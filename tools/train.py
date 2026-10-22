@@ -76,6 +76,7 @@ DEFAULTS = {
     "RebuildGiveUpSeconds": 120,
     "BuildSkipSeconds": 90,
     "BuildSkipMinMetal": 300,
+    "StarvedFlatTicks": 4,
     "Fire": {"Enabled": True, "Interval": 1.0, "WeaponsPerTick": 3, "AlwaysOffensive": True, "RebuildFireFactor": 2.5},
     "Tempo": {"UpdatePeriod": 2.0, "UpdatePeriodEasy": 4.0, "UpdatePeriodNormal": 2.0, "UpdatePeriodHard": 1.0, "UpdateAfterRebuildDelay": 0.625, "ConstructionMean": 20, "ConstructionMin": 12,
               "NonConstructionMean": 6, "NonConstructionMin": 3, "RepairPeriod": 6,

@@ -34,7 +34,7 @@ local CAI_Defaults =
 	IndirectThreatTypes = { mortar = true, mortar2 = true, missile = true, missileinv = true, missile2 = true, missile2inv = true },
 	AntiAirThreatShots = 6, AntiAirBoostMax = 1.4,
 	RebuildGiveUpSeconds = 120,
-	BuildSkipSeconds = 90, BuildSkipMinMetal = 300,
+	BuildSkipSeconds = 90, BuildSkipMinMetal = 300, StarvedFlatTicks = 4,
 	Fire = { Enabled = true, Interval = 1.0, WeaponsPerTick = 3, AlwaysOffensive = true, RebuildFireFactor = 2.5 },
 	Tempo = { UpdatePeriod = 2.0, UpdatePeriodEasy = 4.0, UpdatePeriodNormal = 2.0, UpdatePeriodHard = 1.0, UpdateAfterRebuildDelay = 0.625, ConstructionMean = 20, ConstructionMin = 12,
 		NonConstructionMean = 6, NonConstructionMin = 3, RepairPeriod = 6,
@@ -648,7 +648,17 @@ function CAI_Think()
 	-- "broken", they will be built as soon as there is enough metal again.
 	local okRes, resNow = pcall(GetTeamResources, teamId)
 	local metalNow = (okRes and resNow and resNow.metal) or 0
-	local starved = data.ResourceStarved or metalNow < Strategy.BuildSkipMinMetal
+	-- "insufficient resources" only counts as waiting while metal is still rising: if it stays flat
+	-- at a high level (e.g. at the storage cap, the action costs more than can ever be stored),
+	-- waiting does not help and the clocks must run (otherwise the AI stalls for the rest of the match)
+	if st.lastMetal ~= nil and metalNow <= st.lastMetal + 1 and metalNow >= Strategy.BuildSkipMinMetal then
+		st.metalFlatTicks = (st.metalFlatTicks or 0) + 1
+	else
+		st.metalFlatTicks = 0
+	end
+	st.lastMetal = metalNow
+	local capped = st.metalFlatTicks >= (Strategy.StarvedFlatTicks or 4)
+	local starved = (data.ResourceStarved and not capped) or metalNow < Strategy.BuildSkipMinMetal
 	if type(data.Rebuild) == "table" then
 		for k in pairs(data.Rebuild) do
 			rebuildCount = rebuildCount + 1
