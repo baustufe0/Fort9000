@@ -73,16 +73,40 @@ MAPS = {
         "base_plan": "fort-t1f1-Template-1.lua",
         "fwe": "Vanilla.fwe",
         "solid_minus1": True,          # blocks with id -1 are rock here
-        "cols": [-3300, -3200, -3100, -3000, -2920, -2845, -2745],
+        # front column at -2945/-2845 = the prow of the starting fort (rock ends at x=-2900, nothing beyond -2845)
+        # back columns -3500/-3400: room for turbines and eco behind the fort (rock reaches back to -3600)
+        "cols": [-3500, -3400, -3300, -3200, -3100, -3000, -2945, -2845],
         "rows": [-395, -295, -195, -95, 5, 105, 205, 308, 405, 503, 602, 700],
         "reactor": (-3040, 305),
         "keepout": [(-3140, -2900, 205, 405)],   # reactor + frame: no cells
+        # the rock ends at x=-2900: no cells hanging beyond the cliff without foundations
+        "require_support": True,
+        # rules from the guide "How to be a PRO at Vanilla Forts": crossbraced lower layers,
+        # build from the bottom up, no heavy metal roof
+        "crossbrace_y": -1000,         # every cell crossbraced (|X|), like big vanilla forts
+        "crossbrace_late_y": 405,      # ... but above the lower layers only in a final pass (weapons first)
+        "crossbrace_now_x": -3100,     # ... except the front weapon column and the prow
+        "bottom_up": True,
+        "light_roof": True,
+        # after the first test match: the ground row of the back column is taken by the starting
+        # store/battery (CS_OCCUPIED), turbines on the 55-wide cell block their neighbours and the laser
+        "use_eco_slots": True,
+        "eco_no_ground": True,
+        "turbine_min_w": 90,
+        # turbine gallery: turbines stand on the floor of the storey just above the starting fort (y=205)
+        "turbine_floor_y": 205,
+        "turbine_row_open": True,      # only background bracing in that storey, so the wind gets through
+        # front cell of the turbine row split at half height: two stacked sandbags shield the turbines.
+        # Both stand side by side on the half-height strut (test match: the floor spot on the
+        # starting fort's top beam was blocked).
+        "split_cell": (-2945, 105), "sandbag_slots": [("mid", 0.27), ("mid", 0.73)],
+        "turbine_cheap_first": True,
         "eco_orig": False,             # no battery/storage in cells of the starting fort
         "weapon_min_w": 95,            # no weapons in narrow cells (<95 wide)
         "mortar_avoid_roof": True,
         "turbine_narrow_first": True,
         "tech_spill": True,
-        "aa_y": 250, "large_y": 100,
+        "aa_y": 250, "large_y": -195,         # large weapons in the main column, two storeys above the open turbine row (test match: CS_UNSTABLE right above it)
         "snap": 45,
         "ground_snap": 25,
         # proven slots from Template-1/-2: (node A, node B, LinkT)
@@ -176,80 +200,129 @@ def _union(*fs):
     return lambda a, b, c, d: any(f(a, b, c, d) for f in fs)
 
 
-# Vanilla: columns -3300 .. -2745, rows -395 .. 700. Reactor at (-3040, 305) (keep-out zone).
-_V_LEFT = _box(-3300, -3100, 205, 700)       # left column down to the ground
-_V_RIGHT = _box(-2920, -2745, 205, 700)      # right column (front, anti-air)
+# Vanilla: columns -3500 .. -2845, rows -395 .. 700. Reactor at (-3040, 305) (keep-out zone).
+# The rock ends at x=-2900 and the starting fort leans forward, so the forts grow backwards
+# (left column on new foundations) and upwards over the starting fort, never out over the cliff.
+# Every variant starts with economy (3rd mine + turbines in the first seconds), as the guide advises.
+_V_BACK = _box(-3500, -3100, 205, 700)       # back block down to the ground (counterweight, eco, tech)
+
+
+def _v_terrace(*steps):
+    """Storeys over the starting fort roof (y=205), each given as (top y, front x): the storeys step
+    back, so every storey has its own front cell for a weapon and roof space behind it."""
+    fs, y1 = [], 205
+    for y0, x1 in steps:
+        fs.append(_box(-3500, x1, y0, y1))
+        y1 = y0
+    return _union(*fs)
+
+
+_V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
+# tall rectangle like big vanilla forts: a weapon column at the front over 6 storeys, mortars on top,
+# turbine gallery above the starting fort. The tall front stands at x=-3000 over the core frame;
+# the prow (-3000..-2845, beyond the cliff edge at -2900) only carries two light storeys.
+_V_TALL = _union(_box(-3500, -3000, -395, 205), _box(-3000, -2845, 5, 205))
 
 VANILLA_VARIANTS = {
+    # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
+    # does not run out of things to build while metal piles up (test match 22.10.2026: plan done
+    # after 5.4 min, then minutes at the storage cap). The raised back towers give extra front
+    # cells that look out over the deck.
     "artillerie": {
-        "title": "Artillery tower: wide platform above the reactor, mortars on top under a door roof, workshop early",
-        "shape": _union(_box(-3300, -2745, -195, 205), _V_LEFT, _V_RIGHT),
+        "title": "Artillery deck: two-storey deck over the starting fort, mortars on top under doors, workshop early",
+        "shape": _union(_V_TALL, _V_BACK),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
+            ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
-            ("eco", ["mine", "mine", "turbine", "turbine", "battery"]),
+            ("weapons", ["sniper"]),
+            ("eco", ["turbine"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("tech", ["workshop"]),
-            ("weapons", ["mortar", "mortar", "sniper", "mortar"]),
-            ("eco", ["mine", "turbine", "store", "battery"]),
+            ("weapons", ["mortar", "mortar"]),
+            ("eco", ["mine", "battery"]),
             ("tech", ["upgrade"]),
-            ("weapons", ["mortar", "sniper", "machinegun"]),
-            ("upgrades", ["mortar2", "mortar2", "minigun"]),
+            ("upgrades", ["mortar2", "mortar2"]),
+            ("eco", ["turbine", "store"]),
+            # late game
+            ("aa", ["machinegun", "machinegun"]),
+            ("weapons", ["mortar", "sniper"]),
+            ("upgrades", ["mortar2", "sniper2"]),
             ("eco", ["turbine", "battery"]),
+            ("upgrades", ["mine2", "mine2", "turbine2"]),
         ],
-        "armour_roof": True,
     },
     "scharfschuetzen": {
-        "title": "Sniper fortress: tall narrow tower on the left, advanced front on top, snipers + anti-air",
-        "shape": _union(_box(-3300, -3100, -395, 205), _box(-3100, -2745, -395, -195),
-                        _box(-3100, -2745, 105, 205), _V_LEFT, _V_RIGHT),
+        "title": "Sniper tower: deck over the starting fort plus a tower at the back, snipers in front, upgrade early",
+        "shape": _union(_V_TALL, _V_BACK),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
+            ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
-            ("eco", ["mine", "turbine", "mine", "battery"]),
             ("weapons", ["sniper", "sniper"]),
+            ("eco", ["turbine"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("tech", ["upgrade"]),
-            ("weapons", ["sniper", "machinegun"]),
-            ("eco", ["mine", "turbine", "store"]),
-            ("upgrades", ["sniper2", "sniper2", "minigun"]),
-            ("weapons", ["sniper", "machinegun"]),
+            ("eco", ["mine", "battery"]),
             ("upgrades", ["sniper2", "minigun"]),
+            ("weapons", ["sniper"]),
+            ("eco", ["turbine", "store"]),
+            ("upgrades", ["sniper2", "sniper2"]),
+            # late game
+            ("aa", ["machinegun", "machinegun"]),
+            ("weapons", ["sniper"]),
+            ("upgrades", ["sniper2", "mine2", "mine2"]),
             ("eco", ["turbine", "battery"]),
+            ("upgrades", ["turbine2"]),
         ],
-        "armour_roof": True,
     },
     "schwer": {
-        "title": "Heavy front: lower, wide, heavily armoured block, factory early, cannon and laser",
-        "shape": _union(_box(-3300, -2745, 5, 205), _V_LEFT, _V_RIGHT),
+        "title": "Laser deck: factory early, plasma laser in the prow, extra store/battery for it, no cannon",
+        "shape": _union(_V_TALL, _V_BACK),
         "plan": [
+            ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
-            ("eco", ["mine", "mine", "turbine", "battery", "turbine"]),
+            ("weapons", ["sniper"]),
+            ("eco", ["turbine"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("tech", ["workshop"]),
-            ("eco", ["mine", "store", "battery"]),
+            ("eco", ["mine", "battery", "store"]),
+            # a laser shot needs a lot of energy: turbines first (test match: laser stood, never fired)
+            ("eco", ["turbine", "turbine"]),
             ("tech", ["factory"]),
-            ("weapons", ["cannon", "machinegun"]),
-            ("eco", ["turbine", "battery"]),
-            ("weapons", ["laser", "cannon"]),
-            ("weapons", ["sniper", "machinegun"]),
-        ],
-        "armour_roof": True,
-    },
-    "wirtschaft": {
-        "title": "Economy fortress: all mines and turbines first, then mixed snipers/mortars, few MGs",
-        "shape": _union(_box(-3300, -2745, 5, 205), _box(-3300, -3000, -95, 5), _V_LEFT, _V_RIGHT),
-        "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        "plan": [
-            ("eco", ["mine", "mine", "mine", "turbine", "turbine"]),
-            ("aa", ["machinegun"]),
-            ("eco", ["turbine", "turbine", "battery", "store"]),
-            ("tech", ["workshop"]),
-            ("weapons", ["sniper", "mortar", "mortar"]),
-            ("tech", ["upgrade"]),
-            ("upgrades", ["mine2", "mine2", "mine2", "turbine2", "turbine2"]),
+            ("weapons", ["laser"]),
+            ("eco", ["turbine"]),
+            ("weapons", ["machinegun"]),
+            # late game: more anti-air and snipers, a mortar, more storage for repairs
+            ("aa", ["machinegun", "machinegun"]),
             ("weapons", ["sniper", "mortar"]),
             ("eco", ["battery", "turbine"]),
-            ("upgrades", ["mortar2", "sniper2"]),
+            ("weapons", ["sniper"]),
         ],
-        "armour_roof": True,
+    },
+    "wirtschaft": {
+        "title": "Economy deck: all mines and turbines first, then snipers and mortars, mine/turbine upgrades",
+        "shape": _union(_V_TALL, _V_BACK),
+        "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+        "plan": [
+            ("eco", ["mine", "turbine", "mine", "mine"]),
+            ("aa", ["machinegun"]),
+            ("weapons", ["sniper"]),
+            ("eco", ["turbine", "turbine", "battery"]),
+            ("defence", ["sandbags", "sandbags"]),
+            ("tech", ["workshop"]),
+            ("weapons", ["mortar", "sniper"]),
+            ("tech", ["upgrade"]),
+            ("upgrades", ["mine2", "mine2", "turbine2"]),
+            ("weapons", ["mortar", "sniper"]),
+            ("eco", ["store", "turbine"]),
+            ("upgrades", ["mortar2", "sniper2"]),
+            # late game
+            ("aa", ["machinegun", "machinegun"]),
+            ("weapons", ["sniper", "mortar"]),
+            ("upgrades", ["mortar2", "sniper2", "mine2", "turbine2"]),
+            ("eco", ["battery"]),
+        ],
     },
 }
 
@@ -347,6 +420,8 @@ class Plan:
             i, j = c
             return ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1))
         self.cells |= {c for c in self.connectors if any(n in self.cells for n in neigh(c))}
+        if self.cfg.get("require_support"):
+            self.filter_supported()
         # keep only cells connected to the starting fort via edges
         # start points: cells of the starting fort and all cells with an original node as a corner
         reach = set(self.orig_cells) | {c for c in self.cells
@@ -364,6 +439,69 @@ class Plan:
         if dropped:
             self.problems.append("%d cells without connection to the starting fort omitted" % len(dropped))
         self.all_cells = self.cells | self.orig_cells
+
+    def filter_supported(self):
+        """Drop cells that would hang in the air (e.g. beyond a cliff edge).
+        A node is held if it is an original node, a foundation, or the top corner of a supported cell.
+        A cell is supported if both bottom corners are held, or if it lies in a horizontal run of
+        at most max_bridge cells whose outer bottom corners are held (a truss over a gap)."""
+        # held node -> cell that holds it up (None: original node or foundation, always there);
+        # self.deps[c] = cells that must be built before c, so that c never hangs in the air
+        # while the fort is being built (build_cell builds them first)
+        held = {ij: None for ij, n in self.nodes.items() if n[2] in ("orig", "found")}
+        sup = set(self.orig_cells)
+        for i, j in sup:
+            held.setdefault((i, j), None)
+            held.setdefault((i + 1, j), None)
+        via = {}       # supported cell -> the held nodes it rests on
+
+        def hold_top(c):
+            held.setdefault((c[0], c[1]), c)
+            held.setdefault((c[0] + 1, c[1]), c)
+
+        max_bridge = self.cfg.get("max_bridge", 3)
+        changed = True
+        while changed:
+            changed = False
+            for c in sorted(self.cells - sup, key=lambda c: -c[1]):
+                i, j = c
+                if (i, j + 1) in held and (i + 1, j + 1) in held:
+                    sup.add(c)
+                    via[c] = [(i, j + 1), (i + 1, j + 1)]
+                    hold_top(c)
+                    changed = True
+            # bridges: runs of unsupported cells in one row, held at both outer ends
+            for c in sorted(self.cells - sup):
+                i, j = c
+                if (i, j + 1) not in held or (i - 1, j) in self.cells - sup:
+                    continue
+                run = [c]
+                while len(run) <= max_bridge and (run[-1][0] + 1, j) in self.cells - sup:
+                    run.append((run[-1][0] + 1, j))
+                for k in range(len(run)):
+                    if k < max_bridge and (run[k][0] + 1, j + 1) in held:
+                        ends = [(i, j + 1), (run[k][0] + 1, j + 1)]
+                        for x in run[:k + 1]:
+                            sup.add(x)
+                            via[x] = ends
+                            hold_top(x)
+                        changed = True
+                        break
+        # dependencies: each resting node is held by the shallowest supported cell below it
+        # (fewest cells to build first), so devices up top do not wait for the whole back column
+        depth, best = {}, {}
+        for c in sorted(via, key=lambda c: -c[1]):
+            for n in via[c]:
+                if n not in best:
+                    hs = [h for h in ((n[0] - 1, n[1]), n) if h in depth]
+                    best[n] = None if held.get(n, 0) is None or not hs else min(hs, key=lambda h: depth[h])
+            depth[c] = 1 + max([depth[best[n]] if best[n] else 0 for n in via[c]])
+        self.deps = {c: {best[n] for n in via[c]} - {None} for c in via}
+        self.depth = depth
+        dropped = self.cells - sup
+        if dropped:
+            self.cells -= dropped
+            self.problems.append("%d unsupported cells omitted: %s" % (len(dropped), sorted(dropped)))
 
     # --- Cell properties
     def is_front(self, c):
@@ -427,13 +565,56 @@ class Plan:
         a, b = self.devices.get(c) or "", self.devices.get((c[0] + 1, c[1])) or ""
         return bool(a and b) and (a + "+" == b or b + "+" == a)
 
+    def in_turbine_row(self, c):
+        """Cell in the turbine gallery storey: only background bracing inside (open for the wind)."""
+        y = self.cfg.get("turbine_floor_y")
+        return y is not None and self.cfg.get("turbine_row_open") and self.cfg["rows"][c[1] + 1] == y
+
+    def is_split(self, c):
+        """Front cell of the turbine row, split at half height for two stacked sandbags."""
+        sc = self.cfg.get("split_cell")
+        return bool(sc) and self.cfg["cols"][c[0]] == sc[0] and self.cfg["rows"][c[1]] == sc[1]
+
+    def build_split_cell(self, c):
+        """Cell with a background-bracing strut at half height: both side edges in two halves,
+        no full-height posts, so two sandbags fit into the height of one turbine (like big vanilla forts)."""
+        i, j = c
+        tl, tr, bl, br = (i, j), (i + 1, j), (i, j + 1), (i + 1, j + 1)
+        mids = []
+        for top, bot, key in ((tl, bl, ("mid", i, j)), (tr, br, ("mid", i + 1, j))):
+            if key not in self.nodes:
+                pt, pb = self.nodes[top][1], self.nodes[bot][1]
+                self.nodes[key] = (None, (round((pt[0] + pb[0]) / 2, 2), round((pt[1] + pb[1]) / 2, 2)), "new")
+            nid, p, _ = self.node(key)
+            if nid not in self.built_nodes:
+                src = self.nodes[top]
+                self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "backbracing" },'
+                                    % (src[0], self._fmt(src[1]), nid, self._fmt(p)))
+                self.built_nodes.add(nid)
+                self.links[frozenset((src[0], nid))] = "backbracing"
+            self.link(key, bot, "backbracing")
+            mids.append(key)
+        self.link(bl, br, "bracing")
+        self.link(mids[0], mids[1], "backbracing")
+        self.link(tl, tr, self.edge_material(c, "top"))
+        self.link(tl, mids[1], "backbracing")
+        self.link(mids[0], br, "backbracing")
+        self.split_slots = {"mid": (mids[0], mids[1]), "floor": (bl, br)}
+
     def edge_material(self, c, edge):
         """Material for a cell edge: front/roof armoured, doors in front of weapons."""
         dev = self.devices.get(c)
+        if edge == "right" and self.in_turbine_row(c):
+            return "backbracing"       # wind must blow through the whole turbine row
         if edge == "right" and self.spans_right(c):
             return "backbracing"
+        if edge == "right" and dev == "sandbags":
+            return "bracing"
         if edge == "right" and self.is_front(c):
             return "door" if dev in DIRECT_WEAPONS else "armour"
+        if edge == "top" and self.is_top(c) and self.cfg.get("light_roof"):
+            # no metal roof (heavy, guide "How to be a PRO at Vanilla Forts"): doors only over mortars
+            return "door" if dev in LOBBED_WEAPONS else "bracing"
         if edge == "top" and self.is_top(c) and self.variant.get("armour_roof"):
             if dev in LOBBED_WEAPONS:
                 return "door"
@@ -445,6 +626,18 @@ class Plan:
     def build_cell(self, c):
         if c in self.built_cells:
             return True
+        # first the cells that hold this one up (require_support); "building" guards against a
+        # path to a support that leads back through this cell
+        building = self.__dict__.setdefault("building", set())
+        if c in building:
+            return False
+        building.add(c)
+        try:
+            for d in sorted(getattr(self, "deps", {}).get(c, ()), key=lambda d: -d[1]):
+                if d not in self.built_cells and not self.build_cell_path(d):
+                    return False
+        finally:
+            building.discard(c)
         i, j = c
         tl, tr, bl, br = (i, j), (i + 1, j), (i, j + 1), (i + 1, j + 1)
         orig = c in self.orig_cells
@@ -453,25 +646,53 @@ class Plan:
                 # build the neighbouring cell first
                 return False
         mine_cell = self.devices.get(c) == "mine-platz"
+        if not orig and self.is_split(c):
+            self.build_split_cell(c)
+            self.built_cells.add(c)
+            self.build_order.append(c)
+            return True
         if not orig:
             if not mine_cell:   # no link on the rock at mine sites (otherwise the mine is blocked)
                 self.link(bl, br, "bracing")
-            self.link(tl, bl, "backbracing" if self.spans_right((i - 1, j)) else "bracing")
-            self.link(tr, br, self.edge_material(c, "right"))
+            self.link(tl, bl, "backbracing" if self.spans_right((i - 1, j)) or self.in_turbine_row(c) else "bracing")
+            if not self.is_split((i + 1, j)):   # the split cell builds that edge in two halves
+                self.link(tr, br, self.edge_material(c, "right"))
             self.link(tl, tr, self.edge_material(c, "top"))
-            diag = "backbracing" if c in self.devices or self.devices.get((i - 1, j)) in LARGE else "bracing"
+            diag = "backbracing" if c in self.devices or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
             if mine_cell:
                 diag = "backbracing"
             if (i + j) % 2 == 0:
                 self.link(tl, br, diag)
             else:
                 self.link(tr, bl, diag)
+            # crossbrace the lower layers (|X|) so the fort does not wobble or collapse; with
+            # crossbrace_late_y, cells above that height get their second diagonal in a final pass
+            # (after all devices), so the weapons are not delayed by a lot of extra wood
+            y = self.nodes[tl][1][1]
+            if y >= self.cfg.get("crossbrace_y", 1e9) and not mine_cell:
+                # the front weapon column (x >= crossbrace_now_x) is crossbraced right away: it is
+                # what the enemy shoots at (test match: one 20mm volley cut off the single-braced column)
+                if y >= self.cfg.get("crossbrace_late_y", -1e9) or self.cfg["cols"][i] >= self.cfg.get("crossbrace_now_x", 1e9):
+                    self.crossbrace(c, diag)
+                else:
+                    self.late_crossbrace.append(c)
         else:
             self.link(bl, br, "bracing")
             if self.is_front(c):
                 self.link(tr, br, self.edge_material(c, "right"))
         self.built_cells.add(c)
+        self.build_order.append(c)
         return True
+
+    def crossbrace(self, c, diag=None):
+        """Second diagonal of cell c."""
+        i, j = c
+        if diag is None:
+            diag = "backbracing" if c in self.devices or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
+        if (i + j) % 2 == 0:
+            self.link((i + 1, j), (i, j + 1), diag)
+        else:
+            self.link((i, j), (i + 1, j + 1), diag)
 
     def build_cell_path(self, c):
         """Build a cell; if necessary first the cells on the way from the starting fort."""
@@ -486,7 +707,7 @@ class Plan:
             if x == c:
                 break
             for n in ((x[0] + 1, x[1]), (x[0] - 1, x[1]), (x[0], x[1] + 1), (x[0], x[1] - 1)):
-                if n in self.all_cells and n not in prev:
+                if n in self.all_cells and n not in prev and n not in self.__dict__.get("building", ()):
                     prev[n] = x
                     q.append(n)
         if c not in prev:
@@ -525,7 +746,8 @@ class Plan:
 
     # --- Choose slots
     def free_cells(self, pred):
-        cells = [c for c in sorted(self.all_cells) if c not in self.devices and not self.near_reactor(c) and pred(c)]
+        cells = [c for c in sorted(self.all_cells) if c not in self.devices and not self.near_reactor(c)
+                 and not self.in_turbine_row(c) and pred(c)]
         return cells
 
     def choose_weapon_cell(self, dev):
@@ -554,16 +776,61 @@ class Plan:
         # some randomness among the best three so that variants differ
         return cands[self.rng.randrange(min(2, len(cands)))]
 
+    def place_eco_slot(self, dev):
+        """Battery/store on a proven slot of the original plan (node A, node B, LinkT)."""
+        for (pa, pb, t) in self.cfg.get("eco_slots", []):
+            ia, ib = self.node_at(pa), self.node_at(pb)
+            if not ia or not ib:
+                continue
+            c = (ia[0], ia[1] - 1)
+            if c in self.devices or c not in self.all_cells or not self.build_cell_path(c):
+                continue
+            self.devices[c] = dev
+            a, b = self.nodes[ia], self.nodes[ib]
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, dev))
+            self.placed.append((dev, a[1], b[1], t, c))
+            return True
+        return False
+
     def choose_eco_cell(self):
-        cands = self.free_cells(lambda c: not self.is_front(c) and (c in self.cells or self.cfg.get("eco_orig", True)))
+        ground = max(self.cfg["rows"])
+        no_ground = self.cfg.get("eco_no_ground")
+        cands = self.free_cells(lambda c: not self.is_front(c) and (c in self.cells or self.cfg.get("eco_orig", True))
+                                and not (no_ground and self.cfg["rows"][c[1] + 1] >= ground))
         cands.sort(key=lambda c: (-self.cfg["rows"][c[1]], c[0]))
         return cands[0] if cands else None
 
+    def unbuilt_support(self, c, seen=None):
+        """Number of unbuilt cells that must be built before c (c included)."""
+        seen = set() if seen is None else seen
+        if c in self.built_cells or c in seen:
+            return 0
+        seen.add(c)
+        return 1 + sum(self.unbuilt_support(d, seen) for d in getattr(self, "deps", {}).get(c, ()))
+
+    def choose_turbine_floor(self):
+        """Free cell of the turbine gallery (floor at turbine_floor_y), cheapest to reach first."""
+        y = self.cfg["turbine_floor_y"]
+        min_w = self.cfg.get("turbine_min_w", 0)
+        cands = [c for c in sorted(self.cells)
+                 if self.cfg["rows"][c[1] + 1] == y and not self.is_front(c) and c not in self.devices
+                 and self.cell_w(c) >= min_w]
+        cands.sort(key=lambda c: (self.unbuilt_support(c), -c[0]))
+        return cands[0] if cands else None
+
     def choose_turbine_roof(self):
+        min_w = self.cfg.get("turbine_min_w", 0)
         cands = [c for c in sorted(self.cells)
                  if self.is_top(c) and not self.is_front(c) and not self.roof_device.get(c)
-                 and self.devices.get(c) not in LOBBED_WEAPONS]
-        if self.cfg.get("turbine_narrow_first"):
+                 and self.devices.get(c) not in LOBBED_WEAPONS
+                 and self.cell_w(c) >= min_w
+                 # not over a large weapon (the turbine collides with it)
+                 and not (min_w and (self.devices.get(c) or "").rstrip("+") in LARGE)]
+        if self.cfg.get("turbine_cheap_first"):
+            # early economy: the roof that needs the fewest unbuilt cells first, then the highest
+            cands.sort(key=lambda c: (self.unbuilt_support(c), self.cfg["rows"][c[1]], -c[0]))
+        elif self.cfg.get("turbine_narrow_first"):
             cands.sort(key=lambda c: (self.cell_w(c) >= 95, self.cfg["rows"][c[1]], -c[0]))
         else:
             cands.sort(key=lambda c: (self.cfg["rows"][c[1]], c[0]))
@@ -577,6 +844,8 @@ class Plan:
         self.build_lattice()
         self.select_cells(variant["shape"])
         self.built_cells = set()
+        self.build_order = []
+        self.late_crossbrace = []
         self.roof_device = {}
         self.mines_done = 0
         # the starting fort counts as built
@@ -592,9 +861,14 @@ class Plan:
         for step, items in variant["plan"]:
             for dev in items:
                 self.add(step, dev)
-        # finish building the remaining cells of the shape (structure + armour)
-        for c in sorted(self.cells, key=lambda c: (self.cfg["rows"][c[1]], c[0])):
+        # finish building the remaining cells of the shape (structure + armour);
+        # bottom_up: lower layers first, so the fort does not grow top-heavy
+        sign = -1 if self.cfg.get("bottom_up") else 1
+        for c in sorted(self.cells, key=lambda c: (sign * self.cfg["rows"][c[1]], c[0])):
             self.build_cell_path(c)
+        # deferred crossbracing, bottom up
+        for c in sorted(self.late_crossbrace, key=lambda c: (-self.cfg["rows"][c[1]], c[0])):
+            self.crossbrace(c)
         return self
 
     def add(self, step, dev):
@@ -624,6 +898,13 @@ class Plan:
         if dev == "mine":
             return self.add_mine()
         if dev == "turbine":
+            c = self.choose_turbine_floor() if self.cfg.get("turbine_floor_y") is not None else None
+            if c is not None and self.build_cell_path(c):
+                # turbine gallery: a row of turbines on the floor of one open storey (like big vanilla
+                # forts), so roofs stay free for mortars
+                self.devices[c] = dev
+                self.place_on_floor(c, dev)
+                return
             c = self.choose_turbine_roof()
             if c is None or not self.build_cell_path(c):
                 self.problems.append("no roof slot for turbine")
@@ -660,12 +941,28 @@ class Plan:
             self.problems.append("no room for %s" % dev)
             return
         if dev in ("battery", "store"):
+            if self.cfg.get("use_eco_slots") and self.place_eco_slot(dev):
+                return
             c = self.choose_eco_cell()
             if c is None or not self.build_cell_path(c):
                 self.problems.append("no room for %s" % dev)
                 return
             self.devices[c] = dev
             self.place_on_floor(c, dev)
+            return
+        if dev == "sandbags":
+            # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts)
+            slots = self.cfg.get("sandbag_slots", [])
+            c = next((c for c in self.all_cells if self.is_split(c)), None)
+            n = sum(1 for p in self.placed if p[0] == "sandbags")
+            if c is None or n >= len(slots) or not self.build_cell_path(c):
+                self.problems.append("no room for sandbags")
+                return
+            slot, t = slots[n]
+            a, b = (self.nodes[k] for k in self.split_slots[slot])
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "sandbags" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t))
+            self.placed.append(("sandbags", a[1], b[1], t, c))
             return
         # Weapons
         c = self.choose_weapon_cell(dev)
@@ -758,6 +1055,13 @@ class Plan:
         for nid, p in pos.items():
             if nid >= 10000 and self.t.inside((p[0], p[1] - 3)) and self.t.inside((p[0] + 3, p[1])):
                 errors.append("node %d lies in rock" % nid)
+        # every cell is built only after the cells that hold it up
+        done = set(self.orig_cells)
+        for c in getattr(self, "build_order", []):
+            missing = getattr(self, "deps", {}).get(c, set()) - done
+            if missing:
+                errors.append("cell %s built before its support %s" % (c, sorted(missing)))
+            done.add(c)
         seen = set()
         for line in self.actions:
             m = re.search(r'DeviceSaveName = "(\w+)"', line)

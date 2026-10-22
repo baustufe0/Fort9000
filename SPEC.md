@@ -35,7 +35,7 @@ The built-in AI only fires during build pauses and at most one weapon per cycle.
 Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolated linearly between Easy / Normal / Hard. Construction and pause durations are configurable.
 
 ### 2.6 Build safety valves
-- **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run.
+- **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run. "Insufficient resources" only counts as waiting while metal is still rising; if metal stays flat above `BuildSkipMinMetal` for `StarvedFlatTicks` think ticks (e.g. at the storage cap, when an action costs more than can be stored), the clocks run again.
 - **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
 
 ### 2.7 Custom build plan variants per map
@@ -70,6 +70,17 @@ It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--stre
 
 ### 2.12 Fort generator
 `tools/fortgen/` generates build plan variants (`gen_fort.py`), converts plans between coordinate systems (`mid_to_long.py`) and renders them as images for review (`render_all.py`, `view.py`).
+Optional per-map rules (used for Vanilla, following the Steam guide "How to be a PRO at Vanilla Forts"):
+- `require_support`: cells that would hang in the air (beyond a cliff edge) are dropped; a cell needs both bottom corners held (original node, foundation or top of a supported cell) or must be a short bridge (`max_bridge`, default 3 cells) between held nodes.
+- `crossbrace_y`: cells at or below this height get both diagonals (|X|). With `crossbrace_late_y`, only cells at or below that height get the second diagonal right away; the others get it in a final pass after all devices, so weapons are not delayed by extra wood. Cells from `crossbrace_now_x` forward (the front weapon column) are always crossbraced right away.
+- `bottom_up`: remaining cells are built from the bottom up.
+- `light_roof`: no armour roof; doors only over mortars.
+- `use_eco_slots`: batteries/stores go on the proven slots of the original plan (`eco_slots`) first; `eco_no_ground`: never on the ground row.
+- `turbine_min_w`: no turbines on narrower cells or above large weapons.
+- `turbine_floor_y`: turbines stand on the floor of the storey at this height (turbine gallery) before roofs are used. `turbine_row_open`: that storey contains only background bracing (posts, diagonals, outer edges), so the wind can blow through; no weapons or eco devices there. `split_cell`/`sandbag_slots`: the front cell of the turbine row is split at half height by a background-bracing strut (no full-height posts), with two sandbags side by side on that strut (build step `defence`; the floor below is the starting fort's top beam, which was blocked in a test match). The laser goes two storeys above the open turbine row (`large_y`), on solid storeys.
+- With `require_support`, each cell also records the cells it rests on (the shallowest support); they are always built first, so nothing hangs in the air while the fort is under construction (`validate()` checks the build order). `turbine_cheap_first`: turbines go on the roof that needs the fewest unbuilt cells.
+
+The Vanilla variants share one shape modelled on large player-built vanilla forts: a tall rectangle (back block on the ground at x -3500..-3100, six storeys over the starting fort up to y=-395), a weapon column at the front (x -3100..-3000, over the core frame; the prow beyond the cliff edge only carries two light storeys), a turbine gallery on the storey just above the starting fort and mortars on top; every cell is crossbraced (above the lower layers in a final pass). The build lists put a machine gun and a sniper right after the first mine/turbine/mine and only then the turbines that need the back block. The laser plan builds four turbines before the factory and laser (a laser shot needs a lot of energy). They start with economy (mines and turbines first), end with a late-game block (more anti-air, weapons, upgrades, storage) so the AI does not sit idle at the storage cap, and use no cannon (its prerequisite differs between the base game and `weapon_pack`); the heavy variant uses a plasma laser.
 
 ---
 
