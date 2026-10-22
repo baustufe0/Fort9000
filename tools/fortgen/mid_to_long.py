@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""FORT 9000 - Plaene der Mid-Festung (Team 1, Vanilla, FortPos -2900/700) in das Koordinatensystem des
+Long-Plans (Team 2, FortId 3, FortPos 3700/-1950) umrechnen: x' = 800 - x, y' = y - 2650.
+Geraete auf Links: A/B getauscht, LinkT -> 1 - LinkT (wie MirrorFort im Spiel).
+Aufruf: mid_to_long.py <mid-plan> <long-plan-original> <ausgabe>"""
+import math, re, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fortplan import parse_plan, node_positions
+
+DX, DY = 800.0, -2650.0
+M = lambda p: (DX - p[0], p[1] + DY)
+
+def f(p): return "x = %.2f, y = %.2f" % p
+
+def convert(src, long_orig, dst):
+    h, acts = parse_plan(src)
+    mid_pos = node_positions(acts)
+    _, lacts = parse_plan(long_orig)
+    lpos = {k: v for k, v in node_positions(lacts).items() if k < 10000}
+    idmap = {}
+    for k, v in mid_pos.items():
+        if k >= 10000:
+            continue
+        m = M(v)
+        best = min(lpos.items(), key=lambda kv: math.dist(kv[1], m))
+        assert math.dist(best[1], m) < 3, (k, v, best)
+        idmap[k] = best[0]
+    assert len(set(idmap.values())) == len(idmap)
+    nid = lambda i: idmap.get(i, i)
+    npos = lambda i, p: lpos[idmap[i]] if i in idmap else M(p)
+    out = []
+    for a in acts:
+        t = a["Type"]
+        if t == "CREATE_NODE":
+            A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
+            out.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+                       % (nid(A), f(npos(A, a["PosA"])), nid(B), f(M(a["NewNodePos"])), a["MaterialSaveName"]))
+        elif t == "CREATE_LINK":
+            A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
+            out.append('{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
+                       % (nid(A), f(npos(A, a["PosA"])), nid(B), f(npos(B, a["PosB"])), a["MaterialSaveName"]))
+        elif t == "CREATE_DEVICE" and "GroundPosition" in a:
+            out.append('{ Type = CREATE_DEVICE, GroundPosition = { %s }, LinkT = %s, DeviceSaveName = "%s" },'
+                       % (f(M(a["GroundPosition"])), re.search(r"LinkT = ([\d.]+)", a["raw"]).group(1), a["DeviceSaveName"]))
+        elif t == "CREATE_DEVICE":
+            A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
+            pa, pb = npos(A, a["PosA"]), npos(B, a["PosB"])
+            out.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                       % (nid(B), f(pb), nid(A), f(pa), 1.0 - a["LinkT"], a["DeviceSaveName"]))
+        else:
+            raise ValueError(a["raw"])
+    head = ("-- Fort recorded for AI replay\n"
+            "CREATE_NODE = 1\nDESTROY_NODE = 2\nCREATE_LINK = 3\nDESTROY_LINK = 4\nCREATE_DEVICE = 5\nDESTROY_DEVICE = 6\n")
+    lh, _ = parse_plan(long_orig)
+    header = "FortTeam = %d; FortId = %d; FortPos = { x = %.6f, y = %.6f }; " % (lh["team"], lh["fort"], lh["pos"][0], lh["pos"][1])
+    tail = "-- Erzeugt von Claude AI (tools/fortgen/mid_to_long.py) aus %s\n" % os.path.basename(src)
+    with open(dst, "w", encoding="ascii", newline="\r\n") as fh:
+        fh.write(head + header + "\n\nFort =\n{\n" + "\n".join(out) + "\n}\n" + tail)
+    return len(out)
+
+if __name__ == "__main__":
+    print(convert(*sys.argv[1:4]))
