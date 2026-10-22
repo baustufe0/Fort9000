@@ -1,5 +1,5 @@
-"""Gelaende aus Forts-Kartendateien (.fwe) lesen: Polygone aus zusammenhaengenden Eckpunkt-Datensaetzen.
-Datensatz: float x, float y, float z(=0), u32, u32 len, len Bytes Name."""
+"""Read terrain from Forts map files (.fwe): polygons from contiguous vertex records.
+Record: float x, float y, float z(=0), u32, u32 len, len bytes name."""
 import struct
 
 def _vertex(d, o):
@@ -14,7 +14,7 @@ def _vertex(d, o):
     return (x, y), o + 20 + n
 
 def read_blocks(path, min_vertices=3):
-    """Liefert (bounds, [(kennung, punkte)]). Kennung 1/2 = fester Fels (Seite), -2 = Hintergrund."""
+    """Returns (bounds, [(id, points)]). Id 1/2 = solid rock (side), -2 = background."""
     d = open(path, "rb").read()
     bounds = struct.unpack_from("<ffff", d, 16)
     blocks, o = [], 0

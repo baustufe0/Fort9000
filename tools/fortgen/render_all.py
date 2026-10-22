@@ -1,4 +1,4 @@
-"""Vorschau: render_all.py <Karten-fwe> <out.png> <view x0,x1,y0,y1> <px_per_unit> <plaene...>"""
+"""Preview: render_all.py <map-fwe> <out.png> <view x0,x1,y0,y1> <px_per_unit> <plans...>"""
 import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fwe import read_blocks; from fortplan import parse_plan; from view import draw
 from PIL import Image

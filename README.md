@@ -1,11 +1,11 @@
 # FORT 9000
 
-KI-Mod für **Forts**: erweitert die eingebaute KI (adaptive Zielwahl, Aggression, Luftabwehr, Feuersteuerung, eigene Bauplan-Varianten), zeichnet Partien auf und trainiert die KI-Parameter daraus nach.
+AI mod for **Forts**: extends the built-in AI (adaptive target selection, aggression, anti-air, fire control, custom build plan variants), records matches and retrains the AI parameters from them.
 
-Details zu Features und Architektur: [SPEC.md](SPEC.md)
+Features and architecture: [SPEC.md](SPEC.md)
 
 ## Installation
-Diesen Ordner als `fort-9000` nach `<Steam>/steamapps/common/Forts/data/mods/` legen und im Spiel *FORT 9000 (KI + Recorder)* aktivieren.
+Place this folder as `fort-9000` in `<Steam>/steamapps/common/Forts/data/mods/` and enable *FORT 9000 (AI + Recorder)* in the game.
 
 ## Training
-Nach jeder Spielsitzung `tools/train.bat` ausführen (Python 3 nötig).
+After each play session, run `tools/train.bat` (requires Python 3).

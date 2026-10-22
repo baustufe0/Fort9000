@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""FORT 9000 fuer Forts - Training aus Partien und Replays.
+"""FORT 9000 for Forts - training from matches and replays.
 
-Ablauf:
-  1. collect: kopiert das aktuelle Forts-Log (users/<id>/log.txt) ins Archiv tools/logs/,
-     wenn es Recorder-Daten ([CREC]) enthaelt. Forts ueberschreibt log.txt bei jedem Start,
-     deshalb nach jeder Spielsitzung sammeln!
-  2. train: liest ALLE archivierten Logs, lernt daraus und schreibt ai/strategy.lua neu.
-     Es wird jedes Mal von den Startwerten aus neu gelernt - mehrfaches Ausfuehren
-     verschiebt also nichts, nur neue Partien aendern das Ergebnis.
+Flow:
+  1. collect: copies the current Forts log (users/<id>/log.txt) into the archive tools/logs/
+     if it contains recorder data ([CREC]). Forts overwrites log.txt on every start,
+     so collect after every play session!
+  2. train: reads ALL archived logs, learns from them and rewrites ai/strategy.lua.
+     It always learns from the default values again - running it repeatedly
+     therefore shifts nothing, only new matches change the result.
 
-Aufruf:
+Usage:
   python train.py              -> collect + train
-  python train.py collect      -> nur Log archivieren
-  python train.py train        -> nur trainieren
-  python train.py report       -> nur Auswertung anzeigen, nichts schreiben
-Optionen:
-  --strength 0.5   wie stark die gelernten Werte von den Startwerten abweichen duerfen (0..1)
-  --log PFAD       ein bestimmtes Log statt users/*/log.txt sammeln
+  python train.py collect      -> only archive the log
+  python train.py train        -> only train
+  python train.py report       -> only show the evaluation, write nothing
+Options:
+  --strength 0.5   how far the learned values may deviate from the defaults (0..1)
+  --log PATH       collect one specific log instead of users/*/log.txt
 """
 import argparse
 import glob
@@ -37,22 +37,22 @@ ARCHIVE = os.path.join(TOOLS, "logs")
 STRATEGY = os.path.join(MOD, "ai", "strategy.lua")
 REPORT_JSON = os.path.join(TOOLS, "last_training.json")
 
-FPS = 25                 # Annahme: Spielframes pro Sekunde (fuer die Phasen)
-WINDOW_FRAMES = 375      # Zeitfenster vor/nach einem Verlust (3 Snapshots)
-MIN_CONF_EVENTS = 5      # ab so vielen Beobachtungen zaehlt ein Typ halb
+FPS = 25                 # assumption: game frames per second (for the phases)
+WINDOW_FRAMES = 375      # time window before/after a loss (3 snapshots)
+MIN_CONF_EVENTS = 5      # from this many observations a type counts half
 
-# Feuerkraft-Gewicht je Waffentyp (fuer "wie sehr schwaecht ein Verlust den Gegner")
+# firepower weight per weapon type (for "how much does a loss weaken the opponent")
 WEAPON_WEIGHT = {
     "machinegun": 0.3, "minigun": 0.6, "sniper": 0.8, "sniper2": 1.0,
     "mortar": 1.5, "mortar2": 2.0, "missile": 2.0, "missileinv": 2.0,
     "missile2": 3.0, "missile2inv": 3.0, "cannon": 3.0, "laser": 3.0,
-    # DLC-Waffen
+    # DLC weapons
     "rocket": 2.0, "rocketemp": 1.5, "buzzsaw": 2.0, "flak": 0.5, "shotgun": 1.0, "shrapnel": 1.5,
     "firebeam": 2.5, "magnabeam": 2.0, "smokelauncher": 0.2, "howitzer": 3.0,
 }
 DEFAULT_WEAPON_WEIGHT = 1.0
 
-# Startwerte - identisch mit der ausgelieferten strategy.lua
+# default values - identical to the shipped strategy.lua
 DEFAULTS = {
     "Version": 1,
     "TrainedGames": 0,
@@ -96,12 +96,12 @@ DEFAULTS = {
 
 LINE_RE = re.compile(r"\[CREC\] f=(-?\d+) (\w+)(.*)")
 CAI_RE = re.compile(r"\[CAI\] T(\d+) (\w+)(.*)")
-# vom Spiel selbst: welche Teams sind KI (team members 0) und welchen Bauplan bekommen sie
+# from the game itself: which teams are AI (team members 0) and which build plan they get
 PLAN_RE = re.compile(r"\[CAI\] T(\d+) PLAN map=\S+ file=(\S+)")
 ACT_RE = re.compile(r"ActivateAI team (\d+) team members (\d+) fort (.*)")
 
 
-# ---------------------------------------------------------------- Logs lesen
+# ---------------------------------------------------------------- Reading logs
 
 def read_log(path):
     raw = open(path, "rb").read()
@@ -142,9 +142,9 @@ class Game:
         self.lost = []                # (frame, side, type)
         self.built = []
         self.winner = None
-        self.ai_teams = set()         # Seiten, auf denen die FORT-9000-KI lief
+        self.ai_teams = set()         # sides on which the FORT 9000 AI ran
         self.ai_end = []
-        self.ai_sides = {}            # Seite -> Bauplan der KI (laut Spiel-Log)
+        self.ai_sides = {}            # side -> build plan of the AI (according to the game log)
 
     @property
     def frames(self):
@@ -174,7 +174,7 @@ def parse_games(lines, source):
             kv = parse_kv(rest)
             if kind == "START" or g is None:
                 g = Game(source)
-                # eigener Plan der FORT-9000-KI hat Vorrang vor dem vom Spiel gewaehlten
+                # the FORT 9000 AI's own plan takes precedence over the one chosen by the game
                 for side, plan in pending_plan.items():
                     if side in pending_ai and plan != "original":
                         pending_ai[side] = plan
@@ -209,7 +209,7 @@ def parse_games(lines, source):
     return [x for x in games if x.snaps[1] or x.snaps[2]]
 
 
-# ---------------------------------------------------------------- Lernen
+# ---------------------------------------------------------------- Learning
 
 def firepower(shots):
     return sum(n * WEAPON_WEIGHT.get(t, DEFAULT_WEAPON_WEIGHT) for t, n in shots.items())
@@ -228,7 +228,7 @@ def metal_at(snaps, frame):
 
 
 def learn(games, strength):
-    impact = defaultdict(list)   # Typ -> Liste der Wirkungen eines Verlusts auf den Verlierer
+    impact = defaultdict(list)   # type -> list of effects of a loss on the loser
     lift_games = defaultdict(list)
     phase_share = {"Early": [], "Mid": [], "Late": []}
     early_f = DEFAULTS["EarlySeconds"] * FPS
@@ -241,7 +241,7 @@ def learn(games, strength):
                 continue
             before = window_sum(snaps, frame - WINDOW_FRAMES, frame, lambda s: firepower(s[4]))
             after = window_sum(snaps, frame, frame + WINDOW_FRAMES, lambda s: firepower(s[4]))
-            # Ende der Partie: kein volles Fenster danach -> ueberspringen
+            # end of the match: no full window afterwards -> skip
             if not any(s[0] > frame + WINDOW_FRAMES * 0.6 for s in snaps):
                 continue
             fire_drop = (before - after) / max(before, 1.0)
@@ -287,7 +287,7 @@ def learn(games, strength):
             if typ in table:
                 table[typ] = round(max(0.0, min(150.0, table[typ] + shift)), 1)
             elif cls == "Heavy":
-                # neue Geraetetypen (z.B. aus Mods/DLC) mit neutralem Wert aufnehmen
+                # add new device types (e.g. from mods/DLC) with a neutral value
                 table[typ] = round(max(0.0, min(150.0, 30 + shift)), 1)
 
     aggression = {}
@@ -304,7 +304,7 @@ def learn(games, strength):
     return strategy, learned_types, aggression
 
 
-# ---------------------------------------------------------------- Lua schreiben
+# ---------------------------------------------------------------- Writing Lua
 
 def lua_value(v, indent):
     pad = "\t" * indent
@@ -328,15 +328,15 @@ def write_strategy(strategy, n_logs):
     if os.path.exists(STRATEGY):
         shutil.copyfile(STRATEGY, os.path.join(MOD, "ai", "strategy_previous.lua"))
     header = (
-        "-- FORT 9000 - Strategiedatei (automatisch erzeugt von tools/train.py)\n"
-        "-- Trainiert am %s aus %d Partien mit Ergebnis in %d Logs.\n"
-        "-- Wird beim Start eines Gefechts einmal geladen. Vorherige Version: strategy_previous.lua\n\n"
+        "-- FORT 9000 - strategy file (generated automatically by tools/train.py)\n"
+        "-- Trained on %s from %d matches with a result in %d logs.\n"
+        "-- Loaded once at the start of a match. Previous version: strategy_previous.lua\n\n"
         % (time.strftime("%Y-%m-%d %H:%M"), strategy["TrainedGames"], n_logs))
     with open(STRATEGY, "w", encoding="ascii", newline="\n") as f:
         f.write(header + "Strategy =\n" + lua_value(strategy, 0) + "\n")
 
 
-# ---------------------------------------------------------------- Befehle
+# ---------------------------------------------------------------- Commands
 
 def find_logs(explicit):
     if explicit:
@@ -351,11 +351,11 @@ def collect(explicit=None):
     for path in find_logs(explicit):
         lines = read_log(path)
         if not any("[CREC]" in l for l in lines):
-            print("  %s: keine Recorder-Daten, uebersprungen" % path)
+            print("  %s: no recorder data, skipped" % path)
             continue
         digest = hashlib.sha1("\n".join(lines).encode("utf-8")).hexdigest()[:12]
         if digest in known:
-            print("  %s: schon archiviert" % path)
+            print("  %s: already archived" % path)
             continue
         stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(os.path.getmtime(path)))
         dest = os.path.join(ARCHIVE, "log_%s_%s.txt" % (stamp, digest))
@@ -363,12 +363,12 @@ def collect(explicit=None):
             f.write("\n".join(lines))
         known.add(digest)
         added += 1
-        print("  archiviert: %s" % os.path.basename(dest))
+        print("  archived: %s" % os.path.basename(dest))
     return added
 
 
 def game_key(g):
-    """Fingerabdruck einer Partie, damit dieselbe Partie aus mehreren Logs nur einmal zaehlt."""
+    """Fingerprint of a match so that the same match from several logs counts only once."""
     parts = [str(g.winner), str(sorted(g.ai_sides.items()))]
     for side in (1, 2):
         parts += ["%d:%d:%s:%s" % (side, s[0], s[1], sorted(s[3].items())) for s in g.snaps[side]]
@@ -388,34 +388,34 @@ def load_archive():
             seen.add(k)
             games.append(g)
     if dupes:
-        print("  %d doppelte Partie(n) aus ueberlappenden Logs uebersprungen" % dupes)
+        print("  %d duplicate match(es) from overlapping logs skipped" % dupes)
     return games, logs
 
 
 def report(games, learned_types, aggression, strategy):
-    print("\nPartien im Archiv: %d (davon mit Ergebnis: %d)" % (len(games), sum(1 for g in games if g.winner)))
+    print("\nMatches in archive: %d (with result: %d)" % (len(games), sum(1 for g in games if g.winner)))
     ai_games = [(side, plan, g.winner) for g in games if g.winner for side, plan in g.ai_sides.items()]
-    if not ai_games:  # alte Logs ohne ActivateAI-Zeilen: Seite 2 war die KI
+    if not ai_games:  # old logs without ActivateAI lines: side 2 was the AI
         ai_games = [(2, "?", g.winner) for g in games if g.winner]
     wins = sum(1 for side, plan, w in ai_games if side == w)
-    print("KI-Ergebnis: %d Siege in %d Partien" % (wins, len(ai_games)))
+    print("AI result: %d wins in %d matches" % (wins, len(ai_games)))
     per_plan = defaultdict(lambda: [0, 0])
     for side, plan, w in ai_games:
         per_plan[plan][1] += 1
         per_plan[plan][0] += (side == w)
     for plan, (w, n) in sorted(per_plan.items()):
-        print("  Bauplan %-28s %d/%d Siege" % (plan, w, n))
+        print("  Build plan %-28s %d/%d wins" % (plan, w, n))
     if learned_types:
-        print("\nGelernte Zielwerte (Wirkung = wie stark ein Verlust den Gegner schwaecht, -1..1):")
-        print("  %-14s %5s %8s %8s %7s %8s %8s" % ("Typ", "n", "Wirkung", "SiegLift", "Sicher", "Heavy", "Small"))
+        print("\nLearned target values (impact = how much a loss weakens the opponent, -1..1):")
+        print("  %-14s %5s %8s %8s %7s %8s %8s" % ("Type", "n", "Impact", "WinLift", "Conf", "Heavy", "Small"))
         rows = sorted(learned_types.items(), key=lambda kv: -kv[1]["shift"])
         for typ, d in rows:
             print("  %-14s %5d %8.2f %8.2f %7.2f %8s %8s" % (
                 typ, d["n"], d["impact"], d["winLift"], d["conf"],
                 strategy["TargetValue"]["Heavy"].get(typ, "-"), strategy["TargetValue"]["Small"].get(typ, "-")))
-    print("\nAggression je Phase:")
+    print("\nAggression per phase:")
     for phase, d in aggression.items():
-        print("  %-6s Anteil Feuerkraft der Sieger %.2f in %d Partien -> %.2f" % (
+        print("  %-6s winners' firepower share %.2f in %d matches -> %.2f" % (
             phase, d["winnerFireShare"], d["games"], d["value"]))
 
 
@@ -427,13 +427,13 @@ def main():
     args = ap.parse_args()
 
     if args.cmd in ("all", "collect"):
-        print("Sammle Logs ...")
+        print("Collecting logs ...")
         collect(args.log)
         if args.cmd == "collect":
             return
     games, logs = load_archive()
     if not games:
-        print("Keine Partien mit Recorder-Daten im Archiv. Erst mit aktiviertem Mod spielen oder ein Replay abspielen.")
+        print("No matches with recorder data in the archive. Play with the mod enabled or watch a replay first.")
         return
     strategy, learned_types, aggression = learn(games, max(0.0, min(1.0, args.strength)))
     report(games, learned_types, aggression, strategy)
@@ -441,7 +441,7 @@ def main():
         write_strategy(strategy, logs)
         with open(REPORT_JSON, "w", encoding="utf-8") as f:
             json.dump({"games": len(games), "types": learned_types, "aggression": aggression}, f, indent=1)
-        print("\nNeue Strategie geschrieben: %s" % STRATEGY)
+        print("\nNew strategy written: %s" % STRATEGY)
 
 
 if __name__ == "__main__":

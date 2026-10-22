@@ -1,4 +1,4 @@
--- Simuliert 6 Partien: wer frueh die gegnerischen Kanonen zerstoert, gewinnt.
+-- Simulates 6 matches: whoever destroys the enemy cannons early wins.
 local game = tonumber(arg[1])
 MAX_SIDES = 100
 local devs = { [1] = {}, [2] = {} }
@@ -21,10 +21,10 @@ for frame = 0, 6000, 25 do
       if (t == "cannon" or t == "mortar") and frame % 100 == 0 then OnWeaponFired(side + 100, t, id, 1, nil) end
     end
   end
-  if frame == 1500 or frame == 1800 then -- Sieger zerstoert gegnerische Kanone
+  if frame == 1500 or frame == 1800 then -- winner destroys an enemy cannon
     for id, t in pairs(devs[loser]) do if t == "cannon" then devs[loser][id] = nil; OnDeviceDestroyed(loser, id, t); break end end
   end
-  if frame == 2500 then -- Verlierer zerstoert eine Mine
+  if frame == 2500 then -- loser destroys a mine
     for id, t in pairs(devs[winner]) do if t == "mine" then devs[winner][id] = nil; OnDeviceDestroyed(winner, id, t); break end end
   end
   if frame == 3000 then OnDeviceCompleted(winner, 99, "mortar") end

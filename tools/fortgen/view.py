@@ -1,4 +1,4 @@
-"""Gelaende + Plan in Weltkoordinaten zeichnen."""
+"""Draw terrain + plan in world coordinates."""
 from PIL import Image, ImageDraw
 from fortplan import node_positions, COLORS, DEVCOL, WEAPONS, ECO, TECH
 

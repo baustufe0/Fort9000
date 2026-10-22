@@ -1,9 +1,9 @@
 -- FORT 9000 - Recorder
--- Laeuft als Mod-Script in jeder Partie und auch beim Abspielen eines Replays.
--- Schreibt Spielzustand und Ereignisse beider Seiten mit [CREC] ins Log (users/<id>/log.txt).
--- tools/train.py lernt daraus. Der Recorder liest nur und veraendert nichts am Spiel.
+-- Runs as a mod script in every match and also when a replay is played.
+-- Writes game state and events of both sides to the log with [CREC] (users/<id>/log.txt).
+-- tools/train.py learns from it. The recorder only reads and changes nothing in the game.
 --
--- Zeilenformat (f = Spielframe):
+-- Line format (f = game frame):
 --   [CREC] f=0 START v=1
 --   [CREC] f=250 SNAP s=1 m=1200 e=3400 dev=cannon:2,mortar:1 shots=cannon:3
 --   [CREC] f=260 BUILT s=2 d=sniper
@@ -54,7 +54,7 @@ local function RecSnapshot()
 			if saveName then
 				devices[saveName] = (devices[saveName] or 0) + 1
 			end
-			-- echte Team-Nummer (z.B. 102) statt Seitennummer, sonst liefert GetTeamResources Startwerte
+			-- real team number (e.g. 102) instead of side number, otherwise GetTeamResources returns starting values
 			if team == nil and saveName == "reactor" and type(GetDeviceTeamIdActual) == "function" then
 				team = GetDeviceTeamIdActual(id)
 			end

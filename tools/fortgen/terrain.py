@@ -1,4 +1,4 @@
-"""Geometrie-Hilfen fuer das Gelaende (Polygone aus der .fwe-Datei)."""
+"""Geometry helpers for the terrain (polygons from the .fwe file)."""
 import math
 
 
@@ -43,7 +43,7 @@ class Terrain:
         return best, bestd
 
     def segment_clear(self, a, b, step=8.0, end_margin=12.0):
-        """True, wenn die Strebe a-b nicht durch Fels geht (Enden duerfen auf dem Boden liegen)."""
+        """True if the link a-b does not pass through rock (ends may lie on the ground)."""
         L = math.dist(a, b)
         n = max(2, int(L / step))
         for i in range(1, n):

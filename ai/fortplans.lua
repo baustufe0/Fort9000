@@ -1,14 +1,14 @@
--- FORT 9000 - eigene Bauplaene je Karte
--- Die Plan-Dateien liegen in mods/fort-9000/fortplans/<Karte>/ (nicht in data/maps,
--- dort entfernt Forts fremde Dateien). Diese Datei wird vom Training NICHT veraendert.
+-- FORT 9000 - custom build plans per map
+-- The plan files live in mods/fort-9000/fortplans/<map>/ (not in data/maps,
+-- where Forts removes foreign files). This file is NOT modified by training.
 --
--- Originals:       Originalplaene der Karte (in data/maps/<Karte>/) - daran erkennt die KI die Karte
--- ReactorsPerSide: Reaktoren pro Seite (unterscheidet z.B. Abyss von Abyss 2v2 mit gleichen Plaenen)
--- Plans:           Plaene, aus denen die KI per Zufall waehlt; "original" = Plan des Spiels behalten
--- Strategy:        optionale kartenbezogene KI-Einstellungen, ueberschreiben ai/strategy.lua fuer diese
---                  Karte (Tabellen werden zusammengefuehrt), z.B. Strategy = { Tempo = { UpdatePeriod = 0.8 } },
--- OriginalsDir:    Ordner der Originalplaene, falls nicht maps/<Karte>/ (z.B. ai/forts/vanilla/mid/)
--- Force:           einen Plan erzwingen (zum Testen), z.B. Force = { Abyss = "fort-t1f1-Abyss-2.lua" },
+-- Originals:       original plans of the map (in data/maps/<map>/) - the AI recognises the map by them
+-- ReactorsPerSide: reactors per side (distinguishes e.g. Abyss from Abyss 2v2 with identical plans)
+-- Plans:           plans the AI picks from at random; "original" = keep the game's plan
+-- Strategy:        optional map-specific AI settings, override ai/strategy.lua for this
+--                  map (tables are merged), e.g. Strategy = { Tempo = { UpdatePeriod = 0.8 } },
+-- OriginalsDir:    folder of the original plans, if not maps/<map>/ (e.g. ai/forts/vanilla/mid/)
+-- Force:           force a plan (for testing), e.g. Force = { Abyss = "fort-t1f1-Abyss-2.lua" },
 
 FortPlanConfig =
 {
@@ -20,15 +20,15 @@ FortPlanConfig =
 			ReactorsPerSide = 1,
 			Plans = { "original", "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-4.lua" },
 		},
-		-- Vorlagen-Karte: Startfestung kommt aus ai/forts/vanilla/mid (geteilt mit Penguin, Caverns, ...).
-		-- Erkennung per FortPos + Aktionszahl, daher gelten Plaene/Werte auf allen Karten mit diesen Mid-Plaenen.
+		-- Template map: the starting fort comes from ai/forts/vanilla/mid (shared with Penguin, Caverns, ...).
+		-- Detected by FortPos + action count, so plans/values apply on all maps with these mid plans.
 		Vanilla =
 		{
 			OriginalsDir = "ai/forts/vanilla/mid/",
 			Originals = { "fort-t1f1-Template-1.lua", "fort-t1f1-Template-2.lua" },
 			Plans = { "original", "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-4.lua", "fort-t1f1-Vanilla-5.lua" },
-			-- weite, flache Karte (Festungen ~6000 Einheiten auseinander, keine Deckung): langsamerer Start,
-			-- Wirtschaft und Fernwaffen (Moerser/Sniper) zaehlen mehr
+			-- wide, flat map (forts ~6000 units apart, no cover): slower start,
+			-- economy and long-range weapons (mortar/sniper) matter more
 			Strategy =
 			{
 				EarlySeconds = 150,
@@ -40,8 +40,8 @@ FortPlanConfig =
 				},
 			},
 		},
-		-- Vanilla 2v2, Festung 2 (obere Plattform): Startfestung = gespiegelte Mid-Festung, Plan ai/forts/vanilla/long.
-		-- Die Plaene sind die Vanilla-Plaene, umgerechnet ins Koordinatensystem des Long-Plans (tools/fortgen/mid_to_long.py).
+		-- Vanilla 2v2, fort 2 (upper platform): starting fort = mirrored mid fort, plan ai/forts/vanilla/long.
+		-- The plans are the Vanilla plans, converted into the coordinate system of the long plan (tools/fortgen/mid_to_long.py).
 		VanillaLong =
 		{
 			OriginalsDir = "ai/forts/vanilla/long/",

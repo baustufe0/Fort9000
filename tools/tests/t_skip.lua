@@ -12,4 +12,4 @@ Fort = {} for i=1,409 do Fort[i]={Type=5, DeviceSaveName="mine"} end FortPos={x=
 dofile("mods/fort-9000/ai/ai.lua")
 Load(true)
 for i=1,40 do CAI_Think() end
-print("fortIndex jetzt", data.fortIndex)
+print("fortIndex now", data.fortIndex)

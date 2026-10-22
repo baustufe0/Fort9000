@@ -1,17 +1,16 @@
--- FORT 9000 - erweitert die eingebaute Forts-KI (data/ai/ai.lua).
--- Forts fuehrt diese Datei NACH der eingebauten KI aus, deshalb koennen wir deren
--- Funktionen und Tabellen hier erweitern. Bauen, Zielen, Reparieren bleiben wie gehabt;
--- neu sind:
---   1. Adaptive Zielwahl: die Prioritaetslisten werden laufend neu sortiert, nach
---      Grundwert (Strategy.TargetValue) + Bedrohung (wer schiesst und trifft uns gerade?)
---   2. Aggression je Spielphase und Wirtschaftslage
---   3. Luftabwehr, die bei starkem Beschuss mit Raketen/Moersern hochfaehrt
--- Alle Entscheidungen werden mit [CAI] ins Log geschrieben.
--- Wichtig: nur deterministische Werte verwenden (keine Uhrzeit, kein math.random),
--- sonst laufen Replays und Multiplayer auseinander.
+-- FORT 9000 - extends the built-in Forts AI (data/ai/ai.lua).
+-- Forts runs this file AFTER the built-in AI, so we can extend its functions and tables here.
+-- Building, aiming and repairing stay as they are; new are:
+--   1. Adaptive target selection: the priority lists are continuously re-sorted by
+--      base value (Strategy.TargetValue) + threat (who is shooting and hitting us right now?)
+--   2. Aggression by game phase and economy
+--   3. Anti-air that ramps up under heavy mortar/missile fire
+-- All decisions are written to the log with [CAI].
+-- Important: use deterministic values only (no wall-clock time, no math.random),
+-- otherwise replays and multiplayer desync.
 
 --------------------------------------------------------------------------------
--- Strategie laden (dofile ist nur hier, bei der Initialisierung, erlaubt)
+-- Load strategy (dofile is only allowed here, during initialisation)
 
 local CAI_StrategyFiles = { "mods/fort-9000/ai/strategy.lua" }
 if type(path) == "string" then
@@ -56,17 +55,16 @@ if Strategy.TargetValue.Heavy == nil then Strategy.TargetValue.Heavy = {} end
 if Strategy.TargetValue.Small == nil then Strategy.TargetValue.Small = {} end
 
 --------------------------------------------------------------------------------
--- Eigene Bauplaene aus dem Mod-Ordner (mods/fort-9000/fortplans/<Karte>/)
--- Forts entfernt fremde Dateien aus data/maps, deshalb liegen die Plaene im Mod.
+-- Custom build plans from the mod folder (mods/fort-9000/fortplans/<map>/)
+-- Forts removes foreign files from data/maps, which is why the plans live in the mod.
 --
--- Ablauf:
---  1. Beim Initialisieren (nur hier ist dofile erlaubt) werden alle eigenen Plaene und die
---     Originalplaene der Karten vorgeladen. Zu diesem Zeitpunkt kennt die KI weder ihr Team
---     noch die Karte.
---  2. Das Spiel ruft spaeter OffsetFort/MirrorFort (Plan an die echte Festung anpassen) und
---     Load auf. Beim ersten dieser Aufrufe wird getauscht: Karte am Spielplan erkennen,
---     eigenen Plan waehlen, in die Koordinaten des Spielplans verschieben, einsetzen.
---     Das Spiel wendet danach seine eigene Verschiebung/Spiegelung auf unseren Plan an.
+-- Flow:
+--  1. During initialisation (the only place where dofile is allowed) all custom plans and the
+--     original plans of the maps are preloaded. At this point the AI knows neither its team nor the map.
+--  2. Later the game calls OffsetFort/MirrorFort (adapt the plan to the real fort) and
+--     Load. On the first of these calls we swap: identify the map from the game's plan,
+--     choose a custom plan, shift it into the game plan's coordinates, insert it.
+--     The game then applies its own offset/mirroring to our plan.
 
 CAI_Plan = { maps = {}, done = false, notes = {} }
 
@@ -74,7 +72,7 @@ local function CAI_PlanNote(msg)
 	Log("[CAI] T" .. tostring(teamId) .. " " .. msg)
 end
 
--- Direkter Zugriff auf die Plan-Variablen (rawget/rawset gibt es in Forts nicht)
+-- Direct access to the plan variables (rawget/rawset do not exist in Forts)
 local function CAI_GetPlanGlobals()
 	return { Fort = Fort, FortTeam = FortTeam, FortId = FortId, FortPos = FortPos,
 		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines }
@@ -98,7 +96,7 @@ local function CAI_LoadPlanFile(path)
 	if ok and type(t.Fort) == "table" and #t.Fort > 0 and type(t.FortPos) == "table" then
 		return t
 	end
-	return nil, (ok and "kein Fort" or tostring(err))
+	return nil, (ok and "no fort" or tostring(err))
 end
 
 FortPlanConfig = nil
@@ -123,19 +121,19 @@ local function CAI_PreloadPlans()
 					entry.plans[f] = t
 					count = count + 1
 				else
-					Log("[CAI] PLAN-LADEFEHLER " .. mapName .. "/" .. f .. ": " .. tostring(err))
+					Log("[CAI] PLAN-LOAD-ERROR " .. mapName .. "/" .. f .. ": " .. tostring(err))
 				end
 			end
 		end
 		CAI_Plan.maps[mapName] = entry
 		table.insert(summary, mapName .. ":" .. count .. "/" .. #entry.sigs)
 	end
-	Log("[CAI] PLAN-VORLADEN " .. table.concat(summary, " ") .. " (eigene/originale)")
+	Log("[CAI] PLAN-PRELOAD " .. table.concat(summary, " ") .. " (custom/original)")
 end
 
 local okPre, errPre = pcall(CAI_PreloadPlans)
 if not okPre then
-	Log("[CAI] PLAN-VORLADEN FEHLER " .. tostring(errPre))
+	Log("[CAI] PLAN-PRELOAD ERROR " .. tostring(errPre))
 end
 
 local function CAI_OwnReactors()
@@ -155,7 +153,7 @@ local function CAI_IdentifyMap(engineFort, E)
 		if ok and type(f) == "string" then
 			local name = string.match(f, "maps[/\\]([^/\\]+)")
 			if name and CAI_Plan.maps[name] then
-				return name, "dateiname", nil
+				return name, "filename", nil
 			end
 		end
 	end
@@ -177,22 +175,22 @@ local function CAI_IdentifyMap(engineFort, E)
 			cands = filtered
 		end
 	end
-	-- mehrere Originalplaene derselben Karte mit gleicher Signatur (z.B. Vanilla Template-1/-2) sind eindeutig
+	-- several original plans of the same map with the same signature (e.g. Vanilla Template-1/-2) are unambiguous
 	local sameMap = #cands > 0
 	for _, c in ipairs(cands) do
 		if c.name ~= cands[1].name then sameMap = false end
 	end
 	if sameMap then
-		return cands[1].name, "signatur", cands[1].file
+		return cands[1].name, "signature", cands[1].file
 	end
-	return nil, (#cands == 0 and "kein-bekannter-spielplan" or "mehrdeutig")
+	return nil, (#cands == 0 and "unknown-game-plan" or "ambiguous")
 end
 
 local function CAI_ChoosePlan(entry, mapName)
 	local forced = FortPlanConfig.Force and FortPlanConfig.Force[mapName]
-	if forced then return forced, "erzwungen" end
+	if forced then return forced, "forced" end
 	local n = #entry.list
-	if n == 0 then return "original", "leer" end
+	if n == 0 then return "original", "empty" end
 	local idx = nil
 	if type(GetRandomInteger) == "function" then
 		local ok, r = pcall(GetRandomInteger, 1, n, "CAI plan " .. tostring(teamId))
@@ -201,11 +199,11 @@ local function CAI_ChoosePlan(entry, mapName)
 	if idx == nil then
 		return entry.list[1 + (math.floor(type(teamId) == "number" and teamId or 0) % n)], "teamId"
 	end
-	return entry.list[idx], "zufall"
+	return entry.list[idx], "random"
 end
 
--- Kartenbezogene Einstellungen: FortPlanConfig.Maps[<Karte>].Strategy ueberschreibt Werte der
--- Strategiedatei (Tabellen werden zusammengefuehrt, z.B. nur Tempo.UpdatePeriod).
+-- Map-specific settings: FortPlanConfig.Maps[<map>].Strategy overrides values of the
+-- strategy file (tables are merged, e.g. only Tempo.UpdatePeriod).
 local function CAI_Merge(dst, src)
 	for k, v in pairs(src) do
 		if type(v) == "table" and type(dst[k]) == "table" then
@@ -223,7 +221,7 @@ function CAI_ApplyMapStrategy(mapName)
 		local keys = {}
 		for k in pairs(m.Strategy) do keys[#keys + 1] = tostring(k) end
 		table.sort(keys)
-		CAI_PlanNote("KARTE-STRATEGIE " .. mapName .. ": " .. table.concat(keys, ","))
+		CAI_PlanNote("MAP-STRATEGY " .. mapName .. ": " .. table.concat(keys, ","))
 	end
 end
 
@@ -232,12 +230,12 @@ function CAI_TrySwapPlan(where)
 	CAI_Plan.done = true
 	local engineFort, E = Fort, FortPos
 	if type(engineFort) ~= "table" or #engineFort == 0 or type(E) ~= "table" then
-		CAI_PlanNote("PLAN file=original grund=kein-spielplan bei=" .. where)
+		CAI_PlanNote("PLAN file=original reason=no-game-plan at=" .. where)
 		return
 	end
 	local mapName, how, engineFile = CAI_IdentifyMap(engineFort, E)
 	if not mapName then
-		CAI_PlanNote("PLAN file=original grund=" .. tostring(how) .. " bei=" .. where)
+		CAI_PlanNote("PLAN file=original reason=" .. tostring(how) .. " at=" .. where)
 		return
 	end
 	local entry = CAI_Plan.maps[mapName]
@@ -245,11 +243,11 @@ function CAI_TrySwapPlan(where)
 	local choice, why = CAI_ChoosePlan(entry, mapName)
 	local ours = entry.plans[choice]
 	if choice == "original" or ours == nil then
-		CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. (engineFile or "original") .. " grund=" .. why
-			.. (ours == nil and choice ~= "original" and " (eigener Plan fehlt)" or "") .. " bei=" .. where)
+		CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. (engineFile or "original") .. " reason=" .. why
+			.. (ours == nil and choice ~= "original" and " (own plan missing)" or "") .. " at=" .. where)
 		return
 	end
-	-- in die Koordinaten des Spielplans verschieben
+	-- shift into the coordinates of the game's plan
 	local dx, dy = E.x - ours.FortPos.x, E.y - ours.FortPos.y
 	local function Shift(p)
 		if p then p.x = p.x + dx; p.y = p.y + dy end
@@ -263,14 +261,14 @@ function CAI_TrySwapPlan(where)
 		FortId = ours.FortId or FortId,
 		FortPos = { x = E.x, y = E.y },
 	})
-	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " aktionen=" .. #ours.Fort .. " statt=" .. tostring(engineFile)
-		.. " wahl=" .. why .. " erkannt=" .. how .. " bei=" .. where .. " verschiebung=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5))
+	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " actions=" .. #ours.Fort .. " instead=" .. tostring(engineFile)
+		.. " choice=" .. why .. " detected=" .. how .. " at=" .. where .. " shift=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5))
 end
 
 local CAI_BaseOffsetFort = OffsetFort
 function OffsetFort(offset, structureId)
 	local ok, err = pcall(CAI_TrySwapPlan, "OffsetFort")
-	if not ok then Log("[CAI] PLAN-FEHLER " .. tostring(err)) end
+	if not ok then Log("[CAI] PLAN-ERROR " .. tostring(err)) end
 	CAI_PlanNote("TRANSFORM OffsetFort " .. tostring(offset and offset.x) .. "," .. tostring(offset and offset.y))
 	return CAI_BaseOffsetFort(offset, structureId)
 end
@@ -278,13 +276,13 @@ end
 local CAI_BaseMirrorFort = MirrorFort
 function MirrorFort(pivot, offset, structureId)
 	local ok, err = pcall(CAI_TrySwapPlan, "MirrorFort")
-	if not ok then Log("[CAI] PLAN-FEHLER " .. tostring(err)) end
+	if not ok then Log("[CAI] PLAN-ERROR " .. tostring(err)) end
 	CAI_PlanNote("TRANSFORM MirrorFort pivot=" .. tostring(pivot) .. " " .. tostring(offset and offset.x) .. "," .. tostring(offset and offset.y))
 	return CAI_BaseMirrorFort(pivot, offset, structureId)
 end
 
 --------------------------------------------------------------------------------
--- Hilfsfunktionen
+-- Helper functions
 
 function CAI_Log(msg)
 	if Strategy.LogDecisions then
@@ -308,18 +306,18 @@ local function CAI_Round(v)
 end
 
 --------------------------------------------------------------------------------
--- Bautempo: die eingebaute KI fuehrt pro Durchlauf (data.UpdatePeriod) nur EINE Bauaktion aus
--- und legt zwischen Bauphasen (ConstructionPeriod) lange Pausen ein (NonConstructionPeriod).
+-- Build tempo: the built-in AI performs only ONE build action per pass (data.UpdatePeriod)
+-- and inserts long pauses (NonConstructionPeriod) between build phases (ConstructionPeriod).
 
 function CAI_ApplyTempo()
 	local t = Strategy.Tempo
-	if type(t) ~= "table" then return "aus" end
+	if type(t) ~= "table" then return "off" end
 	if data.CAI then
 		data.CAI.baseTempo = { data.UpdatePeriod, data.UpdateAfterRebuildDelay, data.ConstructionPeriodMean, data.ConstructionPeriodMin,
 			data.NonConstructionPeriodMean, data.NonConstructionPeriodMin, data.RepairPeriod }
 	end
 	if t.UpdatePeriod then data.UpdatePeriod = t.UpdatePeriod end
-	-- Takt und Reparaturzeit je Schwierigkeit: leicht (0) / normal (0,5) / schwer (1), dazwischen linear
+	-- Update period and repair time by difficulty: easy (0) / normal (0.5) / hard (1), linear in between
 	local function byDifficulty(easy, normal, hard)
 		local d = tonumber(data.difficulty) or 0.5
 		if d < 0 then d = 0 elseif d > 1 then d = 1 end
@@ -338,19 +336,19 @@ function CAI_ApplyTempo()
 	if t.RepairPeriodEasy and t.RepairPeriodNormal and t.RepairPeriodHard then
 		data.RepairPeriod = byDifficulty(t.RepairPeriodEasy, t.RepairPeriodNormal, t.RepairPeriodHard)
 	end
-	return "schwierigkeit=" .. tostring(data.difficulty) .. " takt=" .. tostring(data.UpdatePeriod) .. "s bauen=" .. tostring(data.ConstructionPeriodMean)
-		.. "s pause=" .. tostring(data.NonConstructionPeriodMean) .. "s reparatur=" .. tostring(data.RepairPeriod) .. "s"
+	return "difficulty=" .. tostring(data.difficulty) .. " period=" .. tostring(data.UpdatePeriod) .. "s build=" .. tostring(data.ConstructionPeriodMean)
+		.. "s pause=" .. tostring(data.NonConstructionPeriodMean) .. "s repair=" .. tostring(data.RepairPeriod) .. "s"
 end
 
 --------------------------------------------------------------------------------
--- Feuersteuerung: die eingebaute KI feuert nur in Baupausen und hoechstens eine Waffe pro
--- Durchlauf; beim Bauen spart sie zusaetzlich. Hier: immer angriffsbereit, mehr Feuer beim
--- Bauen und ein eigener Takt, der pro Sekunde mehrere bereite Waffen feuern laesst.
--- TryFireGun prueft selbst Bereitschaft, Tueren, Gruppen und Ziel.
+-- Fire control: the built-in AI only fires during build pauses and at most one weapon per
+-- pass; while building it also holds back. Here: always ready to attack, more fire while
+-- building, and a separate timer that fires several ready weapons per second.
+-- TryFireGun itself checks readiness, doors, groups and target.
 
 function CAI_ApplyFire()
 	local f = Strategy.Fire
-	if type(f) ~= "table" or not f.Enabled then return "aus" end
+	if type(f) ~= "table" or not f.Enabled then return "off" end
 	data.CAI.baseFire = { HardThreshold = data.HardThreshold, Rebuild = {} }
 	if f.AlwaysOffensive then
 		data.HardThreshold = 0
@@ -366,8 +364,8 @@ function CAI_ApplyFire()
 	if ScheduledCallCountOfFunc(CAI_FireTick) == 0 then
 		ScheduleCall(f.Interval or 1, CAI_FireTick)
 	end
-	return "takt=" .. tostring(f.Interval) .. "s waffen=" .. tostring(f.WeaponsPerTick) .. " immer=" .. tostring(f.AlwaysOffensive)
-		.. " beimBauen=x" .. tostring(f.RebuildFireFactor)
+	return "period=" .. tostring(f.Interval) .. "s weapons=" .. tostring(f.WeaponsPerTick) .. " always=" .. tostring(f.AlwaysOffensive)
+		.. " duringRebuild=x" .. tostring(f.RebuildFireFactor)
 end
 
 function CAI_RestoreFire()
@@ -401,14 +399,14 @@ function CAI_FireTick()
 		end
 	end)
 	if not ok then
-		CAI_Log("FEHLER Feuersteuerung: " .. tostring(err))
+		CAI_Log("ERROR fire control: " .. tostring(err))
 	end
 	ScheduleCall(f.Interval or 1, CAI_FireTick)
 end
 
 --------------------------------------------------------------------------------
--- Fehlersuche: fehlgeschlagene Bauversuche mit Fehlercode ins Log schreiben
--- (je Strebe/Geraet und Fehler nur einmal, damit das Log klein bleibt)
+-- Debugging: write failed build attempts with their error code to the log
+-- (once per link/device and error, to keep the log small)
 
 local CAI_BuildErrSeen = {}
 local CAI_BuildErrCount = 0
@@ -424,20 +422,20 @@ local function CAI_NoteBuildError(kind, what, a, b, r)
 	if CAI_BuildErrSeen[key] or CAI_BuildErrCount >= 200 then return end
 	CAI_BuildErrSeen[key] = true
 	CAI_BuildErrCount = CAI_BuildErrCount + 1
-	CAI_Log("BAUFEHLER " .. kind .. " " .. tostring(what) .. " " .. tostring(a) .. "-" .. tostring(b)
-		.. " " .. CAI_ResultName(r) .. " aktion=" .. tostring(data.fortIndex))
+	CAI_Log("BUILD_ERROR " .. kind .. " " .. tostring(what) .. " " .. tostring(a) .. "-" .. tostring(b)
+		.. " " .. CAI_ResultName(r) .. " action=" .. tostring(data.fortIndex))
 end
 
 local function CAI_IsSuccess(r)
 	return r == CS_SUCCESS
 end
 
--- Die Bau-Funktionen stellt das Spiel erst nach dem Initialisieren bereit,
--- deshalb werden sie erst in Load eingehaengt.
+-- The game only provides the build functions after initialisation,
+-- so they are hooked in Load.
 CAI_BuildLoggingInstalled = false
 
 function CAI_InstallBuildLogging()
-	if CAI_BuildLoggingInstalled then return "schon aktiv" end
+	if CAI_BuildLoggingInstalled then return "already active" end
 	CAI_BuildLoggingInstalled = true
 	local hooked = {}
 	if type(CreateLink) == "function" then
@@ -445,7 +443,7 @@ function CAI_InstallBuildLogging()
 		CreateLink = function(team, material, nodeA, nodeB, ...)
 			local r = CAI_BaseCreateLink(team, material, nodeA, nodeB, ...)
 			if not CAI_IsSuccess(r) and r ~= CS_INSUFFICIENTRESOURCES then
-				pcall(CAI_NoteBuildError, "Strebe", material, nodeA, nodeB, r)
+				pcall(CAI_NoteBuildError, "link", material, nodeA, nodeB, r)
 			end
 			return r
 		end
@@ -456,7 +454,7 @@ function CAI_InstallBuildLogging()
 		CreateNode = function(team, material, nodeA, pos, ...)
 			local r = CAI_BaseCreateNode(team, material, nodeA, pos, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
-				pcall(CAI_NoteBuildError, "Knoten", material, nodeA, pos and (math.floor(pos.x) .. "," .. math.floor(pos.y)), r)
+				pcall(CAI_NoteBuildError, "node", material, nodeA, pos and (math.floor(pos.x) .. "," .. math.floor(pos.y)), r)
 			end
 			return r
 		end
@@ -467,7 +465,7 @@ function CAI_InstallBuildLogging()
 		CreateDeviceWithFlags = function(team, saveName, nodeA, nodeB, t, ...)
 			local r = CAI_BaseCreateDeviceWithFlags(team, saveName, nodeA, nodeB, t, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
-				pcall(CAI_NoteBuildError, "Geraet", saveName, nodeA, nodeB, r)
+				pcall(CAI_NoteBuildError, "device", saveName, nodeA, nodeB, r)
 			end
 			return r
 		end
@@ -478,7 +476,7 @@ function CAI_InstallBuildLogging()
 		CreateGroundDevice = function(team, saveName, pos, ...)
 			local r = CAI_BaseCreateGroundDevice(team, saveName, pos, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
-				pcall(CAI_NoteBuildError, "Bodengeraet", saveName, pos and (math.floor(pos.x) .. "," .. math.floor(pos.y)), "", r)
+				pcall(CAI_NoteBuildError, "ground_device", saveName, pos and (math.floor(pos.x) .. "," .. math.floor(pos.y)), "", r)
 			end
 			return r
 		end
@@ -489,17 +487,17 @@ function CAI_InstallBuildLogging()
 		UpgradeDevice = function(id, saveName, ...)
 			local r = CAI_BaseUpgradeDevice(id, saveName, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
-				pcall(CAI_NoteBuildError, "Upgrade", saveName, id, "", r)
+				pcall(CAI_NoteBuildError, "upgrade", saveName, id, "", r)
 			end
 			return r
 		end
 		table.insert(hooked, "UpgradeDevice")
 	end
-	return (#hooked > 0) and table.concat(hooked, ",") or "keine Bau-Funktionen gefunden"
+	return (#hooked > 0) and table.concat(hooked, ",") or "no build functions found"
 end
 
 --------------------------------------------------------------------------------
--- Initialisierung
+-- Initialisation
 
 function CAI_Init()
 	if data.CAI and data.CAI.initialised then
@@ -509,13 +507,13 @@ function CAI_Init()
 	{
 		initialised = true,
 		ticks = 0,
-		threat = {},       -- gegnerischer Waffentyp -> Bedrohung (zerfaellt mit der Zeit)
-		shots = {},        -- gegnerischer Waffentyp -> Schuesse gesamt
+		threat = {},       -- enemy weapon type -> threat (decays over time)
+		shots = {},        -- enemy weapon type -> total shots
 		recentIndirect = 0,
-		projOwner = {},    -- Projektil-Node -> Waffentyp, um Treffer einer Waffe zuzuordnen
+		projOwner = {},    -- projectile node -> weapon type, to attribute hits to a weapon
 		projCount = 0,
-		lost = {},         -- eigene verlorene Geraete nach Typ
-		kills = {},        -- zerstoerte Gegnergeraete nach Typ
+		lost = {},         -- own lost devices by type
+		kills = {},        -- destroyed enemy devices by type
 		baseOff = {},
 		baseAA = {},
 	}
@@ -530,7 +528,7 @@ function CAI_Init()
 end
 
 --------------------------------------------------------------------------------
--- 1. Adaptive Zielwahl
+-- 1. Adaptive target selection
 
 function CAI_BuildPriorityList(baseList, values)
 	local entries = {}
@@ -539,12 +537,12 @@ function CAI_BuildPriorityList(baseList, values)
 		if base == nil then
 			base = math.max(5, 100 - 4 * (i - 1))
 		end
-		-- saettigend: bei ThreatHalf gibt es den halben, bei viel Bedrohung fast den vollen Bonus
+		-- saturating: half the bonus at ThreatHalf, almost the full bonus under heavy threat
 		local threat = data.CAI.threat[saveName] or 0
 		local bonus = Strategy.ThreatWeight * threat / (threat + Strategy.ThreatHalf)
 		table.insert(entries, { name = saveName, score = base + bonus, idx = i })
 	end
-	-- stabil und deterministisch sortieren
+	-- sort stably and deterministically
 	table.sort(entries, function(a, b)
 		if a.score ~= b.score then
 			return a.score > b.score
@@ -575,7 +573,7 @@ function CAI_UpdateTargets()
 end
 
 --------------------------------------------------------------------------------
--- 2. Aggression je Phase und Wirtschaft
+-- 2. Aggression by phase and economy
 
 function CAI_UpdateAggression(elapsed)
 	local s = Strategy
@@ -612,7 +610,7 @@ function CAI_UpdateAggression(elapsed)
 end
 
 --------------------------------------------------------------------------------
--- 3. Luftabwehr nach Beschussdruck
+-- 3. Anti-air by incoming fire pressure
 
 function CAI_UpdateAntiAir()
 	local s = Strategy
@@ -626,7 +624,7 @@ function CAI_UpdateAntiAir()
 end
 
 --------------------------------------------------------------------------------
--- Denkschleife
+-- Think loop
 
 function CAI_Think()
 	if data.gameEnded or data.CAI == nil then
@@ -640,12 +638,12 @@ function CAI_Think()
 		st.threat[k] = v * Strategy.ThreatDecay
 	end
 
-	-- Bau-Fortschritt und Notbremse: die eingebaute KI baut nichts Neues, solange eine
-	-- vorgemerkte Wiederaufbau-Aktion scheitert. Haengt eine zu lange, wird sie aufgegeben.
+	-- Build progress and safety valve: the built-in AI builds nothing new while a queued
+	-- rebuild action keeps failing. If one hangs for too long, it is given up.
 	local rebuildCount = 0
 	st.rebuildSince = st.rebuildSince or {}
-	-- Wartet die KI nur auf Metall, laeuft die Uhr nicht weiter: solche Aktionen sind nicht
-	-- "kaputt", sie werden gebaut, sobald wieder genug Metall da ist.
+	-- If the AI is only waiting for metal, the clock stops: such actions are not
+	-- "broken", they will be built as soon as there is enough metal again.
 	local okRes, resNow = pcall(GetTeamResources, teamId)
 	local metalNow = (okRes and resNow and resNow.metal) or 0
 	local starved = data.ResourceStarved or metalNow < Strategy.BuildSkipMinMetal
@@ -661,8 +659,8 @@ function CAI_Think()
 				data.Rebuild[k] = nil
 				st.rebuildSince[k] = nil
 				local a = Fort and Fort[k]
-				CAI_Log("AUFGEGEBEN Aktion " .. tostring(k) .. " typ=" .. tostring(a and a.Type)
-					.. " " .. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " nach " .. Strategy.RebuildGiveUpSeconds .. "s")
+				CAI_Log("GAVE_UP action " .. tostring(k) .. " type=" .. tostring(a and a.Type)
+					.. " " .. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " after " .. Strategy.RebuildGiveUpSeconds .. "s")
 			end
 		end
 		for k in pairs(st.rebuildSince) do
@@ -670,12 +668,12 @@ function CAI_Think()
 		end
 	end
 
-	-- Zweite Notbremse: haengt der normale Weiterbau an derselben Aktion, obwohl Metall da ist,
-	-- wird die Aktion uebersprungen (die eingebaute KI wartet sonst endlos).
+	-- Second safety valve: if normal construction hangs on the same action although there is metal,
+	-- the action is skipped (the built-in AI would otherwise wait forever).
 	local fi = data.fortIndex
 	if type(fi) == "number" and Fort and fi <= #Fort then
 		if st.buildIndex ~= fi or rebuildCount > 0 then
-			-- neue Aktion, oder der Bau wartet gerade auf Wiederaufbau: Uhr neu starten
+			-- new action, or construction is currently waiting for a rebuild: restart the clock
 			if st.buildIndex ~= fi then st.buildHadRes = false end
 			st.buildIndex = fi
 			st.buildSince = elapsed
@@ -686,8 +684,8 @@ function CAI_Think()
 			end
 			if st.buildHadRes and elapsed - st.buildSince >= Strategy.BuildSkipSeconds then
 				local a = Fort[fi]
-				CAI_Log("UEBERSPRUNGEN Aktion " .. fi .. " typ=" .. tostring(a and a.Type) .. " "
-					.. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " nach " .. (elapsed - st.buildSince) .. "s")
+				CAI_Log("SKIPPED action " .. fi .. " type=" .. tostring(a and a.Type) .. " "
+					.. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " after " .. (elapsed - st.buildSince) .. "s")
 				data.fortIndex = fi + 1
 				st.buildIndex = fi + 1
 				st.buildSince = elapsed
@@ -696,14 +694,14 @@ function CAI_Think()
 		end
 	end
 
-	local parts = { "THINK t=" .. elapsed .. " bau=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " wiederaufbau=" .. rebuildCount }
+	local parts = { "THINK t=" .. elapsed .. " build=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " rebuild=" .. rebuildCount }
 	local ok, res = pcall(CAI_UpdateTargets)
-	parts[#parts + 1] = ok and res or ("FEHLER Ziele: " .. tostring(res))
+	parts[#parts + 1] = ok and res or ("ERROR targets: " .. tostring(res))
 	ok, res = pcall(CAI_UpdateAggression, elapsed)
-	parts[#parts + 1] = ok and res or ("FEHLER Aggression: " .. tostring(res))
+	parts[#parts + 1] = ok and res or ("ERROR aggression: " .. tostring(res))
 	ok, res = pcall(CAI_UpdateAntiAir)
-	parts[#parts + 1] = ok and res or ("FEHLER Luftabwehr: " .. tostring(res))
-	parts[#parts + 1] = "feuer=" .. tostring(st.fireAttempts or 0)
+	parts[#parts + 1] = ok and res or ("ERROR anti-air: " .. tostring(res))
+	parts[#parts + 1] = "fire=" .. tostring(st.fireAttempts or 0)
 	st.fireAttempts = 0
 	CAI_Log(table.concat(parts, " "))
 
@@ -711,36 +709,36 @@ function CAI_Think()
 end
 
 --------------------------------------------------------------------------------
--- Einhaengen in die Ereignisse der eingebauten KI
+-- Hooking into the events of the built-in AI
 
 local CAI_BaseLoad = Load
 function Load(gameStart)
 	local okSwap, errSwap = pcall(CAI_TrySwapPlan, "Load")
-	if not okSwap then Log("[CAI] PLAN-FEHLER " .. tostring(errSwap)) end
+	if not okSwap then Log("[CAI] PLAN-ERROR " .. tostring(errSwap)) end
 	CAI_BaseLoad(gameStart)
-	-- Hilfs-KI auf der Seite eines menschlichen Spielers (z.B. Luftabwehr-Assistent): nicht anfassen
+	-- Assist AI on the side of a human player (e.g. anti-air assistant): do not touch
 	if data.HumanAssist then
-		Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT-9000-KI inaktiv (Hilfs-KI eines Spielers)")
+		Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT 9000 AI inactive (assist AI of a player)")
 		return
 	end
 	local ok, err = pcall(CAI_Init)
 	if not ok then
-		Log("[CAI] FEHLER bei Init: " .. tostring(err))
+		Log("[CAI] ERROR in init: " .. tostring(err))
 		return
 	end
 	local okT, tempo = pcall(CAI_ApplyTempo)
 	CAI_Log("TEMPO " .. tostring(tempo))
 	local okF, fire = pcall(CAI_ApplyFire)
-	CAI_Log("FEUER " .. tostring(fire))
+	CAI_Log("FIRE " .. tostring(fire))
 	local okL, logging = pcall(CAI_InstallBuildLogging)
-	CAI_Log("FEHLERSUCHE " .. tostring(logging))
+	CAI_Log("DEBUG-HOOKS " .. tostring(logging))
 	if ScheduledCallCountOfFunc(CAI_Think) == 0 then
 		ScheduleCall(Strategy.ThinkInterval, CAI_Think)
 	end
 end
 
--- Das Spiel macht eine KI erst NACH Load() zur Hilfs-KI eines Spielers (Luftabwehr-Assistent).
--- Dann die FORT-9000-KI abschalten und die veraenderten Werte zuruecksetzen.
+-- The game only turns an AI into a player's assist AI (anti-air assistant) AFTER Load().
+-- Then switch off the FORT 9000 AI and reset the changed values.
 local CAI_BaseEnableHumanAssist = EnableHumanAssist
 function EnableHumanAssist()
 	if data.CAI and data.CAI.baseOff then
@@ -759,7 +757,7 @@ function EnableHumanAssist()
 	data.HeavyArmsPrioritiesOverride = nil
 	data.SmallArmsPrioritiesOverride = nil
 	if CAI_BaseEnableHumanAssist then CAI_BaseEnableHumanAssist() end
-	Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT-9000-KI inaktiv (Hilfs-KI eines Spielers)")
+	Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT 9000 AI inactive (assist AI of a player)")
 end
 
 local CAI_BaseOnWeaponFired = OnWeaponFired
@@ -814,7 +812,7 @@ function OnDeviceDestroyed(deviceTeamId, deviceId, saveName, nodeA, nodeB, t)
 		st.lost[saveName] = (st.lost[saveName] or 0) + 1
 	elseif CAI_Side(deviceTeamId) == enemyTeamId then
 		st.kills[saveName] = (st.kills[saveName] or 0) + 1
-		-- eine zerstoerte Waffe bedroht uns nicht mehr so stark
+		-- a destroyed weapon no longer threatens us as much
 		if st.threat[saveName] then
 			st.threat[saveName] = st.threat[saveName] * 0.7
 		end

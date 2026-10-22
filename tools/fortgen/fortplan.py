@@ -1,4 +1,4 @@
-"""Lesen und Zeichnen von Forts-KI-Bauplaenen (fort-*.lua)."""
+"""Reading and drawing Forts AI build plans (fort-*.lua)."""
 import re
 
 NUM = r"-?\d+(?:\.\d+)?"

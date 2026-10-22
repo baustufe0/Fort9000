@@ -1,153 +1,154 @@
-# FORT 9000 – Spezifikation
+# FORT 9000 – Specification
 
-FORT 9000 ist eine Mod für das Spiel **Forts** (Steam), die die eingebaute KI erweitert, Partien aufzeichnet und aus den Aufzeichnungen die KI-Parameter automatisch nachtrainiert.
+FORT 9000 is a mod for the game **Forts** (Steam). It extends the built-in AI, records matches, and automatically retrains the AI parameters from those recordings.
 
-Anzeigename im Spiel: *FORT 9000 (KI + Recorder)* · Ordner: `data/mods/fort-9000`
+In-game name: *FORT 9000 (AI + Recorder)* · Folder: `data/mods/fort-9000`
 
 ---
 
-## 1. Ziele
+## 1. Goals
 
-- Eine stärkere, anpassungsfähigere Computergegnerin als die eingebaute Forts-KI.
-- Die Spielweise soll sich aus echten Partien verbessern (Training), nicht nur durch Handarbeit.
-- Eigene Bauvarianten je Karte, damit die KI nicht immer dieselbe Festung baut.
-- Alles deterministisch: Replays und Multiplayer dürfen nicht auseinanderlaufen.
+- A stronger, more adaptive computer opponent than the built-in Forts AI.
+- The AI should improve from real matches (training), not only through manual tuning.
+- Custom build variants per map, so the AI does not always build the same fort.
+- Everything deterministic: replays and multiplayer must not desync.
 
 ## 2. Features
 
-### 2.1 Adaptive Zielwahl
-Die Prioritätslisten der eingebauten KI (`HeavyArmsPriorities`, `SmallArmsPriorities`) werden alle `ThinkInterval` Sekunden neu sortiert.
-Punktzahl je Gerätetyp = Grundwert (`Strategy.TargetValue`) + Bedrohungsbonus.
-Die Bedrohung steigt, wenn eine gegnerische Waffe schießt (`ThreatPerShot`), uns trifft (`ThreatPerHit`) oder den Reaktor trifft (`ThreatPerReactorHit`), und zerfällt laufend (`ThreatDecay`). Der Bonus sättigt: `ThreatWeight · T / (T + ThreatHalf)`. Wird eine Waffe des Gegners zerstört, sinkt ihre Bedrohung auf 70 %.
+### 2.1 Adaptive target selection
+The priority lists of the built-in AI (`HeavyArmsPriorities`, `SmallArmsPriorities`) are re-sorted every `ThinkInterval` seconds.
+Score per device type = base value (`Strategy.TargetValue`) + threat bonus.
+Threat rises when an enemy weapon fires (`ThreatPerShot`), hits us (`ThreatPerHit`) or hits the reactor (`ThreatPerReactorHit`), and decays continuously (`ThreatDecay`). The bonus saturates: `ThreatWeight · T / (T + ThreatHalf)`. When an enemy weapon is destroyed, its threat drops to 70 %.
 
-### 2.2 Aggression nach Spielphase und Wirtschaft
-- Phasen: Early (< `EarlySeconds`), Mid, Late (ab `LateSeconds`) mit je eigenem Faktor.
-- Viel Metall (`RichMetal`) → Faktor × `RichBoost`; wenig Metall/Energie (`PoorMetal`, `PoorEnergy`) → Faktor × `PoorFactor`.
-- Wirkt auf `OffensiveFireProbability` (Maschinengewehre sind über `AggressionExclude` ausgenommen).
+### 2.2 Aggression by game phase and economy
+- Phases: Early (< `EarlySeconds`), Mid, Late (from `LateSeconds`), each with its own factor.
+- Plenty of metal (`RichMetal`) → factor × `RichBoost`; low metal/energy (`PoorMetal`, `PoorEnergy`) → factor × `PoorFactor`.
+- Applied to `OffensiveFireProbability` (machine guns are excluded via `AggressionExclude`).
 
-### 2.3 Luftabwehr nach Beschussdruck
-Zählt gegnerische Schüsse mit Mörsern und Raketen (`IndirectThreatTypes`). Je mehr, desto stärker wird `AntiAirFireProbability` angehoben (bis `AntiAirBoostMax`).
+### 2.3 Anti-air by incoming fire pressure
+Counts enemy shots from mortars and missiles (`IndirectThreatTypes`). The more there are, the more `AntiAirFireProbability` is raised (up to `AntiAirBoostMax`).
 
-### 2.4 Feuersteuerung
-Die eingebaute KI feuert nur in Baupausen und höchstens eine Waffe pro Durchlauf. FORT 9000 setzt `HardThreshold = 0` (immer angriffsbereit), erhöht die Feuerwahrscheinlichkeit beim Bauen (`RebuildFireFactor`) und feuert in einem eigenen Takt (`Fire.Interval`) bis zu `WeaponsPerTick` bereite Waffen reihum.
+### 2.4 Fire control
+The built-in AI only fires during build pauses and at most one weapon per cycle. FORT 9000 sets `HardThreshold = 0` (always ready to attack), raises the fire probability while building (`RebuildFireFactor`), and fires on its own timer (`Fire.Interval`), cycling through up to `WeaponsPerTick` ready weapons.
 
-### 2.5 Bautempo nach Schwierigkeit
-Takt (`UpdatePeriod`) und Reparaturzeit (`RepairPeriod`) werden zwischen Easy / Normal / Hard linear interpoliert. Bau- und Pausenzeiten sind einstellbar.
+### 2.5 Build tempo by difficulty
+Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolated linearly between Easy / Normal / Hard. Construction and pause durations are configurable.
 
-### 2.6 Notbremsen beim Bauen
-- **Wiederaufbau aufgeben:** hängt eine vorgemerkte Wiederaufbau-Aktion länger als `RebuildGiveUpSeconds`, wird sie verworfen. Wartet die KI nur auf Metall, läuft die Uhr nicht.
-- **Aktion überspringen:** hängt der normale Weiterbau trotz genug Metall (`BuildSkipMinMetal`) länger als `BuildSkipSeconds`, wird die Aktion übersprungen.
+### 2.6 Build safety valves
+- **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run.
+- **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
 
-### 2.7 Eigene Bauplan-Varianten je Karte
-- Pläne liegen in `fortplans/<Karte>/` (Forts entfernt fremde Dateien aus `data/maps`).
-- Karte wird über den Dateinamen oder über die Signatur des Spielplans (Position + Aktionszahl, ggf. Reaktorzahl) erkannt.
-- Pro Partie wird deterministisch ein Plan gewählt (Spielzufall bzw. `teamId`) und in die Koordinaten des Spielplans verschoben; das Spiel spiegelt/verschiebt ihn danach wie gewohnt.
-- `"original"` in der Planliste behält den Plan des Spiels.
-- Unterstützte Karten: **Abyss**, **Vanilla** (Mid-Festung, gilt auch für Penguin, Caverns, …), **VanillaLong** (2v2, obere Plattform).
-- Kartenbezogene Strategie-Überschreibungen (`Maps[<Karte>].Strategy`), z. B. langsamerer Start auf weiten Karten.
+### 2.7 Custom build plan variants per map
+- Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).
+- The map is identified by file name or by the signature of the game's plan (position + action count, optionally reactor count).
+- One plan is chosen deterministically per match (game random or `teamId`) and shifted into the coordinates of the game's plan; the game then mirrors/offsets it as usual.
+- `"original"` in the plan list keeps the game's own plan.
+- Supported maps: **Abyss**, **Vanilla** (mid fort, also applies to Penguin, Caverns, …), **VanillaLong** (2v2, upper platform).
+- Per-map strategy overrides (`Maps[<Map>].Strategy`), e.g. a slower start on wide maps.
 
-### 2.8 Fehlersuche
-Bau-Funktionen (`CreateLink`, `CreateNode`, `CreateDeviceWithFlags`, `CreateGroundDevice`, `UpgradeDevice`) werden eingehängt; fehlgeschlagene Versuche landen mit Fehlercode als `BAUFEHLER` im Log (je Fall einmal, max. 200).
+### 2.8 Debugging
+Build functions (`CreateLink`, `CreateNode`, `CreateDeviceWithFlags`, `CreateGroundDevice`, `UpgradeDevice`) are hooked; failed attempts are written to the log with the error code as `BUILD_ERROR` (once per case, max. 200).
 
-### 2.9 Hilfs-KI-Modus
-Übernimmt ein Spieler die KI als Luftabwehr-Assistent, schaltet sich FORT 9000 ab und stellt alle geänderten Werte wieder her.
+### 2.9 Assist-AI mode
+If a player takes over the AI as an anti-air assistant, FORT 9000 deactivates itself and restores all changed values.
 
 ### 2.10 Recorder
-`script.lua` läuft in jeder Partie und in Replays, verändert nichts am Spiel und schreibt mit Präfix `[CREC]` ins Forts-Log:
+`script.lua` runs in every match and in replays, changes nothing in the game, and writes lines prefixed `[CREC]` to the Forts log:
 
-| Zeile | Inhalt |
+| Line | Content |
 |---|---|
-| `START v=2` | Beginn |
-| `SNAP s=… m=… e=… dev=… shots=…` | alle 125 Frames: Metall, Energie, Geräte und Schüsse je Seite |
-| `BUILT` / `LOST` | Gerät fertig / zerstört |
-| `RESULT w=…` | Sieger |
+| `START v=2` | Start |
+| `SNAP s=… m=… e=… dev=… shots=…` | every 125 frames: metal, energy, devices and shots per side |
+| `BUILT` / `LOST` | device completed / destroyed |
+| `RESULT w=…` | winner |
 
 ### 2.11 Training
-`tools/train.py` sammelt die Logs, lernt daraus und schreibt `ai/strategy.lua` neu (vorherige Version: `strategy_previous.lua`).
-Gelernt wird jedes Mal von den Startwerten aus, mehrfaches Ausführen verschiebt also nichts. Nur neue Partien ändern das Ergebnis.
-Gelernt werden `TargetValue` (Heavy/Small) und `Aggression` (Early/Mid/Late). Mit `--strength` (0..1) wird begrenzt, wie weit die Werte von den Startwerten abweichen.
+`tools/train.py` collects the logs, learns from them and rewrites `ai/strategy.lua` (previous version: `strategy_previous.lua`).
+Learning always starts from the default values, so running it repeatedly shifts nothing; only new matches change the result.
+It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--strength` (0..1) limits how far values may deviate from the defaults.
 
-### 2.12 Festungs-Generator
-`tools/fortgen/` erzeugt Bauplan-Varianten (`gen_fort.py`), rechnet Pläne zwischen Koordinatensystemen um (`mid_to_long.py`) und rendert sie zur Prüfung als Bild (`render_all.py`, `view.py`).
+### 2.12 Fort generator
+`tools/fortgen/` generates build plan variants (`gen_fort.py`), converts plans between coordinate systems (`mid_to_long.py`) and renders them as images for review (`render_all.py`, `view.py`).
 
 ---
 
-## 3. Architektur
+## 3. Architecture
 
 ```
 fort-9000/
-├── mod.lua                 Mod-Manifest
-├── displayname.lua         Anzeigename (EN/DE)
-├── script.lua              Recorder (Mod-Script, läuft immer)
+├── mod.lua                 Mod manifest
+├── displayname.lua         Display name (EN/DE)
+├── script.lua              Recorder (mod script, always runs)
 ├── ai/
-│   ├── ai.lua              KI-Erweiterung (läuft NACH data/ai/ai.lua)
-│   ├── strategy.lua        trainierte Parameter (von train.py erzeugt)
-│   ├── strategy_previous.lua   Vorversion
-│   └── fortplans.lua       Karten, Planlisten, Karten-Strategien
-├── fortplans/<Karte>/      eigene Bauplan-Varianten
+│   ├── ai.lua              AI extension (runs AFTER data/ai/ai.lua)
+│   ├── strategy.lua        Trained parameters (generated by train.py)
+│   ├── strategy_previous.lua   Previous version
+│   └── fortplans.lua       Maps, plan lists, per-map strategies
+├── fortplans/<Map>/        Custom build plan variants
 └── tools/
-    ├── train.py / train.bat    Sammeln + Training
-    ├── fortgen/                Plan-Generator und Werkzeuge
-    ├── tests/                  Lua-Tests (run_tests.sh)
-    ├── logs/                   archivierte Partie-Logs (nicht im Repo)
-    └── _alt/                   Sicherungen (nicht im Repo)
+    ├── train.py / train.bat    Collect + train
+    ├── fortgen/                Plan generator and utilities
+    ├── tests/                  Lua tests (run_tests.sh)
+    ├── logs/                   Archived match logs (not in repo)
+    └── _alt/                   Backups (not in repo)
 ```
 
-### 3.1 Ladereihenfolge und Erweiterungsprinzip
-Forts führt `ai/ai.lua` des Mods **nach** der eingebauten KI aus. Die Mod überschreibt keine Dateien, sondern **umhüllt** Funktionen der eingebauten KI (`Load`, `OffsetFort`, `MirrorFort`, `OnWeaponFired`, `OnDeviceHit`, `OnDeviceDestroyed`, `OnGameResult`, `EnableHumanAssist`): die Originalfunktion wird gesichert, aufgerufen und um eigene Logik ergänzt.
+### 3.1 Load order and extension principle
+Forts executes the mod's `ai/ai.lua` **after** the built-in AI. The mod does not overwrite files but **wraps** functions of the built-in AI (`Load`, `OffsetFort`, `MirrorFort`, `OnWeaponFired`, `OnDeviceHit`, `OnDeviceDestroyed`, `OnGameResult`, `EnableHumanAssist`): the original function is saved, called, and extended with custom logic.
 
-### 3.2 Ablauf in der KI
-
-```
-Initialisierung (dofile erlaubt)
-  ├─ strategy.lua laden, fehlende Werte mit Defaults füllen
-  ├─ fortplans.lua laden
-  └─ alle eigenen und Originalpläne vorladen
-Spielstart
-  ├─ OffsetFort / MirrorFort / Load → CAI_TrySwapPlan (einmalig):
-  │     Karte erkennen → Karten-Strategie mergen → Plan wählen → verschieben → einsetzen
-  ├─ Load → CAI_Init, Tempo, Feuer, Bau-Logging, Denkschleife starten
-Laufend
-  ├─ CAI_Think (alle ThinkInterval s): Bedrohung zerfällt, Notbremsen, Ziele, Aggression, Luftabwehr
-  ├─ CAI_FireTick (alle Fire.Interval s): reihum Waffen feuern
-  └─ Ereignisse: OnWeaponFired / OnDeviceHit / OnDeviceDestroyed → Bedrohung, Statistik
-Spielende
-  └─ OnGameResult → [CAI] END mit kills / lost / enemyShots
-```
-
-### 3.3 Trainingskreislauf
+### 3.2 AI flow
 
 ```
-Partie spielen ──► users/<id>/log.txt ([CREC] + [CAI])
-      ▲                      │ train.py collect (Archiv in tools/logs/)
-      │                      ▼
-strategy.lua  ◄── train.py train (liest alle Logs, lernt von Startwerten aus)
+Initialisation (dofile allowed)
+  ├─ load strategy.lua, fill missing values with defaults
+  ├─ load fortplans.lua
+  └─ preload all custom and original plans
+Game start
+  ├─ OffsetFort / MirrorFort / Load → CAI_TrySwapPlan (once):
+  │     identify map → merge map strategy → choose plan → shift → insert
+  ├─ Load → CAI_Init, tempo, fire control, build logging, start think loop
+Ongoing
+  ├─ CAI_Think (every ThinkInterval s): threat decay, safety valves, targets, aggression, anti-air
+  ├─ CAI_FireTick (every Fire.Interval s): fire weapons round-robin
+  └─ Events: OnWeaponFired / OnDeviceHit / OnDeviceDestroyed → threat, statistics
+Game end
+  └─ OnGameResult → [CAI] END with kills / lost / enemyShots
 ```
 
-Forts überschreibt `log.txt` bei jedem Start – deshalb nach jeder Spielsitzung `train.bat` ausführen.
+### 3.3 Training loop
 
-### 3.4 Wichtige Entwurfsregeln
-- **Determinismus:** keine Uhrzeit, kein `math.random`. Zufall nur über `GetRandomInteger`, sonst Fallback auf `teamId`.
-- **Fehlertoleranz:** jede eigene Logik läuft in `pcall`; ein Fehler darf die Partie nicht abbrechen, sondern wird mit `[CAI] FEHLER …` geloggt.
-- **Konfiguration statt Code:** Verhalten steuern `strategy.lua` (gelernt) und `fortplans.lua` (manuell); `fortplans.lua` wird vom Training nie verändert.
-- **Logging:** Entscheidungen mit `[CAI]`, Aufzeichnung mit `[CREC]`.
+```
+Play match ──► users/<id>/log.txt ([CREC] + [CAI])
+     ▲                      │ train.py collect (archive in tools/logs/)
+     │                      ▼
+strategy.lua  ◄── train.py train (reads all logs, learns from defaults)
+```
 
-## 4. Konfigurationsreferenz
+Forts overwrites `log.txt` on every start, so run `train.bat` after each play session.
 
-**`strategy.lua`** (Auszug): `ThinkInterval`, `ThreatWeight/Half/Decay/PerShot/PerHit/PerReactorHit`, `EarlySeconds`, `LateSeconds`, `Aggression{Early,Mid,Late}`, `AggressionExclude`, `RichMetal/RichBoost`, `PoorMetal/PoorEnergy/PoorFactor`, `IndirectThreatTypes`, `AntiAirThreatShots`, `AntiAirBoostMax`, `RebuildGiveUpSeconds`, `BuildSkipSeconds`, `BuildSkipMinMetal`, `Fire{…}`, `Tempo{…}`, `TargetValue{Heavy,Small}`.
+### 3.4 Key design rules
+- **Determinism:** no wall-clock time, no `math.random`. Randomness only via `GetRandomInteger`, with fallback to `teamId`.
+- **Fault tolerance:** all custom logic runs inside `pcall`; an error must not abort the match, it is logged as `[CAI] ERROR …`.
+- **Configuration over code:** behaviour is controlled by `strategy.lua` (learned) and `fortplans.lua` (manual); training never modifies `fortplans.lua`.
+- **Logging:** decisions use `[CAI]`, recording uses `[CREC]`.
+- **Language:** code, comments, log messages and documentation are written in English.
 
-**`fortplans.lua`:** je Karte `Originals`, `OriginalsDir`, `ReactorsPerSide`, `Plans`, `Strategy`; global `Force` (Plan erzwingen, zum Testen).
+## 4. Configuration reference
 
-## 5. Installation und Benutzung
+**`strategy.lua`** (excerpt): `ThinkInterval`, `ThreatWeight/Half/Decay/PerShot/PerHit/PerReactorHit`, `EarlySeconds`, `LateSeconds`, `Aggression{Early,Mid,Late}`, `AggressionExclude`, `RichMetal/RichBoost`, `PoorMetal/PoorEnergy/PoorFactor`, `IndirectThreatTypes`, `AntiAirThreatShots`, `AntiAirBoostMax`, `RebuildGiveUpSeconds`, `BuildSkipSeconds`, `BuildSkipMinMetal`, `Fire{…}`, `Tempo{…}`, `TargetValue{Heavy,Small}`.
 
-1. Ordner `fort-9000` nach `<Steam>/steamapps/common/Forts/data/mods/` kopieren.
-2. Im Spiel die Mod *FORT 9000 (KI + Recorder)* aktivieren.
-3. Partien spielen oder Replays abspielen.
-4. `tools/train.bat` ausführen (benötigt Python 3) – aktualisiert `ai/strategy.lua`.
-5. Tests: `tools/tests/run_tests.sh` (Lua, über `LuaPlusC.exe`).
+**`fortplans.lua`:** per map `Originals`, `OriginalsDir`, `ReactorsPerSide`, `Plans`, `Strategy`; global `Force` (force a plan, for testing).
 
-## 6. Bekannte Einschränkungen
+## 5. Installation and usage
 
-- Pläne nur für Abyss, Vanilla und VanillaLong.
-- Training lernt aus wenigen Partien (aktuell 11); `--strength` begrenzt die Abweichung.
-- Annahme von 25 Frames pro Sekunde für die Spielphasen im Training.
+1. Copy the `fort-9000` folder to `<Steam>/steamapps/common/Forts/data/mods/`.
+2. Enable the mod *FORT 9000 (AI + Recorder)* in the game.
+3. Play matches or watch replays.
+4. Run `tools/train.bat` (requires Python 3) – updates `ai/strategy.lua`.
+5. Tests: `tools/tests/run_tests.sh` (Lua, via `LuaPlusC.exe`).
+
+## 6. Known limitations
+
+- Plans only for Abyss, Vanilla and VanillaLong.
+- Training learns from few matches (currently 11); `--strength` limits the deviation.
+- Assumes 25 frames per second for the game phases in training.

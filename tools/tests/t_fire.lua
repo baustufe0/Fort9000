@@ -16,16 +16,16 @@ function GetWeaponCount() return #weapons end
 function GetWeaponId(t,i) return weapons[i+1] end
 function IsDummy() return false end
 function IsAIDeviceAvailable() return true end
-function IsWeaponReadyToFire(id) return id ~= 13 end   -- 13 laedt gerade nach
+function IsWeaponReadyToFire(id) return id ~= 13 end   -- 13 is reloading
 local fired={}
 function TryFireGun(id) fired[#fired+1]=id end
 dofile("mods/fort-9000/ai/ai.lua")
 Load(true)
-print("HardThreshold", data.HardThreshold, "Moerser beim Bauen", data.FireDuringRebuildProbability.mortar, "MG", data.FireDuringRebuildProbability.machinegun)
-print("FireTick geplant:", ScheduledCallCountOfFunc(CAI_FireTick))
+print("HardThreshold", data.HardThreshold, "mortar while building", data.FireDuringRebuildProbability.mortar, "MG", data.FireDuringRebuildProbability.machinegun)
+print("FireTick scheduled:", ScheduledCallCountOfFunc(CAI_FireTick))
 for i=1,4 do CAI_FireTick() end
-print("gefeuert:", table.concat(fired,","))
+print("fired:", table.concat(fired,","))
 CAI_Think()
 EnableHumanAssist()
-print("nach Hilfs-KI: HardThreshold", data.HardThreshold, "Moerser", data.FireDuringRebuildProbability.mortar)
-local before=#fired; CAI_FireTick(); print("Hilfs-KI feuert nicht:", #fired==before)
+print("after assist AI: HardThreshold", data.HardThreshold, "mortar", data.FireDuringRebuildProbability.mortar)
+local before=#fired; CAI_FireTick(); print("assist AI does not fire:", #fired==before)

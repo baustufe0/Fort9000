@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""FORT 9000 - Generator fuer neue Forts-KI-Bauplaene (fort-t1f1-<Karte>-<Nr>.lua).
+"""FORT 9000 - generator for new Forts AI build plans (fort-t1f1-<map>-<no>.lua).
 
-Idee:
-  * Gelaende aus der .fwe-Karte lesen (Polygone).
-  * Die Startfestung (Original-Knoten) aus einem vorhandenen Plan der Karte uebernehmen.
-  * Ein Raster aus Zellen (ca. 100 x 110) ueber den Bauraum legen. Rasterpunkte nahe
-    Original-Knoten werden auf diese gesetzt, Punkte im Fels werden zu Fundamenten auf
-    der Felsoberflaeche oder fallen weg.
-  * Eine Variante (Archetyp) waehlt, welche Zellen gebaut werden (Form), welche Waffen,
-    Wirtschaft und Technik wohin kommen und in welcher Reihenfolge.
-  * Front (zum Gegner) wird gepanzert, vor direkt feuernden Waffen kommen Tueren,
-    ueber Moersern Tuer-Daecher. Diagonalen in Geraete-Zellen sind Hintergrundstreben.
-  * Pruefungen: Knoten nicht im Fels, Streben nicht durch Fels und nicht zu lang,
-    Bau-Reihenfolge (jeder Knoten wird von einem schon gebauten Knoten aus erzeugt),
-    Technik-Voraussetzungen (Werkstatt vor Moerser usw.).
+Idea:
+  * Read terrain from the .fwe map (polygons).
+  * Take the starting fort (original nodes) from an existing plan of the map.
+  * Lay a grid of cells (approx. 100 x 110) over the building area. Grid points near
+    original nodes are snapped to them, points inside rock become foundations on
+    the rock surface or are dropped.
+  * A variant (archetype) chooses which cells are built (shape), which weapons,
+    economy and tech go where, and in which order.
+  * The front (facing the enemy) is armoured, doors go in front of direct-fire weapons,
+    door roofs over mortars. Diagonals in device cells are background braces.
+  * Checks: nodes not in rock, links not through rock and not too long,
+    build order (every node is created from an already built node),
+    tech prerequisites (workshop before mortar, etc.).
 
-Die KI fuehrt Plaene robust aus: was nicht klappt, ueberspringt sie nach einigen
-Versuchen ("Frustration"). Ein leicht fehlerhafter Plan bricht also nicht das Spiel.
+The AI executes plans robustly: what does not work, it skips after a few
+attempts ("frustration"). A slightly faulty plan therefore does not break the game.
 """
 import argparse
 import math
@@ -38,7 +38,7 @@ PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "las
           "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine"}
 
-# ----------------------------------------------------------------------------- Kartenkonfiguration
+# ----------------------------------------------------------------------------- Map configuration
 
 MAPS = {
     "Abyss": {
@@ -49,7 +49,7 @@ MAPS = {
         "reactor": (-1995, 60),
         "snap": 45,
         "ground_snap": 25,
-        # erprobte Plaetze aus dem Originalplan: (Knoten A, Knoten B, LinkT); Knoten als Position
+        # proven slots from the original plan: (node A, node B, LinkT); nodes given as positions
         "tech_slots": {
             "workshop": [((-2001, 305), (-1901, 309), 0.05)],
             "upgrade": [((-2097, 3), (-1997, 5), 0.94)],
@@ -58,7 +58,7 @@ MAPS = {
         "eco_slots": [((-2100, 200), (-1998, 206), 0.51), ((-2100, 400), (-2002, 405), 0.46),
                       ((-1998, 206), (-1898, 210), 0.52), ((-2100, 500), (-2002, 500), 0.55),
                       ((-2002, 500), (-1902, 500), 0.47)],
-        # Bodenminen: Position + Kette von Knoten, die vorher stehen muessen (Positionen)
+        # ground mines: position + chain of nodes that must exist beforehand (positions)
         "mines": [
             {"ground": (-2223.44, 650.0), "chain": [(-2100, 500), (-2100, 600), (-2150, 650)]},
             {"ground": (-2271.2, -750.0), "needs": [(-2200, -750)]},
@@ -68,24 +68,24 @@ MAPS = {
         "header": "FortTeam = 1; FortId = 1; FortPos = { x = -1995.335815, y = 106.206329 }; ",
     },
     "Vanilla": {
-        # Vorlagen-Karte: Startfestung kommt aus ai/forts/vanilla/mid (geteilt mit Penguin, Caverns, ...)
+        # template map: starting fort comes from ai/forts/vanilla/mid (shared with Penguin, Caverns, ...)
         "plan_dir": "ai/forts/vanilla/mid",
         "base_plan": "fort-t1f1-Template-1.lua",
         "fwe": "Vanilla.fwe",
-        "solid_minus1": True,          # Bloecke mit Kennung -1 sind hier Fels
+        "solid_minus1": True,          # blocks with id -1 are rock here
         "cols": [-3300, -3200, -3100, -3000, -2920, -2845, -2745],
         "rows": [-395, -295, -195, -95, 5, 105, 205, 308, 405, 503, 602, 700],
         "reactor": (-3040, 305),
-        "keepout": [(-3140, -2900, 205, 405)],   # Reaktor + Rahmen: keine Zellen
-        "eco_orig": False,             # Batterie/Speicher nicht in Zellen der Startfestung
-        "weapon_min_w": 95,            # keine Waffen in schmalen Zellen (<95 breit)
+        "keepout": [(-3140, -2900, 205, 405)],   # reactor + frame: no cells
+        "eco_orig": False,             # no battery/storage in cells of the starting fort
+        "weapon_min_w": 95,            # no weapons in narrow cells (<95 wide)
         "mortar_avoid_roof": True,
         "turbine_narrow_first": True,
         "tech_spill": True,
         "aa_y": 250, "large_y": 100,
         "snap": 45,
         "ground_snap": 25,
-        # erprobte Plaetze aus Template-1/-2: (Knoten A, Knoten B, LinkT)
+        # proven slots from Template-1/-2: (node A, node B, LinkT)
         "tech_slots": {
             "workshop": [((-3096, 503), (-2996, 504), 0.05), ((-3200, 503), (-3096, 503), 0.96)],
             "upgrade": [((-3200, 600), (-3098, 602), 0.02)],
@@ -102,12 +102,12 @@ MAPS = {
     },
 }
 
-# ----------------------------------------------------------------------------- Varianten (Archetypen)
-# shape(x0, y0, x1, y1) -> True, wenn die Zelle mit diesen Ecken gebaut werden soll
+# ----------------------------------------------------------------------------- Variants (archetypes)
+# shape(x0, y0, x1, y1) -> True if the cell with these corners should be built
 
 VARIANTS = {
     "artillerie": {
-        "title": "Artillerie-Turm: breiter Turm, viele Moerser oben, Werkstatt frueh",
+        "title": "Artillery tower: wide tower, many mortars on top, workshop early",
         "shape": lambda x0, y0, x1, y1: (
             (y0 >= -628 and y1 <= -250 and x0 >= -2100 and x1 <= -1800) or
             (y0 >= -846 and y1 <= -628 and x0 >= -2400 and x1 <= -1900)),
@@ -125,7 +125,7 @@ VARIANTS = {
         "armour_roof": True,
     },
     "scharfschuetzen": {
-        "title": "Scharfschuetzen-Festung: schmaler hoher Turm mit vorgezogener Front, viele Sniper und Luftabwehr",
+        "title": "Sniper fortress: narrow tall tower with advanced front, many snipers and anti-air",
         "shape": lambda x0, y0, x1, y1: (
             (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -1900) or
             (y0 >= -628 and y1 <= -250 and x0 >= -1900 and x1 <= -1700) or
@@ -145,7 +145,7 @@ VARIANTS = {
         "armour_roof": True,
     },
     "schwer": {
-        "title": "Schwere Front: breiter, stark gepanzerter Block, Fabrik frueh, Kanonen und Laser",
+        "title": "Heavy front: wide, heavily armoured block, factory early, cannons and lasers",
         "shape": lambda x0, y0, x1, y1: (
             (y0 >= -502 and y1 <= -250 and x0 >= -2100 and x1 <= -1700) or
             (y0 >= -846 and y1 <= -502 and x0 >= -2400 and x1 <= -1900) or
@@ -176,13 +176,13 @@ def _union(*fs):
     return lambda a, b, c, d: any(f(a, b, c, d) for f in fs)
 
 
-# Vanilla: Spalten -3300 .. -2745, Zeilen -395 .. 700. Reaktor bei (-3040, 305) (Sperrzone).
-_V_LEFT = _box(-3300, -3100, 205, 700)       # linke Saeule bis zum Boden
-_V_RIGHT = _box(-2920, -2745, 205, 700)      # rechte Saeule (Front, Luftabwehr)
+# Vanilla: columns -3300 .. -2745, rows -395 .. 700. Reactor at (-3040, 305) (keep-out zone).
+_V_LEFT = _box(-3300, -3100, 205, 700)       # left column down to the ground
+_V_RIGHT = _box(-2920, -2745, 205, 700)      # right column (front, anti-air)
 
 VANILLA_VARIANTS = {
     "artillerie": {
-        "title": "Artillerie-Turm: breite Plattform ueber dem Reaktor, Moerser oben unter Tuer-Dach, Werkstatt frueh",
+        "title": "Artillery tower: wide platform above the reactor, mortars on top under a door roof, workshop early",
         "shape": _union(_box(-3300, -2745, -195, 205), _V_LEFT, _V_RIGHT),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
@@ -199,7 +199,7 @@ VANILLA_VARIANTS = {
         "armour_roof": True,
     },
     "scharfschuetzen": {
-        "title": "Scharfschuetzen-Festung: hoher schmaler Turm links, vorgezogene Front oben, Sniper + Luftabwehr",
+        "title": "Sniper fortress: tall narrow tower on the left, advanced front on top, snipers + anti-air",
         "shape": _union(_box(-3300, -3100, -395, 205), _box(-3100, -2745, -395, -195),
                         _box(-3100, -2745, 105, 205), _V_LEFT, _V_RIGHT),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
@@ -218,7 +218,7 @@ VANILLA_VARIANTS = {
         "armour_roof": True,
     },
     "schwer": {
-        "title": "Schwere Front: niedriger, breiter, stark gepanzerter Block, Fabrik frueh, Kanone und Laser",
+        "title": "Heavy front: lower, wide, heavily armoured block, factory early, cannon and laser",
         "shape": _union(_box(-3300, -2745, 5, 205), _V_LEFT, _V_RIGHT),
         "plan": [
             ("aa", ["machinegun"]),
@@ -234,7 +234,7 @@ VANILLA_VARIANTS = {
         "armour_roof": True,
     },
     "wirtschaft": {
-        "title": "Wirtschaftsfestung: erst alle Minen und Turbinen, dann gemischt Sniper/Moerser, wenig MGs",
+        "title": "Economy fortress: all mines and turbines first, then mixed snipers/mortars, few MGs",
         "shape": _union(_box(-3300, -2745, 5, 205), _box(-3300, -3000, -95, 5), _V_LEFT, _V_RIGHT),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
@@ -265,7 +265,7 @@ class Plan:
         self.nodes = {}        # (i,j) -> (id, pos, kind) kind: orig/new/found
         self.next_id = 10000
         self.built_nodes = set(self.orig)
-        self.links = {}        # frozenset(idA,idB) -> material (zuletzt gesetzt)
+        self.links = {}        # frozenset(idA,idB) -> material (last set)
         self.actions = []
         self.pos = dict(self.orig)
         self.devices = {}      # cell -> device
@@ -273,7 +273,7 @@ class Plan:
         self.problems = []
         self.tech_done = set()
 
-    # --- Raster
+    # --- Grid
     def build_lattice(self):
         cols, rows = self.cfg["cols"], self.cfg["rows"]
         for i, x in enumerate(cols):
@@ -342,13 +342,13 @@ class Plan:
                     self.cells.add((i, j))
                 elif sum(self.nodes[c][2] == "orig" for c in corners) >= 1:
                     self.connectors.add((i, j))
-        # Verbindungszellen nur, wenn sie an eine Form-Zelle grenzen
+        # connecting cells only if they border a shape cell
         def neigh(c):
             i, j = c
             return ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1))
         self.cells |= {c for c in self.connectors if any(n in self.cells for n in neigh(c))}
-        # nur Zellen behalten, die ueber Kanten mit der Startfestung verbunden sind
-        # Startpunkte: Zellen der Startfestung und alle Zellen mit einem Original-Knoten als Ecke
+        # keep only cells connected to the starting fort via edges
+        # start points: cells of the starting fort and all cells with an original node as a corner
         reach = set(self.orig_cells) | {c for c in self.cells
                                          if any(self.nodes[x][2] == "orig" for x in
                                                 ((c[0], c[1]), (c[0] + 1, c[1]), (c[0], c[1] + 1), (c[0] + 1, c[1] + 1)))}
@@ -362,10 +362,10 @@ class Plan:
         dropped = self.cells - reach
         self.cells &= reach
         if dropped:
-            self.problems.append("%d Zellen ohne Verbindung zur Startfestung weggelassen" % len(dropped))
+            self.problems.append("%d cells without connection to the starting fort omitted" % len(dropped))
         self.all_cells = self.cells | self.orig_cells
 
-    # --- Eigenschaften von Zellen
+    # --- Cell properties
     def is_front(self, c):
         n = (c[0] + 1, c[1])
         return n not in self.all_cells and n not in self.keep_cells
@@ -382,12 +382,12 @@ class Plan:
         cy = (rows[c[1]] + rows[c[1] + 1]) / 2
         return math.dist((cx, cy), self.cfg["reactor"]) < 120
 
-    # --- Aktionen
+    # --- Actions
     def _fmt(self, p):
         return "x = %.2f, y = %.2f" % (p[0], p[1])
 
     def ensure_node(self, ij, via_material="bracing"):
-        """Knoten ij bauen (falls noetig) - von einem schon gebauten Nachbarn aus."""
+        """Build node ij (if necessary) - from an already built neighbour."""
         nid, p, kind = self.node(ij)
         if nid in self.built_nodes:
             return nid
@@ -402,7 +402,7 @@ class Plan:
         if not cand:
             return None
         if kind == "found":
-            # Fundament von oben/schraeg bauen, nicht seitlich entlang des Bodens
+            # build the foundation from above/diagonally, not sideways along the ground
             cand.sort(key=lambda dc: (dc[1][1] == j, dc[0]))
         else:
             cand.sort()
@@ -423,12 +423,12 @@ class Plan:
         self.links[key] = material
 
     def spans_right(self, c):
-        """True, wenn ein grosses Geraet ueber die rechte Kante von c in die Nachbarzelle reicht."""
+        """True if a large device extends over the right edge of c into the neighbouring cell."""
         a, b = self.devices.get(c) or "", self.devices.get((c[0] + 1, c[1])) or ""
         return bool(a and b) and (a + "+" == b or b + "+" == a)
 
     def edge_material(self, c, edge):
-        """Material fuer eine Zellkante: front/roof gepanzert, Tueren vor Waffen."""
+        """Material for a cell edge: front/roof armoured, doors in front of weapons."""
         dev = self.devices.get(c)
         if edge == "right" and self.spans_right(c):
             return "backbracing"
@@ -450,11 +450,11 @@ class Plan:
         orig = c in self.orig_cells
         for ij in (tl, tr, bl, br):
             if self.nodes[ij][0] not in self.built_nodes and self.ensure_node(ij) is None:
-                # Nachbarzelle zuerst bauen
+                # build the neighbouring cell first
                 return False
         mine_cell = self.devices.get(c) == "mine-platz"
         if not orig:
-            if not mine_cell:   # auf Minenplaetzen keine Strebe auf dem Fels (sonst ist die Mine blockiert)
+            if not mine_cell:   # no link on the rock at mine sites (otherwise the mine is blocked)
                 self.link(bl, br, "bracing")
             self.link(tl, bl, "backbracing" if self.spans_right((i - 1, j)) else "bracing")
             self.link(tr, br, self.edge_material(c, "right"))
@@ -474,10 +474,10 @@ class Plan:
         return True
 
     def build_cell_path(self, c):
-        """Zelle bauen; wenn noetig zuerst die Zellen auf dem Weg von der Startfestung."""
+        """Build a cell; if necessary first the cells on the way from the starting fort."""
         if self.build_cell(c):
             return True
-        # Breitensuche von gebauten Zellen zu c
+        # breadth-first search from built cells to c
         start = [x for x in self.built_cells]
         prev = {x: None for x in start}
         q = list(start)
@@ -490,7 +490,7 @@ class Plan:
                     prev[n] = x
                     q.append(n)
         if c not in prev:
-            self.problems.append("Zelle %s nicht erreichbar" % (c,))
+            self.problems.append("cell %s not reachable" % (c,))
             return False
         path = []
         x = c
@@ -499,7 +499,7 @@ class Plan:
             x = prev[x]
         for x in reversed(path):
             if not self.build_cell(x):
-                self.problems.append("Zelle %s konnte nicht gebaut werden" % (x,))
+                self.problems.append("cell %s could not be built" % (x,))
                 return False
         return True
 
@@ -523,7 +523,7 @@ class Plan:
                 return ij
         return None
 
-    # --- Plaetze waehlen
+    # --- Choose slots
     def free_cells(self, pred):
         cells = [c for c in sorted(self.all_cells) if c not in self.devices and not self.near_reactor(c) and pred(c)]
         return cells
@@ -538,7 +538,7 @@ class Plan:
         avoid_roof = self.cfg.get("mortar_avoid_roof")
         if dev in LOBBED_WEAPONS:
             cands = self.free_cells(lambda c: self.is_top(c) and c in self.cells and wide(c) and not (avoid_roof and self.roof_device.get(c)))
-            cands.sort(key=lambda c: (-c[0], c[1]))     # oben, moeglichst weit vorn
+            cands.sort(key=lambda c: (-c[0], c[1]))     # on top, as far forward as possible
         elif dev in LARGE:
             cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and (c[0] - 1, c[1]) in self.all_cells
                                     and (c[0] - 1, c[1]) not in self.devices and wide(c))
@@ -546,12 +546,12 @@ class Plan:
         else:
             cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and wide(c))
             if dev == "machinegun":
-                cands.sort(key=lambda c: (abs(rows[c[1]] - self.cfg.get("aa_y", -250)), -c[0]))   # nahe Reaktorhoehe: Luftabwehr
+                cands.sort(key=lambda c: (abs(rows[c[1]] - self.cfg.get("aa_y", -250)), -c[0]))   # near reactor height: anti-air
             else:
-                cands.sort(key=lambda c: (rows[c[1]], -c[0]))               # Sniper eher oben
+                cands.sort(key=lambda c: (rows[c[1]], -c[0]))               # snipers preferably on top
         if not cands:
             return None
-        # etwas Zufall unter den besten drei, damit Varianten sich unterscheiden
+        # some randomness among the best three so that variants differ
         return cands[self.rng.randrange(min(2, len(cands)))]
 
     def choose_eco_cell(self):
@@ -569,7 +569,7 @@ class Plan:
             cands.sort(key=lambda c: (self.cfg["rows"][c[1]], c[0]))
         return cands[0] if cands else None
 
-    # --- Hauptablauf
+    # --- Main flow
     def generate(self, variant):
         self.variant = variant
         self.tech_slots = dict(self.cfg["tech_slots"])
@@ -579,10 +579,10 @@ class Plan:
         self.built_cells = set()
         self.roof_device = {}
         self.mines_done = 0
-        # Startfestung gilt als gebaut
+        # the starting fort counts as built
         for c in self.orig_cells:
             self.built_cells.add(c)
-        # Zellen, deren Boden auf einem Minenplatz liegt, bleiben frei (Mine steht auf dem Fels darunter)
+        # cells whose floor lies on a mine site stay free (the mine sits on the rock below)
         for m in self.cfg["mines"]:
             gx, gy = m["ground"]
             for c in self.all_cells:
@@ -592,14 +592,14 @@ class Plan:
         for step, items in variant["plan"]:
             for dev in items:
                 self.add(step, dev)
-        # restliche Zellen der Form fertig bauen (Struktur + Panzerung)
+        # finish building the remaining cells of the shape (structure + armour)
         for c in sorted(self.cells, key=lambda c: (self.cfg["rows"][c[1]], c[0])):
             self.build_cell_path(c)
         return self
 
     def add(self, step, dev):
         if PREREQ.get(dev) and PREREQ[dev] not in self.tech_done and dev not in UPGRADE_OF:
-            self.problems.append("%s ohne %s - vorgezogen" % (dev, PREREQ[dev]))
+            self.problems.append("%s without %s - moved forward" % (dev, PREREQ[dev]))
             self.add("tech", PREREQ[dev])
         if step == "upgrades":
             base = UPGRADE_OF[dev]
@@ -608,7 +608,7 @@ class Plan:
             for (d, a, b, t, c) in self.placed:
                 if d == base:
                     self.placed.remove((d, a, b, t, c))
-                    if c is None:       # Bodenmine aufruesten
+                    if c is None:       # upgrade ground mine
                         self.actions.append('{ Type = CREATE_DEVICE, GroundPosition = { %s }, LinkT = 1.57, DeviceSaveName = "%s" },'
                                             % (self._fmt(a), dev))
                         self.placed.append((dev, a, b, t, None))
@@ -619,14 +619,14 @@ class Plan:
                         self.devices[c] = dev
                         self.place_on_floor(c, dev, t)
                     return
-            self.problems.append("kein %s zum Aufruesten auf %s" % (base, dev))
+            self.problems.append("no %s to upgrade to %s" % (base, dev))
             return
         if dev == "mine":
             return self.add_mine()
         if dev == "turbine":
             c = self.choose_turbine_roof()
             if c is None or not self.build_cell_path(c):
-                self.problems.append("kein Dachplatz fuer Turbine")
+                self.problems.append("no roof slot for turbine")
                 return
             self.roof_device[c] = dev
             i, j = c
@@ -643,9 +643,9 @@ class Plan:
                     if c in self.devices:
                         continue
                     self.devices[c] = dev
-                    self.devices[(c[0] + 1, c[1])] = dev + "+"   # zweite Zellhaelfte belegt
+                    self.devices[(c[0] + 1, c[1])] = dev + "+"   # second half of the cell occupied
                     if self.cfg.get("tech_spill") and t <= 0.1 and (c[0] - 1, c[1]) not in self.devices:
-                        self.devices[(c[0] - 1, c[1])] = dev + "+"   # Geraet am linken Linkende ragt nach links
+                        self.devices[(c[0] - 1, c[1])] = dev + "+"   # device at the left link end extends to the left
                     if c in self.all_cells:
                         self.build_cell_path(c)
                     if self.ensure_node(ia) is None or self.ensure_node(ib) is None:
@@ -657,27 +657,27 @@ class Plan:
                     self.placed.append((dev, a[1], b[1], t, c))
                     self.tech_done.add(dev)
                     return
-            self.problems.append("kein Platz fuer %s" % dev)
+            self.problems.append("no room for %s" % dev)
             return
         if dev in ("battery", "store"):
             c = self.choose_eco_cell()
             if c is None or not self.build_cell_path(c):
-                self.problems.append("kein Platz fuer %s" % dev)
+                self.problems.append("no room for %s" % dev)
                 return
             self.devices[c] = dev
             self.place_on_floor(c, dev)
             return
-        # Waffen
+        # Weapons
         c = self.choose_weapon_cell(dev)
         if c is None:
-            self.problems.append("kein Platz fuer %s" % dev)
+            self.problems.append("no room for %s" % dev)
             return
         self.devices[c] = dev
         if dev in LARGE:
             self.devices[(c[0] - 1, c[1])] = dev + "+"
         if not self.build_cell_path(c):
             return
-        # Front/Dach nach Waffenwahl neu setzen (Tuer statt Panzerung)
+        # reset front/roof after the weapon choice (door instead of armour)
         i, j = c
         if self.is_front(c):
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
@@ -696,7 +696,7 @@ class Plan:
                 for p in m["chain"]:
                     ij = self.node_at(p)
                     if ij is None:
-                        # zusaetzlicher Knoten ausserhalb des Rasters
+                        # additional node outside the grid
                         ij = ("x",) + p
                         self.nodes[ij] = (None, p, "found")
                     nid = self.node(ij)[0]
@@ -714,7 +714,7 @@ class Plan:
                 if ij is None:
                     ok = False
                     break
-                # Zelle ueber dem Fundament bauen
+                # build the cell above the foundation
                 cell = None
                 for c in sorted(self.all_cells):
                     if ij in ((c[0], c[1] + 1), (c[0] + 1, c[1] + 1)):
@@ -728,9 +728,9 @@ class Plan:
                 self.actions.append('{ Type = CREATE_DEVICE, GroundPosition = { %s }, LinkT = 1.57, DeviceSaveName = "mine" },' % self._fmt(g))
                 self.placed.append(("mine", g, g, 0, None))
                 return
-        self.problems.append("kein Minenplatz mehr")
+        self.problems.append("no mine site left")
 
-    # --- Pruefung und Ausgabe
+    # --- Validation and output
     def validate(self):
         errors = []
         built = set(self.orig)
@@ -742,44 +742,44 @@ class Plan:
             pts = [(float(a), float(b)) for a, b in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
             if m == "CREATE_NODE":
                 if ids[0] not in built:
-                    errors.append("Aktion %d: Knoten %d wird von nicht gebautem %d erzeugt" % (k, ids[1], ids[0]))
+                    errors.append("action %d: node %d is created from unbuilt node %d" % (k, ids[1], ids[0]))
                 built.add(ids[1])
                 pos[ids[1]] = pts[1]
             elif m in ("CREATE_LINK", "CREATE_DEVICE") and ids:
                 for x in ids:
                     if x not in built:
-                        errors.append("Aktion %d: Knoten %d noch nicht gebaut" % (k, x))
+                        errors.append("action %d: node %d not built yet" % (k, x))
             if len(pts) >= 2 and m in ("CREATE_NODE", "CREATE_LINK"):
                 L = math.dist(pts[0], pts[1])
                 if L > MAX_LINK + 1:
-                    errors.append("Aktion %d: Strebe zu lang (%.0f)" % (k, L))
+                    errors.append("action %d: link too long (%.0f)" % (k, L))
                 if not self.t.segment_clear(pts[0], pts[1]):
-                    errors.append("Aktion %d: Strebe geht durch Fels" % k)
+                    errors.append("action %d: link passes through rock" % k)
         for nid, p in pos.items():
             if nid >= 10000 and self.t.inside((p[0], p[1] - 3)) and self.t.inside((p[0] + 3, p[1])):
-                errors.append("Knoten %d liegt im Fels" % nid)
+                errors.append("node %d lies in rock" % nid)
         seen = set()
         for line in self.actions:
             m = re.search(r'DeviceSaveName = "(\w+)"', line)
             if m:
                 d = m.group(1)
                 if PREREQ.get(d) and PREREQ[d] not in seen:
-                    errors.append("%s vor %s gebaut" % (d, PREREQ[d]))
+                    errors.append("%s built before %s" % (d, PREREQ[d]))
                 seen.add(d)
         return errors
 
     def write(self, path, title):
-        # Kopf exakt wie bei aufgezeichneten Plaenen (die KI rechnet mit diesen Zeilennummern)
+        # header exactly like recorded plans (the AI relies on these line numbers)
         head = ("-- Fort recorded for AI replay\n"
                 "CREATE_NODE = 1\nDESTROY_NODE = 2\nCREATE_LINK = 3\nDESTROY_LINK = 4\nCREATE_DEVICE = 5\nDESTROY_DEVICE = 6\n")
-        tail = "-- Erzeugt von Claude AI (tools/gen_fort.py): %s\n" % title
+        tail = "-- Generated by Claude AI (tools/fortgen/gen_fort.py): %s\n" % title
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
             f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--maps", required=True, help="Ordner data/maps")
+    ap.add_argument("--maps", required=True, help="data/maps folder")
     ap.add_argument("--map", default="Abyss")
     ap.add_argument("--out", required=True)
     ap.add_argument("--seed", type=int, default=1)
@@ -805,11 +805,11 @@ def main():
             if "CREATE_DEVICE" in line:
                 d = line.split('DeviceSaveName = "')[1].split('"')[0]
                 devs[d] = devs.get(d, 0) + 1
-        print("%s [%s] %d Aktionen, Geraete: %s" % (name, key, len(p.actions), ", ".join("%s:%d" % kv for kv in sorted(devs.items()))))
+        print("%s [%s] %d actions, devices: %s" % (name, key, len(p.actions), ", ".join("%s:%d" % kv for kv in sorted(devs.items()))))
         for e in errors:
-            print("   FEHLER:", e)
+            print("   ERROR:", e)
         for pr in p.problems:
-            print("   Hinweis:", pr)
+            print("   Note:", pr)
 
 
 if __name__ == "__main__":

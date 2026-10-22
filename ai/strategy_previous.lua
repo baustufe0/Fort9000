@@ -1,6 +1,6 @@
--- FORT 9000 - Strategiedatei (automatisch erzeugt von tools/train.py)
--- Trainiert am 2026-10-19 17:04 aus 11 Partien mit Ergebnis in 10 Logs.
--- Wird beim Start eines Gefechts einmal geladen. Vorherige Version: strategy_previous.lua
+-- FORT 9000 - strategy file (generated automatically by tools/train.py)
+-- Trained on 2026-10-19 17:04 from 11 matches with a result in 10 logs.
+-- Loaded once at the start of a match. Previous version: strategy_previous.lua
 
 Strategy =
 {
