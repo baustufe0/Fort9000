@@ -8,6 +8,7 @@
 LUA="${1:-lua5.1}"; DATA="$2"
 HERE="$(cd "$(dirname "$0")" && pwd)"; MOD="$(cd "$HERE/../.." && pwd)"
 ROOT="$(mktemp -d)"; mkdir -p "$ROOT/mods"; ln -s "$MOD" "$ROOT/mods/fort-9000"; ln -s "$DATA/maps" "$ROOT/maps"; ln -s "$DATA/ai" "$ROOT/ai"
+WP="$DATA/mods/weapon_pack"; [ -d "$WP" ] && ln -s "$WP" "$ROOT/mods/weapon_pack"
 cp "$HERE"/t_*.lua "$ROOT/"; cd "$ROOT"; fail=0
 check() { local name="$1" pat="$2"; shift 2; if "$@" 2>&1 | grep -qE "$pat"; then echo "OK    $name"; else echo "FAIL  $name"; "$@" 2>&1 | tail -5; fail=1; fi; }
 check "Basic (targeting, aggression, end)"       "MOCK OK"                       "$LUA" t_basic.lua
@@ -20,6 +21,12 @@ for o in before after; do for e in fort-t1f1-Template-1.lua fort-t1f1-Template-2
   check "Plan swap Vanilla $o $e team 1"         "first action = -2846.2, 204.0"  "$LUA" t_vanilla.lua $o $e 1
   check "Plan swap Vanilla $o $e team 102"       "first action = 2846.2, 204.0"   "$LUA" t_vanilla.lua $o $e 102
 done; done
+# plans of the weapon_pack mod (other FortPos, same starting fort); only if the mod is installed
+if [ -d "$WP" ]; then for o in before after; do for e in ToGAF1 ToGWM2; do
+  f="mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-$e.lua"
+  check "Plan swap Vanilla $o weapon_pack $e team 1"   "first action = -2846.2, 204.0" "$LUA" t_vanilla.lua $o $f 1
+  check "Plan swap Vanilla $o weapon_pack $e team 102" "first action = 2846.2, 204.0"  "$LUA" t_vanilla.lua $o $f 102
+done; done; fi
 for o in before after; do
   check "Plan swap VanillaLong $o team 1"        "first action = -3747.2, -746.4" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
   check "Plan swap VanillaLong $o team 102"      "first action = 3747.2, -746.4"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102

@@ -24,7 +24,7 @@ function OffsetFort(offset)
   for _, a in ipairs(Fort) do for _, k in ipairs({"PosA","PosB","NewNodePos","GroundPosition"}) do
     local p = a[k]; if p then p.x = p.x + offset.x; p.y = p.y + offset.y end end end
 end
-local engineFile = "ai/forts/vanilla/mid/" .. ENGINE
+local engineFile = string.find(ENGINE, "/", 1, true) and ENGINE or ("ai/forts/vanilla/mid/" .. ENGINE)
 if ORDER == "before" then dofile(engineFile) end
 dofile("mods/fort-9000/ai/ai.lua")
 if ORDER == "after" then dofile(engineFile) end

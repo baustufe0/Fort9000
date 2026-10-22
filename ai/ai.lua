@@ -108,9 +108,11 @@ local function CAI_PreloadPlans()
 	for mapName, m in pairs(FortPlanConfig.Maps or {}) do
 		local entry = { sigs = {}, plans = {}, list = m.Plans or {}, reactors = m.ReactorsPerSide }
 		for _, f in ipairs(m.Originals or {}) do
-			local t = CAI_LoadPlanFile((m.OriginalsDir or ("maps/" .. mapName .. "/")) .. f)
+			-- entries with a folder are full paths (e.g. plans of other mods), others are relative to OriginalsDir
+			local path = string.find(f, "/", 1, true) and f or ((m.OriginalsDir or ("maps/" .. mapName .. "/")) .. f)
+			local t = CAI_LoadPlanFile(path)
 			if t then
-				table.insert(entry.sigs, { file = f, x = t.FortPos.x, y = t.FortPos.y, n = #t.Fort })
+				table.insert(entry.sigs, { file = string.match(f, "([^/]+)$"), x = t.FortPos.x, y = t.FortPos.y, n = #t.Fort })
 			end
 		end
 		local count = 0
