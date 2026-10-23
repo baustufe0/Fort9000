@@ -1,0 +1,215 @@
+"""FORT 9000 - rule checks for Forts AI build plans (lessons from test matches, see SPEC.md 2.13).
+
+check_plan(actions, enemy_dir=+1, terrain=None) -> (errors, warnings)
+  actions: parsed plan actions (fortplan.parse_plan) in plan coordinates, team 1 (enemy to the right).
+
+Usage on plan files:  python rules.py <plan.lua> [...]
+"""
+import math
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fortplan import parse_plan   # noqa: E402
+
+# Sizes from the game files (SelectionWidth / SelectionHeight); weapon_pack is always installed.
+SIZE = {
+    "machinegun": (40, 40), "minigun": (40, 40), "sniper": (70, 45), "sniper2": (70, 45),
+    "mortar": (40, 30), "mortar2": (40, 30), "cannon": (95, 60), "cannon20mm": (90, 55), "laser": (50, 50),
+    "flak": (40, 59), "shotgun": (40, 59), "rocket": (40, 56), "rocketemp": (40, 56), "firebeam": (50, 50),
+    "battery": (40, 40), "store": (40, 40), "turbine": (40, 63), "turbine2": (40, 63), "sandbags": (40, 25),
+    "workshop": (90, 45), "factory": (90, 45), "upgrade": (90, 45), "munitions": (45, 85), "armoury": (45, 85),
+}
+# weapons that fire (roughly) straight ahead and need a clear line of fire (MinFireClearance 500-1000)
+DIRECT = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser", "flak", "shotgun",
+          "rocket", "rocketemp", "firebeam"}
+LOBBED = {"mortar", "mortar2"}
+TURBINES = {"turbine", "turbine2"}
+UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine"}
+FOREGROUND = {"bracing", "armour", "door"}     # materials that stop shots (and wind); background bracing does not
+MIN_LENGTH = 37.5          # StandardMinLength
+MIN_DOOR_LENGTH = 49
+FIRE_RANGE = 600           # checked length of the line of fire (beyond that it is outside the fort)
+# When a weapon is placed, the game recesses foreground struts that already stand in its way within its
+# RecessionBox (bracing -> background bracing, armour -> door). Struts built later, or further away, block it.
+RECESSION_LEN = {"machinegun": 20}
+DEFAULT_RECESSION_LEN = 200
+TURBINE_SPACING = 90       # two turbines 46-54 apart failed with CS_OCCUPIED; the game's plan uses ~100
+WIND_RANGE = 120
+
+
+def _cross(o, a, b):
+    return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+
+def segments_cross(p1, p2, q1, q2):
+    """Proper intersection of two segments (touching endpoints does not count)."""
+    d1, d2 = _cross(q1, q2, p1), _cross(q1, q2, p2)
+    d3, d4 = _cross(p1, p2, q1), _cross(p1, p2, q2)
+    return ((d1 > 1e-6 and d2 < -1e-6) or (d1 < -1e-6 and d2 > 1e-6)) and \
+           ((d3 > 1e-6 and d4 < -1e-6) or (d3 < -1e-6 and d4 > 1e-6))
+
+
+def build_state(actions):
+    """Final state of the plan: node positions, links {pair: (material, a, b, action index)},
+    devices [(name, a, b, t, pair, action index)], ground devices [(name, pos)]."""
+    pos, links, devices, ground = {}, {}, [], []
+    for k, a in enumerate(actions):
+        ida, idb = a.get("OriginalNodeAId"), a.get("OriginalNodeBId")
+        if ida is not None and "PosA" in a:
+            pos.setdefault(ida, a["PosA"])
+        if a["Type"] == "CREATE_NODE":
+            pos[idb] = a["NewNodePos"]
+            links[frozenset((ida, idb))] = (a.get("MaterialSaveName"), ida, idb, k)
+        elif idb is not None and "PosB" in a:
+            pos.setdefault(idb, a["PosB"])
+        if a["Type"] == "CREATE_LINK":
+            links[frozenset((ida, idb))] = (a.get("MaterialSaveName"), ida, idb, k)
+        elif a["Type"] == "CREATE_DEVICE":
+            name = a.get("DeviceSaveName")
+            if "GroundPosition" in a:
+                ground.append((name, a["GroundPosition"]))
+                continue
+            pair = frozenset((ida, idb))
+            # an upgrade replaces the device at the same place
+            base = UPGRADE_OF.get(name)
+            if base:
+                devices = [d for d in devices if not (d[0] == base and d[4] == pair and abs(d[3] - a["LinkT"]) < 0.02)]
+            devices.append((name, ida, idb, a["LinkT"], pair, k))
+    return pos, links, devices, ground
+
+
+def _point(pos, ida, idb, t):
+    a, b = pos[ida], pos[idb]
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+
+def _blocking(links, pos, p, q, skip=()):
+    """Foreground links crossing the segment p-q (except those in skip): [(material, a, b, action, pair)]."""
+    out = []
+    for pair, (mat, ia, ib, k) in links.items():
+        if mat not in FOREGROUND or pair in skip or ia not in pos or ib not in pos:
+            continue
+        if segments_cross(p, q, pos[ia], pos[ib]):
+            out.append((mat, pos[ia], pos[ib], k, pair))
+    return out
+
+
+def _cross_dist(p, q, a, b):
+    """Distance from p along p-q to the crossing with a-b."""
+    d = (q[0] - p[0], q[1] - p[1])
+    e = (b[0] - a[0], b[1] - a[1])
+    den = d[0] * e[1] - d[1] * e[0]
+    if abs(den) < 1e-9:
+        return 0
+    s = ((a[0] - p[0]) * e[1] - (a[1] - p[1]) * e[0]) / den
+    return s * math.hypot(*d)
+
+
+def fire_lines(name, p, enemy_dir=1):
+    """Segments a weapon at base point p needs free: direct fire straight ahead, mortars steep forward."""
+    w, h = SIZE.get(name, (40, 40))
+    muzzle = (p[0], p[1] - 0.6 * h)
+    if name in DIRECT:
+        return [(muzzle, (p[0] + enemy_dir * FIRE_RANGE, muzzle[1]))]
+    if name in LOBBED:
+        return [(muzzle, (p[0] + enemy_dir * 150, muzzle[1] - 260))]
+    return []
+
+
+def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1):
+    """Foreground struts that block a weapon: built after it anywhere in its line of fire, or (built before)
+    beyond its recession length; doors close in front of it are its own (opened to fire)."""
+    out = []
+    rec = RECESSION_LEN.get(name, DEFAULT_RECESSION_LEN)
+    for p0, p1 in fire_lines(name, p, enemy_dir):
+        for m, a, b, k, pair in _blocking(links, pos, p0, p1):
+            dist = _cross_dist(p0, p1, a, b)
+            if m == "door":
+                continue                    # the AI opens all doors in the way before firing (OpenWeaponDoors)
+            if k < k_dev and dist <= rec:
+                continue                    # recessed by the game when the weapon is placed
+            out.append((m, a, b, k, pair, dist))
+    return out
+
+
+def _fmt(p):
+    return "(%d,%d)" % (round(p[0]), round(p[1]))
+
+
+def check_plan(actions, enemy_dir=1, terrain=None):
+    errors, warnings = [], []
+    pos, links, devices, ground = build_state(actions)
+
+    # strut lengths
+    for pair, (mat, ia, ib, k) in links.items():
+        if ia in pos and ib in pos:
+            L = math.dist(pos[ia], pos[ib])
+            need = MIN_DOOR_LENGTH if mat == "door" else MIN_LENGTH
+            if L < need - 0.5:
+                errors.append("strut %s-%s %s too short (%.0f < %.1f)" % (_fmt(pos[ia]), _fmt(pos[ib]), mat, L, need))
+
+    for name, ia, ib, t, pair, kd in devices:
+        if ia not in pos or ib not in pos:
+            continue
+        p = _point(pos, ia, ib, t)
+        w, h = SIZE.get(name, (40, 40))
+        mat = links.get(pair, (None,))[0]
+        where = "%s at %s" % (name, _fmt(p))
+        # background bracing cannot carry devices (SupportsDevices = false); the game's own Template-1
+        # nevertheless records a sniper on one (recorded plans may show the recessed material)
+        if mat == "backbracing":
+            warnings.append("%s stands on background bracing (SupportsDevices = false)" % where)
+        # line of fire / mortar arc
+        for m, a, b, k, pr, dist in fire_blockers(links, pos, name, p, kd, enemy_dir)[:1]:
+            errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
+                where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
+                " (built after the weapon, not recessed)" if k > kd else " (beyond the recession box)"))
+        # turbines need wind from the side: open (background) bracing left and right of the rotor
+        if name in TURBINES:
+            hub = (p[0], p[1] - 0.55 * h)
+            blocked = [side for side in (-1, 1)
+                       if _blocking(links, pos, hub, (hub[0] + side * WIND_RANGE, hub[1]))]
+            if len(blocked) == 2:
+                errors.append("%s: no wind (foreground struts on both sides of the rotor)" % where)
+            elif blocked:
+                warnings.append("%s: wind blocked on the %s side" % (where, "left" if blocked[0] < 0 else "right"))
+
+    # devices on the same strut must not overlap; turbines need ~100 between them
+    for k, (n1, a1, b1, t1, pr1, _) in enumerate(devices):
+        for n2, a2, b2, t2, pr2, _ in devices[k + 1:]:
+            if a1 not in pos or b1 not in pos or a2 not in pos or b2 not in pos:
+                continue
+            p1, p2 = _point(pos, a1, b1, t1), _point(pos, a2, b2, t2)
+            if pr1 == pr2:
+                need = (SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]) / 2
+                if math.dist(p1, p2) < need - 1:
+                    errors.append("%s at %s and %s at %s overlap on one strut" % (n1, _fmt(p1), n2, _fmt(p2)))
+            if n1 in TURBINES and n2 in TURBINES and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < TURBINE_SPACING:
+                errors.append("turbines at %s and %s only %.0f apart (need %d)" % (_fmt(p1), _fmt(p2), math.dist(p1, p2), TURBINE_SPACING))
+
+    # nothing lying on the rock across a mine site (the mine would be blocked)
+    for name, g in ground:
+        if name not in ("mine", "mine2"):
+            continue
+        for pair, (mat, ia, ib, k) in links.items():
+            if ia in pos and ib in pos:
+                a, b = pos[ia], pos[ib]
+                if abs(a[1] - g[1]) < 6 and abs(b[1] - g[1]) < 6 and min(a[0], b[0]) - 40 < g[0] < max(a[0], b[0]) + 40:
+                    errors.append("%s strut %s-%s lies on the mine site at %s" % (mat, _fmt(a), _fmt(b), _fmt(g)))
+    return errors, warnings
+
+
+def main():
+    for path in sys.argv[1:]:
+        _, acts = parse_plan(path)
+        errors, warnings = check_plan(acts)
+        print("%s: %d errors, %d warnings" % (os.path.basename(path), len(errors), len(warnings)))
+        for e in errors:
+            print("   RULE ERROR:", e)
+        for w in warnings:
+            print("   RULE WARN: ", w)
+
+
+if __name__ == "__main__":
+    main()

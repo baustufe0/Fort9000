@@ -29,7 +29,8 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
 - Tests: `bash tools/tests/run_tests.sh <lua5.1-binary> <Forts>/data`
   (needs Lua 5.1; see the header of `run_tests.sh`; `LuaPlusC.exe` in the Forts folder may also work, untested).
   The plan-swap tests need the game's `data/maps` and `data/ai` folders.
-- Generate plans: see the docstring of `tools/fortgen/gen_fort.py`; check them with `render_all.py`.
+- Generate plans: see the docstring of `tools/fortgen/gen_fort.py`; check them with `rules.py` (fort building rules,
+  SPEC.md 2.13 – read that section before changing plans or the generator) and `render_all.py`.
 - The Forts log is `<Forts>/users/<steam-id>/log.txt`; it is overwritten on every game start.
   Run `train.py collect` after each play session.
 

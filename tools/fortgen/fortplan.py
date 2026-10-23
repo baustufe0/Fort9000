@@ -14,8 +14,13 @@ def parse_plan(path):
     m = re.search(r"FortTeam = (\d+); FortId = (\d+); FortPos = \{ x = (" + NUM + "), y = (" + NUM + ")", text)
     if m:
         header = {"team": int(m.group(1)), "fort": int(m.group(2)), "pos": (float(m.group(3)), float(m.group(4)))}
+    return header, parse_lines(text.splitlines())
+
+
+def parse_lines(lines):
+    """Parse plan action lines ('{ Type = ... },') into dicts."""
     actions = []
-    for line in text.splitlines():
+    for line in lines:
         line = line.strip()
         if not line.startswith("{ Type"):
             continue
@@ -35,7 +40,7 @@ def parse_plan(path):
         if mm: a["Facing"] = mm.group(1)
         a["raw"] = line
         actions.append(a)
-    return header, actions
+    return actions
 
 def node_positions(actions):
     pos = {}
