@@ -120,7 +120,10 @@ MAPS = {
         "mortar_avoid_roof": True,
         "turbine_narrow_first": True,
         "tech_spill": True,
-        "aa_y": 250, "large_y": -195, "large_top_max": -195, "reserve_large": True, "crossbrace_large": True, "large_t": 0.2,         # large weapons in the main column, two storeys above the open turbine row (test match: CS_UNSTABLE right above it)
+        # large weapons in the weapon column, in the two storeys below the top one: the floor of the top
+        # storey rests on the weapon cell below, whose diagonals are background bracing (lines of fire),
+        # and sagged 24-38 (test match: 20mm cannon there CS_UNSTABLE, the one a storey lower was placed)
+        "aa_y": 250, "large_y": -195, "large_top_min": -195, "large_top_max": -95, "reserve_large": True, "crossbrace_large": True, "large_t": 0.2,
         "snap": 45,
         "ground_snap": 25,
         # proven slots from Template-1/-2: (node A, node B, LinkT)
@@ -830,8 +833,9 @@ class Plan:
             cands.sort(key=lambda c: (-c[0], c[1]))     # on top, as far forward as possible
         elif dev in LARGE:
             top = self.cfg.get("large_top_max", 1e9)    # large weapons only in cells whose top is this high or higher
+            low = self.cfg.get("large_top_min", -1e9)   # ... and this low or lower (not in the top storey)
             cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and (c[0] - 1, c[1]) in self.all_cells
-                                    and (c[0] - 1, c[1]) not in self.devices and wide(c) and rows[c[1]] <= top)
+                                    and (c[0] - 1, c[1]) not in self.devices and wide(c) and low <= rows[c[1]] <= top)
             cands.sort(key=lambda c: abs(rows[c[1]] - self.cfg.get("large_y", -300)))
         else:
             cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and wide(c))
