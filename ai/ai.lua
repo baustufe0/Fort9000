@@ -432,6 +432,85 @@ local function CAI_IsSuccess(r)
 	return r == CS_SUCCESS
 end
 
+-- CS_UNSTABLE diagnostics: how strained are the links the device would hang on?
+-- Rest lengths come from the plan (Fort, already moved to world coordinates by the game),
+-- current lengths from the engine. Bracing breaks below 0.90 / above 1.10 of its length.
+local CAI_PlanPos = nil
+local CAI_PlanMat = nil       -- "<origA>:<origB>" -> material of the last plan action building that link
+local CAI_ActualToOrig = nil
+local CAI_UnstableCount = {}
+
+local function CAI_PairKey(a, b)
+	if a > b then a, b = b, a end
+	return tostring(a) .. ":" .. tostring(b)
+end
+
+local function CAI_BuildPlanIndex()
+	CAI_PlanPos = {}
+	CAI_PlanMat = {}
+	for _, a in ipairs(Fort or {}) do
+		if a.OriginalNodeAId and a.PosA then CAI_PlanPos[a.OriginalNodeAId] = a.PosA end
+		if a.OriginalNodeBId and a.PosB then CAI_PlanPos[a.OriginalNodeBId] = a.PosB end
+		if a.OriginalNodeBId and a.NewNodePos then CAI_PlanPos[a.OriginalNodeBId] = a.NewNodePos end
+		if a.MaterialSaveName and a.OriginalNodeAId and a.OriginalNodeBId then
+			CAI_PlanMat[CAI_PairKey(a.OriginalNodeAId, a.OriginalNodeBId)] = a.MaterialSaveName
+		end
+	end
+end
+
+-- "N<id>(x,y)-N<id>(x,y) <planned material>" for the log (positions now, in world coordinates)
+local function CAI_LinkText(n1, p1, n2, p2, o1, o2)
+	local mat = (o1 and o2 and CAI_PlanMat[CAI_PairKey(o1, o2)]) or "start-fort"
+	return string.format("N%s(%d,%d)-N%s(%d,%d) %s", tostring(n1), math.floor(p1.x + 0.5), math.floor(p1.y + 0.5),
+		tostring(n2), math.floor(p2.x + 0.5), math.floor(p2.y + 0.5), mat)
+end
+
+local function CAI_Dist(p, q)
+	local dx, dy = p.x - q.x, p.y - q.y
+	return math.sqrt(dx * dx + dy * dy)
+end
+
+local function CAI_NoteUnstable(what, a, b)
+	if data.CAI == nil or data.HumanAssist then return end
+	local key = tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b)
+	local n = (CAI_UnstableCount[key] or 0) + 1
+	if n > 3 then return end                 -- three samples per device and place are enough
+	CAI_UnstableCount[key] = n
+	if CAI_PlanPos == nil then CAI_BuildPlanIndex() end
+	CAI_ActualToOrig = {}
+	for orig, act in pairs(data.OriginalToActual or {}) do CAI_ActualToOrig[act] = orig end
+	local parts = {}
+	local minR, maxR, links = 9, 0, 0
+	local minL, maxL = "-", "-"
+	for _, nid in ipairs({ a, b }) do
+		local pos = NodePosition(nid)
+		local orig = CAI_ActualToOrig[nid]
+		local plan = orig and CAI_PlanPos[orig]
+		local vel = NodeVelocity(nid)
+		local speed = vel and math.sqrt(vel.x * vel.x + vel.y * vel.y) or -1
+		parts[#parts + 1] = "N" .. tostring(nid) .. " sag=" .. (plan and pos and math.floor(CAI_Dist(pos, plan) + 0.5) or "?")
+			.. " v=" .. math.floor(speed + 0.5)
+		for k = 0, (NodeLinkCount(nid) or 0) - 1 do
+			local other = NodeLinkedNodeId(nid, k)
+			local o2 = CAI_ActualToOrig[other]
+			local p1, p2 = plan, o2 and CAI_PlanPos[o2]
+			local q2 = NodePosition(other)
+			if p1 and p2 and pos and q2 then
+				local rest = CAI_Dist(p1, p2)
+				if rest > 1 then
+					local r = CAI_Dist(pos, q2) / rest
+					if r < minR then minR = r; minL = CAI_LinkText(nid, pos, other, q2, orig, o2) end
+					if r > maxR then maxR = r; maxL = CAI_LinkText(nid, pos, other, q2, orig, o2) end
+					links = links + 1
+				end
+			end
+		end
+	end
+	CAI_Log(string.format("UNSTABLE %s %s-%s %s links=%d strain=%.3f..%.3f stretched=%s compressed=%s action=%s",
+		tostring(what), tostring(a), tostring(b), table.concat(parts, " "), links, links > 0 and minR or 0, links > 0 and maxR or 0,
+		maxL, minL, tostring(data.fortIndex)))
+end
+
 -- The game only provides the build functions after initialisation,
 -- so they are hooked in Load.
 CAI_BuildLoggingInstalled = false
@@ -468,6 +547,10 @@ function CAI_InstallBuildLogging()
 			local r = CAI_BaseCreateDeviceWithFlags(team, saveName, nodeA, nodeB, t, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
 				pcall(CAI_NoteBuildError, "device", saveName, nodeA, nodeB, r)
+				if r == CS_UNSTABLE then
+					local ok, err = pcall(CAI_NoteUnstable, saveName, nodeA, nodeB)
+					if not ok then CAI_Log("ERROR unstable diagnostics: " .. tostring(err)) end
+				end
 			end
 			return r
 		end
