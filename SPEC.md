@@ -70,7 +70,7 @@ Learning always starts from the default values, so running it repeatedly shifts 
 It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--strength` (0..1) limits how far values may deviate from the defaults.
 
 ### 2.12 Fort generator
-`tools/fortgen/` generates build plan variants (`gen_fort.py`), checks plans against the fort building rules (`rules.py`, see 2.13), converts plans between coordinate systems (`mid_to_long.py`) and renders them as images for review (`render_all.py`, `view.py`).
+`tools/fortgen/` generates build plan variants (`gen_fort.py`), checks plans against the fort building rules (`rules.py`, see 2.13), converts plans between coordinate systems (`mid_to_long.py`: the VanillaLong plans are the Vanilla plans converted, `mid_to_long.py fortplans/Vanilla/fort-t1f1-Vanilla-N.lua <Forts>/data/ai/forts/vanilla/long/fort-t2f1-Template-1.lua fortplans/VanillaLong/fort-t2f3-VanillaLong-N.lua`; convert them again whenever the Vanilla plans change) and renders them as images for review (`render_all.py`, `view.py`).
 Optional per-map rules (used for Vanilla, following the Steam guide "How to be a PRO at Vanilla Forts"):
 - `require_support`: cells that would hang in the air (beyond a cliff edge) are dropped; a cell needs both bottom corners held (original node, foundation or top of a supported cell) or must be a short bridge (`max_bridge`, default 3 cells) between held nodes.
 - `crossbrace_y`: cells at or below this height get both diagonals (|X|). With `crossbrace_late_y`, only cells at or below that height get the second diagonal right away; the others get it in a final pass after all devices, so weapons are not delayed by extra wood. Cells from `crossbrace_now_x` forward (the front weapon column) are always crossbraced right away.
@@ -80,14 +80,14 @@ Optional per-map rules (used for Vanilla, following the Steam guide "How to be a
 - `cols_upper` / `upper_y`: from node row `upper_y` upwards the grid uses other column positions (cells take the columns of their bottom row). Vanilla follows the starting fort's roof posts (-3093, -2945) like the game's Template-1, so the weapon column is one 155-wide cell and no node stands mid-span on the roof beam; heavy weapons stand near the back post (`large_t` 0.2).
 - `support_struts`: extra solid struts built as soon as both end nodes exist (currently unused). `validate()` also rejects new nodes more than 150 from their source (StandardMaxLength).
 - `crossbrace_large`: the cells of a large weapon and the cells below it (down to the turbine row) are crossbraced right away; the sandbag strut in the split cell is solid bracing.
-- `roof_turbine_t`: LinkT positions of turbines on one roof cell (default one at 0.5). Two side by side on a 100-wide cell failed in a test match (CS_OCCUPIED), so Vanilla uses one per cell: 4 slots on the back block's roof.
-- `clear_fire_lines`: final pass, struts that would block a weapon's line of fire become background bracing (armour becomes a door); `mortar_open_arc`: mortars only where no other cell is in their arc.
+- `roof_turbine_t`: LinkT positions of turbines on one roof cell (default one at 0.5). Two side by side on a 100-wide cell failed in a test match (CS_OCCUPIED), so Vanilla uses one per cell. `turbine_roof_max_y`: turbines only on roofs this high or higher (Vanilla: the tower roof, y=-295, see the wind rule in 2.13). `reserve_mortar`: mortars take their top cells before the turbines take the roofs.
+- `clear_fire_lines`: final pass, struts that would block a weapon's line of fire become background bracing (armour becomes a door); `mortar_open_arc`: mortars only where no other cell is in their arc (`rules.MORTAR_ARC`, 300 forward and 520 up, so a mortar on a low roof behind the tower is rejected).
 - `turbine_min_w`: no turbines on narrower cells or above large weapons.
 - `woodspam`: cheap, dense wooden layers, two layers 40 apart. Material per storey: background bracing in front of direct-fire weapons (they shoot through it, `MinFireClearance`; solid woodspam blocked our own cannon and snipers in a test match; the weapon itself is protected by a metal door, which the AI opens to fire) and in turbine rows (wind); foreground bracing (`material`) only where it protects something that does not fire through it (e.g. a mortar storey). `finalise_woodspam` sets each strut's final material and builds it once (the minimum strut length is 37.5) with posts and X-diagonals in front of the weapon column's door wall, over the rock; build step `defence` / `woodspam`, once after the main weapons and again late (idempotent, completes new storeys).
 - `turbine_floor_y`: turbines stand on the floor of the storey at this height (turbine gallery) before roofs are used. `turbine_row_open`: that storey contains only background bracing (posts, diagonals, outer edges), so the wind can blow through; no weapons or eco devices there. `split_cell`/`sandbag_slots`: the front cell of the turbine row is split at half height by a background-bracing strut (no full-height posts), with two sandbags side by side on that strut (build step `defence`, last in the plan: if the strut cannot carry them, nothing else is blocked).
 - With `require_support`, each cell also records the cells it rests on (the shallowest support); they are always built first, so nothing hangs in the air while the fort is under construction (`validate()` checks the build order). `turbine_cheap_first`: turbines go on the roof that needs the fewest unbuilt cells.
 
-The Vanilla variants share one shape: a back block on the ground (x -3600..-3100, back to the rock edge) whose roof at the starting fort's roof height (y=205) carries the turbines with nothing resting on them, and a solid, fully X-braced weapon tower (x -3200..-2945, five storeys up to y=-295) on the back block and the starting fort's roof posts; weapon column at the front, mortars on top, the prow beyond the cliff edge carries two light storeys. (An open turbine storey under the weapons was the breaking point in a test match: one hit dropped the whole upper block.) They start with economy (mines and turbines first), end with a late-game block (more anti-air, weapons, upgrades, storage) so the AI does not sit idle at the storage cap, and assume `weapon_pack` is installed (all players use it): cannons and 20mm cannons need the munitions plant (`prereq` override, munitions slot taken from weapon_pack's own plan ToGWM2). Each variant has its own main weapon, so the player meets a different challenge: Vanilla-2 mortars, Vanilla-3 two 20mm cannons, Vanilla-4 two cannons (both with the munitions plant), Vanilla-5 a laser (factory; all four roof turbines, an extra store and batteries before the laser, then turbine upgrades from an upgrade centre on the munitions slot, since the factory takes the usual upgrade slot). Large weapons are reserved first (`reserve_large`) and placed in the two storeys below the top one (`large_top_min`/`large_top_max`: cell tops y=-195 and -95); the top storey gets a sniper and its roof a turbine.
+The Vanilla variants share one shape: a back block on the ground (x -3600..-3100, back to the rock edge) up to the starting fort's roof height (y=205), and a solid, fully X-braced weapon tower (x -3400..-2945, five storeys up to y=-295; Vanilla-2 one column wider, from -3500) on the back block and the starting fort's roof posts; weapon column at the front, the prow beyond the cliff edge carries two light storeys. The tower roof carries the turbines (one per cell, nothing resting on them) and, in Vanilla-2, the mortars: it is the only height where the wind reaches a turbine from both sides (on the back block's roof the tower blocked the wind on the right of every turbine). (An open turbine storey under the weapons was the breaking point in a test match: one hit dropped the whole upper block.) They start with economy (mines and turbines first), end with a late-game block (more anti-air, weapons, upgrades, storage) so the AI does not sit idle at the storage cap, and assume `weapon_pack` is installed (all players use it): cannons and 20mm cannons need the munitions plant (`prereq` override, munitions slot taken from weapon_pack's own plan ToGWM2). Each variant has its own main weapon, so the player meets a different challenge: Vanilla-2 mortars, Vanilla-3 two 20mm cannons, Vanilla-4 two cannons (both with the munitions plant), Vanilla-5 a laser (factory; all four turbines, an extra store and batteries before the laser, then turbine upgrades from an upgrade centre on the munitions slot, since the factory takes the usual upgrade slot). Large weapons are reserved first (`reserve_large`) and placed in the two storeys below the top one (`large_top_min`/`large_top_max`: cell tops y=-195 and -95); the top storey gets a sniper and its roof a turbine. The two-heavy-weapon variants (Vanilla-3, -4) use a **stepped tower** (`_V_STEPPED`): the front column (x -3100..-2945, on the starting fort's roof posts) ends at y=-95 and carries the lower heavy weapon (floor 5, built first: `cfg` override `large_y` -95); the upper one stands one column back (x -3200..-3100, floor -95) on solid X-braced cells, behind its own door wall at x=-3100, and fires over the front column's roof; the rear part reaches back to x -3500, so its roof keeps four turbine slots, and the woodspam covers only the front column's storey. A variant can override map settings with `cfg`. A large weapon's LinkT keeps its body inside its cell (`large_t` 0.2 in the 155-wide cell, `large_t_narrow` 0.32 in a 100-wide cell), so the cell behind it keeps solid diagonals and a solid post (`large_rear_solid`).
 
 ### 2.13 Fort building rules (lessons learned)
 
@@ -135,15 +135,21 @@ difficulty 0.5–1, October 2026). The generator follows these rules; `tools/for
   in that line stop the AI from firing (test match: woodspam built after the cannon → 0 cannon shots, sniper
   shots dropped to 0 once the woodspam stood).
 - When a weapon is placed, the game **recesses** foreground struts that already stand in its way within its
-  `RecessionBox` (about 200 ahead; machine gun only 20): bracing becomes background bracing, armour becomes a
+  `RecessionBox` (a band 200 long and only 25 high at barrel height, ahead of the weapon; machine gun only 20): bracing becomes background bracing, armour becomes a
   door. Struts built **after** the weapon, or further away, are not recessed and block it.
 - Doors never block: the AI opens all doors in the way before firing (`OpenWeaponDoors`) and closes them
   afterwards. Every direct-fire weapon gets a metal door in front of it.
 - Mortars fire steeply up and forward: the roof above them must be a door (or open) and no other part of the
   fort may stand in that arc (test match: a mortar beside the weapon tower).
 
-**Wind:** turbines need open air to the side. Foreground struts or metal next to the rotor block the wind
-(test match: turbines inside a storey with solid posts produced almost nothing, energy stayed at 170–300).
+**Wind:** the game tests the wind with rays from each turbine to both sides, from 25 to 600 away and within ±10°
+(`devices/windturbine.lua`: `MinTestDistance`, `MaxTestDistance`, `MinWindAngle`/`MaxWindAngle`). Every material
+except background bracing, shields, rope and fuse collides with the wind (`CollidesWithWind = false`); with wind
+from one side only the turbine falls back to a lower minimum efficiency (`MinWindNoCrossFlow` 0.3 vs.
+`MinWindCrossFlow` 0.35; the exact formula is not known). Consequence: a turbine needs open air 600 to both sides
+at its own height, so a turbine beside a taller solid tower gets no wind from that side, however far back it
+stands (test match: turbines inside a storey with solid posts produced almost nothing, energy stayed at
+170–300; the player noticed little energy from the turbines on the back block's roof beside the tower).
 Two turbines 46–54 apart on one strut failed with `CS_OCCUPIED`; the game's own plan spaces them ~100 apart.
 
 **`CS_UNSTABLE`** (the game refuses a device; there is no flag to skip the check)
@@ -162,7 +168,16 @@ Two turbines 46–54 apart on one strut failed with `CS_OCCUPIED`; the game's ow
 - A heavy weapon on top of another weapon cell fails: a weapon cell's diagonals are background bracing (lines of
   fire), so the floor above it sags (test match, Vanilla-3: 20mm cannon in the top storey sagged 24–38, most
   stretched link the background diagonal of the 20mm cell below; the 20mm one storey lower was placed and
-  fired 63 shots). Heavy weapons therefore stay out of the top storey.
+  fired 63 shots). Heavy weapons therefore stay out of the top storey. In a second match the 20mm one storey
+  lower, again directly on the other 20mm's cell, failed the same way under fire (sag 38–49, moving).
+- Background bracing is exactly as stiff and heavy as foreground bracing (it inherits `Bracing`); it only breaks
+  sooner (0.92 / 1.08 instead of 0.90 / 1.10), so in a sagging weapon cell its diagonal is the first link near
+  its limit (1.06 in the first match). Inside a weapon cell no solid strut is possible: the weapons aim over a
+  wide range (cannon -20..30 degrees, 20mm -40..40). What helps is not standing on such a cell: the stepped
+  tower (2.12) puts the upper heavy weapon on solid X-braced cells.
+- A heavy weapon's body sits 18 in front of its LinkT point (`SelectionOffset` -18 in the weapon's own frame,
+  which faces left, mirrored for team 1); the laser is centred. At the generator's LinkT values the body stays
+  inside its own cell, so the cell behind it needs no background bracing.
 
 **Other build errors:** `CS_OCCUPIED` (spot taken: starting fort devices, debris, devices too close),
 `CS_OBSTRUCTION` (something in the way), `CS_NODESTOOFAR` / `CS_NODESTOOCLOSE` (length limits),
@@ -188,13 +203,14 @@ right; weapon_pack's ToGAF1/ToGWM2 use the same fort, shifted by -3950/-3300)
    column at once, the rest in a final pass so weapons are not delayed.
 4. **Economy first:** mine, turbine, mine, then a machine gun and a sniper; tech and heavy weapons later;
    turbines before power-hungry tech (munitions plant, laser).
-5. **Turbines on an open roof** with nothing resting on them and ~100 apart; never inside a storey with solid
-   posts, and never as the floor that carries the weapons (an open turbine storey under the weapon tower was
+5. **Turbines on an open roof** with nothing resting on them and ~100 apart, at least as high as every solid part
+   of the fort within 600 to both sides (Vanilla: the tower roof); never inside a storey with solid posts, and never as the floor that carries the weapons (an open turbine storey under the weapon tower was
    the breaking point: one hit dropped the whole upper block).
 6. **Weapons:** direct-fire weapons at the front behind a door; struts in their line of fire are background
    bracing (or built before the weapon within its recession box); heavy weapons in solid, X-braced storeys on
-   strong posts, near the back post, never in the top storey of the tower; mortars on top with a door roof and an
-   open arc.
+   strong posts, near the back post, never in the top storey of the tower and never directly on another
+   weapon cell (two heavy weapons: stepped tower, the upper one a column further back, firing over the
+   lower one's roof); mortars on top with a door roof and an open arc.
 7. **Woodspam:** cheap wooden layers in front of the weapons; background bracing where it is in a line of fire
    or next to turbines, foreground bracing only where it just protects (e.g. in front of a mortar storey).
 8. **Devices only on solid bracing** (never on background bracing); batteries and stores on proven slots, not
@@ -212,13 +228,19 @@ prerequisites). Checked:
 - device on background bracing (warning: the game's Template-1 records one);
 - line of fire of direct-fire weapons and the arc of mortars: no foreground strut that is built after the
   weapon or lies beyond its recession box (doors are fine);
-- turbine wind (error if blocked on both sides, warning on one side) and turbine spacing (≥ 90);
-- devices overlapping on one strut (widths from the table above);
+- turbine wind with the game's ray test (`wind_rays`: a side is open when at least half of its rays are clear;
+  error if both sides are blocked, warning if one is) and turbine spacing (≥ 90);
+- devices overlapping on one strut, or side by side on neighbouring struts at the same height (a wide device
+  near a strut end reaches over the shared node; widths from the table above);
 - struts lying on a mine site.
 
 The generator fixes lines of fire itself (`clear_fire_lines`: blocking struts become background bracing,
-armour becomes a door) and only places mortars where the arc is open (`mortar_open_arc`). All current Vanilla
-plans pass without errors; the one warning is the turbine next to the weapon tower (wind from one side only).
+armour becomes a door) and only places mortars where the arc is open (`mortar_open_arc`). All current Abyss,
+Vanilla and VanillaLong plans pass without errors or warnings. On the command line `rules.py` takes the enemy side
+from the plan header (team 2 plans such as VanillaLong face the enemy on the left) and ignores the terrain;
+`check_plan(..., terrain=...)` also lets rock block the wind rays. With terrain, every turbine on Abyss's top roof
+(next to the cliff wall) gets no wind from the left; the game's own Abyss-1 puts its turbines on the same spots,
+weapon_pack's ToGA1 puts some far out on the right instead (open on both sides).
 
 #### Approaches that failed (do not repeat)
 
@@ -235,8 +257,9 @@ plans pass without errors; the one warning is the turbine next to the weapon tow
 | Weapon wall mid-span on the starting fort's roof beam (+ support strut) | door post below the cannon stretched 6–7 %, `CS_UNSTABLE` |
 | Dropping a grid column for the whole map | the starting fort's lower nodes no longer snapped, plans broke |
 | Two turbines per 100-wide roof cell | the second one `CS_OCCUPIED` |
-| Cannons with factory as prerequisite | `CS_PREQUISITENOTMET` with weapon_pack |
-| Heavy weapon in the top storey, above another weapon cell | floor sagged 24–38, `CS_UNSTABLE`, given up |
+| Turbines on the back block's roof beside the taller weapon tower | wind on the right blocked for every turbine (0 % of the rays clear), little energy |
+| Cannons with factory as prerequisite | `CS_PREQUISITENOTMET` with weapon_pack (Abyss-4 never placed its cannons; it now builds the munitions plant on weapon_pack's ToGA1 armoury slot) |
+| Heavy weapon directly on another weapon cell (top storey, and one storey lower under fire) | floor sagged 24–49, `CS_UNSTABLE`, given up |
 
 #### Testing a plan
 
@@ -247,8 +270,8 @@ plans pass without errors; the one warning is the turbine next to the weapon tow
   `PLAN`, `BUILT`/`LOST`, `BUILD_ERROR`, `UNSTABLE`, `GAVE_UP`/`SKIPPED`, the `THINK` lines (build index,
   metal, energy) and the `shots=` of the `SNAP` lines.
 - Render plans with `render_all.py` and compare with the game's Template-1.
-- Open problem: the heavy weapons were moved out of the top storey but the new positions are not yet tested
-  in a match; the AI is not yet able to beat a human who builds heavy weapons by ~6 minutes at difficulty 1.
+- Open problem: the stepped tower (Vanilla-3, -4) and the turbines on the tower roof (exposed to fire: 5 lost
+  in one match) are not yet tested enough; the AI is not yet able to beat a human who builds heavy weapons by ~6 minutes at difficulty 1.
 
 ---
 

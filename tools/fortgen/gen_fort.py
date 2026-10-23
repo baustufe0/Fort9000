@@ -56,7 +56,12 @@ MAPS = {
             "workshop": [((-2001, 305), (-1901, 309), 0.05)],
             "upgrade": [((-2097, 3), (-1997, 5), 0.94)],
             "factory": [((-2002, 405), (-1901, 405), 0.94)],
+            # weapon_pack's ToGA1 armoury slot (shifted by -500; the munitions plant has the same size), moved
+            # to 0.3: the workshop at 0.05 on the strut to the right reaches over the shared node
+            "munitions": [((-2100, 300), (-2001, 305), 0.3)],
         },
+        # weapon_pack is always installed: cannons and 20mm cannons need the munitions plant
+        "prereq": {"cannon": "munitions", "cannon20mm": "munitions", "munitions": "workshop"},
         "eco_slots": [((-2100, 200), (-1998, 206), 0.51), ((-2100, 400), (-2002, 405), 0.46),
                       ((-1998, 206), (-1898, 210), 0.52), ((-2100, 500), (-2002, 500), 0.55),
                       ((-2002, 500), (-1902, 500), 0.47)],
@@ -104,8 +109,13 @@ MAPS = {
         "use_eco_slots": True,
         "eco_no_ground": True,
         "turbine_min_w": 90,
-        # turbines stand on the roof of the back block (y=205), nothing rests on them; the
-        # turbine gallery / split sandbag cell options (turbine_floor_y, split_cell) are not used here
+        # turbines stand on the tower roof (y=-295), nothing rests on them: the game tests the wind with rays
+        # up to 600 to both sides (+-10 degrees), so any lower turbine has the solid tower in its wind on the
+        # right (rules.wind_rays: 0% clear on the back block's roof at y=205); the turbine gallery / split
+        # sandbag cell options (turbine_floor_y, split_cell) are not used here
+        "turbine_roof_max_y": -295,
+        # mortars take their top cells before the turbines take the roofs (both want the tower top)
+        "reserve_mortar": True,
         # woodspam in front of the weapon column (door wall x=-2945), two layers 40 apart
         "woodspam": {"wall_x": -2945, "layers": [-2905, -2865], "rows": [-295, -195, -95],
                      "base": [(-2845, 5), (-2845, 5)]},
@@ -124,6 +134,10 @@ MAPS = {
         # storey rests on the weapon cell below, whose diagonals are background bracing (lines of fire),
         # and sagged 24-38 (test match: 20mm cannon there CS_UNSTABLE, the one a storey lower was placed)
         "aa_y": 250, "large_y": -195, "large_top_min": -195, "large_top_max": -95, "reserve_large": True, "crossbrace_large": True, "large_t": 0.2,
+        # a heavy weapon's body sits 18 forward of its LinkT point (SelectionOffset, mirrored for team 1):
+        # at 0.2 in the 155-wide cell and 0.32 in a 100-wide cell it stays inside its own cell, so the cell
+        # behind it (marked "<weapon>+") keeps solid diagonals and a solid post (large_rear_solid)
+        "large_t_narrow": (150, 0.32), "large_rear_solid": True,
         "snap": 45,
         "ground_snap": 25,
         # proven slots from Template-1/-2: (node A, node B, LinkT)
@@ -191,7 +205,7 @@ VARIANTS = {
         "armour_roof": True,
     },
     "schwer": {
-        "title": "Heavy front: wide, heavily armoured block, factory early, cannons and lasers",
+        "title": "Heavy front: wide, heavily armoured block, munitions plant early, two cannons",
         "shape": lambda x0, y0, x1, y1: (
             (y0 >= -502 and y1 <= -250 and x0 >= -2100 and x1 <= -1700) or
             (y0 >= -846 and y1 <= -502 and x0 >= -2400 and x1 <= -1900) or
@@ -201,10 +215,12 @@ VARIANTS = {
             ("eco", ["mine", "mine", "turbine", "battery", "turbine"]),
             ("tech", ["workshop"]),
             ("eco", ["mine", "store", "battery", "mine"]),
-            ("tech", ["factory"]),
-            ("weapons", ["cannon", "machinegun"]),
+            # the munitions plant costs 800 metal and 5000 energy: all turbines first; no laser (only three
+            # turbine slots, and their wind is blocked on the cliff side: a laser plan with 2-3 turbines never fired)
             ("eco", ["turbine", "battery"]),
-            ("weapons", ["laser", "cannon"]),
+            ("tech", ["munitions"]),
+            ("weapons", ["cannon", "machinegun"]),
+            ("weapons", ["sniper", "cannon"]),
             ("tech", ["upgrade"]),
             ("upgrades", ["minigun"]),
             ("weapons", ["sniper"]),
@@ -240,11 +256,20 @@ def _v_terrace(*steps):
 
 
 _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
-# weapon tower (x -3200..-2945, five storeys up to y=-295): solid and X-braced, standing on the back
-# block and the starting fort's roof posts (-3093, -2945); weapon column at the front, mortars on top.
-# The back block (x -3600..-3200) ends at the starting fort's roof: its roof carries the turbines, with
-# nothing resting on them. The prow (-2945..-2845, beyond the cliff edge at -2900) carries two light storeys.
-_V_TALL = _union(_box(-3200, -2945, -295, 205), _box(-2945, -2845, 5, 205))
+# weapon tower (x -3400..-2945, five storeys up to y=-295): solid and X-braced, standing on the back
+# block and the starting fort's roof posts (-3093, -2945); weapon column at the front, mortars and the
+# turbines on its roof (the only height where the wind reaches a turbine from both sides).
+# The back block (x -3600..-3100) ends at the starting fort's roof. The prow (-2945..-2845, beyond the
+# cliff edge at -2900) carries two light storeys.
+_V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
+# artillery: one more tower column, so three mortars (prow + two top cells) and three turbines fit on top
+_V_TALL_WIDE = _union(_V_TALL, _box(-3500, -3400, -295, 205))
+# two heavy weapons: stepped tower. The front column (-3100..-2945, on the starting fort's roof posts) ends
+# at y=-95 and carries the lower heavy weapon; the upper one stands one column back (-3200..-3100) on solid
+# X-braced cells and fires over the front column's roof (test matches: a heavy weapon directly on another
+# weapon cell, whose diagonals are background bracing, failed with CS_UNSTABLE, sag 24-49). The rear part
+# reaches back to -3500, so its roof still has four turbine slots.
+_V_STEPPED = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2945, -95, 205), _box(-2945, -2845, 5, 205))
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -253,7 +278,7 @@ VANILLA_VARIANTS = {
     # cells that look out over the deck.
     "artillerie": {
         "title": "Artillery deck: two-storey deck over the starting fort, mortars on top under doors, workshop early",
-        "shape": _union(_V_TALL, _V_BACK),
+        "shape": _union(_V_TALL_WIDE, _V_BACK),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
@@ -271,14 +296,15 @@ VANILLA_VARIANTS = {
             ("aa", ["machinegun", "machinegun"]),
             ("weapons", ["mortar", "sniper"]),
             ("upgrades", ["mortar2", "sniper2"]),
-            ("eco", ["turbine", "battery"]),
-            ("upgrades", ["mine2", "mine2", "turbine2"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["mine2", "mine2", "turbine2", "turbine2"]),
             ("defence", ["woodspam"]),
         ],
     },
     "kanone20mm": {
-        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons in the weapon column",
-        "shape": _union(_V_TALL, _V_BACK),
+        "title": "20mm tower (weapon_pack): munitions plant early, two 20mm cannons on a stepped tower",
+        "shape": _union(_V_STEPPED, _V_BACK),
+        "cfg": {"large_y": -95},       # the lower heavy weapon (front column) first
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
@@ -290,7 +316,6 @@ VANILLA_VARIANTS = {
             ("eco", ["turbine", "turbine"]),
             ("tech", ["munitions"]),
             ("weapons", ["cannon20mm"]),
-            ("eco", ["turbine"]),
             ("weapons", ["cannon20mm", "machinegun"]),
             ("defence", ["woodspam"]),
             # late game: more anti-air, storage for repairs
@@ -301,8 +326,9 @@ VANILLA_VARIANTS = {
         ],
     },
     "kanone": {
-        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons in the weapon column",
-        "shape": _union(_V_TALL, _V_BACK),
+        "title": "Cannon tower (weapon_pack): munitions plant early, two cannons on a stepped tower",
+        "shape": _union(_V_STEPPED, _V_BACK),
+        "cfg": {"large_y": -95},       # the lower heavy weapon (front column) first
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
@@ -314,7 +340,6 @@ VANILLA_VARIANTS = {
             ("eco", ["turbine", "turbine"]),
             ("tech", ["munitions"]),
             ("weapons", ["cannon"]),
-            ("eco", ["turbine"]),
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
             # late game: second cannon, more anti-air, storage for repairs
@@ -608,6 +633,8 @@ class Plan:
     def spans_right(self, c):
         """True if a large device extends over the right edge of c into the neighbouring cell."""
         a, b = self.devices.get(c) or "", self.devices.get((c[0] + 1, c[1])) or ""
+        if self.cfg.get("large_rear_solid") and (a in LARGE or b in LARGE):
+            return False            # the weapon's body stays inside its own cell (large_t)
         return bool(a and b) and (a + "+" == b or b + "+" == a)
 
     def prereq(self, dev):
@@ -708,7 +735,7 @@ class Plan:
             if not self.is_split((i + 1, j)):   # the split cell builds that edge in two halves
                 self.link(tr, br, self.edge_material(c, "right"))
             self.link(tl, tr, self.edge_material(c, "top"))
-            diag = "backbracing" if c in self.devices or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
+            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
             if mine_cell:
                 diag = "backbracing"
             if (i + j) % 2 == 0:
@@ -746,11 +773,25 @@ class Plan:
         """Second diagonal of cell c."""
         i, j = c
         if diag is None:
-            diag = "backbracing" if c in self.devices or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
+            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
         if (i + j) % 2 == 0:
             self.link((i + 1, j), (i, j + 1), diag)
         else:
             self.link((i, j), (i + 1, j + 1), diag)
+
+    def large_t(self, c):
+        """LinkT of a large weapon in cell c: near the back post, its body inside the cell."""
+        narrow = self.cfg.get("large_t_narrow")
+        if narrow and self.cell_w(c) < narrow[0]:
+            return narrow[1]
+        return self.cfg.get("large_t", 0.4)
+
+    def has_device(self, c):
+        """A device in cell c that needs background diagonals (not the solid rear half of a large weapon)."""
+        d = self.devices.get(c)
+        if d is None:
+            return False
+        return not (self.cfg.get("large_rear_solid") and d.endswith("+") and d[:-1] in LARGE)
 
     def brace_below(self, c):
         """Crossbrace the cells of a large weapon (its own and the half to the left) and the cells
@@ -873,8 +914,9 @@ class Plan:
         x0, x1 = self.cell_x(c)
         y_floor = self.cfg["rows"][c[1] + 1]
         p0 = ((x0 + x1) / 2, y_floor - 20)
+        dx, dy = rules.MORTAR_ARC
         for k in range(1, 27):
-            q = (p0[0] + 150 * k / 26, p0[1] - 260 * k / 26)
+            q = (p0[0] + dx * k / 26, p0[1] - dy * k / 26)
             for d in self.all_cells:
                 if d == c:
                     continue
@@ -911,8 +953,11 @@ class Plan:
 
     def choose_turbine_roof(self):
         min_w = self.cfg.get("turbine_min_w", 0)
+        top = self.cfg.get("turbine_roof_max_y", 1e9)    # only roofs this high or higher (wind)
         cands = [c for c in sorted(self.cells)
-                 if self.is_top(c) and not self.is_front(c)
+                 if self.is_top(c) and (not self.is_front(c) or top < 1e9)
+                 and self.cfg["rows"][c[1]] <= top
+                 and c not in self.mortar_cells
                  and self.roof_count.get(c, 0) < len(self.cfg.get("roof_turbine_t", [0.5]))
                  and self.devices.get(c) not in LOBBED_WEAPONS
                  and self.cell_w(c) >= min_w
@@ -930,6 +975,7 @@ class Plan:
     # --- Main flow
     def generate(self, variant):
         self.variant = variant
+        self.cfg = dict(self.cfg, **variant.get("cfg", {}))     # per-variant overrides of the map config
         self.tech_slots = dict(self.cfg["tech_slots"])
         self.tech_slots.update(variant.get("tech_slots", {}))
         self.build_lattice()
@@ -952,6 +998,16 @@ class Plan:
                     self.devices[c] = "mine-platz"
         # reserve the cells of large weapons first, so early small weapons do not take them
         self.reserved = {}
+        self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
+        if self.cfg.get("reserve_mortar"):
+            for step, items in variant["plan"]:
+                for dev in items:
+                    if dev in LOBBED_WEAPONS and step == "weapons":
+                        c = self.choose_weapon_cell(dev)
+                        if c is not None:
+                            self.reserved.setdefault(dev, []).append(c)
+                            self.devices[c] = "reserved"
+                            self.mortar_cells.add(c)
         if self.cfg.get("reserve_large"):
             for step, items in variant["plan"]:
                 for dev in items:
@@ -1152,7 +1208,7 @@ class Plan:
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
         if dev in LOBBED_WEAPONS and self.is_top(c):
             self.link((i, j), (i + 1, j), "door")
-        self.place_on_floor(c, dev, self.cfg.get("large_t", 0.4) if dev in LARGE else 0.5)
+        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else 0.5)
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 

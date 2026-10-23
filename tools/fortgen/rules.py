@@ -34,8 +34,15 @@ FIRE_RANGE = 600           # checked length of the line of fire (beyond that it 
 # RecessionBox (bracing -> background bracing, armour -> door). Struts built later, or further away, block it.
 RECESSION_LEN = {"machinegun": 20}
 DEFAULT_RECESSION_LEN = 200
+# mortar arc checked from the muzzle: steeply up and forward (dx, up); long enough to reach over a tower
+# standing 150 in front of a lower mortar
+MORTAR_ARC = (300, 520)
 TURBINE_SPACING = 90       # two turbines 46-54 apart failed with CS_OCCUPIED; the game's plan uses ~100
-WIND_RANGE = 120
+# Wind test of the game (devices/windturbine.lua): rays to both sides from MinTestDistance 25 to MaxTestDistance
+# 600, between MinWindAngle -10 and MaxWindAngle 10 degrees. Everything except background bracing, shields,
+# rope and fuse collides with the wind (CollidesWithWind = false in building_materials.lua).
+WIND_MIN, WIND_MAX, WIND_ANGLE, WIND_STEP = 25, 600, 10, 2
+WIND_OPEN = 0.5            # a side counts as open when at least this share of its rays is clear
 
 
 def _cross(o, a, b):
@@ -106,6 +113,27 @@ def _cross_dist(p, q, a, b):
     return s * math.hypot(*d)
 
 
+def wind_rays(links, pos, hub, terrain=None):
+    """Share of clear wind rays on the left and right of a turbine hub: (left, right), 0..1."""
+    out = []
+    for side in (-1, 1):
+        n = clear = 0
+        for deg in range(-WIND_ANGLE, WIND_ANGLE + 1, WIND_STEP):
+            r = math.radians(deg)
+            d = (side * math.cos(r), math.sin(r))
+            p = (hub[0] + WIND_MIN * d[0], hub[1] + WIND_MIN * d[1])
+            q = (hub[0] + WIND_MAX * d[0], hub[1] + WIND_MAX * d[1])
+            n += 1
+            if not _blocking(links, pos, p, q) and (terrain is None or terrain.segment_clear(p, q, end_margin=0)):
+                clear += 1
+        out.append(clear / n)
+    return tuple(out)
+
+
+def turbine_hub(p):
+    return (p[0], p[1] - 0.55 * SIZE["turbine"][1])
+
+
 def fire_lines(name, p, enemy_dir=1):
     """Segments a weapon at base point p needs free: direct fire straight ahead, mortars steep forward."""
     w, h = SIZE.get(name, (40, 40))
@@ -113,7 +141,7 @@ def fire_lines(name, p, enemy_dir=1):
     if name in DIRECT:
         return [(muzzle, (p[0] + enemy_dir * FIRE_RANGE, muzzle[1]))]
     if name in LOBBED:
-        return [(muzzle, (p[0] + enemy_dir * 150, muzzle[1] - 260))]
+        return [(muzzle, (p[0] + enemy_dir * MORTAR_ARC[0], muzzle[1] - MORTAR_ARC[1]))]
     return []
 
 
@@ -165,15 +193,15 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
                 where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
                 " (built after the weapon, not recessed)" if k > kd else " (beyond the recession box)"))
-        # turbines need wind from the side: open (background) bracing left and right of the rotor
+        # turbines need wind from both sides (the game's ray test, see wind_rays)
         if name in TURBINES:
-            hub = (p[0], p[1] - 0.55 * h)
-            blocked = [side for side in (-1, 1)
-                       if _blocking(links, pos, hub, (hub[0] + side * WIND_RANGE, hub[1]))]
+            shares = wind_rays(links, pos, turbine_hub(p), terrain)
+            blocked = [side for side, sh in zip(("left", "right"), shares) if sh < WIND_OPEN]
+            info = "%d%% / %d%% of the rays clear" % (100 * shares[0], 100 * shares[1])
             if len(blocked) == 2:
-                errors.append("%s: no wind (foreground struts on both sides of the rotor)" % where)
+                errors.append("%s: no wind (%s)" % (where, info))
             elif blocked:
-                warnings.append("%s: wind blocked on the %s side" % (where, "left" if blocked[0] < 0 else "right"))
+                warnings.append("%s: wind blocked on the %s side (%s)" % (where, blocked[0], info))
 
     # devices on the same strut must not overlap; turbines need ~100 between them
     for k, (n1, a1, b1, t1, pr1, _) in enumerate(devices):
@@ -181,10 +209,14 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             if a1 not in pos or b1 not in pos or a2 not in pos or b2 not in pos:
                 continue
             p1, p2 = _point(pos, a1, b1, t1), _point(pos, a2, b2, t2)
+            need = (SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]) / 2
             if pr1 == pr2:
-                need = (SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]) / 2
                 if math.dist(p1, p2) < need - 1:
                     errors.append("%s at %s and %s at %s overlap on one strut" % (n1, _fmt(p1), n2, _fmt(p2)))
+            elif abs(p1[1] - p2[1]) < 10 and abs(p1[0] - p2[0]) < need - 1:
+                # side by side on neighbouring struts at the same height (a device wider than the rest of its
+                # strut reaches over the shared node)
+                errors.append("%s at %s and %s at %s overlap (neighbouring struts)" % (n1, _fmt(p1), n2, _fmt(p2)))
             if n1 in TURBINES and n2 in TURBINES and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < TURBINE_SPACING:
                 errors.append("turbines at %s and %s only %.0f apart (need %d)" % (_fmt(p1), _fmt(p2), math.dist(p1, p2), TURBINE_SPACING))
 
@@ -202,8 +234,9 @@ def check_plan(actions, enemy_dir=1, terrain=None):
 
 def main():
     for path in sys.argv[1:]:
-        _, acts = parse_plan(path)
-        errors, warnings = check_plan(acts)
+        head, acts = parse_plan(path)
+        # team 1 plans face the enemy on the right, team 2 plans (e.g. VanillaLong) on the left
+        errors, warnings = check_plan(acts, enemy_dir=-1 if head.get("team") == 2 else 1)
         print("%s: %d errors, %d warnings" % (os.path.basename(path), len(errors), len(warnings)))
         for e in errors:
             print("   RULE ERROR:", e)
