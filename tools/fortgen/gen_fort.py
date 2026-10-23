@@ -273,33 +273,32 @@ VANILLA_VARIANTS = {
             ("defence", ["woodspam"]),
         ],
     },
-    "scharfschuetzen": {
-        "title": "Sniper tower: deck over the starting fort plus a tower at the back, snipers in front, upgrade early",
+    "kanone20mm": {
+        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons in the weapon column",
         "shape": _union(_V_TALL, _V_BACK),
-        "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
-            ("weapons", ["sniper", "sniper"]),
+            ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("tech", ["upgrade"]),
-            ("eco", ["mine", "battery"]),
-            ("upgrades", ["sniper2", "minigun"]),
-            ("weapons", ["sniper"]),
+            ("tech", ["workshop"]),
+            ("eco", ["mine", "battery", "store"]),
+            # the munitions plant costs 800 metal and 5000 energy: turbines first
+            ("eco", ["turbine", "turbine"]),
+            ("tech", ["munitions"]),
+            ("weapons", ["cannon20mm"]),
+            ("eco", ["turbine"]),
+            ("weapons", ["cannon20mm", "machinegun"]),
             ("defence", ["woodspam"]),
-            ("eco", ["turbine", "store"]),
-            ("upgrades", ["sniper2", "sniper2"]),
-            # late game
-            ("aa", ["machinegun", "machinegun"]),
+            # late game: more anti-air, storage for repairs
+            ("aa", ["machinegun"]),
+            ("eco", ["battery"]),
             ("weapons", ["sniper"]),
-            ("upgrades", ["sniper2", "mine2", "mine2"]),
-            ("eco", ["turbine", "battery"]),
-            ("upgrades", ["turbine2"]),
             ("defence", ["woodspam"]),
         ],
     },
-    "schwer": {
-        "title": "Cannon deck (weapon_pack): munitions plant early, cannon and 20mm cannon in the weapon column",
+    "kanone": {
+        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons in the weapon column",
         "shape": _union(_V_TALL, _V_BACK),
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
@@ -313,37 +312,43 @@ VANILLA_VARIANTS = {
             ("tech", ["munitions"]),
             ("weapons", ["cannon"]),
             ("eco", ["turbine"]),
-            ("weapons", ["cannon20mm", "machinegun"]),
-            ("defence", ["woodspam"]),
-            # late game: more anti-air, a second cannon, more storage for repairs
             ("aa", ["machinegun"]),
-            ("eco", ["battery", "turbine"]),
-            ("weapons", ["cannon", "sniper"]),
+            ("defence", ["woodspam"]),
+            # late game: second cannon, more anti-air, storage for repairs
+            ("weapons", ["cannon"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["battery"]),
+            ("weapons", ["sniper"]),
             ("defence", ["woodspam"]),
         ],
     },
-    "wirtschaft": {
-        "title": "Economy deck: all mines and turbines first, then snipers and mortars, mine/turbine upgrades",
+    "laser": {
+        "title": "Laser deck: factory early, all turbines and extra batteries before the laser",
         "shape": _union(_V_TALL, _V_BACK),
-        "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+        # the factory takes the usual upgrade slot: upgrade centre on the munitions slot (no munitions here)
+        "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
         "plan": [
-            ("eco", ["mine", "turbine", "mine", "mine"]),
+            ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
             ("weapons", ["sniper"]),
-            ("eco", ["turbine", "turbine", "battery"]),
+            ("eco", ["turbine"]),
             ("tech", ["workshop"]),
-            ("weapons", ["mortar", "sniper"]),
-            ("tech", ["upgrade"]),
-            ("upgrades", ["mine2", "mine2", "turbine2"]),
-            ("weapons", ["mortar", "sniper"]),
-            ("eco", ["store", "turbine"]),
-            ("upgrades", ["mortar2", "sniper2"]),
+            ("eco", ["mine", "turbine", "battery"]),
+            ("tech", ["factory"]),
+            # the laser needs an extra store and battery and a lot of energy per shot (test match: a laser
+            # plan with 2-3 turbines never placed or never fired the laser): all turbines first
+            ("eco", ["turbine", "store", "battery"]),
+            ("weapons", ["laser"]),
+            ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
-            # late game
-            ("aa", ["machinegun", "machinegun"]),
-            ("weapons", ["sniper", "mortar"]),
-            ("upgrades", ["mortar2", "sniper2", "mine2", "turbine2"]),
+            # only 4 turbine slots on the roof: upgraded turbines for more energy
+            ("tech", ["upgrade"]),
+            ("upgrades", ["turbine2", "turbine2"]),
+            # late game: more anti-air, a sniper, more storage
+            ("aa", ["machinegun"]),
             ("eco", ["battery"]),
+            ("upgrades", ["turbine2", "turbine2"]),
+            ("weapons", ["sniper"]),
             ("defence", ["woodspam"]),
         ],
     },
