@@ -86,6 +86,21 @@ def build_state(actions):
     return pos, links, devices, ground
 
 
+def node_chains(actions, terrain=None, ground_tol=3):
+    """Chain depth of every node the plan creates: how many node creations lie between it and an anchor (a node
+    of the starting fort, or a node on the ground, which the game places at its absolute position). The game
+    places every other new node relative to the CURRENT position of its source node (GetAdjustedNodePosition),
+    so a lean of any node in the chain is copied into it: short chains keep the fort in shape."""
+    depth = {}
+    for a in actions:
+        if a["Type"] != "CREATE_NODE":
+            continue
+        p = a["NewNodePos"]
+        on_ground = terrain is not None and (terrain.inside(p) or terrain.nearest_surface(p)[1] <= ground_tol)
+        depth[a["OriginalNodeBId"]] = 0 if on_ground else depth.get(a["OriginalNodeAId"], 0) + 1
+    return depth
+
+
 def _point(pos, ida, idb, t):
     a, b = pos[ida], pos[idb]
     return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)

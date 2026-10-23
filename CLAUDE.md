@@ -54,7 +54,7 @@ Do not change these without updating `train.py` and the tests:
 - `[CAI] T<team> END winner=<n> ...`
 - `ActivateAI team <n> team members <m> fort <file>` (written by the game itself)
 
-Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `BUILD_ERROR`, `FIRE`, `TEMPO`, ...) are used by the
+Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `BUILD_ERROR`, `SHAPE`, `STRESS`, `FIRE`, `TEMPO`, ...) are used by the
 tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 ## Workflow

@@ -1,13 +1,13 @@
 -- FORT 9000 - strategy file (generated automatically by tools/train.py)
--- Trained on 2026-10-23 19:01 from 30 matches with a result in 28 logs.
+-- Trained on 2026-10-23 22:34 from 32 matches with a result in 30 logs.
 -- Loaded once at the start of a match. Previous version: strategy_previous.lua
 
 Strategy =
 {
 	Aggression = {
-		Early = 0.705,
-		Late = 1.511,
-		Mid = 1.117,
+		Early = 0.702,
+		Late = 1.465,
+		Mid = 1.098,
 	},
 	AggressionExclude = {
 		machinegun = true,
@@ -48,8 +48,8 @@ Strategy =
 			battery = 49.9,
 			buzzsaw = 20.2,
 			cannon = 106.1,
-			factory = 69.8,
-			flak = 36.1,
+			factory = 69.9,
+			flak = 37.5,
 			laser = 99.4,
 			machinegun = 61.4,
 			mine = 78.6,
@@ -61,21 +61,21 @@ Strategy =
 			missileinv = 32,
 			mortar = 34.3,
 			mortar2 = 55.9,
-			munitions = 31.1,
+			munitions = 31.4,
 			reactor = 91.3,
 			repairstation = 29.3,
 			rocket = 22.7,
-			rocketemp = 29.7,
-			sandbags = 28.6,
-			shotgun = 27.7,
+			rocketemp = 30.7,
+			sandbags = 28.9,
+			shotgun = 29.7,
 			smokebomb2 = 30.6,
-			sniper = 29.9,
-			sniper2 = 24.3,
-			store = 31.4,
-			turbine = 86.0,
-			turbine2 = 84,
+			sniper = 29.2,
+			sniper2 = 25.6,
+			store = 46.1,
+			turbine = 84.6,
+			turbine2 = 78.3,
 			upgrade = 57.3,
-			workshop = 61.4,
+			workshop = 61.3,
 		},
 		Small = {
 			barreltemp = 96,
@@ -93,11 +93,11 @@ Strategy =
 			mortar = 84.3,
 			mortar2 = 87.9,
 			reactor = 67.3,
-			sniper = 101.9,
-			sniper2 = 100.3,
-			store = 27.4,
-			turbine = 58.0,
-			turbine2 = 56,
+			sniper = 101.2,
+			sniper2 = 101.6,
+			store = 42.1,
+			turbine = 56.6,
+			turbine2 = 50.3,
 		},
 	},
 	Tempo = {
@@ -122,6 +122,6 @@ Strategy =
 	ThreatPerReactorHit = 6,
 	ThreatPerShot = 1,
 	ThreatWeight = 30,
-	TrainedGames = 30,
+	TrainedGames = 32,
 	Version = 1,
 }

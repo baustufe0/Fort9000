@@ -37,5 +37,10 @@ check "Safety valve gives up when metal is there" "GAVE_UP action 59"           
 check "Construction is skipped when stuck"       "SKIPPED action 386"            "$LUA" t_skip.lua
 check "Tempo + reset for assist AI"              "after assist AI:.3.11.13.10"   "$LUA" t_tempo.lua
 check "Build error log"                          "BUILD_ERROR link armour"       "$LUA" t_builderrors.lua
+check "Shape snapshot on CS_UNSTABLE"            "SHAPE t=0 why=unstable:cannon mirrored=0 part=1/2 1:0,0 2:0,-4$" "$LUA" t_shape.lua
+check "Shape snapshot mirrored back"             "why=minute mirrored=1 part=2/2 10000:-30,12$" "$LUA" t_shape.lua
+check "Shape snapshots once per place, capped"   "^shapes=2$"                    "$LUA" t_shape.lua
+check "Real stress on CS_UNSTABLE"               "STRESS cannon 501-503 links=4 at=P10000-N504:backbracing:-0.310 P1-P10000:bracing:0.120 top=N504-N505:bracing:0.950 P10000-N504:backbracing:-0.310$" "$LUA" t_stress.lua
+check "Stress scan once per place, capped"       "^stress=1 enumerated=4$"       "$LUA" t_stress.lua
 check "Recorder"                                 "RESULT w="                     "$LUA" t_recorder.lua 1
 rm -rf "$ROOT"; [ $fail = 0 ] && echo "All tests passed." || { echo "There are failures."; exit 1; }

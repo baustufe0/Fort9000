@@ -280,6 +280,7 @@ function MirrorFort(pivot, offset, structureId)
 	local ok, err = pcall(CAI_TrySwapPlan, "MirrorFort")
 	if not ok then Log("[CAI] PLAN-ERROR " .. tostring(err)) end
 	CAI_PlanNote("TRANSFORM MirrorFort pivot=" .. tostring(pivot) .. " " .. tostring(offset and offset.x) .. "," .. tostring(offset and offset.y))
+	CAI_FortMirrored = true       -- SHAPE diagnostics report offsets in the plan's own frame
 	return CAI_BaseMirrorFort(pivot, offset, structureId)
 end
 
@@ -470,6 +471,96 @@ local function CAI_Dist(p, q)
 	return math.sqrt(dx * dx + dy * dy)
 end
 
+-- Shape diagnostics: how far has every plan node moved from its planned position? One snapshot on the
+-- first CS_UNSTABLE of a device and place, and one per game minute (CAI_Think), at most CAI_SHAPE_MAX.
+-- Line: SHAPE t=<s> why=<minute|unstable:<device>> mirrored=<0|1> part=<k>/<n> <plan node id>:<dx>,<dy> ...
+-- dx/dy are in the plan's own frame (x mirrored back if the game mirrored the plan), so they can be laid
+-- over the plan file (tools/fortgen/shape.py). New nodes are placed relative to the current position of
+-- their source node, so a lean while building is copied into everything built from it.
+CAI_SHAPE_MAX = 40
+CAI_SHAPE_PER_LINE = 25
+CAI_ShapeCount = 0
+
+function CAI_LogShape(why)
+	if data.CAI == nil or data.HumanAssist or CAI_ShapeCount >= CAI_SHAPE_MAX then return end
+	if CAI_PlanPos == nil then CAI_BuildPlanIndex() end
+	local items = {}
+	for orig, act in pairs(data.OriginalToActual or {}) do
+		local plan = CAI_PlanPos[orig]
+		local pos = plan and NodePosition(act)
+		if pos and pos.x then
+			local dx = pos.x - plan.x
+			if CAI_FortMirrored then dx = -dx end
+			items[#items + 1] = { orig, math.floor(dx + 0.5), math.floor(pos.y - plan.y + 0.5) }
+		end
+	end
+	if #items == 0 then return end
+	CAI_ShapeCount = CAI_ShapeCount + 1
+	table.sort(items, function(p, q) return p[1] < q[1] end)    -- pairs() has no fixed order
+	local t = (data.CAI.ticks or 0) * (Strategy.ThinkInterval or 0)
+	local parts = math.ceil(#items / CAI_SHAPE_PER_LINE)
+	for k = 1, parts do
+		local chunk = {}
+		for i = (k - 1) * CAI_SHAPE_PER_LINE + 1, math.min(k * CAI_SHAPE_PER_LINE, #items) do
+			chunk[#chunk + 1] = items[i][1] .. ":" .. items[i][2] .. "," .. items[i][3]
+		end
+		CAI_Log("SHAPE t=" .. t .. " why=" .. tostring(why) .. " mirrored=" .. (CAI_FortMirrored and 1 or 0)
+			.. " part=" .. k .. "/" .. parts .. " " .. table.concat(chunk, " "))
+	end
+end
+
+-- Stress diagnostics: the engine's own stress of the struts (EnumerateLinks hands it to the callback), on the
+-- first CS_UNSTABLE of a device and place, at most CAI_STRESS_MAX times. The strain in the UNSTABLE line only
+-- compares with plan lengths; struts built between nodes that had already moved have other rest lengths.
+-- Line: STRESS <device> <a>-<b> at=<link> ... top=<link> ...
+-- at = the struts at the device's two nodes, top = the CAI_STRESS_TOP most stressed struts of the fort (by |stress|);
+-- <link> = <node>-<node>:<material>:<stress>, <node> = P<plan node id> if the node is in the plan, else N<actual id>
+CAI_STRESS_MAX = 20
+CAI_STRESS_TOP = 8
+CAI_StressCount = 0
+CAI_StressScan = nil
+
+function CAI_EnumStress(nodeA, nodeB, saveName, relativeHealth, stress, segmentsOnFire, deviceId)
+	local s = CAI_StressScan
+	if s and nodeA and nodeB and type(stress) == "number" then
+		local item = { nodeA, nodeB, tostring(saveName), stress }
+		if s.at[nodeA] or s.at[nodeB] then s.near[#s.near + 1] = item end
+		s.all[#s.all + 1] = item
+	end
+	return true      -- continue enumeration
+end
+
+function CAI_LogStress(what, a, b)
+	if type(EnumerateLinks) ~= "function" or CAI_StressCount >= CAI_STRESS_MAX then return end
+	CAI_StressCount = CAI_StressCount + 1
+	local toOrig = {}
+	for orig, act in pairs(data.OriginalToActual or {}) do toOrig[act] = orig end
+	CAI_StressScan = { at = { [a] = true, [b] = true }, near = {}, all = {} }
+	local ok, err = pcall(EnumerateLinks, teamId, "CAI_EnumStress", 1, 1, "", false)
+	local s = CAI_StressScan
+	CAI_StressScan = nil
+	if not ok then
+		CAI_Log("ERROR stress diagnostics: " .. tostring(err))
+		return
+	end
+	local function label(n) return toOrig[n] and ("P" .. toOrig[n]) or ("N" .. tostring(n)) end
+	local function text(list, n)
+		table.sort(list, function(p, q)
+			if math.abs(p[4]) ~= math.abs(q[4]) then return math.abs(p[4]) > math.abs(q[4]) end
+			if p[1] ~= q[1] then return p[1] < q[1] end
+			return p[2] < q[2]
+		end)
+		local out = {}
+		for i = 1, math.min(n, #list) do
+			local l = list[i]
+			out[#out + 1] = string.format("%s-%s:%s:%.3f", label(l[1]), label(l[2]), l[3], l[4])
+		end
+		return table.concat(out, " ")
+	end
+	CAI_Log("STRESS " .. tostring(what) .. " " .. tostring(a) .. "-" .. tostring(b) .. " links=" .. #s.all
+		.. " at=" .. text(s.near, #s.near) .. " top=" .. text(s.all, CAI_STRESS_TOP))
+end
+
 local function CAI_NoteUnstable(what, a, b)
 	if data.CAI == nil or data.HumanAssist then return end
 	local key = tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b)
@@ -509,6 +600,10 @@ local function CAI_NoteUnstable(what, a, b)
 	CAI_Log(string.format("UNSTABLE %s %s-%s %s links=%d strain=%.3f..%.3f stretched=%s compressed=%s action=%s",
 		tostring(what), tostring(a), tostring(b), table.concat(parts, " "), links, links > 0 and minR or 0, links > 0 and maxR or 0,
 		maxL, minL, tostring(data.fortIndex)))
+	if n == 1 then
+		CAI_LogShape("unstable:" .. tostring(what))
+		CAI_LogStress(what, a, b)
+	end
 end
 
 -- The game only provides the build functions after initialisation,
@@ -799,6 +894,13 @@ function CAI_Think()
 	parts[#parts + 1] = "fire=" .. tostring(st.fireAttempts or 0)
 	st.fireAttempts = 0
 	CAI_Log(table.concat(parts, " "))
+
+	-- shape snapshot once per game minute (see CAI_LogShape)
+	if elapsed >= (st.nextShape or 60) then
+		st.nextShape = elapsed + 60
+		local okS, errS = pcall(CAI_LogShape, "minute")
+		if not okS then CAI_Log("ERROR shape diagnostics: " .. tostring(errS)) end
+	end
 
 	ScheduleCall(Strategy.ThinkInterval, CAI_Think)
 end

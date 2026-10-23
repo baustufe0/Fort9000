@@ -264,12 +264,6 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # artillery: one more tower column, so three mortars (prow + two top cells) and three turbines fit on top
 _V_TALL_WIDE = _union(_V_TALL, _box(-3500, -3400, -295, 205))
-# two heavy weapons: stepped tower. The front column (-3100..-2945, on the starting fort's roof posts) ends
-# at y=-95 and carries the lower heavy weapon; the upper one stands one column back (-3200..-3100) on solid
-# X-braced cells and fires over the front column's roof (test matches: a heavy weapon directly on another
-# weapon cell, whose diagonals are background bracing, failed with CS_UNSTABLE, sag 24-49). The rear part
-# reaches back to -3500, so its roof still has four turbine slots.
-_V_STEPPED = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2945, -95, 205), _box(-2945, -2845, 5, 205))
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -302,9 +296,8 @@ VANILLA_VARIANTS = {
         ],
     },
     "kanone20mm": {
-        "title": "20mm tower (weapon_pack): munitions plant early, two 20mm cannons on a stepped tower",
-        "shape": _union(_V_STEPPED, _V_BACK),
-        "cfg": {"large_y": -95},       # the lower heavy weapon (front column) first
+        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons in the weapon column",
+        "shape": _union(_V_TALL, _V_BACK),
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
@@ -326,9 +319,8 @@ VANILLA_VARIANTS = {
         ],
     },
     "kanone": {
-        "title": "Cannon tower (weapon_pack): munitions plant early, two cannons on a stepped tower",
-        "shape": _union(_V_STEPPED, _V_BACK),
-        "cfg": {"large_y": -95},       # the lower heavy weapon (front column) first
+        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons in the weapon column",
+        "shape": _union(_V_TALL, _V_BACK),
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
@@ -394,6 +386,7 @@ class Plan:
         self.nodes = {}        # (i,j) -> (id, pos, kind) kind: orig/new/found
         self.next_id = 10000
         self.built_nodes = set(self.orig)
+        self.depth = {}        # node id -> chain depth (node creations since an anchor; see chain())
         self.links = {}        # frozenset(idA,idB) -> material (last set)
         self.actions = []
         self.pos = dict(self.orig)
@@ -594,8 +587,21 @@ class Plan:
     def _fmt(self, p):
         return "x = %.2f, y = %.2f" % (p[0], p[1])
 
+    def chain(self, nid):
+        """Chain depth of a built node: node creations since an anchor (a starting fort node, or a foundation on
+        the ground, which the game places at its absolute position). The game places every other new node at
+        the CURRENT position of its source node plus the planned offset (GetAdjustedNodePosition), so a lean
+        anywhere in the chain is copied into the new node (test match: a stepped tower, built sideways from
+        a leaning back column through chains of up to 17 nodes, ended ~100 forward and squeezed its cannon
+        cells to 55-65 % of their width)."""
+        return self.depth.get(nid, 0)
+
+    def note_node(self, src_id, nid, kind):
+        self.depth[nid] = 0 if kind == "found" else self.chain(src_id) + 1
+
     def ensure_node(self, ij, via_material="bracing"):
-        """Build node ij (if necessary) - from an already built neighbour."""
+        """Build node ij (if necessary) from an already built neighbour: the one with the shortest chain to an
+        anchor, then the node directly below (a vertical post), then the nearest."""
         nid, p, kind = self.node(ij)
         if nid in self.built_nodes:
             return nid
@@ -606,18 +612,20 @@ class Plan:
             if n and n[0] in self.built_nodes:
                 d = math.dist(n[1], p)
                 if MIN_LINK <= d <= MAX_LINK and self.t.segment_clear(n[1], p):
-                    cand.append((d, (i + di, j + dj)))
+                    cand.append((d, (i + di, j + dj), (di, dj)))
         if not cand:
             return None
         if kind == "found":
             # build the foundation from above/diagonally, not sideways along the ground
             cand.sort(key=lambda dc: (dc[1][1] == j, dc[0]))
         else:
-            cand.sort()
+            near = [c for c in cand if c[0] <= MAX_NEW_NODE] or cand    # a new node at most 150 from its source
+            cand = sorted(near, key=lambda dc: (self.chain(self.nodes[dc[1]][0]), dc[2] != (0, 1), dc[0]))
         src = self.nodes[cand[0][1]]
         self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
                             % (src[0], self._fmt(src[1]), nid, self._fmt(p), via_material))
         self.built_nodes.add(nid)
+        self.note_node(src[0], nid, kind)
         self.links[frozenset((src[0], nid))] = via_material
         return nid
 
@@ -668,6 +676,7 @@ class Plan:
                 self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "backbracing" },'
                                     % (src[0], self._fmt(src[1]), nid, self._fmt(p)))
                 self.built_nodes.add(nid)
+                self.note_node(src[0], nid, "new")
                 self.links[frozenset((src[0], nid))] = "backbracing"
             self.link(key, bot, "backbracing")
             mids.append(key)
@@ -1238,6 +1247,7 @@ class Plan:
         self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
                             % (src[0], self._fmt(src[1]), nid, self._fmt(p), mat))
         self.built_nodes.add(nid)
+        self.note_node(src[0], nid, "new")
         self.links[frozenset((src[0], nid))] = mat
         return True
 
@@ -1302,6 +1312,7 @@ class Plan:
                         self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "bracing" },'
                                             % (src[0], self._fmt(src[1]), nid, self._fmt(self.nodes[ij][1])))
                         self.built_nodes.add(nid)
+                        self.note_node(src[0], nid, self.nodes[ij][2])
                     prev = ij
             for p in m.get("needs", []):
                 ij = self.node_at(p)
@@ -1410,6 +1421,9 @@ def main():
                 d = line.split('DeviceSaveName = "')[1].split('"')[0]
                 devs[d] = devs.get(d, 0) + 1
         print("%s [%s] %d actions, devices: %s" % (name, key, len(p.actions), ", ".join("%s:%d" % kv for kv in sorted(devs.items()))))
+        chains = rules.node_chains(parse_lines(p.actions), terrain)
+        if chains:
+            print("   node chains: max %d, avg %.1f (node creations since an anchor)" % (max(chains.values()), sum(chains.values()) / len(chains)))
         for e in errors:
             print("   ERROR:", e)
         for e in rule_errors:
