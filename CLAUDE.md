@@ -45,6 +45,9 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
 - **Wrap, don't replace.** Save the original function (`local CAI_BaseX = X`), call it, then add logic.
 - **`pcall` around all custom logic.** An error must never abort a match; log it as `[CAI] ERROR ...`.
 - **`dofile` only during initialisation.** `rawget`/`rawset` do not exist in Forts Lua.
+- **No bitwise operators (`|`, `&`, `~`, `<<`) in the mod's Lua files.** The game's Lua accepts them (the built-in
+  AI uses `FIREFLAG_A | FIREFLAG_B`), but the tests run Lua 5.1, where the file then does not load at all. Flags
+  are separate bits, so add them (`RAY_A + RAY_B`).
 - **Forts removes foreign files from `data/maps`**, so custom plans stay in `fortplans/`.
 - **Plan files are line-sensitive** (the game's AI relies on line numbers); keep the generated header intact
   and write them with CRLF as `gen_fort.py` does.
