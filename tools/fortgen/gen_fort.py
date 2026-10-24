@@ -327,13 +327,15 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 # cliff edge at -2900) carries two light storeys.
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # sniper and mortar rush (Vanilla-2): the mortars cannot wait for the five-storey tower (~165 struts before its
-# roof). A low deck on the starting fort carries two mortars on open roofs (like the game's Template-2; cells under
-# door roofs would cost ~700 metal more for doors and armour, economy model: mortars at ~77/120 s instead of
-# ~67/88 s): one on the front column (x -3100..-2945, one storey on its roof posts, roof y=105), one on the prow's
-# second storey (roof y=5). The sniper stands in that second prow storey behind a door: the first one holds the
-# starting fort's machine gun on its floor (orig_devices).
-# The tower (turbines and the third mortar on its roof) stands one column back, x -3500..-3100, on the back block.
-_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2945, 105, 205), _box(-2945, -2845, 5, 205), _V_BACK)
+# roof). A one-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow) carries two
+# mortars on its open roof (y=105, like the game's Template-2; cells under door roofs would cost ~700 metal more for
+# doors and armour, economy model: mortars at ~77/120 s instead of ~67/88 s). The sniper stands in the front column
+# on the starting fort's roof beam (-3093,205)-(-2945,206), like Template-2's sniper (placed there after ~42 struts),
+# and fires through the prow storey (the starting fort's machine gun, door in front). On the prow it was refused
+# with CS_UNSTABLE in both test matches (25.10.2026: on the prow's roof strut, which holds the starting machine gun,
+# and on the floor of a second prow storey). The tower (turbines and the third mortar on its roof) stands one column
+# back, x -3500..-3100, on the back block.
+_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 105, 205), _V_BACK)
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -374,11 +376,12 @@ VANILLA_VARIANTS = {
         "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
         "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        # the sniper takes the lowest free front cell (the second prow storey), the mortars the lowest open roofs
-        # (the front column, then the prow, then the tower), without the random pick; woodspam in front
+        # the sniper takes the front column on the starting fort's roof beam (weapon_cells), the mortars the lowest
+        # open roofs (the deck, then the tower), without the random pick; woodspam in front
         # of the tower's front wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
         "roof_weapons": {"mortar"}, "roof_weapon_low_first": True,
         "cfg": {"small_low_first": True, "weapon_pick_best": True, "reserve_mortar": False,
+                "weapon_cells": [(-3100, 205, "sniper")],
                 "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-295, -195, -95], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
@@ -1089,6 +1092,12 @@ class Plan:
         rows = self.cfg["rows"]
         if dev in LARGE and self.cfg.get("large_cells"):
             return self.explicit_large_cell()
+        # weapon_cells: [(left x, floor y, device)], cells given for a weapon (also cells that are not at the front:
+        # the weapon fires through the cells ahead of it, whose struts the game recesses when it is placed)
+        for x0, floor_y, d in self.cfg.get("weapon_cells", []):
+            for c in sorted(self.cells):
+                if d == dev and abs(self.cell_x(c)[0] - x0) < 10 and rows[c[1] + 1] == floor_y and c not in self.devices:
+                    return c
         mw = self.cfg.get("weapon_min_w", 0)
         if mw:
             wide = lambda c: self.cell_w(c) >= mw
