@@ -35,7 +35,10 @@ local CAI_Defaults =
 	AntiAirThreatShots = 6, AntiAirBoostMax = 1.4,
 	RebuildGiveUpSeconds = 120,
 	BuildSkipSeconds = 90, BuildSkipMinMetal = 300, StarvedFlatTicks = 4,
-	Fire = { Enabled = true, Interval = 1.0, WeaponsPerTick = 3, AlwaysOffensive = true, RebuildFireFactor = 2.5 },
+	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
+	-- anti-air), their turns in the fire control go to the other weapons (snipers)
+	Fire = { Enabled = true, Interval = 1.0, WeaponsPerTick = 3, AlwaysOffensive = true, RebuildFireFactor = 2.5,
+		NoOffence = { machinegun = true } },
 	Tempo = { UpdatePeriod = 2.0, UpdatePeriodEasy = 4.0, UpdatePeriodNormal = 2.0, UpdatePeriodHard = 1.0, UpdateAfterRebuildDelay = 0.625, ConstructionMean = 20, ConstructionMin = 12,
 		NonConstructionMean = 6, NonConstructionMin = 3, RepairPeriod = 6,
 		RepairPeriodEasy = 12, RepairPeriodNormal = 6, RepairPeriodHard = 3 },
@@ -362,13 +365,25 @@ function CAI_ApplyFire()
 			data.FireDuringRebuildProbability[k] = CAI_Clamp(v * (f.RebuildFireFactor or 1), 0, 1)
 		end
 	end
+	-- no offensive fire for NoOffence types (anti-air is separate: AntiAirFireProbability)
+	local no = f.NoOffence or CAI_Defaults.Fire.NoOffence or {}
+	data.CAI.noOffence = no
+	local noList = {}
+	for k in pairs(no) do
+		if data.OffensiveFireProbability[k] ~= nil then data.OffensiveFireProbability[k] = 0 end
+		if type(data.FireDuringRebuildProbability) == "table" and data.FireDuringRebuildProbability[k] ~= nil then
+			data.FireDuringRebuildProbability[k] = 0
+		end
+		noList[#noList + 1] = k
+	end
+	table.sort(noList)
 	data.CAI.firePtr = 0
 	data.CAI.fireAttempts = 0
 	if ScheduledCallCountOfFunc(CAI_FireTick) == 0 then
 		ScheduleCall(f.Interval or 1, CAI_FireTick)
 	end
 	return "period=" .. tostring(f.Interval) .. "s weapons=" .. tostring(f.WeaponsPerTick) .. " always=" .. tostring(f.AlwaysOffensive)
-		.. " duringRebuild=x" .. tostring(f.RebuildFireFactor)
+		.. " duringRebuild=x" .. tostring(f.RebuildFireFactor) .. " noOffence=" .. table.concat(noList, ",")
 end
 
 function CAI_RestoreFire()
@@ -390,14 +405,22 @@ function CAI_FireTick()
 		local n = GetWeaponCount(teamId) or 0
 		if n == 0 or (data.offencePoints or 1) < 1 then return end
 		local tries = math.min(f.WeaponsPerTick or 3, n)
-		for i = 1, tries do
+		local no = st.noOffence or {}
+		local checked = 0
+		-- round robin over the weapons; NoOffence types are skipped without using up a turn
+		for step = 1, n do
+			if checked >= tries then break end
 			if st.firePtr >= n then st.firePtr = 0 end
 			local id = GetWeaponId(teamId, st.firePtr)
 			st.firePtr = st.firePtr + 1
-			if id and id > 0 and not IsDummy(id) and IsAIDeviceAvailable(id) and IsWeaponReadyToFire(id)
-				and (data.ActionQueue == nil or data.ActionQueue[id] == nil) then
-				st.fireAttempts = st.fireAttempts + 1
-				TryFireGun(id)
+			local kind = (type(GetDeviceType) == "function" and id and id > 0) and GetDeviceType(id) or nil
+			if not (kind and no[kind]) then
+				checked = checked + 1
+				if id and id > 0 and not IsDummy(id) and IsAIDeviceAvailable(id) and IsWeaponReadyToFire(id)
+					and (data.ActionQueue == nil or data.ActionQueue[id] == nil) then
+					st.fireAttempts = st.fireAttempts + 1
+					TryFireGun(id)
+				end
 			end
 		end
 	end)
@@ -781,8 +804,9 @@ function CAI_UpdateAggression(elapsed)
 		econ = "poor"
 	end
 
+	local no = data.CAI.noOffence or {}
 	for k, base in pairs(data.CAI.baseOff) do
-		if not s.AggressionExclude[k] then
+		if not s.AggressionExclude[k] and not no[k] then
 			data.OffensiveFireProbability[k] = CAI_Clamp(base * mult, 0, 1)
 		end
 	end

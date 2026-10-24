@@ -32,6 +32,10 @@ for o in before after; do
   check "Plan swap VanillaLong $o team 102"      "first action = 3929.4, -250.0"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
 done
 check "Fire control"                             "fired:.11,12,14,15"            "$LUA" t_fire.lua
+check "Machine guns: no offensive fire"          "fired:.11,13,14,15,11,13$"      "$LUA" t_fire_mg.lua
+check "Miniguns still fire at the fort"         "minigun offensive.true$"       "$LUA" t_fire_mg.lua
+check "Machine guns stay anti-air"               "MG offensive.0.MG during rebuild.0.MG anti-air.0.7" "$LUA" t_fire_mg.lua
+check "Aggression keeps machine guns at 0"       "after think: MG offensive.0$"  "$LUA" t_fire_mg.lua
 check "Safety valve waits when metal is short"   "Rebuild\[59\] =.true"          "$LUA" t_failsafe_poor.lua
 check "Safety valve gives up when metal is there" "GAVE_UP action 59"            "$LUA" t_failsafe_rich.lua
 check "Construction is skipped when stuck"       "SKIPPED action 386"            "$LUA" t_skip.lua

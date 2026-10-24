@@ -1,5 +1,5 @@
 -- FORT 9000 - strategy file (generated automatically by tools/train.py)
--- Trained on 2026-10-23 23:25 from 33 matches with a result in 31 logs.
+-- Trained on 2026-10-24 12:25 from 33 matches with a result in 31 logs.
 -- Loaded once at the start of a match. Previous version: strategy_previous.lua
 
 Strategy =
@@ -21,6 +21,9 @@ Strategy =
 		AlwaysOffensive = true,
 		Enabled = true,
 		Interval = 1.0,
+		NoOffence = {
+			machinegun = true,
+		},
 		RebuildFireFactor = 2.5,
 		WeaponsPerTick = 3,
 	},

@@ -30,7 +30,7 @@ from terrain import Terrain              # noqa: E402
 from fortplan import parse_plan, parse_lines, node_positions  # noqa: E402
 import rules  # noqa: E402
 
-MAX_LINK = 195
+MAX_LINK = 205          # struts between existing nodes (the game allows StandardMaxLinkLength = 218)
 MAX_NEW_NODE = 150     # StandardMaxLength: a new node can be at most this far from the node it is built from
 MIN_LINK = 45
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser"}
@@ -264,6 +264,28 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # artillery: one more tower column, so three mortars (prow + two top cells) and three turbines fit on top
 _V_TALL_WIDE = _union(_V_TALL, _box(-3500, -3400, -295, 205))
+# heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
+# x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
+# the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
+# above the first, in the front part of the tower: one column back (x -3300..-3200), a storey higher or lower,
+# it was refused with CS_UNSTABLE while the first was built and fired (test matches 24.10.2026). That column is
+# the seam where the back part of the tower (leaning 25-30 more) meets the front part: its cells are squeezed.
+_V_LARGE_TOGWM2 = [(-3200, -20, 0.5), (-3200, -145, 0.5)]
+# The cannon storeys (floors 5 and -120) are 125 high instead of 100: the cannon's box reaches ~90 above its
+# floor, and the game turns struts a device overlaps into background bracing, on which nothing can be placed
+# (test match 24.10.2026: the floor of the second cannon, 100 above the first, had become background bracing).
+# The sniper storey below them (floor 105, front column) is 125 high too: a sniper there was refused with
+# CS_UNSTABLE in both tests with 100-high storeys. Rows above the starting fort: 205, 105, -20, -145, -270,
+# -370 (tower roof); the 155x125 cells get 199-long diagonals (MAX_LINK 205).
+# Less load on the starting fort's prow (it hangs over the cliff; test match 24.10.2026: its armour chain reached
+# 0.97 of its breaking limit after the first cannon was placed and the fort collapsed at 7.8 min, without enemy
+# fire): no prow storeys, no woodspam base on the prow, cannons at LinkT 0.5 instead of 0.75 (ToGWM2).
+_V_HIGH_ROWS = [-470, -370, -270, -145, -20, 105, 205, 308, 405, 503, 602, 700]
+_V_TALL_HIGH = _box(-3400, -2945, -370, 205)
+_V_HIGH_CFG = {"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370,
+               "large_top_min": -270, "large_top_max": -145,
+               "woodspam": {"wall_x": -2945, "layers": [-2905, -2865], "rows": [-370, -270, -145],
+                            "base": []}}
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -277,15 +299,17 @@ VANILLA_VARIANTS = {
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
+            # tech early, then devices that do not need it: the AI waits on a device until its tech is
+            # finished (workshop and upgrade centre: 60 s to build)
+            ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("tech", ["workshop"]),
             ("weapons", ["mortar", "mortar"]),
-            ("eco", ["mine", "battery"]),
             ("tech", ["upgrade"]),
+            ("eco", ["mine", "battery"]),
+            ("eco", ["turbine", "store"]),
             ("upgrades", ["mortar2", "mortar2"]),
             ("defence", ["woodspam"]),
-            ("eco", ["turbine", "store"]),
             # late game
             ("aa", ["machinegun", "machinegun"]),
             ("weapons", ["mortar", "sniper"]),
@@ -296,49 +320,56 @@ VANILLA_VARIANTS = {
         ],
     },
     "kanone20mm": {
-        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons in the weapon column",
-        "shape": _union(_V_TALL, _V_BACK),
+        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons behind open front cells (like weapon_pack's ToGWM2)",
+        "shape": _union(_V_TALL_HIGH, _V_BACK),
+        "cfg": _V_HIGH_CFG,
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
+            # tech early, then devices that do not need it: the AI waits on a device until its tech is
+            # finished (workshop 60 s; munitions plant ~90 s: test matches 24.10.2026 waited ~1.5 min at
+            # the storage cap before the first heavy weapon)
+            ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("tech", ["workshop"]),
-            ("eco", ["mine", "battery", "store"]),
+            ("eco", ["mine", "battery"]),
             # the munitions plant costs 800 metal and 5000 energy: turbines first
             ("eco", ["turbine", "turbine"]),
             ("tech", ["munitions"]),
-            ("weapons", ["cannon20mm"]),
-            ("weapons", ["cannon20mm", "machinegun"]),
-            ("defence", ["woodspam"]),
-            # late game: more anti-air, storage for repairs
+            ("eco", ["store", "battery"]),
             ("aa", ["machinegun"]),
-            ("eco", ["battery"]),
             ("weapons", ["sniper"]),
+            ("defence", ["woodspam"]),
+            ("weapons", ["cannon20mm", "cannon20mm"]),
+            # late game: more anti-air, the woodspam completed
+            ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
         ],
     },
     "kanone": {
-        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons in the weapon column",
-        "shape": _union(_V_TALL, _V_BACK),
+        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons behind open front cells (like weapon_pack's ToGWM2)",
+        "shape": _union(_V_TALL_HIGH, _V_BACK),
+        "cfg": _V_HIGH_CFG,
         "plan": [
             ("eco", ["mine", "turbine", "mine"]),
             ("aa", ["machinegun"]),
+            # tech early, then devices that do not need it: the AI waits on a device until its tech is
+            # finished (workshop 60 s; munitions plant ~90 s: test matches 24.10.2026 waited ~1.5 min at
+            # the storage cap before the first cannon)
+            ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("tech", ["workshop"]),
-            ("eco", ["mine", "battery", "store"]),
+            ("eco", ["mine", "battery"]),
             # the munitions plant costs 800 metal and 5000 energy: turbines first
             ("eco", ["turbine", "turbine"]),
             ("tech", ["munitions"]),
-            ("weapons", ["cannon"]),
+            ("eco", ["store", "battery"]),
             ("aa", ["machinegun"]),
-            ("defence", ["woodspam"]),
-            # late game: second cannon, more anti-air, storage for repairs
-            ("weapons", ["cannon"]),
-            ("aa", ["machinegun"]),
-            ("eco", ["battery"]),
             ("weapons", ["sniper"]),
+            ("defence", ["woodspam"]),
+            ("weapons", ["cannon", "cannon"]),
+            # late game: more anti-air, the woodspam completed
+            ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
         ],
     },
@@ -359,10 +390,11 @@ VANILLA_VARIANTS = {
             # plan with 2-3 turbines never placed or never fired the laser): all turbines first
             ("eco", ["turbine", "store", "battery"]),
             ("weapons", ["laser"]),
+            # only 4 turbine slots on the roof: upgraded turbines for more energy; the upgrade centre first,
+            # then devices that do not need it while it is built (60 s)
+            ("tech", ["upgrade"]),
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
-            # only 4 turbine slots on the roof: upgraded turbines for more energy
-            ("tech", ["upgrade"]),
             ("upgrades", ["turbine2", "turbine2"]),
             # late game: more anti-air, a sniper, more storage
             ("aa", ["machinegun"]),
@@ -697,7 +729,7 @@ class Plan:
         if edge == "right" and dev == "sandbags":
             return "bracing"
         if edge == "right" and self.is_front(c):
-            return "door" if dev in DIRECT_WEAPONS else "armour"
+            return "door" if dev in DIRECT_WEAPONS or dev == "lane" else "armour"
         if edge == "top" and self.is_top(c) and self.cfg.get("light_roof"):
             # no metal roof (heavy, guide "How to be a PRO at Vanilla Forts"): doors only over mortars
             return "door" if dev in LOBBED_WEAPONS else "bracing"
@@ -789,7 +821,9 @@ class Plan:
             self.link((i, j), (i + 1, j + 1), diag)
 
     def large_t(self, c):
-        """LinkT of a large weapon in cell c: near the back post, its body inside the cell."""
+        """LinkT of a large weapon in cell c: from large_cells, else near the back post, its body inside the cell."""
+        if c in self.large_t_at:
+            return self.large_t_at[c]
         narrow = self.cfg.get("large_t_narrow")
         if narrow and self.cell_w(c) < narrow[0]:
             return narrow[1]
@@ -869,8 +903,31 @@ class Plan:
                  and not self.in_turbine_row(c) and pred(c)]
         return cells
 
+    def explicit_large_cell(self):
+        """large_cells: the next free cell of the list [(left x, floor y, LinkT), ...] (or None)."""
+        rows = self.cfg["rows"]
+        for x0, floor_y, t in self.cfg["large_cells"]:
+            for c in sorted(self.cells):
+                if abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == floor_y and c not in self.devices:
+                    self.large_t_at[c] = t
+                    return c
+        return None
+
+    def mark_large(self, c, dev):
+        """A large weapon in cell c: the half cell behind it is taken ("<dev>+"); with large_cells, the cells
+        between it and the front of its storey are its fire lane ("lane": no device, background diagonals,
+        door in the front wall), as in weapon_pack's ToGWM2 where the cannons stand behind open cells."""
+        self.devices[(c[0] - 1, c[1])] = dev + "+"
+        if self.cfg.get("large_cells"):
+            i = c[0] + 1
+            while (i, c[1]) in self.all_cells and (i, c[1]) not in self.devices:
+                self.devices[(i, c[1])] = "lane"
+                i += 1
+
     def choose_weapon_cell(self, dev):
         rows = self.cfg["rows"]
+        if dev in LARGE and self.cfg.get("large_cells"):
+            return self.explicit_large_cell()
         mw = self.cfg.get("weapon_min_w", 0)
         if mw:
             wide = lambda c: self.cell_w(c) >= mw
@@ -1007,6 +1064,7 @@ class Plan:
                     self.devices[c] = "mine-platz"
         # reserve the cells of large weapons first, so early small weapons do not take them
         self.reserved = {}
+        self.large_t_at = {}           # cell -> LinkT of its large weapon (large_cells)
         self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
         if self.cfg.get("reserve_mortar"):
             for step, items in variant["plan"]:
@@ -1025,7 +1083,7 @@ class Plan:
                         if c is not None:
                             self.reserved.setdefault(dev, []).append(c)
                             self.devices[c] = "reserved"
-                            self.devices[(c[0] - 1, c[1])] = dev + "+"
+                            self.mark_large(c, dev)
         for step, items in variant["plan"]:
             for dev in items:
                 self.add(step, dev)
@@ -1208,7 +1266,7 @@ class Plan:
             return
         self.devices[c] = dev
         if dev in LARGE:
-            self.devices[(c[0] - 1, c[1])] = dev + "+"
+            self.mark_large(c, dev)
         if not self.build_cell_path(c):
             return
         # reset front/roof after the weapon choice (door instead of armour)
@@ -1229,7 +1287,7 @@ class Plan:
         for c in self.all_cells:
             if abs(self.cell_x(c)[1] - ws["wall_x"]) < 1 and self.cfg["rows"][c[1]] == y_top:
                 dev = self.devices.get(c)
-                if dev in DIRECT_WEAPONS or dev == "reserved" or self.in_turbine_row(c):
+                if dev in DIRECT_WEAPONS or dev in ("reserved", "lane") or self.in_turbine_row(c):
                     return "backbracing"
                 return ws.get("material", "bracing")
         return "backbracing"
