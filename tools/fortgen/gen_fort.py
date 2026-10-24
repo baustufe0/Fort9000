@@ -160,6 +160,9 @@ MAPS = {
         "mortar_open_arc": True,
         # one turbine per roof cell (test match: two side by side, 46-54 apart, failed with CS_OCCUPIED)
         "eco_orig": False,             # no battery/storage in cells of the starting fort
+        # the starting fort's machine gun stands on the prow's roof strut (LinkT 0.5): no device in the prow storey
+        # above it (test match 25.10.2026: a sniper planned there was refused with CS_UNSTABLE, then CS_OCCUPIED)
+        "orig_devices": [((-2945.11, 206.49), (-2846.18, 203.99), "machinegun")],
         "weapon_min_w": 95,            # no weapons in narrow cells (<95 wide)
         "mortar_avoid_roof": True,
         "turbine_narrow_first": True,
@@ -324,12 +327,13 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 # cliff edge at -2900) carries two light storeys.
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # sniper and mortar rush (Vanilla-2): the mortars cannot wait for the five-storey tower (~165 struts before its
-# roof). A one-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow)
-# carries two mortars on its open roof (y=105, like the game's Template-2; cells under door roofs would cost
-# ~700 metal more for doors and armour, economy model: mortars at ~77/120 s instead of ~67/88 s); the sniper takes
-# the prow storey on the starting fort's roof (Template-2 places its sniper on that roof beam after ~42 struts).
+# roof). A low deck on the starting fort carries two mortars on open roofs (like the game's Template-2; cells under
+# door roofs would cost ~700 metal more for doors and armour, economy model: mortars at ~77/120 s instead of
+# ~67/88 s): one on the front column (x -3100..-2945, one storey on its roof posts, roof y=105), one on the prow's
+# second storey (roof y=5). The sniper stands in that second prow storey behind a door: the first one holds the
+# starting fort's machine gun on its floor (orig_devices).
 # The tower (turbines and the third mortar on its roof) stands one column back, x -3500..-3100, on the back block.
-_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 105, 205), _V_BACK)
+_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2945, 105, 205), _box(-2945, -2845, 5, 205), _V_BACK)
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -370,8 +374,8 @@ VANILLA_VARIANTS = {
         "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
         "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        # the sniper takes the lowest front cell (the prow storey on the starting fort's roof), the mortars the
-        # most forward top cells (both deck cells, then the tower roof), without the random pick; woodspam in front
+        # the sniper takes the lowest free front cell (the second prow storey), the mortars the lowest open roofs
+        # (the front column, then the prow, then the tower), without the random pick; woodspam in front
         # of the tower's front wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
         "roof_weapons": {"mortar"}, "roof_weapon_low_first": True,
         "cfg": {"small_low_first": True, "weapon_pick_best": True, "reserve_mortar": False,
@@ -413,7 +417,10 @@ VANILLA_VARIANTS = {
         # the column right behind the starting fort, next to the workshop, it was refused with CS_UNSTABLE
         # (test match 24.10.2026: no stress, no sag; its body beside the workshop, its 170-high box over the
         # workshop's strut) and the AI gave up on it
-        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True),
+        # the machine gun stays out of the sniper's cell (front column, floor -145): the sniper was built there,
+        # while one on the top front cell (floor -270) was refused once the tower stood below it
+        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True,
+                    weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})]),
         "plan": [
             # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
             # economy (601 m / 3004 e, +13 m/s, +100 e/s, caps 900 / 5000) pays for it on time if nothing else
@@ -1258,6 +1265,14 @@ class Plan:
                 a, b = self.nodes[(c[0], c[1] + 1)][1], self.nodes[(c[0] + 1, c[1] + 1)][1]
                 if min(a[0], b[0]) - 40 <= gx <= max(a[0], b[0]) + 40 and abs((a[1] + b[1]) / 2 - gy) < 20:
                     self.devices[c] = "mine-platz"
+        # cells whose floor strut already carries a device of the starting fort stay free (orig_devices); the cell
+        # counts as holding that device, so a weapon there gets its door and clear diagonals like a planned one
+        for pa, pb, dev in self.cfg.get("orig_devices", []):
+            ia, ib = self.node_at(pa), self.node_at(pb)
+            if ia and ib:
+                c = (min(ia[0], ib[0]), ia[1] - 1)
+                if c in self.all_cells:
+                    self.devices[c] = dev
         # reserve the cells of large weapons first, so early small weapons do not take them
         self.reserved = {}
         self.large_t_at = {}           # cell -> LinkT of its large weapon (large_cells)
