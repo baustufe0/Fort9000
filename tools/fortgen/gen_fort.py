@@ -323,8 +323,13 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 # The back block (x -3600..-3100) ends at the starting fort's roof. The prow (-2945..-2845, beyond the
 # cliff edge at -2900) carries two light storeys.
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
-# artillery: one more tower column, so three mortars (prow + two top cells) and three turbines fit on top
-_V_TALL_WIDE = _union(_V_TALL, _box(-3500, -3400, -295, 205))
+# sniper and mortar rush (Vanilla-2): the mortars cannot wait for the five-storey tower (~165 struts before its
+# roof). A one-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow)
+# carries two mortars on its open roof (y=105, like the game's Template-2; cells under door roofs would cost
+# ~700 metal more for doors and armour, economy model: mortars at ~77/120 s instead of ~67/88 s); the sniper takes
+# the prow storey on the starting fort's roof (Template-2 places its sniper on that roof beam after ~42 struts).
+# The tower (turbines and the third mortar on its roof) stands one column back, x -3500..-3100, on the back block.
+_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 105, 205), _V_BACK)
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -362,24 +367,33 @@ VANILLA_VARIANTS = {
     # after 5.4 min, then minutes at the storage cap). The raised back towers give extra front
     # cells that look out over the deck.
     "artillerie": {
-        "title": "Artillery deck: two-storey deck over the starting fort, mortars on top under doors, workshop early",
-        "shape": _union(_V_TALL_WIDE, _V_BACK),
+        "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
+        "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+        # the sniper takes the lowest front cell (the prow storey on the starting fort's roof), the mortars the
+        # most forward top cells (both deck cells, then the tower roof), without the random pick; woodspam in front
+        # of the tower's front wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
+        "roof_weapons": {"mortar"}, "roof_weapon_low_first": True,
+        "cfg": {"small_low_first": True, "weapon_pick_best": True, "reserve_mortar": False,
+                "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-295, -195, -95], "base": []}},
         "plan": [
-            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
-            # first roof turbine, the anti-air machine gun, then the second mine
-            ("eco", ["mine"]),
+            # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
+            # workshop at once; the sniper (100 m / 300 e, no tech) and the deck with the two mortar cells while
+            # the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished
+            ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
+            ("weapons", ["sniper"]),
+            ("weapons", ["mortar", "mortar"]),
+            # then the economy and the tower
+            ("eco", ["mine"]),
             ("eco", ["turbine"]),
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
-            ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("weapons", ["mortar", "mortar"]),
             ("tech", ["upgrade"]),
-            ("eco", ["mine", "battery"]),
-            ("eco", ["turbine", "store"]),
+            ("eco", ["battery"]),
             ("upgrades", ["mortar2", "mortar2"]),
+            ("eco", ["mine", "turbine", "store"]),
             ("defence", ["woodspam"]),
             # late game
             ("aa", ["machinegun", "machinegun"]),
@@ -1105,7 +1119,9 @@ class Plan:
                     cands.sort(key=lambda c: (rows[c[1]], -c[0]))           # snipers preferably on top
         if not cands:
             return None
-        # some randomness among the best three so that variants differ
+        # some randomness among the best three so that variants differ (weapon_pick_best: always the best one)
+        if self.cfg.get("weapon_pick_best"):
+            return cands[0]
         return cands[self.rng.randrange(min(2, len(cands)))]
 
     def place_eco_slot(self, dev):
@@ -1125,10 +1141,11 @@ class Plan:
             return True
         return False
 
-    def arc_open(self, c):
-        """No other cell of the fort in the mortar arc of cell c (steeply up and forward)."""
+    def arc_open(self, c, roof=False):
+        """No other cell of the fort in the mortar arc of cell c (steeply up and forward); roof: for a mortar
+        standing on c's roof instead of its floor."""
         x0, x1 = self.cell_x(c)
-        y_floor = self.cfg["rows"][c[1] + 1]
+        y_floor = self.cfg["rows"][c[1] + (0 if roof else 1)]
         p0 = ((x0 + x1) / 2, y_floor - 20)
         dx, dy = rules.MORTAR_ARC
         for k in range(1, 27):
@@ -1196,10 +1213,11 @@ class Plan:
         level and lies ahead of c (enemy to the right)."""
         return self.cfg["rows"][c[1] + 1] == self.cfg["rows"][r[1]] and self.cell_x(c)[1] <= self.cell_x(r)[0] + 1
 
-    def choose_weapon_roof(self):
+    def choose_weapon_roof(self, dev=None):
         """Open roof for a roof weapon (variant roof_weapons: tall devices with nothing above them): a top cell
         without turbine, mortar or other roof device and not in the line of fire of a weapon behind it on the
-        same level; the highest roof first, there as far forward as possible."""
+        same level (mortars: with an open arc, mortar_open_arc); the highest roof first (roof_weapon_low_first:
+        the lowest), there as far forward as possible."""
         weapons = [d for d, v in self.devices.items() if v in DIRECT_WEAPONS or v == "reserved"]
         top = self.variant.get("roof_weapon_max_y", 1e9)     # only roofs this high or higher
         taken = {(p[1], p[2]) for p in self.placed}           # struts that already carry a device
@@ -1209,8 +1227,10 @@ class Plan:
                  and (self.nodes[c][1], self.nodes[(c[0] + 1, c[1])][1]) not in taken
                  and self.devices.get(c) not in LOBBED_WEAPONS
                  and (self.devices.get(c) or "").rstrip("+") not in LARGE
-                 and not any(self.roof_in_line(c, d) for d in weapons)]
-        cands.sort(key=lambda c: (self.cfg["rows"][c[1]], -c[0]))
+                 and not any(self.roof_in_line(c, d) for d in weapons)
+                 and not (dev in LOBBED_WEAPONS and self.cfg.get("mortar_open_arc") and not self.arc_open(c, roof=True))]
+        low = -1 if self.variant.get("roof_weapon_low_first") else 1
+        cands.sort(key=lambda c: (low * self.cfg["rows"][c[1]], -c[0]))
         return cands[0] if cands else None
 
     # --- Main flow
@@ -1453,7 +1473,7 @@ class Plan:
             self.placed.append(("sandbags", a[1], b[1], t, c))
             return
         # Weapons
-        roof = self.choose_weapon_roof() if dev in self.variant.get("roof_weapons", ()) else None
+        roof = self.choose_weapon_roof(dev) if dev in self.variant.get("roof_weapons", ()) else None
         if roof is None and dev in LOBBED_WEAPONS and dev in self.variant.get("roof_weapons", ()):
             self.problems.append("no roof for %s" % dev)
             return
