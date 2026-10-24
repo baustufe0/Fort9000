@@ -376,15 +376,21 @@ VANILLA_VARIANTS = {
         "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
         "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        # the sniper takes the front column on the starting fort's roof beam (weapon_cells), the mortars the most
-        # forward top cells (the nest, then the tower roof) at the back of their struts (weapon_t), the sandbags the
-        # front ends (sandbag_struts), without the random pick; woodspam in front
-        # of the tower's front wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
+        # the sniper takes the front column on the starting fort's roof beam (weapon_cells). The game allows one
+        # device per strut (test match 25.10.2026: sandbags planned beside the mortars on their struts took both,
+        # no mortar was placed): the nest floor over the front column is built in two halves (split_edges, braced
+        # down to the starting fort's roof posts), one mortar on each (mortar_slots); the prow's nest cell is split
+        # at half height (split_cell) and carries two stacked sandbags in front of both mortars (sandbag_slots).
+        # The third mortar takes the tower roof, without the random pick; woodspam in front of the tower's front
+        # wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "weapon_cells": [(-3100, 205, "sniper")],
                 "hidden_box": (-3100, -2845, 5, 105),
-                "weapon_t": [(-3100, 105, 0.3), (-2945, 105, 0.3)],
-                "sandbag_struts": [((-2945, 105), (-2845, 105), 0.8), ((-3100, 105), (-2945, 105), 0.82)],
+                "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
+                                 "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]}],
+                "mortar_slots": [((-3100, 105), (-3022, 105), 0.5), ((-3022, 105), (-2945, 105), 0.5)],
+                "split_cell": (-2945, 5),
+                "sandbag_slots": [("floor", 0.5), ("mid", 0.5)],
                 "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-295, -195, -95], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
@@ -820,7 +826,36 @@ class Plan:
     # places the strut gets the final material instead of a second action that swaps it
     SWAP_WINDOW = 20
 
+    def split_edge(self, a_ij, b_ij, material):
+        """split_edges: [{"a", "b", "mid", "braces"}] (positions): the strut a-b is built in two halves through a
+        node at mid, braced by struts from mid to the given (point, material) pairs, since a node held only by
+        two struts in line would hinge; one device fits on each half (the game allows one device per strut).
+        Returns True if a_ij-b_ij is such an edge."""
+        pa, pb = self.nodes[a_ij][1], self.nodes[b_ij][1]
+        for e in self.cfg.get("split_edges", []):
+            if {self.node_at(e["a"]), self.node_at(e["b"])} != {a_ij, b_ij}:
+                continue
+            key = ("split",) + tuple(e["mid"])
+            if key not in self.nodes:
+                self.nodes[key] = (None, tuple(e["mid"]), "new")
+            nid, p, _ = self.node(key)
+            if nid not in self.built_nodes:
+                src = self.nodes[a_ij] if self.nodes[a_ij][0] in self.built_nodes else self.nodes[b_ij]
+                self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+                                    % (src[0], self._fmt(src[1]), nid, self._fmt(p), material))
+                self.built_nodes.add(nid)
+                self.note_node(src[0], nid, "new")
+                self.links[frozenset((src[0], nid))] = material
+            self.link(a_ij, key, material)
+            self.link(key, b_ij, material)
+            for q, m in e.get("braces", []):
+                self.link(key, self.node_at(q), m)
+            return True
+        return False
+
     def link(self, a_ij, b_ij, material):
+        if self.cfg.get("split_edges") and self.split_edge(a_ij, b_ij, material):
+            return
         a, b = self.nodes[a_ij], self.nodes[b_ij]
         key = frozenset((a[0], b[0]))
         if self.links.get(key) == material:
@@ -1043,6 +1078,36 @@ class Plan:
             if not self.build_cell(x):
                 self.problems.append("cell %s could not be built" % (x,))
                 return False
+        return True
+
+    def mortar_slots_cells(self):
+        """mortar_slots: [(node A, node B, LinkT)] -> the cell above each slot (its strut lies on the cell's floor;
+        on a split edge, a half of it)."""
+        out = []
+        for pa, pb, t in self.cfg.get("mortar_slots", []):
+            # the grid end of the strut (the other end may be the node of a split edge)
+            ia = next((k for k in (self.node_at(pa), self.node_at(pb)) if k and k[0] != "split"), None)
+            out.append(next((c for c in sorted(self.all_cells) if ia in ((c[0], c[1] + 1), (c[0] + 1, c[1] + 1))
+                             and self.cell_x(c)[0] <= min(pa[0], pb[0]) + 1 and self.cell_x(c)[1] >= max(pa[0], pb[0]) - 1), None))
+        return out
+
+    def mortar_slot(self, dev):
+        """The next free mortar_slots strut: its cell (with its floor, maybe split) is built, then the mortar."""
+        n = self.mortar_slots_used = getattr(self, "mortar_slots_used", 0)
+        slots = self.cfg.get("mortar_slots", [])
+        if n >= len(slots):
+            return False
+        pa, pb, t = slots[n]
+        c = self.mortar_slots_cells()[n]
+        if c is None or not self.build_cell_path(c):
+            self.problems.append("mortar slot %d not reachable" % n)
+            return False
+        ka, kb = self.node_at(pa), self.node_at(pb)
+        a, b = self.nodes[ka], self.nodes[kb]
+        self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                            % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, dev))
+        self.placed.append((dev, a[1], b[1], t, ("slot", ka, kb)))
+        self.mortar_slots_used = n + 1
         return True
 
     def place_on_floor(self, c, dev, t=0.5):
@@ -1268,6 +1333,7 @@ class Plan:
         self.roof_device = {}
         self.roof_count = {}           # turbines per roof cell (roof_turbine_t: their LinkT positions)
         self.mines_done = 0
+        self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
         # the starting fort counts as built
         for c in self.orig_cells:
             self.built_cells.add(c)
@@ -1286,13 +1352,24 @@ class Plan:
                 c = (min(ia[0], ib[0]), ia[1] - 1)
                 if c in self.all_cells:
                     self.devices[c] = dev
+        # mortar_slots and the split sandbag cell are taken before any cell is reserved
+        for c in self.mortar_slots_cells():
+            if c is not None:
+                self.devices[c] = "mortar"
+                self.mortar_cells.add(c)
+        for c in self.all_cells:
+            if self.is_split(c) and self.cfg.get("sandbag_slots"):
+                self.devices[c] = "sandbags"
         # reserve the cells of large weapons first, so early small weapons do not take them
         self.reserved = {}
         self.large_t_at = {}           # cell -> LinkT of its large weapon (large_cells)
-        self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
         if self.cfg.get("reserve_mortar"):
+            skip = len(self.cfg.get("mortar_slots", []))     # the first mortars take their slots
             for step, items in variant["plan"]:
                 for dev in items:
+                    if dev in LOBBED_WEAPONS and step == "weapons" and skip:
+                        skip -= 1
+                        continue
                     if dev in LOBBED_WEAPONS and step == "weapons":
                         c = self.choose_weapon_cell(dev)
                         if c is not None:
@@ -1344,7 +1421,8 @@ class Plan:
         return self
 
     def hide_box(self):
-        """hidden_box (x0, x1, y_top, y_floor): every strut of these cells except their floor becomes background
+        """hidden_box (x0, x1, y_top, y_floor): every strut of these cells except their floor and struts carrying a
+        device becomes background
         bracing, built only once. The enemy cannot see through it, and mortar shells pass through it (the built-in
         AI checks only the terrain for lobbed weapons, TargetObstructed), so mortars on the floor stay hidden."""
         box = self.cfg.get("hidden_box")
@@ -1353,13 +1431,15 @@ class Plan:
         import re
         x0, x1, y_top, y_floor = box
         inside = lambda p: x0 - 1 <= p[0] <= x1 + 1 and y_top - 1 <= p[1] <= y_floor + 3
+        # struts that carry a device stay solid (background bracing cannot carry devices)
+        carry = {frozenset((tuple(a), tuple(b))) for d, a, b, t, c in self.placed if c is not None}
         seen, out = set(), []
         for line in self.actions:
             pts = [(float(x), float(y)) for x, y in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
             ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
             if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2:
                 a, b = pts[-2], pts[-1]
-                if inside(a) and inside(b) and min(a[1], b[1]) < y_floor - 3:
+                if inside(a) and inside(b) and min(a[1], b[1]) < y_floor - 3 and frozenset((a, b)) not in carry:
                     pair = frozenset(ids)
                     if pair in seen:
                         continue
@@ -1444,6 +1524,11 @@ class Plan:
                         return
                     if c[0] == "roof":
                         self.place_on_roof(c[1:], dev, t)
+                    elif c[0] == "slot":            # mortar_slots: the exact strut (maybe half a split edge)
+                        na, nb = self.nodes[c[1]], self.nodes[c[2]]
+                        self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                            % (na[0], self._fmt(na[1]), nb[0], self._fmt(nb[1]), t, dev))
+                        self.placed.append((dev, na[1], nb[1], t, c))
                     else:
                         self.devices[c] = dev
                         self.place_on_floor(c, dev, t)
@@ -1512,24 +1597,6 @@ class Plan:
             return
         if dev == "woodspam":
             return self.add_woodspam()
-        if dev == "sandbags" and self.cfg.get("sandbag_struts"):
-            # sandbag_struts: [(node A, node B, LinkT)], e.g. in front of mortars on the same strut (snipers)
-            n = sum(1 for p in self.placed if p[0] == "sandbags")
-            if n >= len(self.cfg["sandbag_struts"]):
-                self.problems.append("no room for sandbags")
-                return
-            pa, pb, t = self.cfg["sandbag_struts"][n]
-            ia, ib = self.node_at(pa), self.node_at(pb)
-            c = (min(ia[0], ib[0]), ia[1]) if ia and ib else None     # the cell below the strut
-            if c is None or (c not in self.orig_cells and not self.build_cell_path(c)):
-                self.problems.append("no room for sandbags")
-                return
-            self.link(ia, ib, "bracing")
-            a, b = self.nodes[ia], self.nodes[ib]
-            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "sandbags" },'
-                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t))
-            self.placed.append(("sandbags", a[1], b[1], t, c))
-            return
         if dev == "sandbags":
             # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts)
             slots = self.cfg.get("sandbag_slots", [])
@@ -1560,6 +1627,8 @@ class Plan:
             self.link((i, j), (i + 1, j), "bracing")
             self.place_on_roof(c, dev)
             return
+        if dev in LOBBED_WEAPONS and self.mortar_slot(dev):
+            return
         lst = self.reserved.get(dev)
         c = lst.pop(0) if lst else None
         if c is None:
@@ -1580,10 +1649,7 @@ class Plan:
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
         if dev in LOBBED_WEAPONS and self.is_top(c):
             self.link((i, j), (i + 1, j), "door")
-        # weapon_t: [(left x, floor y, LinkT)] for weapons that share their strut (e.g. with sandbags)
-        t = next((wt for x0, fy, wt in self.cfg.get("weapon_t", [])
-                  if abs(self.cell_x(c)[0] - x0) < 10 and self.cfg["rows"][c[1] + 1] == fy), 0.5)
-        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else t)
+        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else 0.5)
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 
