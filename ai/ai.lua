@@ -37,8 +37,13 @@ local CAI_Defaults =
 	BuildSkipSeconds = 90, BuildSkipMinMetal = 300, StarvedFlatTicks = 4,
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
+	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one
+	-- of its smoke shells was fired (the enemy anti-air does not see them in the smoke); a ready launcher fires
+	-- first when a rocket is ready; after MaxHold seconds without smoke the rockets fire anyway
 	Fire = { Enabled = true, Interval = 1.0, WeaponsPerTick = 3, AlwaysOffensive = true, RebuildFireFactor = 2.5,
-		NoOffence = { machinegun = true } },
+		NoOffence = { machinegun = true },
+		SmokeCover = { Enabled = true, Smoke = { smokebomb = true, smokebomb2 = true }, Rockets = { rocket = true, rocketemp = true },
+			MinDelay = 2, Window = 10, MaxHold = 30 } },
 	Tempo = { UpdatePeriod = 2.0, UpdatePeriodEasy = 4.0, UpdatePeriodNormal = 2.0, UpdatePeriodHard = 1.0, UpdateAfterRebuildDelay = 0.625, ConstructionMean = 20, ConstructionMin = 12,
 		NonConstructionMean = 6, NonConstructionMin = 3, RepairPeriod = 6,
 		RepairPeriodEasy = 12, RepairPeriodNormal = 6, RepairPeriodHard = 3 },
@@ -379,11 +384,93 @@ function CAI_ApplyFire()
 	table.sort(noList)
 	data.CAI.firePtr = 0
 	data.CAI.fireAttempts = 0
+	-- game seconds counted by the fire timer (deterministic), last own smoke shell, rockets held since
+	data.CAI.fireClock = 0
+	data.CAI.lastSmoke = nil
+	data.CAI.rocketHoldSince = nil
+	data.CAI.smokeCover = f.SmokeCover or CAI_Defaults.Fire.SmokeCover
 	if ScheduledCallCountOfFunc(CAI_FireTick) == 0 then
 		ScheduleCall(f.Interval or 1, CAI_FireTick)
 	end
 	return "period=" .. tostring(f.Interval) .. "s weapons=" .. tostring(f.WeaponsPerTick) .. " always=" .. tostring(f.AlwaysOffensive)
 		.. " duringRebuild=x" .. tostring(f.RebuildFireFactor) .. " noOffence=" .. table.concat(noList, ",")
+		.. " smokeCover=" .. tostring(data.CAI.smokeCover and data.CAI.smokeCover.Enabled or false)
+end
+
+-- Smoke before rockets (Fire.SmokeCover)
+local function CAI_WeaponsOf(kinds)
+	local out = {}
+	if type(GetDeviceType) ~= "function" then return out end
+	for i = 0, (GetWeaponCount(teamId) or 0) - 1 do
+		local id = GetWeaponId(teamId, i)
+		if id and id > 0 and not IsDummy(id) and kinds[GetDeviceType(id)] then
+			out[#out + 1] = id
+		end
+	end
+	return out
+end
+
+local function CAI_Ready(id)
+	return IsAIDeviceAvailable(id) and IsWeaponReadyToFire(id) and (data.ActionQueue == nil or data.ActionQueue[id] == nil)
+end
+
+-- true if a rocket may fire now: no smoke launcher, smoke shell in the air long enough, or held too long
+function CAI_RocketsMayFire()
+	local st = data.CAI
+	local sc = st and st.smokeCover
+	if not sc or not sc.Enabled or st.fireClock == nil or data.HumanAssist then return true end
+	local since = st.lastSmoke and (st.fireClock - st.lastSmoke)
+	if since and since >= sc.MinDelay and since <= sc.Window then return true end
+	if st.rocketRelease == st.fireClock then return true end   -- released after MaxHold, until the next tick
+	if #CAI_WeaponsOf(sc.Smoke) == 0 then return true end
+	if st.rocketHoldSince == nil then st.rocketHoldSince = st.fireClock end
+	if st.fireClock - st.rocketHoldSince >= sc.MaxHold then
+		CAI_Log("SMOKE_TIMEOUT rockets fire without smoke after " .. (st.fireClock - st.rocketHoldSince) .. "s")
+		st.rocketHoldSince = nil               -- the next rocket waits again
+		st.rocketRelease = st.fireClock
+		return true
+	end
+	return false
+end
+
+-- a rocket is ready and waits for smoke: fire a ready smoke launcher (not if a shell is already on its way)
+function CAI_FireSmokeFirst()
+	local st = data.CAI
+	local sc = st.smokeCover
+	if st.lastSmoke and st.fireClock - st.lastSmoke < sc.MinDelay then return false end
+	for _, sid in ipairs(CAI_WeaponsOf(sc.Smoke)) do
+		if CAI_Ready(sid) then
+			st.fireAttempts = st.fireAttempts + 1
+			TryFireGun(sid)
+			return true
+		end
+	end
+	return false
+end
+
+-- the built-in AI fires weapons itself too: rockets are held here until the smoke covers them
+local CAI_BaseTryFireGun = TryFireGun
+function TryFireGun(id, useGroup)
+	local hold = false
+	if useGroup == nil and data.CAI and data.CAI.smokeCover then   -- a group already firing is not interrupted
+		local ok, res = pcall(function()
+			local sc = data.CAI.smokeCover
+			if not (sc.Enabled and type(GetDeviceType) == "function" and sc.Rockets[GetDeviceType(id)]) then return false end
+			if CAI_RocketsMayFire() then
+				data.CAI.rocketHoldSince = nil
+				return false
+			end
+			CAI_FireSmokeFirst()
+			return true
+		end)
+		if not ok then
+			CAI_Log("ERROR smoke cover: " .. tostring(res))
+		else
+			hold = res
+		end
+	end
+	if hold then return end
+	return CAI_BaseTryFireGun(id, useGroup)
 end
 
 function CAI_RestoreFire()
@@ -395,18 +482,88 @@ function CAI_RestoreFire()
 	end
 end
 
+-- Fire diagnostics: why an offence weapon did not fire, at most one line per weapon every
+-- CAI_FIREWAIT_EVERY seconds of the fire clock (at once when the reason changes):
+--   FIREWAIT <type> <id> avail=<0|1> ready=<0|1> code=<FIREFAIL name|-> queue=<0|1> m=<metal> e=<energy>
+--     skipped: not available, not ready to fire (code: the engine's reason) or an action (doors) pending
+--   FIRETRY <type> <id> fired=<0|1> code=<FIREFAIL name|-> [ray=<hit>:<side>:<material>@<x>,<y>] m=<metal> e=<energy>
+--     after TryFireGun: fired = no longer ready (reloading); fired=0: the built-in AI declined
+--     (no target, chance, cost); ray = what the targeting ray towards the enemy reactor hits first, with the
+--     flags of the built-in TargetObstructed (own background bracing blocks it)
+CAI_FIREWAIT_EVERY = 30
+
+local function CAI_FireCode()
+	if type(GetWeaponFireFailureCode) ~= "function" then return "-" end
+	local c = GetWeaponFireFailureCode()
+	return tostring(type(FIREFAIL) == "table" and FIREFAIL[c] or c)
+end
+
+local function CAI_FireRay(id)
+	if type(CastRayFromDevice) ~= "function" or type(GetDeviceCountSide) ~= "function" then return "" end
+	local target
+	for i = 0, GetDeviceCountSide(enemyTeamId) - 1 do
+		local d = GetDeviceIdSide(enemyTeamId, i)
+		if GetDeviceType(d) == "reactor" then target = GetDevicePosition(d) break end
+	end
+	if target == nil then return " ray=no-reactor" end
+	local flags = RAY_EXCLUDE_CONSTRUCTION + RAY_ALLIED_BG_BLOCKS + RAY_EXCLUDE_DYNAMIC_TERRAIN   -- separate bits (no | in Lua 5.1)
+	local hit = CastRayFromDevice(id, target, 0, flags, 0)
+	local name = tostring(type(RAY_HIT) == "table" and RAY_HIT[hit] or hit)
+	local at = GetRayHitPosition and GetRayHitPosition()
+	local mat = GetRayHitMaterialSaveName and GetRayHitMaterialSaveName() or nil
+	return " ray=" .. name .. ":" .. tostring(GetRayHitSideId and GetRayHitSideId() or "?") .. ":" .. tostring(mat or "-")
+		.. (at and string.format("@%d,%d", math.floor(at.x), math.floor(at.y)) or "")
+end
+
+local function CAI_FireNote(st, id, kind, line, why)
+	st.fireNotes = st.fireNotes or {}
+	local n = st.fireNotes[id]
+	local now = st.fireClock or 0
+	if n and n.why == why and now - n.at < CAI_FIREWAIT_EVERY then return end
+	st.fireNotes[id] = { why = why, at = now }
+	local m, e = -1, -1
+	local res = GetTeamResources(teamId)
+	if type(res) == "table" or type(res) == "userdata" then m, e = res.metal or -1, res.energy or -1 end
+	CAI_Log(line .. " m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e))
+end
+
 function CAI_FireTick()
 	local st = data.CAI
 	local f = Strategy.Fire
 	if st == nil or data.gameEnded or data.defeated or data.Disable or data.DisableOffence or data.HumanAssist then
 		return
 	end
+	st.fireClock = (st.fireClock or 0) + (f.Interval or 1)
 	local ok, err = pcall(function()
 		local n = GetWeaponCount(teamId) or 0
 		if n == 0 or (data.offencePoints or 1) < 1 then return end
 		local tries = math.min(f.WeaponsPerTick or 3, n)
 		local no = st.noOffence or {}
 		local checked = 0
+		-- smoke cover: under smoke the ready rockets fire first; a ready rocket without smoke fires the smoke
+		local sc = st.smokeCover
+		local skip = no
+		if sc and sc.Enabled then
+			local rockets = {}
+			for _, id in ipairs(CAI_WeaponsOf(sc.Rockets)) do
+				if CAI_Ready(id) then rockets[#rockets + 1] = id end
+			end
+			if #rockets > 0 then
+				if CAI_RocketsMayFire() then
+					for _, id in ipairs(rockets) do
+						st.fireAttempts = st.fireAttempts + 1
+						TryFireGun(id)
+						checked = checked + 1
+					end
+				else
+					if CAI_FireSmokeFirst() then checked = checked + 1 end
+				end
+				-- fired or held: the round robin skips them without using up a turn
+				skip = {}
+				for k in pairs(no) do skip[k] = true end
+				for k in pairs(sc.Rockets) do skip[k] = true end
+			end
+		end
 		-- round robin over the weapons; NoOffence types are skipped without using up a turn
 		for step = 1, n do
 			if checked >= tries then break end
@@ -414,12 +571,30 @@ function CAI_FireTick()
 			local id = GetWeaponId(teamId, st.firePtr)
 			st.firePtr = st.firePtr + 1
 			local kind = (type(GetDeviceType) == "function" and id and id > 0) and GetDeviceType(id) or nil
-			if not (kind and no[kind]) then
+			if not (kind and skip[kind]) then
 				checked = checked + 1
-				if id and id > 0 and not IsDummy(id) and IsAIDeviceAvailable(id) and IsWeaponReadyToFire(id)
-					and (data.ActionQueue == nil or data.ActionQueue[id] == nil) then
-					st.fireAttempts = st.fireAttempts + 1
-					TryFireGun(id)
+				if id and id > 0 and not IsDummy(id) then
+					local avail = IsAIDeviceAvailable(id)
+					local ready = IsWeaponReadyToFire(id)
+					local code = ready and "-" or CAI_FireCode()
+					local queued = data.ActionQueue ~= nil and data.ActionQueue[id] ~= nil
+					if avail and ready and not queued then
+						st.fireAttempts = st.fireAttempts + 1
+						TryFireGun(id)
+						local fired = not IsWeaponReadyToFire(id)
+						local after = fired and CAI_FireCode() or "-"
+						local ray = ""
+						if not fired then
+							local okRay, r = pcall(CAI_FireRay, id)
+							ray = okRay and r or " ray=error"
+						end
+						CAI_FireNote(st, id, kind, "FIRETRY " .. tostring(kind) .. " " .. id .. " fired=" .. (fired and 1 or 0)
+							.. " code=" .. after .. ray, "try" .. (fired and 1 or 0))
+					else
+						CAI_FireNote(st, id, kind, "FIREWAIT " .. tostring(kind) .. " " .. id .. " avail=" .. (avail and 1 or 0)
+							.. " ready=" .. (ready and 1 or 0) .. " code=" .. code .. " queue=" .. (queued and 1 or 0),
+							"wait" .. tostring(avail) .. tostring(ready) .. code .. tostring(queued))
+					end
 				end
 			end
 		end
@@ -661,6 +836,7 @@ function CAI_InstallBuildLogging()
 	end
 	if type(CreateDeviceWithFlags) == "function" then
 		local CAI_BaseCreateDeviceWithFlags = CreateDeviceWithFlags
+		CAI_RawCreateDeviceWithFlags = CAI_BaseCreateDeviceWithFlags    -- the probe places without diagnostics
 		CreateDeviceWithFlags = function(team, saveName, nodeA, nodeB, t, ...)
 			local r = CAI_BaseCreateDeviceWithFlags(team, saveName, nodeA, nodeB, t, ...)
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
@@ -697,6 +873,274 @@ function CAI_InstallBuildLogging()
 		table.insert(hooked, "UpgradeDevice")
 	end
 	return (#hooked > 0) and table.concat(hooked, ",") or "no build functions found"
+end
+
+--------------------------------------------------------------------------------
+-- CS_UNSTABLE probe (testing only; FortPlanConfig.Probe in ai/fortplans.lua, off by default)
+-- Once the plan is finished (or after Probe.At seconds) the AI stops building (data.Disable) and tries every
+-- device of Probe.Devices at every LinkT of Probe.LinkT on every strut of its fort made of Probe.Materials
+-- and at most Probe.MaxAngle (default 20) degrees steep (steep = struts left out for that),
+-- one attempt every Probe.Interval seconds. A device that is placed is removed again at once (refunded), or
+-- after Probe.Hold seconds, when its load is measured. For a sandbox match without combat;
+-- tools/fortgen/probe.py reads the lines:
+--   PROBE START t=<s> devices=<a,b> linkt=<t,t> struts=<n> steep=<n> attempts=<n> mirrored=<0|1>
+--   PROBE NODE part=<k>/<n> <id>:<x>,<y>:<plan node id|-> ...     every node of the fort (world coordinates)
+--   PROBE LINK part=<k>/<n> <a>-<b>:<material>:<stress>[:<device>@<LinkT>,...] ...
+--             every strut with the engine's stress and the devices standing on it
+--   PROBE TRY <k> <device> <a>-<b> t=<LinkT> r=<OK|result> s=<stress> sn=<max |stress| at a, b> len=<length>
+--             ang=<degrees from horizontal> sag=<a>,<b> v=<a>,<b> dv=<devices on the strut>
+--             dn=<devices on the other struts at a or b> near=<their types, sorted|->
+--   PROBE LOAD <k> <device> <a>-<b> s=<stress> sn=<..> top=<max |stress|>:<a>-<b> d=<dxA>,<dyA>,<dxB>,<dyB>
+--   PROBE END tried=<n> placed=<n> unstable=<n> other=<n>
+-- s/sn are measured before the attempt; sag = distance of a node from its plan position (-1: not a plan node);
+-- d = how far the device's nodes moved while it stood. Short of resources, an attempt waits (PROBE WAIT) and
+-- is repeated, at most CAI_PROBE_WAITS times.
+CAI_PROBE_PER_LINE = 25
+CAI_PROBE_WAITS = 30
+CAI_Probe = nil
+CAI_ProbeScan = nil
+
+function CAI_EnumProbe(nodeA, nodeB, saveName, relativeHealth, stress, segmentsOnFire, deviceId)
+	local s = CAI_ProbeScan
+	if s and nodeA and nodeB then
+		local key = CAI_PairKey(nodeA, nodeB)
+		local l = s.seen[key]
+		if not l then
+			l = { nodeA, nodeB, tostring(saveName), type(stress) == "number" and stress or 0, devs = {} }
+			s.seen[key] = l
+			s.list[#s.list + 1] = l
+		end
+		-- a strut with devices may be enumerated once per device (the built-in DiscoverDevices relies on it)
+		if type(deviceId) == "number" and deviceId > 0 and not s.devSeen[deviceId] then
+			s.devSeen[deviceId] = true
+			l.devs[#l.devs + 1] = deviceId
+		end
+	end
+	return true      -- continue enumeration
+end
+
+-- every strut of the team: { nodeA, nodeB, material, stress, devs = { device id, ... } }, sorted by node ids
+local function CAI_ProbeLinks()
+	CAI_ProbeScan = { seen = {}, devSeen = {}, list = {} }
+	local ok, err = pcall(EnumerateLinks, teamId, "CAI_EnumProbe", 1, 1, "", false)
+	local s = CAI_ProbeScan
+	CAI_ProbeScan = nil
+	if not ok then error(err) end
+	table.sort(s.list, function(p, q)
+		if p[1] ~= q[1] then return p[1] < q[1] end
+		return p[2] < q[2]
+	end)
+	return s.list
+end
+
+-- stress of strut a-b, the largest |stress| of the other struts at a or b, the largest of the fort and its strut
+local function CAI_ProbeStress(list, a, b)
+	local s, sn, top, topL = 0, 0, 0, "-"
+	for _, l in ipairs(list) do
+		local v = math.abs(l[4])
+		if (l[1] == a and l[2] == b) or (l[1] == b and l[2] == a) then
+			s = l[4]
+		elseif l[1] == a or l[1] == b or l[2] == a or l[2] == b then
+			if v > sn then sn = v end
+		end
+		if v > top then top, topL = v, l[1] .. "-" .. l[2] end
+	end
+	return s, sn, top, topL
+end
+
+-- devices on strut a-b, devices on the other struts at a or b, and the sorted types of the latter
+local function CAI_ProbeDevices(list, a, b)
+	local dv, dn, types = 0, 0, {}
+	for _, l in ipairs(list) do
+		if (l[1] == a and l[2] == b) or (l[1] == b and l[2] == a) then
+			dv = dv + #l.devs
+		elseif l[1] == a or l[1] == b or l[2] == a or l[2] == b then
+			dn = dn + #l.devs
+			for _, id in ipairs(l.devs) do types[#types + 1] = tostring(GetDeviceType(id)) end
+		end
+	end
+	table.sort(types)
+	return dv, dn, #types > 0 and table.concat(types, ",") or "-"
+end
+
+local function CAI_ProbeDeviceText(id)
+	local t = (type(GetDeviceLinkPosition) == "function") and GetDeviceLinkPosition(id)
+	return tostring(GetDeviceType(id)) .. (type(t) == "number" and string.format("@%.2f", t) or "")
+end
+
+local function CAI_ProbeLogParts(kind, items)
+	local parts = math.ceil(#items / CAI_PROBE_PER_LINE)
+	for k = 1, parts do
+		local chunk = {}
+		for i = (k - 1) * CAI_PROBE_PER_LINE + 1, math.min(k * CAI_PROBE_PER_LINE, #items) do chunk[#chunk + 1] = items[i] end
+		CAI_Log("PROBE " .. kind .. " part=" .. k .. "/" .. parts .. " " .. table.concat(chunk, " "))
+	end
+end
+
+local function CAI_ProbeSag(p, n, pos)
+	local orig = p.toOrig[n]
+	local plan = orig and CAI_PlanPos[orig]
+	if plan and pos then return math.floor(CAI_Dist(pos, plan) + 0.5) end
+	return -1
+end
+
+local function CAI_ProbeSpeed(n)
+	local v = NodeVelocity(n)
+	return v and math.floor(math.sqrt(v.x * v.x + v.y * v.y) + 0.5) or -1
+end
+
+function CAI_ProbeStart(elapsed)
+	local cfg = FortPlanConfig.Probe
+	if CAI_PlanPos == nil then CAI_BuildPlanIndex() end
+	local toOrig = {}
+	for orig, act in pairs(data.OriginalToActual or {}) do toOrig[act] = orig end
+	local mats = {}
+	for _, m in ipairs(cfg.Materials or { "bracing", "armour" }) do mats[m] = true end
+	local devices = cfg.Devices or { "sniper" }
+	local linkT = cfg.LinkT or { 0.5 }
+	local box = cfg.Box
+	-- devices only go on roughly level struts (first game run: every strut of 30 degrees or more was CS_INVALIDNODES)
+	local maxAngle = cfg.MaxAngle or 20
+	local list = CAI_ProbeLinks()
+	local nodes, linkItems, struts, steep = {}, {}, {}, 0
+	for _, l in ipairs(list) do
+		local item = string.format("%d-%d:%s:%.3f", l[1], l[2], l[3], l[4])
+		if #l.devs > 0 then
+			local ds = {}
+			for _, id in ipairs(l.devs) do ds[#ds + 1] = CAI_ProbeDeviceText(id) end
+			item = item .. ":" .. table.concat(ds, ",")
+		end
+		linkItems[#linkItems + 1] = item
+		nodes[l[1]], nodes[l[2]] = true, true
+		local pa, pb = NodePosition(l[1]), NodePosition(l[2])
+		local use = mats[l[3]] and pa ~= nil and pb ~= nil
+		if use and math.deg(math.atan(math.abs(pb.y - pa.y) / math.max(math.abs(pb.x - pa.x), 0.001))) > maxAngle then
+			use = false
+			steep = steep + 1
+		end
+		if use and box then
+			local mx, my = (pa.x + pb.x) / 2, (pa.y + pb.y) / 2
+			use = mx >= box[1] and mx <= box[3] and my >= box[2] and my <= box[4]
+		end
+		if use then struts[#struts + 1] = l end
+	end
+	-- one device over the whole fort before the next, so a capped run still maps whole devices
+	local attempts = {}
+	for _, d in ipairs(devices) do
+		for _, l in ipairs(struts) do
+			for _, t in ipairs(linkT) do attempts[#attempts + 1] = { l[1], l[2], d, t } end
+		end
+	end
+	while cfg.Max and #attempts > cfg.Max do table.remove(attempts) end
+	local ids = {}
+	for n in pairs(nodes) do ids[#ids + 1] = n end
+	table.sort(ids)
+	local nodeItems = {}
+	for _, n in ipairs(ids) do
+		local q = NodePosition(n)
+		if q then nodeItems[#nodeItems + 1] = string.format("%d:%.1f,%.1f:%s", n, q.x, q.y, toOrig[n] and tostring(toOrig[n]) or "-") end
+	end
+	CAI_Probe = { cfg = cfg, attempts = attempts, k = 0, toOrig = toOrig, placed = 0, unstable = 0, other = 0, waits = 0,
+		wasDisabled = data.Disable }
+	data.Disable = true
+	local ts = {}
+	for i, t in ipairs(linkT) do ts[i] = string.format("%.2f", t) end    -- the game hands over 32-bit floats
+	CAI_Log("PROBE START t=" .. elapsed .. " devices=" .. table.concat(devices, ",") .. " linkt=" .. table.concat(ts, ",")
+		.. " struts=" .. #struts .. " steep=" .. steep .. " attempts=" .. #attempts .. " mirrored=" .. (CAI_FortMirrored and 1 or 0))
+	CAI_ProbeLogParts("NODE", nodeItems)
+	CAI_ProbeLogParts("LINK", linkItems)
+	ScheduleCall(cfg.Interval or 0.2, CAI_ProbeTick)
+end
+
+local function CAI_ProbeFinish(p)
+	p.done = true
+	data.Disable = p.wasDisabled
+	CAI_Log("PROBE END tried=" .. p.k .. " placed=" .. p.placed .. " unstable=" .. p.unstable .. " other=" .. p.other)
+end
+
+local function CAI_ProbeRemove(id)
+	local r = DestroyDeviceById(id)
+	if DD_SUCCESS ~= nil and r ~= DD_SUCCESS then CAI_Log("PROBE ERROR remove " .. tostring(id) .. " " .. tostring(r)) end
+end
+
+local function CAI_ProbeStep(p)
+	p.wait = nil
+	local h = p.hold
+	if h then
+		-- a placed device has stood for Probe.Hold seconds: measure its load, then remove it
+		p.hold = nil
+		local s, sn, top, topL = CAI_ProbeStress(CAI_ProbeLinks(), h.a, h.b)
+		local qa, qb = NodePosition(h.a), NodePosition(h.b)
+		local d = (qa and qb) and string.format("%d,%d,%d,%d", math.floor(qa.x - h.pa.x + 0.5), math.floor(qa.y - h.pa.y + 0.5),
+			math.floor(qb.x - h.pb.x + 0.5), math.floor(qb.y - h.pb.y + 0.5)) or "-"
+		CAI_Log(string.format("PROBE LOAD %d %s %d-%d s=%.3f sn=%.3f top=%.3f:%s d=%s", h.k, h.dev, h.a, h.b, s, sn, top, topL, d))
+		CAI_ProbeRemove(h.id)
+		return
+	end
+	if p.k >= #p.attempts then
+		CAI_ProbeFinish(p)
+		return
+	end
+	local k = p.k + 1
+	local a, b, dev, t = p.attempts[k][1], p.attempts[k][2], p.attempts[k][3], p.attempts[k][4]
+	local pa, pb = NodePosition(a), NodePosition(b)
+	if pa == nil or pb == nil then
+		p.k = k
+		p.other = p.other + 1
+		CAI_Log(string.format("PROBE TRY %d %s %d-%d t=%.2f r=GONE", k, dev, a, b, t))
+		return
+	end
+	local list = CAI_ProbeLinks()
+	local s, sn = CAI_ProbeStress(list, a, b)
+	local dv, dn, near = CAI_ProbeDevices(list, a, b)
+	local r = (CAI_RawCreateDeviceWithFlags or CreateDeviceWithFlags)(teamId, dev, a, b, t, 0, -1)
+	local starved = r == CS_INSUFFICIENTRESOURCES or (CD_INSUFFICIENTRESOURCES ~= nil and r == CD_INSUFFICIENTRESOURCES)
+	if starved and p.waits < CAI_PROBE_WAITS then
+		if p.waits == 0 then CAI_Log("PROBE WAIT " .. k .. " " .. dev .. " resources") end
+		p.waits = p.waits + 1
+		p.wait = 1
+		return
+	end
+	p.waits = 0
+	p.k = k
+	local placed = type(r) == "number" and r >= 0
+	if placed then
+		p.placed = p.placed + 1
+	elseif r == CS_UNSTABLE then
+		p.unstable = p.unstable + 1
+	else
+		p.other = p.other + 1
+	end
+	local dx, dy = pb.x - pa.x, pb.y - pa.y
+	CAI_Log(string.format("PROBE TRY %d %s %d-%d t=%.2f r=%s s=%.3f sn=%.3f len=%.1f ang=%.1f sag=%d,%d v=%d,%d dv=%d dn=%d near=%s",
+		k, dev, a, b, t, placed and "OK" or CAI_ResultName(r), s, sn, math.sqrt(dx * dx + dy * dy),
+		math.deg(math.atan(math.abs(dy) / math.max(math.abs(dx), 0.001))), CAI_ProbeSag(p, a, pa), CAI_ProbeSag(p, b, pb),
+		CAI_ProbeSpeed(a), CAI_ProbeSpeed(b), dv, dn, near))
+	if placed then
+		local hold = p.cfg.Hold or 0
+		if hold > 0 then
+			p.hold = { id = r, k = k, dev = dev, a = a, b = b, pa = { x = pa.x, y = pa.y }, pb = { x = pb.x, y = pb.y } }
+			p.wait = hold
+		else
+			CAI_ProbeRemove(r)
+		end
+	end
+end
+
+function CAI_ProbeTick()
+	local p = CAI_Probe
+	if p == nil or p.done or data.gameEnded then return end
+	local k, h = p.k, p.hold
+	local ok, err = pcall(CAI_ProbeStep, p)
+	if not ok then
+		CAI_Log("ERROR probe: " .. tostring(err))
+		p.hold, p.wait = nil, nil
+		if h then pcall(DestroyDeviceById, h.id) end
+		-- never retry a failing attempt forever
+		if p.k == k and not h then p.k = k + 1 end
+		if p.k >= #p.attempts then CAI_ProbeFinish(p) end
+	end
+	if not p.done then ScheduleCall(p.wait or p.cfg.Interval or 0.2, CAI_ProbeTick) end
 end
 
 --------------------------------------------------------------------------------
@@ -885,7 +1329,7 @@ function CAI_Think()
 	-- Second safety valve: if normal construction hangs on the same action although there is metal,
 	-- the action is skipped (the built-in AI would otherwise wait forever).
 	local fi = data.fortIndex
-	if type(fi) == "number" and Fort and fi <= #Fort then
+	if type(fi) == "number" and Fort and fi <= #Fort and CAI_Probe == nil then
 		if st.buildIndex ~= fi or rebuildCount > 0 then
 			-- new action, or construction is currently waiting for a rebuild: restart the clock
 			if st.buildIndex ~= fi then st.buildHadRes = false end
@@ -924,6 +1368,18 @@ function CAI_Think()
 		st.nextShape = elapsed + 60
 		local okS, errS = pcall(CAI_LogShape, "minute")
 		if not okS then CAI_Log("ERROR shape diagnostics: " .. tostring(errS)) end
+	end
+
+	-- CS_UNSTABLE probe (testing only): once the plan is finished, or after Probe.At seconds
+	local probe = FortPlanConfig and FortPlanConfig.Probe
+	if probe and CAI_Probe == nil and (elapsed >= (probe.At or math.huge)
+			or (Fort and type(fi) == "number" and fi > #Fort)) then
+		local okP, errP = pcall(CAI_ProbeStart, elapsed)
+		if not okP then
+			CAI_Log("ERROR probe: " .. tostring(errP))
+			if CAI_Probe and CAI_Probe.wasDisabled ~= nil then data.Disable = CAI_Probe.wasDisabled end
+			CAI_Probe = { done = true }
+		end
 	end
 
 	ScheduleCall(Strategy.ThinkInterval, CAI_Think)
@@ -985,7 +1441,17 @@ local CAI_BaseOnWeaponFired = OnWeaponFired
 function OnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, projectileNodeIdFrom)
 	CAI_BaseOnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, projectileNodeIdFrom)
 	local st = data.CAI
-	if st == nil or CAI_Side(weaponTeamId) ~= enemyTeamId then
+	if st == nil then
+		return
+	end
+	-- own smoke shell: rockets may follow (Fire.SmokeCover)
+	if CAI_Side(weaponTeamId) == CAI_Side(teamId) and st.smokeCover and st.smokeCover.Smoke[saveName] and st.fireClock then
+		st.lastSmoke = st.fireClock
+		st.rocketHoldSince = nil
+		st.smokeShots = (st.smokeShots or 0) + 1
+		return
+	end
+	if CAI_Side(weaponTeamId) ~= enemyTeamId then
 		return
 	end
 	st.shots[saveName] = (st.shots[saveName] or 0) + 1

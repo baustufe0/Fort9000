@@ -78,7 +78,10 @@ DEFAULTS = {
     "BuildSkipMinMetal": 300,
     "StarvedFlatTicks": 4,
     "Fire": {"Enabled": True, "Interval": 1.0, "WeaponsPerTick": 3, "AlwaysOffensive": True, "RebuildFireFactor": 2.5,
-             "NoOffence": {"machinegun": True}},
+             "NoOffence": {"machinegun": True},
+             # smoke before rockets (ai.lua, Fire.SmokeCover)
+             "SmokeCover": {"Enabled": True, "Smoke": {"smokebomb": True, "smokebomb2": True},
+                            "Rockets": {"rocket": True, "rocketemp": True}, "MinDelay": 2, "Window": 10, "MaxHold": 30}},
     "Tempo": {"UpdatePeriod": 2.0, "UpdatePeriodEasy": 4.0, "UpdatePeriodNormal": 2.0, "UpdatePeriodHard": 1.0, "UpdateAfterRebuildDelay": 0.625, "ConstructionMean": 20, "ConstructionMin": 12,
               "NonConstructionMean": 6, "NonConstructionMin": 3, "RepairPeriod": 6,
               "RepairPeriodEasy": 12, "RepairPeriodNormal": 6, "RepairPeriodHard": 3},
@@ -147,6 +150,7 @@ class Game:
         self.ai_teams = set()         # sides on which the FORT 9000 AI ran
         self.ai_end = []
         self.ai_sides = {}            # side -> build plan of the AI (according to the game log)
+        self.probe = False            # CS_UNSTABLE probe run (testing only, not learned from)
 
     @property
     def frames(self):
@@ -202,13 +206,15 @@ def parse_games(lines, source):
         if m and g is not None:
             team, kind, rest = int(m.group(1)), m.group(2), m.group(3)
             g.ai_teams.add(team % 100)
+            if kind == "PROBE":
+                g.probe = True
             if kind == "END":
                 kv = parse_kv(rest)
                 try:
                     g.ai_end.append((team % 100, int(kv.get("winner", -1)) % 100))
                 except ValueError:
                     pass
-    return [x for x in games if x.snaps[1] or x.snaps[2]]
+    return [x for x in games if (x.snaps[1] or x.snaps[2]) and not x.probe]
 
 
 # ---------------------------------------------------------------- Learning

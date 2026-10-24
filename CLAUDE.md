@@ -31,6 +31,10 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
   The plan-swap tests need the game's `data/maps` and `data/ai` folders.
 - Generate plans: see the docstring of `tools/fortgen/gen_fort.py`; check them with `rules.py` (fort building rules,
   SPEC.md 2.13 – read that section before changing plans or the generator) and `render_all.py`.
+- Plan from a player's build: build the fort (sandbox, no combat), then
+  `python tools/fortgen/rec_fort.py --map Vanilla --out fortplans/Vanilla/fort-t1f1-Vanilla-<n>.lua` (SPEC.md 2.10).
+- Map where the game refuses devices (`CS_UNSTABLE`): set `Probe` in `ai/fortplans.lua`, let the plan build in a sandbox,
+  then `python tools/fortgen/probe.py [--csv out.csv] [--png out.png]` (SPEC.md 2.8). Never commit `Probe` switched on.
 - The Forts log is `<Forts>/users/<steam-id>/log.txt`; it is overwritten on every game start.
   Run `train.py collect` after each play session.
 
@@ -50,11 +54,14 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
 
 Do not change these without updating `train.py` and the tests:
 - `[CREC] f=<frame> START|SNAP|BUILT|LOST|RESULT ...` (recorder lines)
+- `[CREC] f=<frame> NODE|LINK|DEV|GDEV|UNNODE|UNLINK|DEL ...` (build events, parsed by `tools/fortgen/rec_fort.py`)
 - `[CAI] T<team> PLAN map=<map> file=<plan> ...`
 - `[CAI] T<team> END winner=<n> ...`
 - `ActivateAI team <n> team members <m> fort <file>` (written by the game itself)
 
-Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `BUILD_ERROR`, `SHAPE`, `STRESS`, `FIRE`, `TEMPO`, ...) are used by the
+`[CAI] T<team> PROBE START|NODE|LINK|TRY|LOAD|WAIT|END ...` are parsed by `tools/fortgen/probe.py` (and make `train.py` skip the match).
+
+Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `BUILD_ERROR`, `SHAPE`, `STRESS`, `FIRE`, `FIREWAIT`, `FIRETRY`, `TEMPO`, ...) are used by the
 tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 ## Workflow

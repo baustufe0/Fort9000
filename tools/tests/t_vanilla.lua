@@ -27,6 +27,7 @@ end
 local engineFile = string.find(ENGINE, "/", 1, true) and ENGINE or ("ai/forts/vanilla/mid/" .. ENGINE)
 if ORDER == "before" then dofile(engineFile) end
 dofile("mods/fort-9000/ai/ai.lua")
+FortPlanConfig.Force = nil   -- the test picks Vanilla-2; a testing Force in fortplans.lua must not change that
 if ORDER == "after" then dofile(engineFile) end
 teamId = TEAM
 -- Game: real fort of team 1 at x=-1995, team 2 mirrored at +1995

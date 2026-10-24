@@ -19,13 +19,27 @@ SIZE = {
     "flak": (40, 59), "shotgun": (40, 59), "rocket": (40, 56), "rocketemp": (40, 56), "firebeam": (50, 50),
     "battery": (40, 40), "store": (40, 40), "turbine": (40, 63), "turbine2": (40, 63), "sandbags": (40, 25),
     "workshop": (90, 45), "factory": (90, 45), "upgrade": (90, 45), "munitions": (45, 85), "armoury": (45, 85),
+    # dlc_smokebomb is packed (not readable): size estimated like a mortar launcher
+    "smokebomb": (40, 40),
 }
+# Height of a device's box above its strut: the game centres the box SelectionHeight above the strut
+# (SelectionOffset y = -SelectionHeight - 0.5) with half-height SelectionHeight, so it reaches 2x SelectionHeight up.
+BOX_TOP = {"machinegun": 81, "minigun": 81, "sniper": 91, "sniper2": 91, "mortar": 61, "mortar2": 61,
+           "cannon": 121, "cannon20mm": 111, "laser": 101, "firebeam": 101, "flak": 118, "shotgun": 118,
+           "rocket": 112, "rocketemp": 112, "turbine": 127, "turbine2": 127, "battery": 81, "store": 81,
+           "workshop": 91, "factory": 91, "upgrade": 91, "munitions": 170, "armoury": 170, "sandbags": 51,
+           # dlc_smokebomb is packed: assumed like a turbine
+           "smokebomb": 127}
+# tall launchers: a solid strut through their box is an error (the other devices only get a warning; the
+# munitions plant, 170 high, was built in 100-high storeys in test matches)
+TALL = {"rocket", "rocketemp", "flak", "shotgun", "smokebomb"}
 # weapons that fire (roughly) straight ahead and need a clear line of fire (MinFireClearance 500-1000)
 DIRECT = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser", "flak", "shotgun",
           "rocket", "rocketemp", "firebeam"}
-LOBBED = {"mortar", "mortar2"}
+LOBBED = {"mortar", "mortar2", "smokebomb"}
 TURBINES = {"turbine", "turbine2"}
-UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine"}
+UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
+              "shotgun": "flak", "rocket": "rocketemp"}
 FOREGROUND = {"bracing", "armour", "door"}     # materials that stop shots (and wind); background bracing does not
 MIN_LENGTH = 37.5          # StandardMinLength
 MIN_DOOR_LENGTH = 49
@@ -208,6 +222,19 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
                 where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
                 " (built after the weapon, not recessed)" if k > kd else " (beyond the recession box)"))
+        # nothing solid inside the device's box above its strut
+        top = BOX_TOP.get(name)
+        if top and name not in TURBINES:
+            hits = set()
+            for dx in (-w / 2, 0, w / 2):
+                q0, q1 = (p[0] + dx, p[1] - 3), (p[0] + dx, p[1] - top)
+                for m, a, b, k, pr in _blocking(links, pos, q0, q1, skip={pair}):
+                    if ia in pr or ib in pr:
+                        continue            # the posts at the ends of its own strut
+                    hits.add((m, _fmt(a), _fmt(b)))
+            for m, a, b in sorted(hits)[:1]:
+                (errors if name in TALL else warnings).append(
+                    "%s: %s %s-%s inside its box (%d high)" % (where, m, a, b, top))
         # turbines need wind from both sides (the game's ray test, see wind_rays)
         if name in TURBINES:
             shares = wind_rays(links, pos, turbine_hub(p), terrain)

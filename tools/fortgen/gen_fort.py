@@ -22,6 +22,7 @@ import argparse
 import math
 import os
 import random
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,12 +34,23 @@ import rules  # noqa: E402
 MAX_LINK = 205          # struts between existing nodes (the game allows StandardMaxLinkLength = 218)
 MAX_NEW_NODE = 150     # StandardMaxLength: a new node can be at most this far from the node it is built from
 MIN_LINK = 45
-DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser"}
-LOBBED_WEAPONS = {"mortar", "mortar2"}
+DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
+                  "flak", "shotgun", "rocketemp", "rocket"}
+# the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
+# put it on the highest storey
+LOBBED_WEAPONS = {"mortar", "mortar2", "smokebomb"}
 LARGE = {"cannon", "cannon20mm", "laser"}
+# weapon_pack: flak and EMP rockets need the armoury, shotgun (flak) and rocket (EMP rocket) are their upgrades;
+# the smoke bomb follows the armoury in the game's own plans (Crevice-Howie: armoury is its only tech)
 PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "laser": "factory",
-          "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade"}
-UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine"}
+          "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade",
+          "flak": "armoury", "rocketemp": "armoury", "smokebomb": "armoury", "shotgun": "upgrade", "rocket": "upgrade"}
+UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
+              "shotgun": "flak", "rocket": "rocketemp"}
+# tall devices: their box reaches 112 (rockets) to 118 (flak, shotgun) above the strut (rules.BOX_TOP; the smoke
+# bomb is assumed like a turbine, 127); on a floor they need a storey at least this high, like a turbine
+TALL = {"rocketemp", "rocket", "flak", "shotgun", "smokebomb"}
+TALL_MIN_H = 125
 
 # ----------------------------------------------------------------------------- Map configuration
 
@@ -51,6 +63,15 @@ MAPS = {
         "reactor": (-1995, 60),
         "snap": 45,
         "ground_snap": 25,
+        # cliff ledge at y=-750 left of the tower (test match 24.10.2026: the foundation (-2199,-746) built straight
+        # down from the roof node above and the roof node (-2300,-846) built up from that foundation were refused
+        # with CS_OBSTRUCTION, the AI stalled for 5 minutes; the AI places a node at its source's current position
+        # plus the offset, so a source that sagged puts a foundation into the rock). Build like the game's Abyss-1:
+        # foundations from the storey below, else diagonally from above, never straight down; nodes above the
+        # ground not from foundations (roof nodes along the roof); other new nodes at least rock_clear from the rock
+        "found_from_below": True,
+        "no_build_from_found": True,
+        "rock_clear": 30,
         # proven slots from the original plan: (node A, node B, LinkT); nodes given as positions
         "tech_slots": {
             "workshop": [((-2001, 305), (-1901, 309), 0.05)],
@@ -59,6 +80,8 @@ MAPS = {
             # weapon_pack's ToGA1 armoury slot (shifted by -500; the munitions plant has the same size), moved
             # to 0.3: the workshop at 0.05 on the strut to the right reaches over the shared node
             "munitions": [((-2100, 300), (-2001, 305), 0.3)],
+            # the same slot for the armoury (same size; no plan builds both)
+            "armoury": [((-2100, 300), (-2001, 305), 0.3)],
         },
         # weapon_pack is always installed: cannons and 20mm cannons need the munitions plant
         "prereq": {"cannon": "munitions", "cannon20mm": "munitions", "munitions": "workshop"},
@@ -79,6 +102,17 @@ MAPS = {
         "plan_dir": "ai/forts/vanilla/mid",
         "base_plan": "fort-t1f1-Template-1.lua",
         "fwe": "Vanilla.fwe",
+        # the tower stands on two foundations that move apart (the back block and the starting fort): built
+        # column by column, its front part went up to the roof alone and the back part after it, and the seam
+        # between them came last (test matches: the two parts leaned apart, the seam cells were squeezed).
+        # Cells above base_y (the tower) are built storey by storey: none above the first `storeys` storeys
+        # before those are complete over the whole width, and later none more than `storeys` storeys above
+        # the highest complete one (connect_tower)
+        "tower_connect": {"base_y": 205, "storeys": 2},
+        # after the first mine, the inner metal layer in front of the reactor (diagonal (-2892,411)-(-2943,312)
+        # and post (-2943,312)-(-2945,206); the outer armour shell at x -2845 stays) is rebuilt as wood bracing:
+        # the refunded metal speeds up the start (starting-fort node ids of fort-t1f1-Template-1.lua)
+        "rebrace_after_mine": [(50, 53), (53, 55)],
         "solid_minus1": True,          # blocks with id -1 are rock here
         # front column at -2945/-2845 = the prow of the starting fort (rock ends at x=-2900, nothing beyond -2845)
         # back columns -3600..-3400: room for turbines and eco behind the fort (the rock ends at -3600)
@@ -227,6 +261,33 @@ VARIANTS = {
         ],
         "armour_roof": True,
     },
+    "raketen": {
+        "title": "Rocket front (shape of the heavy front): armoury early, EMP rockets upgraded to rockets, smoke bombs on top, flak/shotguns",
+        "shape": lambda x0, y0, x1, y1: (
+            (y0 >= -502 and y1 <= -250 and x0 >= -2100 and x1 <= -1700) or
+            (y0 >= -846 and y1 <= -502 and x0 >= -2400 and x1 <= -1900) or
+            (y0 >= 405 and y1 <= 600 and x0 >= -2100 and x1 <= -1900)),
+        "plan": [
+            ("aa", ["machinegun", "machinegun"]),
+            ("eco", ["mine", "mine", "turbine", "battery", "turbine"]),
+            # armoury (400 metal, 2000 energy), then devices that do not need it while it is being built
+            ("tech", ["armoury"]),
+            ("eco", ["mine", "store", "mine"]),
+            ("weapons", ["rocketemp", "smokebomb", "rocketemp"]),
+            ("tech", ["upgrade"]),
+            ("weapons", ["flak"]),
+            ("eco", ["turbine", "battery"]),
+            ("upgrades", ["rocket", "rocket"]),
+            ("weapons", ["smokebomb", "flak"]),
+            ("upgrades", ["shotgun", "shotgun", "minigun"]),
+        ],
+        # smoke bombs (lobbed, tall) and flak (anti-air, tall) on open roofs: no storey above limits their
+        # height; the rockets take the storeys of at least TALL_MIN_H at the front
+        "roof_weapons": {"smokebomb", "flak"},
+        "reserve_tall": True,
+        "roof_weapon_max_y": -502,
+        "armour_roof": True,
+    },
 }
 
 
@@ -282,7 +343,15 @@ _V_LARGE_TOGWM2 = [(-3200, -20, 0.5), (-3200, -145, 0.5)]
 # fire): no prow storeys, no woodspam base on the prow, cannons at LinkT 0.5 instead of 0.75 (ToGWM2).
 _V_HIGH_ROWS = [-470, -370, -270, -145, -20, 105, 205, 308, 405, 503, 602, 700]
 _V_TALL_HIGH = _box(-3400, -2945, -370, 205)
+# The front cell on the starting fort's front post (x -3100..-2945, floor 105) refused the early sniper with
+# CS_UNSTABLE in every test match, also with a 125-high storey (24.10.2026: the AI gave up after 120 s; the links
+# at its front node were strained to 1.79 of their planned length); snipers stay out of it (a machine gun takes it).
 _V_HIGH_CFG = {"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370,
+               "weapon_avoid": [(-3100, 105, {"sniper"})],
+               # the roof turbine on the seam column (x -3300..-3200, where the back and front parts of the tower
+               # meet) was refused with CS_UNSTABLE in every test match (24.10.2026: three tries, the AI gave up
+               # after 120 s); the tower roof has three turbines without it
+               "turbine_avoid": [(-3300, -370)],
                "large_top_min": -270, "large_top_max": -145,
                "woodspam": {"wall_x": -2945, "layers": [-2905, -2865], "rows": [-370, -270, -145],
                             "base": []}}
@@ -297,11 +366,13 @@ VANILLA_VARIANTS = {
         "shape": _union(_V_TALL_WIDE, _V_BACK),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "plan": [
-            ("eco", ["mine", "turbine", "mine"]),
-            ("aa", ["machinegun"]),
-            # tech early, then devices that do not need it: the AI waits on a device until its tech is
-            # finished (workshop and upgrade centre: 60 s to build)
+            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
+            # first roof turbine, the anti-air machine gun, then the second mine
+            ("eco", ["mine"]),
             ("tech", ["workshop"]),
+            ("eco", ["turbine"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
             ("weapons", ["mortar", "mortar"]),
@@ -320,27 +391,39 @@ VANILLA_VARIANTS = {
         ],
     },
     "kanone20mm": {
-        "title": "20mm deck (weapon_pack): munitions plant early, two 20mm cannons behind open front cells (like weapon_pack's ToGWM2)",
+        "title": "20mm rush (weapon_pack): workshop, munitions plant and the first 20mm cannon before anything else",
         "shape": _union(_V_TALL_HIGH, _V_BACK),
-        "cfg": _V_HIGH_CFG,
+        # the first 20mm stands low, on floor 105 of the column right behind the starting fort (x -3200..-3100,
+        # a 125-high storey), the second one storey higher (that column hangs on the starting fort's back posts:
+        # ~3 struts per cell). The munitions plant keeps its proven slot two columns back: on the bottom floor of
+        # the column right behind the starting fort, next to the workshop, it was refused with CS_UNSTABLE
+        # (test match 24.10.2026: no stress, no sag; its body beside the workshop, its 170-high box over the
+        # workshop's strut) and the AI gave up on it
+        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True),
         "plan": [
-            ("eco", ["mine", "turbine", "mine"]),
-            ("aa", ["machinegun"]),
-            # tech early, then devices that do not need it: the AI waits on a device until its tech is
-            # finished (workshop 60 s; munitions plant ~90 s: test matches 24.10.2026 waited ~1.5 min at
-            # the storage cap before the first heavy weapon)
+            # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
+            # economy (601 m / 3004 e, +13 m/s, +100 e/s, caps 900 / 5000) pays for it on time if nothing else
+            # comes first (economy model: first shot ~225 s instead of ~450 s). The armour sale and the workshop
+            # at once; the struts for the munitions slot while the workshop builds; the munitions plant needs the
+            # whole 5000 energy cap; a mine and a battery and the cannon's cell from the surplus while it builds
+            ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
+            ("tech", ["munitions"]),
+            ("eco", ["mine", "battery"]),
+            ("weapons", ["cannon20mm"]),
+            # then the economy and the tower
+            ("eco", ["turbine"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("eco", ["mine", "battery"]),
-            # the munitions plant costs 800 metal and 5000 energy: turbines first
+            ("eco", ["mine"]),
             ("eco", ["turbine", "turbine"]),
-            ("tech", ["munitions"]),
             ("eco", ["store", "battery"]),
             ("aa", ["machinegun"]),
             ("weapons", ["sniper"]),
             ("defence", ["woodspam"]),
-            ("weapons", ["cannon20mm", "cannon20mm"]),
+            ("weapons", ["cannon20mm"]),
             # late game: more anti-air, the woodspam completed
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
@@ -351,12 +434,13 @@ VANILLA_VARIANTS = {
         "shape": _union(_V_TALL_HIGH, _V_BACK),
         "cfg": _V_HIGH_CFG,
         "plan": [
-            ("eco", ["mine", "turbine", "mine"]),
-            ("aa", ["machinegun"]),
-            # tech early, then devices that do not need it: the AI waits on a device until its tech is
-            # finished (workshop 60 s; munitions plant ~90 s: test matches 24.10.2026 waited ~1.5 min at
-            # the storage cap before the first cannon)
+            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
+            # first roof turbine, the anti-air machine gun, then the second mine
+            ("eco", ["mine"]),
             ("tech", ["workshop"]),
+            ("eco", ["turbine"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
             ("eco", ["mine", "battery"]),
@@ -379,11 +463,15 @@ VANILLA_VARIANTS = {
         # the factory takes the usual upgrade slot: upgrade centre on the munitions slot (no munitions here)
         "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
         "plan": [
-            ("eco", ["mine", "turbine", "mine"]),
+            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
+            # first roof turbine, the anti-air machine gun, then the second mine
+            ("eco", ["mine"]),
+            ("tech", ["workshop"]),
+            ("eco", ["turbine"]),
             ("aa", ["machinegun"]),
+            ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
-            ("tech", ["workshop"]),
             ("eco", ["mine", "turbine", "battery"]),
             ("tech", ["factory"]),
             # the laser needs an extra store and battery and a lot of energy per shot (test match: a laser
@@ -451,7 +539,7 @@ class Plan:
                     self.nodes[(i, j)] = (best[0], best[1], "orig")
                     continue
                 surf, d = self.t.nearest_surface(p)
-                if self.t.inside(p) or d < 12:
+                if self.t.inside(p) or d < self.cfg.get("rock_clear", 12):
                     if d <= self.cfg["ground_snap"]:
                         q = (round(surf[0], 2), round(surf[1], 2))
                         self.nodes[(i, j)] = (None, q, "found")
@@ -583,19 +671,42 @@ class Plan:
                         break
         # dependencies: each resting node is held by the shallowest supported cell below it
         # (fewest cells to build first), so devices up top do not wait for the whole back column
-        depth, best = {}, {}
+        # support_cheapest: by the fewest cells that must be built first (the whole chain below), not the
+        # shallowest chain; on Vanilla the column right behind the starting fort hangs on its back posts, while
+        # the shallowest choice led from column to column through the whole back block
+        cheapest = self.cfg.get("support_cheapest")
+        depth, best, closure = {}, {}, {}
         for c in sorted(via, key=lambda c: -c[1]):
             for n in via[c]:
                 if n not in best:
                     hs = [h for h in ((n[0] - 1, n[1]), n) if h in depth]
-                    best[n] = None if held.get(n, 0) is None or not hs else min(hs, key=lambda h: depth[h])
+                    key = (lambda h: len(closure[h])) if cheapest else (lambda h: depth[h])
+                    best[n] = None if held.get(n, 0) is None or not hs else min(hs, key=key)
             depth[c] = 1 + max([depth[best[n]] if best[n] else 0 for n in via[c]])
+            closure[c] = {c}.union(*[closure[best[n]] for n in via[c] if best[n]])
         self.deps = {c: {best[n] for n in via[c]} - {None} for c in via}
         self.depth = depth
         dropped = self.cells - sup
         if dropped:
             self.cells -= dropped
             self.problems.append("%d unsupported cells omitted: %s" % (len(dropped), sorted(dropped)))
+
+    def connect_tower(self):
+        """tower_connect: a tower cell (floor at or above base_y) in storey k (1 = lowest) also depends on every
+        tower cell in storeys 1..max(n, k - n), so both parts of the tower are joined over n storeys before
+        anything higher is built, and never rise more than n storeys above the joined part."""
+        tc = self.cfg.get("tower_connect")
+        if not tc:
+            return
+        rows, n = self.cfg["rows"], tc["storeys"]
+        tower = [c for c in self.cells if rows[c[1] + 1] <= tc["base_y"]]
+        floors = sorted({rows[c[1] + 1] for c in tower}, reverse=True)       # lowest storey first
+        storey = {c: floors.index(rows[c[1] + 1]) + 1 for c in tower}
+        for c in tower:
+            k = storey[c]
+            if k > n:
+                below = {d for d in tower if storey[d] <= max(n, k - n)}
+                self.deps[c] = self.deps.get(c, set()) | below
 
     # --- Cell properties
     def is_front(self, c):
@@ -604,6 +715,9 @@ class Plan:
 
     def cell_w(self, c):
         return abs(self.nodes[(c[0] + 1, c[1] + 1)][1][0] - self.nodes[(c[0], c[1] + 1)][1][0])
+
+    def cell_h(self, c):
+        return self.cfg["rows"][c[1] + 1] - self.cfg["rows"][c[1]]
 
     def is_top(self, c):
         return (c[0], c[1] - 1) not in self.all_cells
@@ -649,9 +763,20 @@ class Plan:
             return None
         if kind == "found":
             # build the foundation from above/diagonally, not sideways along the ground
-            cand.sort(key=lambda dc: (dc[1][1] == j, dc[0]))
+            if self.cfg.get("found_from_below"):
+                # from the storey below first, then diagonally from above, straight down last
+                cand = [c for c in cand if c[0] <= MAX_NEW_NODE]
+                if not cand:
+                    return None
+                cand.sort(key=lambda dc: (dc[2][1] != 1, dc[2] == (0, -1), dc[1][1] == j, dc[0]))
+            else:
+                cand.sort(key=lambda dc: (dc[1][1] == j, dc[0]))
         else:
-            near = [c for c in cand if c[0] <= MAX_NEW_NODE] or cand    # a new node at most 150 from its source
+            if self.cfg.get("no_build_from_found"):
+                cand = [c for c in cand if self.nodes[c[1]][2] != "found"] or cand
+            near = [c for c in cand if c[0] <= MAX_NEW_NODE]    # a new node at most 150 from its source
+            if not near:
+                return None             # the caller builds a neighbouring cell first
             cand = sorted(near, key=lambda dc: (self.chain(self.nodes[dc[1]][0]), dc[2] != (0, 1), dc[0]))
         src = self.nodes[cand[0][1]]
         self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
@@ -661,11 +786,26 @@ class Plan:
         self.links[frozenset((src[0], nid))] = via_material
         return nid
 
+    # a strut placed this few actions ago is probably still under construction in the game; changing its material
+    # then has no effect (test match 24.10.2026: doors in front of a 20mm, planned right after their post, came only
+    # with the AI's final pass 200 s later, and blocked the cannon's line of fire until then), so the action that
+    # places the strut gets the final material instead of a second action that swaps it
+    SWAP_WINDOW = 20
+
     def link(self, a_ij, b_ij, material):
         a, b = self.nodes[a_ij], self.nodes[b_ij]
         key = frozenset((a[0], b[0]))
         if self.links.get(key) == material:
             return
+        if key in self.links:
+            ids = re.compile(r"OriginalNodeAId = (\d+),.*OriginalNodeBId = (\d+),")
+            for k in range(len(self.actions) - 1, max(-1, len(self.actions) - 1 - self.SWAP_WINDOW), -1):
+                act = self.actions[k]
+                m = ids.search(act)
+                if m and ("CREATE_NODE" in act or "CREATE_LINK" in act) and {int(m.group(1)), int(m.group(2))} == set(key):
+                    self.actions[k] = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "%s"' % material, act)
+                    self.links[key] = material
+                    return
         self.actions.append('{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
                             % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), material))
         self.links[key] = material
@@ -945,7 +1085,17 @@ class Plan:
                                     and (c[0] - 1, c[1]) not in self.devices and wide(c) and low <= rows[c[1]] <= top)
             cands.sort(key=lambda c: abs(rows[c[1]] - self.cfg.get("large_y", -300)))
         else:
-            cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and wide(c))
+            high = lambda c: dev not in TALL or self.cell_h(c) >= TALL_MIN_H
+            # no roof weapon in front of it on its own floor level, now or later (roof_weapons: high roofs ahead
+            # stay free for them)
+            top = self.variant.get("roof_weapon_max_y", 1e9)
+            roofs = [r for r in self.cells if self.is_top(r) and self.cfg["rows"][r[1]] <= top]                 if self.variant.get("roof_weapons") else []
+            clear = lambda c: not any(self.roof_in_line(r, c) for r in roofs)
+            # weapon_avoid: cells [(left x, floor y, devices)] where these weapons were refused in test matches
+            avoid = lambda c: any(abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == fy and dev in devs
+                                  for x0, fy, devs in self.cfg.get("weapon_avoid", []))
+            cands = self.free_cells(lambda c: self.is_front(c) and c in self.cells and wide(c) and high(c) and clear(c)
+                                    and not avoid(c))
             if dev == "machinegun":
                 cands.sort(key=lambda c: (abs(rows[c[1]] - self.cfg.get("aa_y", -250)), -c[0]))   # near reactor height: anti-air
             else:
@@ -1028,7 +1178,10 @@ class Plan:
                  and self.devices.get(c) not in LOBBED_WEAPONS
                  and self.cell_w(c) >= min_w
                  # not over a large weapon (the turbine collides with it)
-                 and not (min_w and (self.devices.get(c) or "").rstrip("+") in LARGE)]
+                 and not (min_w and (self.devices.get(c) or "").rstrip("+") in LARGE)
+                 # turbine_avoid: roofs [(left x, roof y)] where turbines were refused in test matches
+                 and not any(abs(self.cell_x(c)[0] - x0) < 2 and self.cfg["rows"][c[1]] == ry
+                             for x0, ry in self.cfg.get("turbine_avoid", []))]
         if self.cfg.get("turbine_cheap_first"):
             # early economy: the roof that needs the fewest unbuilt cells first, then the highest
             cands.sort(key=lambda c: (self.unbuilt_support(c), self.cfg["rows"][c[1]], -c[0]))
@@ -1036,6 +1189,28 @@ class Plan:
             cands.sort(key=lambda c: (self.cell_w(c) >= 95, self.cfg["rows"][c[1]], -c[0]))
         else:
             cands.sort(key=lambda c: (self.cfg["rows"][c[1]], c[0]))
+        return cands[0] if cands else None
+
+    def roof_in_line(self, r, c):
+        """A device on the roof of cell r stands in the line of fire of a weapon in cell c: the roof is c's floor
+        level and lies ahead of c (enemy to the right)."""
+        return self.cfg["rows"][c[1] + 1] == self.cfg["rows"][r[1]] and self.cell_x(c)[1] <= self.cell_x(r)[0] + 1
+
+    def choose_weapon_roof(self):
+        """Open roof for a roof weapon (variant roof_weapons: tall devices with nothing above them): a top cell
+        without turbine, mortar or other roof device and not in the line of fire of a weapon behind it on the
+        same level; the highest roof first, there as far forward as possible."""
+        weapons = [d for d, v in self.devices.items() if v in DIRECT_WEAPONS or v == "reserved"]
+        top = self.variant.get("roof_weapon_max_y", 1e9)     # only roofs this high or higher
+        taken = {(p[1], p[2]) for p in self.placed}           # struts that already carry a device
+        cands = [c for c in sorted(self.cells)
+                 if self.is_top(c) and c not in self.mortar_cells and not self.roof_count.get(c)
+                 and self.cfg["rows"][c[1]] <= top
+                 and (self.nodes[c][1], self.nodes[(c[0] + 1, c[1])][1]) not in taken
+                 and self.devices.get(c) not in LOBBED_WEAPONS
+                 and (self.devices.get(c) or "").rstrip("+") not in LARGE
+                 and not any(self.roof_in_line(c, d) for d in weapons)]
+        cands.sort(key=lambda c: (self.cfg["rows"][c[1]], -c[0]))
         return cands[0] if cands else None
 
     # --- Main flow
@@ -1046,6 +1221,7 @@ class Plan:
         self.tech_slots.update(variant.get("tech_slots", {}))
         self.build_lattice()
         self.select_cells(variant["shape"])
+        self.connect_tower()
         self.built_cells = set()
         self.build_order = []
         self.late_crossbrace = []
@@ -1084,6 +1260,24 @@ class Plan:
                             self.reserved.setdefault(dev, []).append(c)
                             self.devices[c] = "reserved"
                             self.mark_large(c, dev)
+        if variant.get("reserve_tall"):
+            # tall front weapons (rockets) take the few storeys that are high enough before anything else, the
+            # lowest first, so the high roofs stay out of their lines of fire (roof weapons)
+            roof = variant.get("roof_weapons", ())
+            low_first = self.cfg.get("small_low_first")
+            self.cfg["small_low_first"] = True
+            for step, items in variant["plan"]:
+                for dev in items:
+                    if dev in TALL and dev not in roof and step == "weapons":
+                        c = self.choose_weapon_cell(dev)
+                        if c is not None:
+                            self.reserved.setdefault(dev, []).append(c)
+                            self.devices[c] = "reserved"
+            self.cfg["small_low_first"] = low_first
+            # build their structure right away: on Abyss the lowest one (y -250..-95 above the reactor) is the way
+            # up to the top of the starting fort; left for later, the turbines and mines were not reachable
+            for c in sorted(c for cs in self.reserved.values() for c in cs):
+                self.build_cell_path(c)
         for step, items in variant["plan"]:
             for dev in items:
                 self.add(step, dev)
@@ -1184,6 +1378,8 @@ class Plan:
             return
         if dev == "mine":
             return self.add_mine()
+        if dev == "rebrace":
+            return self.rebrace()
         if dev == "turbine":
             c = self.choose_turbine_floor() if self.cfg.get("turbine_floor_y") is not None else None
             if c is not None and self.build_cell_path(c):
@@ -1257,6 +1453,21 @@ class Plan:
             self.placed.append(("sandbags", a[1], b[1], t, c))
             return
         # Weapons
+        roof = self.choose_weapon_roof() if dev in self.variant.get("roof_weapons", ()) else None
+        if roof is None and dev in LOBBED_WEAPONS and dev in self.variant.get("roof_weapons", ()):
+            self.problems.append("no roof for %s" % dev)
+            return
+        if roof is not None:
+            c = roof
+            if not self.build_cell_path(c):
+                self.problems.append("no roof for %s" % dev)
+                return
+            self.roof_count[c] = 99            # no turbine beside it on this roof
+            self.roof_device[c] = dev
+            i, j = c
+            self.link((i, j), (i + 1, j), "bracing")
+            self.place_on_roof(c, dev)
+            return
         lst = self.reserved.get(dev)
         c = lst.pop(0) if lst else None
         if c is None:
@@ -1268,6 +1479,8 @@ class Plan:
         if dev in LARGE:
             self.mark_large(c, dev)
         if not self.build_cell_path(c):
+            if self.variant.get("reserve_tall"):
+                del self.devices[c]        # not reachable yet: leave the cell to a later device
             return
         # reset front/roof after the weapon choice (door instead of armour)
         i, j = c
@@ -1347,6 +1560,18 @@ class Plan:
                 self.link(key(x, rows[-1]), ij, m)
                 self.link(key(cols[k], rows[-1]), ij, m)
 
+    def rebrace(self):
+        """rebrace_after_mine: starting-fort struts rebuilt as wood bracing (the game swaps the material and refunds
+        the metal); after the first mine, or earlier as the plan step "rebrace"."""
+        if getattr(self, "rebraced", False):
+            return
+        self.rebraced = True
+        for ia, ib in self.cfg.get("rebrace_after_mine", []):
+            pa, pb = self.orig[ia], self.orig[ib]
+            self.actions.append('{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "bracing" },'
+                                % (ia, self._fmt(pa), ib, self._fmt(pb)))
+            self.links[frozenset((ia, ib))] = "bracing"
+
     def add_mine(self):
         spots = self.cfg["mines"]
         while self.mines_done < len(spots):
@@ -1390,6 +1615,8 @@ class Plan:
                 g = m["ground"]
                 self.actions.append('{ Type = CREATE_DEVICE, GroundPosition = { %s }, LinkT = 1.57, DeviceSaveName = "mine" },' % self._fmt(g))
                 self.placed.append(("mine", g, g, 0, None))
+                if self.mines_done == 1:
+                    self.rebrace()
                 return
         self.problems.append("no mine site left")
 
@@ -1423,6 +1650,13 @@ class Plan:
         for nid, p in pos.items():
             if nid >= 10000 and self.t.inside((p[0], p[1] - 3)) and self.t.inside((p[0] + 3, p[1])):
                 errors.append("node %d lies in rock" % nid)
+        clear = self.cfg.get("rock_clear")
+        if clear:
+            found = {v[0] for v in self.nodes.values() if v[2] == "found"}
+            for nid, p in pos.items():
+                if nid >= 10000 and nid not in found and self.t.nearest_surface(p)[1] < clear - 0.5:
+                    errors.append("node %d at (%d,%d) only %.0f from the rock (rock_clear %d)"
+                                  % (nid, p[0], p[1], self.t.nearest_surface(p)[1], clear))
         # every cell is built only after the cells that hold it up
         done = set(self.orig_cells)
         for c in getattr(self, "build_order", []):
