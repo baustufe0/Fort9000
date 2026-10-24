@@ -327,15 +327,15 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 # cliff edge at -2900) carries two light storeys.
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # sniper and mortar rush (Vanilla-2): the mortars cannot wait for the five-storey tower (~165 struts before its
-# roof). A one-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow) carries two
-# mortars on its open roof (y=105, like the game's Template-2; cells under door roofs would cost ~700 metal more for
-# doors and armour, economy model: mortars at ~77/120 s instead of ~67/88 s). The sniper stands in the front column
-# on the starting fort's roof beam (-3093,205)-(-2945,206), like Template-2's sniper (placed there after ~42 struts),
-# and fires through the prow storey (the starting fort's machine gun, door in front). On the prow it was refused
-# with CS_UNSTABLE in both test matches (25.10.2026: on the prow's roof strut, which holds the starting machine gun,
-# and on the floor of a second prow storey). The tower (turbines and the third mortar on its roof) stands one column
-# back, x -3500..-3100, on the back block.
-_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 105, 205), _V_BACK)
+# roof). A two-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow): the
+# sniper in the front column on the starting fort's roof beam (-3093,205)-(-2945,206), like the game's Template-2,
+# firing through the prow storey (the starting fort's machine gun, door in front); on the prow it was refused with
+# CS_UNSTABLE in both test matches (25.10.2026). The second storey (y 105..5) is a hidden mortar nest: two mortars on
+# its floor, each with sandbags at the front end of its strut against sniper fire, and the whole storey above its
+# floor (posts, diagonals, roof) background bracing, through which the enemy cannot see and the shells pass (test
+# match: on the open deck roof both mortars were built at 65-66 s and fired). The tower (turbines and the third
+# mortar on its roof) stands one column back, x -3500..-3100, on the back block.
+_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 5, 205), _V_BACK)
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -376,20 +376,24 @@ VANILLA_VARIANTS = {
         "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
         "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        # the sniper takes the front column on the starting fort's roof beam (weapon_cells), the mortars the lowest
-        # open roofs (the deck, then the tower), without the random pick; woodspam in front
+        # the sniper takes the front column on the starting fort's roof beam (weapon_cells), the mortars the most
+        # forward top cells (the nest, then the tower roof) at the back of their struts (weapon_t), the sandbags the
+        # front ends (sandbag_struts), without the random pick; woodspam in front
         # of the tower's front wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
-        "roof_weapons": {"mortar"}, "roof_weapon_low_first": True,
-        "cfg": {"small_low_first": True, "weapon_pick_best": True, "reserve_mortar": False,
+        "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "weapon_cells": [(-3100, 205, "sniper")],
+                "hidden_box": (-3100, -2845, 5, 105),
+                "weapon_t": [(-3100, 105, 0.3), (-2945, 105, 0.3)],
+                "sandbag_struts": [((-2945, 105), (-2845, 105), 0.8), ((-3100, 105), (-2945, 105), 0.82)],
                 "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-295, -195, -95], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
-            # workshop at once; the sniper (100 m / 300 e, no tech) and the deck with the two mortar cells while
-            # the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished
+            # workshop at once; the sniper (100 m / 300 e, no tech), the deck and the sandbags (0 m / 300 e, no
+            # tech) while the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("weapons", ["mortar", "mortar"]),
             # then the economy and the tower
             ("eco", ["mine"]),
@@ -1334,9 +1338,35 @@ class Plan:
         for c in sorted(self.late_crossbrace, key=lambda c: (-self.cfg["rows"][c[1]], c[0])):
             self.crossbrace(c)
         self.finalise_woodspam()
+        self.hide_box()
         if self.cfg.get("clear_fire_lines"):
             self.clear_fire_lines()
         return self
+
+    def hide_box(self):
+        """hidden_box (x0, x1, y_top, y_floor): every strut of these cells except their floor becomes background
+        bracing, built only once. The enemy cannot see through it, and mortar shells pass through it (the built-in
+        AI checks only the terrain for lobbed weapons, TargetObstructed), so mortars on the floor stay hidden."""
+        box = self.cfg.get("hidden_box")
+        if not box:
+            return
+        import re
+        x0, x1, y_top, y_floor = box
+        inside = lambda p: x0 - 1 <= p[0] <= x1 + 1 and y_top - 1 <= p[1] <= y_floor + 3
+        seen, out = set(), []
+        for line in self.actions:
+            pts = [(float(x), float(y)) for x, y in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
+            ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
+            if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2:
+                a, b = pts[-2], pts[-1]
+                if inside(a) and inside(b) and min(a[1], b[1]) < y_floor - 3:
+                    pair = frozenset(ids)
+                    if pair in seen:
+                        continue
+                    seen.add(pair)
+                    line = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "backbracing"', line)
+            out.append(line)
+        self.actions = out
 
     def clear_fire_lines(self):
         """Every strut the plan builds that would block a weapon (rules.fire_blockers: built after the weapon,
@@ -1482,6 +1512,24 @@ class Plan:
             return
         if dev == "woodspam":
             return self.add_woodspam()
+        if dev == "sandbags" and self.cfg.get("sandbag_struts"):
+            # sandbag_struts: [(node A, node B, LinkT)], e.g. in front of mortars on the same strut (snipers)
+            n = sum(1 for p in self.placed if p[0] == "sandbags")
+            if n >= len(self.cfg["sandbag_struts"]):
+                self.problems.append("no room for sandbags")
+                return
+            pa, pb, t = self.cfg["sandbag_struts"][n]
+            ia, ib = self.node_at(pa), self.node_at(pb)
+            c = (min(ia[0], ib[0]), ia[1]) if ia and ib else None     # the cell below the strut
+            if c is None or (c not in self.orig_cells and not self.build_cell_path(c)):
+                self.problems.append("no room for sandbags")
+                return
+            self.link(ia, ib, "bracing")
+            a, b = self.nodes[ia], self.nodes[ib]
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "sandbags" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t))
+            self.placed.append(("sandbags", a[1], b[1], t, c))
+            return
         if dev == "sandbags":
             # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts)
             slots = self.cfg.get("sandbag_slots", [])
@@ -1532,7 +1580,10 @@ class Plan:
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
         if dev in LOBBED_WEAPONS and self.is_top(c):
             self.link((i, j), (i + 1, j), "door")
-        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else 0.5)
+        # weapon_t: [(left x, floor y, LinkT)] for weapons that share their strut (e.g. with sandbags)
+        t = next((wt for x0, fy, wt in self.cfg.get("weapon_t", [])
+                  if abs(self.cell_x(c)[0] - x0) < 10 and self.cfg["rows"][c[1] + 1] == fy), 0.5)
+        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else t)
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 
