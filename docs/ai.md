@@ -31,6 +31,74 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 - **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run. "Insufficient resources" only counts as waiting while metal is still rising; if metal stays flat above `BuildSkipMinMetal` for `StarvedFlatTicks` think ticks (e.g. at the storage cap, when an action costs more than can be stored), the clocks run again.
 - **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
 
+## Reactive build modules (design, not implemented)
+
+A plan is a fixed fort, and a player who sees it picks its gap: Vanilla-5 lost to a sniped laser, to laser plus
+firebeam, to rockets and to mortars (`docs/history/vanilla-3-5.md`). Modules let the AI answer the weapons the enemy
+actually builds without giving up the fixed opening: the plan still sets the opening and the economy, and a module is
+a small, pre-generated and rule-checked build snippet that is put in front of the rest of the plan when scouting sees
+its trigger.
+
+**How the built-in AI makes this possible** (`data/ai/ai.lua`):
+- It builds `Fort[data.fortIndex]` and moves on; failed actions go to `data.Rebuild[index]`. It already inserts
+  actions into the running plan itself: `DiscoverLinks/Nodes/Devices` do `table.insert(Fort, data.fortIndex, action)`
+  and advance `data.fortIndex`. Inserting at `data.fortIndex` without advancing puts actions *ahead* of the rest of
+  the plan, which is what a module needs.
+- Actions refer to nodes by original id, mapped through `data.OriginalToActual`. `CREATE_NODE` snaps to an existing
+  node within 20 units (`SnapToNode`) and maps its id instead of building a second node, so a module may build
+  nodes the plan also builds later (and the other way round).
+- `OffsetFort`/`MirrorFort` (called before `Load`) renumber the AI's new nodes (`MakeAINodesInSequence`, from
+  `AI_NODE_START` = 10000) and move all positions. Module actions must go through this transform, so they have to be
+  in `Fort` when it runs.
+- Index-keyed state: `data.Rebuild[index]`, `data.Frustration[index]` (keys), `data.Devices[deviceId] = index`
+  (values), and the mod's `st.rebuildSince[index]`, `st.buildIndex`.
+
+**Design:**
+1. **Plan file.** After the `Fort` table the generator writes `FortModules = { <name> = { Trigger = {...}, Requires =
+   <plan action>, Actions = { ... } }, ... }`. The `Fort` table and its header are unchanged, so the line-sensitive
+   part stays as it is. `CAI_LoadPlanFile` also reads `FortModules`.
+2. **Load.** On the swap (`CAI_TrySwapPlan`) the module actions are appended to `Fort`, each tagged
+   `CAI_Module = <name>`, and shifted like the plan's own actions. The game's transform then renumbers and moves them
+   with the rest. In `CAI_Init` (after the base `Load`) the tagged actions are cut out of `Fort` into
+   `data.CAI.modules[name]`, so the built-in AI never reaches them on its own, and `CAI_PlanPos` is rebuilt so SHAPE
+   diagnostics know the module nodes.
+3. **Scouting.** Each think step counts the enemy's devices by type (`GetDeviceCountSide(enemyTeamId)`,
+   `GetDeviceIdSide`, `GetDeviceType`; already used for targeting). This is game state, so it is deterministic and
+   replay-safe.
+4. **Trigger.** A module fires once per match when the enemy has at least `count` devices of its `types`
+   (e.g. `{ types = { "mortar", "mortar2" }, count = 2 }`). If the plan has not yet passed `Requires` (the last plan
+   action whose nodes the module uses), it waits. Several triggered modules go in the order listed in the plan.
+5. **Insertion.** The module's `n` actions are inserted at `data.fortIndex` (copies, so a rebuild works on them like
+   any plan action). All index-keyed state at or after that index moves up by `n`: keys of `data.Rebuild`,
+   `data.Frustration` and `st.rebuildSince`, values of `data.Devices`; `st.buildIndex` is reset so the skip valve
+   starts a new clock. Log: `[CAI] T<team> MODULE <name> trigger=<type:n,...> at=<index> actions=<n>`, and
+   `MODULE_WAIT <name> requires=<k>` while waiting.
+6. **Rebuild cap.** A device destroyed and rebuilt more than `Strategy.RebuildCap[type]` times at one plan action is
+   not rebuilt again (`REBUILD_CAP` in the log): the Vanilla-5 machine gun rebuilt ten times in one match fed the loss
+   and starved the plan of metal.
+
+**Generator** (`gen_fort.py`): a variant lists `modules` with the same step syntax as its plan, a trigger and,
+optionally, a preferred place. They are generated after the plan, on its final geometry, with node ids above the
+plan's, and `rules.py` checks the plan with each module added (fire lanes, overlap, support). `Requires` is the
+highest plan action index the module's actions reference; the generator prefers anchors in the starting fort or the
+early plan so a module can come early.
+
+**First modules** (from the lost matches; the counters themselves are first guesses):
+
+| Trigger (enemy builds) | Module | Lost to it |
+|---|---|---|
+| mortars, howitzers | counter-battery mortars, armour on the exposed roof | Vanilla-5, 25.10.2026 |
+| rockets, EMP rockets | a second anti-air position (machine gun or flak) | Vanilla-5 |
+| snipers, lasers, firebeams | a door or armour in front of the exposed weapons, an own sniper | Vanilla-5 (twice) |
+
+**Rejected:** switching to a whole different plan mid-match (every combination of tails would have to be generated
+and kept consistent with what is already built); building counters by searching free places at runtime (no rule
+checks in the game, and the fort-building rules are what most failures came from).
+
+**Open questions, to test in a sandbox before the first module:** what `CREATE_LINK` returns for a link that already
+exists (module and plan sharing a strut); whether the base AI keeps other index-keyed state (grep for
+`data.<table>[index]` in `data/ai/ai.lua` before implementing); what a module costs against a starved economy.
+
 ## Custom build plan variants per map
 
 - Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).

@@ -114,3 +114,17 @@ upgraded to rockets at 295 s), two flak upgraded to shotguns and an upgrade cent
 Rework after the fifth test: all three free mine sites and the anti-air machine gun (on the starting fort's prow roof
 strut) now come before the laser; the laser moves from action 70 to 78. On the lane's roof, where the generator first
 put that machine gun, it would have pulled ~70 tower struts in front of the laser.
+
+## Vanilla-5, sixth test (25.10.2026): mortars
+
+The first match with mines and anti-air before the laser (difficulty 1). The player built sandbags, three mortars
+(157-160 s), an upgrade centre, missiles and three heavy mortars (294-299 s) and a sniper: **the player won at 480 s**
+(mortar 18, heavy mortar 45, machine gun 7, sniper 4, missile 1 shots) and lost nothing. The AI's build ran as
+planned: mines 141/164/183 s, anti-air machine gun 201 s, laser 294 s.
+
+- The laser fired once. The machine gun was destroyed and rebuilt ten times (201-449 s); metal averaged 187 (below 150
+  in 57 % of the snapshots), so the plan never got past the laser's surroundings (build index 249/423 at 425 s).
+- The AI had no answer to mortars: no mortars of its own, no armour on top. The mortars stood 2½ minutes before they
+  did the damage.
+- Conclusion: a fixed plan loses to whichever weapon the player picks against it. Next step is reactive build
+  modules (`docs/ai.md`) and a rebuild cap per device.

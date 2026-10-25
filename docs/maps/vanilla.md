@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | a laser | laser rush | 3 lost against an active player, laser never fired (blocked; sniped while building; destroyed by rockets 3 s after it was finished); 1 no-combat test: 7 shots |
+| Vanilla-5 | a laser | laser rush | 4 lost against an active player (laser blocked; sniped while building; destroyed by rockets 3 s after it was finished; mortars, one laser shot); 1 no-combat test: 7 shots |
 
 ## Starting fort
 
