@@ -141,7 +141,9 @@ launcher).
 
 - Vanilla-3's layout with one laser in the rush 20mm's cell (x -3200..-3100, floor 105, LinkT 0.5), firing through the
   front cell over the reactor; own beams pass own background bracing (`CollidesWithFriendlyBeams = false`). The factory
-  takes its proven slot below that column, the upgrade centre the munitions slot.
+  takes its proven slot below that column. The upgrade centre stands one strut behind the munitions slot
+  (x -3500..-3400, y 602, LinkT 0.5): on the munitions slot it overlapped the factory and was refused; the batteries
+  and stores keep clear of it (y 503).
 - The laser cell's front post (x -3100, floor 105 to -20) is background bracing: the laser's body reaches only 50 ahead
   and its recession box starts 130 ahead, so the solid post 50 in front of it blocked every shot in the first test.
 - Costs: factory 800 m / 6000 e / 60 s, laser 1000 m / 6000 e / 120 s, one beam 5000 e (reload 24 s): more energy than
@@ -183,6 +185,7 @@ launcher).
 | Both near mines before the first turbine (Vanilla-4) | metal fine, energy 200-600; the first turbine was no earlier |
 | Munitions plant beside the workshop, right behind the starting fort | `CS_UNSTABLE` without stress or sag; the 20mm then `CS_PREQUISITENOTMET` |
 | Support by the shallowest chain (generator default) for the rush 20mm | pulled in the whole back block (100 struts instead of 42); now `support_cheapest` |
+| Upgrade centre on the munitions slot beside the factory (Vanilla-5) | the two 90-wide boxes overlapped (155 apart, need 180): `CS_OCCUPIED`, then `CS_UNSTABLE`; the AI then sat at full storage waiting on the turbine upgrades. Now one strut back |
 | Solid post 50 in front of the laser (Vanilla-5) | outside the laser's body and before its recession box: every shot declined; now background bracing |
 
 ## Open problems
@@ -190,10 +193,7 @@ launcher).
 - Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
 - Vanilla-3's sniper behind its split door, Vanilla-4's cannons against a player and Vanilla-5's laser with the cleared
   post are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
-- Vanilla-5's upgrade centre on the munitions slot (x -3400..-3300, y 602) was refused (`CS_OCCUPIED`, then
-  `CS_UNSTABLE`) right after the mine at x -3412 below it was placed; the munitions plant stands on that slot in
-  Vanilla-3/-4. Cause not confirmed (likely the mine). Then the AI waits on the turbine
-  upgrades with full storage.
+- Vanilla-5's moved upgrade centre (x -3500..-3400) is not yet tested.
 - Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
   4 s; woodspam does not stop that.
 - One armour piece of a 20mm door post (47 long, y 27..-20) was refused with `CS_NODESTOOCLOSE` and given up; the

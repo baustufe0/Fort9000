@@ -59,5 +59,9 @@ of the snapshots; player 511), energy 5,820.
 - **The end:** the player fired the laser and the firebeam once each, together, at ~626 s: the starting fort's lower
   front strut 69-71 first, then woodspam region 1 and the door 64-68; 62 struts, the workshop, factory, batteries,
   store and the reactor within 4 s. The AI destroyed nothing; its sniper fired 28 times.
+- Why the upgrade centre was refused: not the mine at x -3412 below the slot (in three Vanilla-3 matches the munitions
+  plant was placed on the same slot after that mine), but the factory on the neighbouring strut: both are 90 to each
+  side, 155 apart. `rules.py` had treated the widths as full widths. The upgrade centre now stands one strut further
+  back (x -3500..-3400), and the generator keeps batteries and stores clear of it.
 - Fix: the laser's front post is now background bracing (`rules.py` models the recession boxes and bodies from the
   weapon files; the generator clears such struts).

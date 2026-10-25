@@ -606,7 +606,10 @@ VANILLA_VARIANTS = {
                               {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
                                "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}},
                               _V_HIGH_CFG["woodspam"]]),
-        "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
+        # the upgrade centre one strut behind the munitions slot: on it (x -3351) it overlapped the factory's box
+        # (x -3196; both 90 to each side) and was refused in the first test match (25.10.2026), and the AI then
+        # waited on the turbine upgrades with full storage
+        "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
         "plan": [
             # laser rush: the tech chain (workshop 60 s, factory 60 s, laser 120 s) sets the pace. The factory and the
             # laser cost 6000 energy each, more than the starting cap (5000): a battery first (+2000); the laser costs
@@ -1415,11 +1418,34 @@ class Plan:
                     return False
         return True
 
-    def choose_eco_cell(self):
+    def overlaps_placed(self, dev, p):
+        """True if dev at point p would overlap a device already placed beside it at the same height (rules.py:
+        half-widths, weapon bodies moved forward; Vanilla-5's upgrade centre beside the factory was refused)."""
+        def centre(d, q):
+            return q[0] + rules.BODY_SHIFT.get(d, 0)
+        w = rules.SIZE.get(dev, (40, 40))[0]
+        # tech the plan builds later keeps its first proven slot free (a battery took the spot beside Vanilla-5's
+        # upgrade centre before it was built)
+        later = {d for kind, devs in self.variant.get("plan", []) if kind == "tech" for d in devs} - self.tech_done
+        reserved = [(d,) + tuple(self.tech_slots[d][0]) for d in sorted(later) if self.tech_slots.get(d)]
+        for d, a, b, t, *_c in self.placed + reserved:
+            if d in ("mine", "mine2"):
+                continue
+            q = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+            if abs(q[1] - p[1]) < 10 and abs(centre(d, q) - centre(dev, p)) < w + rules.SIZE.get(d, (40, 40))[0] - 1:
+                return True
+        return False
+
+    def choose_eco_cell(self, dev=None):
         ground = max(self.cfg["rows"])
         no_ground = self.cfg.get("eco_no_ground")
+
+        def floor_mid(c):
+            a, b = self.nodes[(c[0], c[1] + 1)][1], self.nodes[(c[0] + 1, c[1] + 1)][1]
+            return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
         cands = self.free_cells(lambda c: not self.is_front(c) and (c in self.cells or self.cfg.get("eco_orig", True))
-                                and not (no_ground and self.cfg["rows"][c[1] + 1] >= ground))
+                                and not (no_ground and self.cfg["rows"][c[1] + 1] >= ground)
+                                and not (dev and self.overlaps_placed(dev, floor_mid(c))))
         cands.sort(key=lambda c: (-self.cfg["rows"][c[1]], c[0]))
         return cands[0] if cands else None
 
@@ -1931,7 +1957,7 @@ class Plan:
         if dev in ("battery", "store"):
             if self.cfg.get("use_eco_slots") and self.place_eco_slot(dev):
                 return
-            c = self.choose_eco_cell()
+            c = self.choose_eco_cell(dev)
             if c is None or not self.build_cell_path(c):
                 self.problems.append("no room for %s" % dev)
                 return

@@ -18,6 +18,8 @@ Abyss-5 (rockets): the Abyss-4 shape; the EMP rockets/rockets in the two tall fr
 Wins of the AI per plan (`train.py report`, 25.10.2026): Abyss-ToGA1 (the game's weapon_pack plan) 2/5, Abyss-3
 (snipers) 1/1 (the player barely fired), Abyss-2 (mortars) 0/3, Abyss-4 (cannons) 0/2, Abyss-5 (rockets) 0/1. Abyss-4
 never placed its cannon, laser or upgrade in those matches (before the munitions-plant fix). Open suggestion: take
-Abyss-2 and -4 out of the plan list. In the first 11 Abyss matches the AI averaged 100-260 metal (player ~510) and
+Abyss-2 and -4 out of the plan list. `rules.py` (half-widths, 25.10.2026) flags Abyss-4's workshop (x -1996) and
+munitions plant (x -2070) at y 305 as overlapping (74 apart, need 135); the installed Abyss plans also differ from what
+the generator now produces (older generator changes), so they are left as they are until Abyss is worked on. In the first 11 Abyss matches the AI averaged 100-260 metal (player ~510) and
 ~3.8 mines (player ~6), and rebuilt lost machine guns 9-18 times per match; the player used miniguns, machine guns,
 buzzsaws and snipers at difficulty 0.5.

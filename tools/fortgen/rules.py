@@ -302,11 +302,16 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             if a1 not in pos or b1 not in pos or a2 not in pos or b2 not in pos:
                 continue
             p1, p2 = _point(pos, a1, b1, t1), _point(pos, a2, b2, t2)
-            need = (SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]) / 2
+            # SIZE widths are half-widths (SelectionWidth); a weapon's body sits BODY_SHIFT forward. This explains
+            # every refusal seen so far: factory and upgrade centre 155 apart (Vanilla-5, CS_OCCUPIED), turbines
+            # 46-54, mortars 77, sandbags 70 from a mortar (all below the 80 two such devices need; 89-100 worked)
+            c1 = p1[0] + enemy_dir * BODY_SHIFT.get(n1, 0)
+            c2 = p2[0] + enemy_dir * BODY_SHIFT.get(n2, 0)
+            need = SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]
             if pr1 == pr2:
                 # the game allows one device per strut (test match 25.10.2026: sandbags beside a mortar took it)
                 errors.append("%s at %s and %s at %s share one strut (one device per strut)" % (n1, _fmt(p1), n2, _fmt(p2)))
-            elif abs(p1[1] - p2[1]) < 10 and abs(p1[0] - p2[0]) < need - 1:
+            elif abs(p1[1] - p2[1]) < 10 and abs(c1 - c2) < need - 1:
                 # side by side on neighbouring struts at the same height (a device wider than the rest of its
                 # strut reaches over the shared node)
                 errors.append("%s at %s and %s at %s overlap (neighbouring struts)" % (n1, _fmt(p1), n2, _fmt(p2)))

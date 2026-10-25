@@ -48,9 +48,13 @@ checks use the table values as full widths.
   800 metal / 5000 energy); laser and firebeam need the factory.
 - **One device per strut**, however short the devices are; the game's Abyss-1 sells its sandbags (`DESTROY_DEVICE`)
   before putting a laser on their strut. `split_edges` builds a strut in two halves for two devices.
-- **~90 between devices at the same height:** mortars 77 apart and sandbags 70 from a mortar were refused, 89-127
-  apart they were placed (the game's own plans: mortars 91-122 apart). Two turbines 46-54 apart on one strut failed
-  (`CS_OCCUPIED`); the game's plans space them ~100 apart.
+- **Devices side by side must not overlap:** the widths in the table are half-widths (`SelectionWidth`), and a
+  weapon's body sits `SelectionOffset` forward (sniper 40, cannons 18). Two devices at the same height need the sum
+  of their half-widths between their centres: 80 for two mortars, turbines, sandbags or machine guns, 130 for an
+  upgrade centre beside a battery, 180 for two tech buildings. This explains every refusal so far: mortars 77 apart,
+  sandbags 70 from a mortar, turbines 46-54 apart, Vanilla-5's upgrade centre 155 from the factory (`CS_OCCUPIED`,
+  later `CS_UNSTABLE`); 89-127 apart mortars and sandbags were placed (the game's plans: mortars 91-122, turbines ~100).
+  A munitions plant (45) fits on the slot where an upgrade centre (90) does not.
 - **A device's body turns the solid struts it overlaps into background bracing**, on which nothing can then be placed
   (a heavy weapon's box reaching the floor above; a sniper's body over the post in front of it, which it then fires
   through). A heavy weapon's body sits 18 in front of its LinkT point (`SelectionOffset` -18 in the weapon's frame,
@@ -214,7 +218,8 @@ writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build o
   recession box (doors are fine);
 - turbine wind with the game's ray test (`wind_rays`: a side is open when at least half its rays are clear; error if
   both sides are blocked, warning if one is) and turbine spacing (≥ 90);
-- two devices on one strut (a `DESTROY_DEVICE` frees it), or overlapping devices side by side on neighbouring struts;
+- two devices on one strut (a `DESTROY_DEVICE` frees it), or overlapping devices side by side on neighbouring struts
+  (half-widths plus the weapon's body shift; the game's own plans pass);
 - mortars at the same height closer than 90 (`MORTAR_SPACING`);
 - struts lying on a mine site;
 - a solid strut inside a device's box above its strut (`BOX_TOP`, the posts at its own strut's ends excluded): error
@@ -245,6 +250,7 @@ Map-specific ones are in [maps/vanilla.md](maps/vanilla.md) and [maps/abyss.md](
 | Heavy weapon directly on another weapon cell | floor sagged 24–49, `CS_UNSTABLE`, given up |
 | Rule check "no device on a strut sharing a node with a strut carrying a device" (from the probe) | flagged the game's own plans and devices that were built; only true for the finished, loaded fort; not in `rules.py` |
 | Door or armour planned a few actions after its strut | no effect while the strut was under construction (a 20mm could not fire); now `SWAP_WINDOW` |
+| Overlap check using the table widths as full widths | passed Vanilla-5's upgrade centre 155 from the factory (they need 180); refused in the game. Now half-widths |
 | Line-of-fire check assuming the recession box runs from the weapon to 200 ahead | missed the post 50 in front of the Vanilla-5 laser (outside its body, before its box); the laser never fired. Now the boxes and bodies from the weapon files |
 
 ## Open problems
