@@ -626,6 +626,21 @@ local function CAI_DestroyResultName(r)
 	return tostring(r)
 end
 
+-- sell the own device whose platform is the strut a-b (either order) by its id: (result or nil, "scan=<devices>
+-- match=<id|none>") for the log
+local function CAI_DestroyOnPlatform(team, a, b)
+	if type(GetDeviceCountSide) ~= "function" or type(DestroyDeviceById) ~= "function" then return nil, "scan=n/a" end
+	local count = GetDeviceCountSide(team) or 0
+	for i = 0, count - 1 do
+		local id = GetDeviceIdSide(team, i)
+		local pa, pb = GetDevicePlatformA(id), GetDevicePlatformB(id)
+		if (pa == a and pb == b) or (pa == b and pb == a) then
+			return DestroyDeviceById(id), "scan=" .. count .. " match=" .. tostring(id)
+		end
+	end
+	return nil, "scan=" .. count .. " match=none"
+end
+
 local function CAI_NoteBuildError(kind, what, a, b, r)
 	if data.CAI == nil or data.HumanAssist then return end
 	local key = kind .. ":" .. tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b) .. ":" .. tostring(r)
@@ -885,16 +900,23 @@ function CAI_InstallBuildLogging()
 		-- A device is found on a strut only in the node order it was built with (GetDeviceIdOnPlatform); a plan
 		-- may name the strut the other way round (selling a device of the starting fort, whose order the plan
 		-- does not know), so a sale that finds nothing is tried the other way round, as the built-in
-		-- DestroyAttachedDevices does. Test match 25.10.2026: the sale of the starting machine gun failed until
-		-- the AI gave up.
+		-- DestroyAttachedDevices does. Test matches 25.10.2026: the sale of the starting machine gun failed until
+		-- the AI gave up, also with both orders (DD_NOTFOUND, though the machine gun stands on that strut); so
+		-- then the own device whose platform is that strut is looked up and sold by its id.
 		local CAI_BaseDestroyDevice = DestroyDevice
 		DestroyDevice = function(team, nodeA, nodeB, ...)
 			local r = CAI_BaseDestroyDevice(team, nodeA, nodeB, ...)
 			if r ~= nil and r == DD_NOTFOUND then
 				r = CAI_BaseDestroyDevice(team, nodeB, nodeA, ...)
 			end
+			local scan = ""
+			if r ~= nil and r == DD_NOTFOUND then
+				local ok, res, info = pcall(CAI_DestroyOnPlatform, team, nodeA, nodeB)
+				if ok and res ~= nil then r = res end
+				scan = ok and tostring(info) or ("ERROR " .. tostring(res))
+			end
 			if r ~= nil and r ~= DD_SUCCESS then
-				pcall(CAI_NoteBuildError, "destroy", "", nodeA, nodeB, CAI_DestroyResultName(r))
+				pcall(CAI_NoteBuildError, "destroy", scan, nodeA, nodeB, CAI_DestroyResultName(r))
 			end
 			return r
 		end
