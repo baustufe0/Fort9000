@@ -598,7 +598,10 @@ VANILLA_VARIANTS = {
         # sold, it fell first when rockets broke through), the hidden turbine cage with two stacked sandbags, and
         # woodspam in front of the reactor (0: prow band y 205..310) and the starting fort's lower front (1: y 411..700,
         # cut through by one laser beam at ~451 s in a lost match) early, the tower front (2) late
+        # the anti-air machine gun before the laser on the starting fort's prow roof strut (no new struts; on the lane's
+        # roof it pulled ~70 tower struts in front of the laser)
         "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5)], support_cheapest=True, sniper_t=0.28,
+                    weapon_cells=[(-2945, 205, "machinegun")],
                     rebrace_after_mine=[],
                     weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})],
                     woodspam=[{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
@@ -614,20 +617,23 @@ VANILLA_VARIANTS = {
             # laser rush: the tech chain (workshop 60 s, factory 60 s, laser 120 s) sets the pace. The factory and the
             # laser cost 6000 energy each, more than the starting cap (5000): a battery first (+2000); the laser costs
             # 1000 metal, more than the metal cap (900): a store while the factory builds, and a mine (+4 metal/s)
+            # Before the laser: all three free mine sites and the anti-air machine gun. With only one mine before it the
+            # rush left the AI at ~186 metal (below 150 most of the time) and with the starting machine gun as its only
+            # anti-air until ~386 s; the player's (EMP) rockets destroyed the laser 3 s after it was finished (test
+            # match 25.10.2026). The laser comes later, but with metal and cover behind it.
             ("tech", ["workshop"]),
             ("eco", ["battery"]),
             ("tech", ["factory"]),
-            ("eco", ["store", "mine"]),
+            ("eco", ["store", "mine", "mine", "mine"]),
+            ("aa", ["machinegun"]),
             ("weapons", ["laser"]),
             # while the laser builds (120 s): woodspam in front of the reactor and the lower front (both lost Vanilla-2
-            # matches ended there), anti-air, then energy: one beam costs 5000 (reload 24 s), the starting economy
-            # gives ~100 per second, so the cage turbines and their sandbags next
+            # matches ended there), then energy: one beam costs 5000 (reload 24 s), the starting economy gives ~100
+            # per second, so the cage turbines and their sandbags next
             ("defence", ["woodspam:0", "woodspam:1"]),
-            ("aa", ["machinegun"]),
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
             ("eco", ["turbine", "battery"]),
-            ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             # upgraded turbines (two fit in the cage); the upgrade centre first, then what needs no tech while it builds
             ("tech", ["upgrade"]),
@@ -638,7 +644,6 @@ VANILLA_VARIANTS = {
             ("upgrades", ["minigun", "minigun"]),
             ("upgrades", ["sniper2"]),
             ("defence", ["woodspam"]),
-            ("eco", ["mine"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
         ],

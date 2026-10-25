@@ -110,3 +110,7 @@ upgraded to rockets at 295 s), two flak upgraded to shotguns and an upgrade cent
 - The end: 113 struts in all; the reactor, workshop, batteries and stores at 449 s.
 - The AI destroyed nothing. Vanilla-5 has now been played four times against an active player and its laser has
   fired in none of them (the one match with 7 laser shots was the one where the player did not fight).
+
+Rework after the fifth test: all three free mine sites and the anti-air machine gun (on the starting fort's prow roof
+strut) now come before the laser; the laser moves from action 70 to 78. On the lane's roof, where the generator first
+put that machine gun, it would have pulled ~70 tower struts in front of the laser.

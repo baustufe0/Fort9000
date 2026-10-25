@@ -150,11 +150,14 @@ launcher).
   and its recession box starts 130 ahead, so the solid post 50 in front of it blocked every shot in the first test.
 - Costs: factory 800 m / 6000 e / 60 s, laser 1000 m / 6000 e / 120 s, one beam 5000 e (reload 24 s): more energy than
   the starting cap and more metal than the metal cap.
-- Order: workshop, battery (cap 7000), factory, store (cap 1200) and a mine while it builds, the laser (after 57
-  struts); while it builds woodspam regions 0 and 1 (as Vanilla-2, in front of the reactor and the lower front),
-  anti-air, the cage turbines with their sandbags, a battery, a mine, the sniper; then the upgrade centre (battery,
-  store, machine gun while it builds), upgraded turbines, miniguns, the AP sniper, the tower's woodspam, a mine, upgraded
-  mines. Inner armour kept.
+- Order: workshop, battery (cap 7000), factory, then while it builds a store (cap 1200) and all three free mine sites,
+  the anti-air machine gun on the starting fort's prow roof strut (`weapon_cells`, one light cell, no tower struts),
+  the laser's lane and the laser (action 78); while it builds woodspam regions 0 and 1 (as Vanilla-2, in front of the
+  reactor and the lower front), the cage turbines with their sandbags, a battery, the sniper (front column, floor
+  -145); then the upgrade centre (battery, store, second machine gun while it builds), upgraded turbines, miniguns,
+  the AP sniper, the tower's woodspam, upgraded mines. Inner armour kept. Before the rework (25.10.2026) only one mine
+  and no anti-air came before the laser: the AI was broke and a player's rockets destroyed the laser 3 s after it was
+  finished.
 - First test (one match, difficulty 1): the build ran as planned up to the upgrade centre (workshop 3 s, factory 80 s,
   laser placed 219 s, built 339 s, cage turbines 369/427 s, sniper 459 s). The upgrade centre on the munitions slot
   was refused (`CS_OCCUPIED`, then `CS_UNSTABLE`), so the upgraded turbines never came and the AI sat at its storage
@@ -195,9 +198,8 @@ launcher).
 
 - Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
 - Vanilla-3's sniper behind its split door and Vanilla-4's cannons against a player are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
-- Vanilla-5's laser rush leaves the AI without metal (average 186 in the rocket match) and without anti-air until
-  ~386 s; a player with (EMP) rockets destroyed the laser 3 s after it was finished. Open: anti-air and mines before the
-  laser, or drop the rush.
+- Vanilla-5 with the mines and the anti-air machine gun before the laser is not yet tested; whether one machine gun
+  stops (EMP) rockets, and whether the laser survives rockets from above at all, is open.
 - Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
   4 s; woodspam does not stop that.
 - One armour piece of a 20mm door post (47 long, y 27..-20) was refused with `CS_NODESTOOCLOSE` and given up; the
