@@ -80,5 +80,6 @@ tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 - Old archived logs in `tools/logs/` contain German `[CAI]` tokens from before the translation; `train.py`
   does not parse them, so they remain usable.
-- Two related skills exist for this project: `forts-karte-optimieren` (generate/install per-map plans and settings)
-  and `forts-partie-auswerten` (evaluate a match and train). They may still mention old German log tokens and refer to the old single-file SPEC.md (now split into `docs/`).
+- Project skills in `.claude/skills/`: `forts-match-review` (analyse a played match, archive the log, train;
+  `summary.py` summarises a log) and `forts-map-plans` (change, generate and install build plans, per-map settings).
+  They hold only the workflow and point to `docs/`; keep facts in `docs/`, not in the skills.

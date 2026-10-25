@@ -26,3 +26,29 @@
 - To map where a plan's fort refuses devices, let it build in a sandbox with `Probe` set ([debugging.md](debugging.md)) and read the run
   with `tools/fortgen/probe.py`.
 - Render plans with `render_all.py` and compare with the game's Template-1.
+
+## Reading the log of a match
+
+- The log is `<Forts>/users/<steam-id>/log.txt` (UTF-16LE with BOM). It holds every match since the last game start
+  and is written live; copies such as `log1.txt` may overlap (`train.py` skips duplicate matches). If its modification
+  time has not changed since the last analysis, there is no new match (Forts still open, match not finished, log renamed).
+- Side 1 is the player, side 2 the AI (team 102); `RESULT w=2` means the AI won. In 2v2 with two AIs each AI team has
+  its own `[CAI] T<team>` lines.
+- Game lines: `Loading map maps/<Map>/<Map>.fwe`, `ConfigureAI Team <n>: Fort , Difficulty <0..1>`,
+  `ActivateAI team 102 team members 0 fort <plan>` (members 0 = a real AI; `team 1 team members 1` = the player's
+  assist AI), `AllocateFortsToAI Side 2 ...`.
+- `[CAI] T<team>` lines:
+  - `PLAN-PRELOAD <Map>:<custom>/<original> ...`; `PLAN map= file= actions= instead= choice=<forced|random> detected=signature at=<MirrorFort|OffsetFort|Load> shift=`
+    (plan swapped) or `PLAN file=original reason=<random|no-game-plan>`; `TRANSFORM MirrorFort/OffsetFort`;
+    `MAP-STRATEGY <Map>: <keys>`; `INIT strategy=v1 trained=<n> difficulty=`; `ASSIST FORT 9000 AI inactive`;
+    `TEMPO`, `FIRE`, `DEBUG-HOOKS` (settings at start).
+  - `THINK t= build=<fort index>/<#actions> rebuild=<n> heavy=.. small=.. phase= econ= m= e= aggr= aa= fire=<ready weapons>`.
+  - `GAVE_UP action k type=<1 node|3 strut|5 device> ...` (a rebuild stuck for 120 s or more despite metal),
+    `SKIPPED action k` (building stuck for 90 s or more with at least 300 metal),
+    `BUILD_ERROR <link|node|device|ground_device|upgrade|destroy> ... <CS_CODE> action=k`
+    (`CS_INSUFFICIENTRESOURCES` is not logged).
+  - `END winner= kills=<what the AI destroyed> lost=<AI losses> enemyShots=<player's shots>` (often written twice).
+- Plausibility before training: a match without `RESULT` or shorter than 1 minute was aborted (does not count); a
+  player with fewer than ~40 shots probably did not defend (ask before training on it); the same action given up in
+  several matches with one plan is a plan bug.
+- After `RESULT`, an instant replay may repeat `[CAI]`/`[CREC]` lines (`Starting instant replay`); count up to `RESULT`.

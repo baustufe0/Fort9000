@@ -41,9 +41,33 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 - Supported maps: **Abyss**, **Vanilla** (mid fort, also applies to Penguin, Caverns, …), **VanillaLong** (2v2, upper platform).
 - Per-map strategy overrides (`Maps[<Map>].Strategy`), e.g. a slower start on wide maps.
 
+- How the swap works: at initialisation (the only time `dofile` is allowed) `ai/ai.lua` preloads all custom plans and
+  all `Originals`. The game then calls `OffsetFort`/`MirrorFort` (adapting its plan to the real fort, using the
+  FortPos of *its* plan) and `Load`; on the first call the mod identifies the map from the game's plan (FortPos +
+  action count, optionally `ReactorsPerSide`), chooses a plan (`GetRandomInteger` or `Force`), shifts it by
+  (FortPos of the game's plan - FortPos of the custom plan) and inserts it; the game then transforms it as usual.
+  Custom plans must therefore be in the coordinate frame of the game's plan (same header).
+- Template maps without their own `fort-*.lua` (Vanilla, Vanilla 2v2) use the shared folders
+  `data/ai/forts/<type>/<mid|long>/` (also Penguin, Caverns, MP 1v3 2, Rhino Vs Tiger, Up & Down, ...): `OriginalsDir`
+  points there and the signature applies to every map using those plans (no `ReactorsPerSide` then).
+- The assist AI (team 1 with a player) has no game plan and never gets a custom plan; forts with an unknown signature
+  keep their original plan.
+
 ## Assist-AI mode
 
 If a player takes over the AI as an anti-air assistant, FORT 9000 deactivates itself and restores all changed values.
+
+## Forts Lua environment
+
+A Lua 5.1 sandbox: no `io`, `os`, `require`, `package`, `loadstring`, `loadfile`, `rawget`, `rawset` (avoid
+metatables); `dofile` only during initialisation. Never use the identifier `L` (LuaPlus reads `L"..."` as a wide
+string: syntax error). When the mod's `ai/ai.lua` runs, `teamId` and the engine functions (`CreateLink`, ...) do not
+exist yet: everything engine-related happens in `Load()`. `GetMapFilename` does not exist in the AI environment.
+`ScheduleCall` comes from `scripts/core.lua` (available to the AI, not to the mod's `script.lua`, which uses
+`Update(frame)`); scheduled functions must be global. The built-in AI (`data/ai/ai.lua`) does one build step per
+`UpdateAI`, puts failed actions into `data.Rebuild` and builds nothing new while a rebuild fails (hence the safety
+valves); it attacks only in build pauses unless `difficulty >= data.HardThreshold` (0.75; the mod sets 0);
+`EnableHumanAssist()` is called after `Load`.
 
 ## Architecture
 

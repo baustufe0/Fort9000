@@ -41,3 +41,35 @@ Options of the Vanilla tower variants (Vanilla-3/-4/-5; details in [maps/vanilla
 - `tower_connect {base_y, storeys, skip_floors}`: storey-by-storey build order of a tower on two foundations.
 - `SWAP_WINDOW` (20, a constant): a strut whose material the plan changes within that many actions is placed with its final material at once.
 - `cfg`: a variant's overrides of any map option.
+
+## Adding a map
+
+- Plan files are named `fort-t<team>f<fort>-<Map>-<n|name>.lua`. Generator and plan swap support **t1f1** (one fort
+  per side, team 2 mirrored, `Symmetrical = true` in `<Map>.lua`); more forts per side or asymmetric maps need an
+  extension. Check whether other maps use the same plans (same FortPos line; Abyss-ToGA1 == Abyss 2v2-ToGA1).
+- Terrain (`fwe.py`): block flags 0/1/2 = solid rock (per side), -1 = ground (solid on Vanilla: `solid_minus1`),
+  -2 = background (walkable). `.fwe` format if `fwe.py` fails: vertex = float x, float y, float z (0), u32, u32 length,
+  name bytes; a polygon = consecutive vertices; flag int32 at offset start-11; map bounds as 4 floats from offset 16.
+  In images y grows downwards; node ids below 10000 are the starting fort, from 10000 built by the plan.
+- Base plan = the plan recorded for exactly this map: its ground mines lie on solid edges and its FortPos (the front
+  edge of the platform) matches the starting fort (Abyss: `-1` at x=-1995; `ToGA1` comes from Abyss 2v2 at x=-1495
+  and is shifted 500 by the game). From it: the grid of the starting fort (~100 spacing), tech slots (node positions +
+  LinkT; large devices stand at a link end, LinkT about 0.05/0.94), eco slots, mines (`GroundPosition` and the nodes
+  they need), the reactor (empty ~200x200 area).
+- `MAPS["<Map>"]`: `base_plan`, `plan_dir` (relative to `data/`, if the base plan is not in `maps/<Map>/`), `fwe`,
+  `solid_minus1`, `cols`, `rows` (grid points closer than `snap` 45 to an original node are moved onto it; points in
+  rock are pulled up to `ground_snap` 25 onto the surface as foundations, else dropped), `reactor`, `keepout`
+  (rectangles without cells; their neighbours do not count as front), `tech_slots`, `eco_slots`, `mines`
+  (`{"ground": (x,y), "needs": [...]}` or `{"ground": ..., "chain": [...]}`), `header` (the base plan's exact FortPos
+  line), `variants` (name of the variant table). Further options: `eco_orig: False`, `weapon_min_w`,
+  `mortar_avoid_roof`, `turbine_narrow_first`, `tech_spill`, `aa_y`, `large_y`. Grid points near similar original
+  nodes (e.g. sandbag anchors) can form unwanted "starting fort cells": choose the columns so they do not.
+- 2v2 maps: FortId 1 = mid plan, FortId 2 = long plan. If the long fort is the mid fort mirrored/shifted, convert with
+  `mid_to_long.py` (x' = 800 - x, y' = y - 2650, device nodes A/B swapped, LinkT -> 1 - LinkT) and register it as its
+  own map (`VanillaLong`, `OriginalsDir = "ai/forts/vanilla/long/"`); check the round trip and the second platform's
+  terrain.
+- A device on a link stands on top with A = left node, B = right node; the game mirrors team 2 itself (MirrorFort swaps
+  A/B, LinkT -> 1 - LinkT).
+- After changing the generator, regenerate the other maps and check by md5 that their plans did not change unintended.
+- Add a plan-swap test for the map (`tools/tests/t_vanilla.lua` etc.: expected first action team 1 = x, team 2 =
+  2*pivot - x, pivot 0 on symmetric maps) to `run_tests.sh`.

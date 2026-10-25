@@ -21,6 +21,12 @@ The build events (see the header of `script.lua` for the exact format) let `tool
 Learning always starts from the default values, so running it repeatedly shifts nothing; only new matches change the result.
 It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--strength` (0..1) limits how far values may deviate from the defaults.
 
+- Usage: `python tools/train.py` (collect + train), `collect` (archive `log.txt` into `tools/logs/`; `--log <file>` for
+  another log such as `log1.txt`), `train`, `report` (show the evaluation, write nothing). The output lists the AI's
+  wins per plan, the learned target values and the aggression per phase.
+- Learning is global, not per map (the map is in the log as `Loading map maps/<Map>/...`). The build tempo is not
+  learned; it comes from the defaults (`DEFAULTS["Tempo"]` in `train.py`) and per-map `Strategy` overrides.
+
 ## Training loop
 
 ```
