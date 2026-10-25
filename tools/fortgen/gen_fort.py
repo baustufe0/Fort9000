@@ -447,28 +447,36 @@ VANILLA_VARIANTS = {
                 # at -3465, -3365, -3265 (100 apart, 95 from the sandbags)
                 "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.3), (1, "mid", 0.5)],
                 "turbine_floor_y": 105, "turbine_floor_t": 0.35,
-                # woodspam: two wooden layers in front of the starting fort's prow below the deck (y 205..310, in
-                # front of the reactor), foreground bracing; not in the hidden storey: there it stood in the turbines'
-                # wind (at hub height, 460-600 in front of them)
-                "woodspam": {"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
-                             "outside": "bracing"}},
+                # woodspam, never in the turbines' wind (in the hidden storey it stood at their hub height, 460-600
+                # in front of them): 0 = two layers in front of the starting fort's prow below the deck (y 205..310,
+                # in front of the reactor); 1 = two layers hanging in front of the starting fort's lower front (y
+                # 411..700, the face at x -2892..-2900, so the layers at -2852/-2812 keep every strut at least 40; the rock
+                # ends there), early: in a test match one laser beam
+                # cut through that unprotected face at ~451 s and the starting fort with the reactor collapsed
+                # within 2 s. The band 411..505 stays background bracing: the starting fort's machine gun (strut at
+                # y 505) fires through it
+                "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
+                              "outside": "bracing"},
+                             {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
+                              "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}}]},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
-            # workshop at once; the sniper (100 m / 300 e, no tech) and the deck while the workshop builds; the
-            # mortars (200 m / 1000 e each) as soon as it is finished, then the sandbags (0 m / 300 e) in front of
-            # them. With the sandbags first, the second mortar (its strut sharing a node with the sandbags' and the
-            # first mortar's) was refused with CS_UNSTABLE (test match 25.10.2026); two mortars alone on the deck
-            # were both placed (65-66 s)
+            # workshop at once; the sniper (100 m / 300 e, no tech), the deck and the nest's sandbags (0 m / 300 e)
+            # while the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished. Placed before
+            # their sandbags, both mortars were destroyed 3-5 s later by the player's machine guns, whose fire passes
+            # the background bracing of the nest (test match 25.10.2026); the second mortar once refused beside the
+            # sandbags stood 77 from the first, now 116 (89-90 from the sandbags worked)
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
-            ("weapons", ["mortar", "mortar"]),
             ("defence", ["sandbags", "sandbags"]),
+            ("weapons", ["mortar", "mortar"]),
             # then energy: each mortar shot costs 200 energy and every strut 0.5 per unit length; with the roof
             # turbines waiting for the tower, energy ran down to 2-20 (test match 25.10.2026). The first turbine,
             # the gallery's sandbags, then more turbines before the next mine (2000 energy each)
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
+            ("defence", ["woodspam:1"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),
             # the upgrade centre, then what needs no tech while it builds (60 s): every upgrade waits until it is
@@ -1259,6 +1267,18 @@ class Plan:
                 return ij
         return None
 
+    def orig_node_at(self, p, tol=5):
+        """A node of the starting fort outside the grid (e.g. its lower front face), registered as a built node
+        under the key ("orig", id); None if there is none within tol."""
+        for nid, q in self.orig.items():
+            if math.dist(p, q) <= tol:
+                key = ("orig", nid)
+                if key not in self.nodes:
+                    self.nodes[key] = (nid, q, "orig")
+                    self.built_nodes.add(nid)
+                return key
+        return None
+
     # --- Choose slots
     def free_cells(self, pred):
         cells = [c for c in sorted(self.all_cells) if c not in self.devices and not self.near_reactor(c)
@@ -1766,16 +1786,23 @@ class Plan:
                 out.append(line)
             self.actions = out
 
+    def woodspams(self):
+        """woodspam: one region {wall_x, layers, rows, base, material, outside} or a list of them (plan step
+        "woodspam" builds all, "woodspam:<k>" region k)."""
+        ws = self.cfg.get("woodspam")
+        return [] if not ws else (ws if isinstance(ws, list) else [ws])
+
     def finalise_woodspam(self):
+        for ws in self.woodspams():
+            self.finalise_woodspam_region(ws)
+
+    def finalise_woodspam_region(self, ws):
         """Give every woodspam strut the material of its storey in the finished fort (a storey may get
         its weapon after the first woodspam pass) and build each strut only once."""
-        ws = self.cfg.get("woodspam")
-        if not ws:
-            return
         import re
         xs = {round(x) for x in ws["layers"]}
         rows = sorted(ws["rows"])
-        band = {y: self.ws_band_mat(y) for y in rows}
+        band = {y: self.ws_band_mat(y, ws) for y in rows}
         def mat_for(ya, yb):
             lo, hi = min(ya, yb), max(ya, yb)
             if lo == hi:                                    # horizontal at a row: background if a neighbour is
@@ -1788,7 +1815,8 @@ class Plan:
         for line in self.actions:
             pts = [(float(x), float(y)) for x, y in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
             ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
-            is_ws = ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2 and any(round(p[0]) in xs for p in pts[:2])
+            is_ws = ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2 and any(round(p[0]) in xs for p in pts[:2]) \
+                and all(rows[0] - 3 <= p[1] <= rows[-1] + 3 for p in pts[:2])
             if is_ws:
                 pair = frozenset(ids)
                 if pair in seen:
@@ -1892,6 +1920,8 @@ class Plan:
             return
         if dev == "woodspam":
             return self.add_woodspam()
+        if dev.startswith("woodspam:"):
+            return self.add_woodspam(int(dev[9:]))
         if dev == "sandbags":
             # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts); sandbag_slots:
             # [(slot, LinkT)] in the (first) split cell, or [(split cell index, slot, LinkT)]
@@ -1954,11 +1984,10 @@ class Plan:
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 
-    def ws_band_mat(self, y_top):
+    def ws_band_mat(self, y_top, ws):
         """Woodspam material in front of the wall cell whose top is y_top: background bracing in front of
         direct-fire weapons (they must shoot through it, MinFireClearance; they get a metal door instead)
         and in turbine rows (wind), foreground bracing elsewhere, where it only protects."""
-        ws = self.cfg["woodspam"]
         for c in self.all_cells:
             if abs(self.cell_x(c)[1] - ws["wall_x"]) < 1 and self.cfg["rows"][c[1]] == y_top:
                 dev = self.devices.get(c)
@@ -1966,8 +1995,9 @@ class Plan:
                     return "backbracing"
                 return ws.get("material", "bracing")
         # no grid cell behind this band (e.g. the starting fort's prow, a keep-out zone): "outside" (default
-        # background bracing)
-        return ws.get("outside", "backbracing")
+        # background bracing), or {band top y: material}
+        out = ws.get("outside", "backbracing")
+        return out.get(y_top, "backbracing") if isinstance(out, dict) else out
 
     def ws_node(self, key, p, src_key, mat):
         """Woodspam node: created from src_key (already built) unless it exists."""
@@ -1986,20 +2016,22 @@ class Plan:
         self.links[frozenset((src[0], nid))] = mat
         return True
 
-    def add_woodspam(self):
+    def add_woodspam(self, k=None):
+        regions = self.woodspams()
+        for ws in (regions if k is None else regions[k:k + 1]):
+            self.add_woodspam_region(ws)
+
+    def add_woodspam_region(self, ws):
         """Woodspam: cheap, dense wooden layers in front of the weapon column's door wall, which
         take the hits before the metal (cheap to build and repair). Layers ~40 apart (struts must be
         at least 37.5 long). Material per storey (ws_band_mat). Idempotent: a later call completes
         storeys built since and updates materials of storeys that got a weapon in the meantime."""
-        ws = self.cfg.get("woodspam")
-        if not ws:
-            return
-        wall = {y: self.node_at((ws["wall_x"], y), tol=5) for y in ws["rows"]}
+        wall = {y: self.node_at((ws["wall_x"], y), tol=5) or self.orig_node_at((ws["wall_x"], y), tol=5) for y in ws["rows"]}
         rows = [y for y in sorted(ws["rows"]) if wall[y] and self.nodes[wall[y]][0] in self.built_nodes]
         if not rows:
             self.problems.append("woodspam: door wall not built yet")
             return
-        band = {y: self.ws_band_mat(y) for y in rows}          # storey below row y (top = y)
+        band = {y: self.ws_band_mat(y, ws) for y in rows}      # storey below row y (top = y)
         def row_mat(y):                                         # horizontal at row y: between two storeys
             k = rows.index(y)
             mats = [band[y]] + ([band[rows[k - 1]]] if k > 0 else [])
