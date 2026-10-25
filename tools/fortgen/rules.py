@@ -45,9 +45,46 @@ MIN_LENGTH = 37.5          # StandardMinLength
 MIN_DOOR_LENGTH = 49
 FIRE_RANGE = 600           # checked length of the line of fire (beyond that it is outside the fort)
 # When a weapon is placed, the game recesses foreground struts that already stand in its way within its
-# RecessionBox (bracing -> background bracing, armour -> door). Struts built later, or further away, block it.
-RECESSION_LEN = {"machinegun": 20}
-DEFAULT_RECESSION_LEN = 200
+# RecessionBox (bracing -> background bracing, armour -> door). Struts built later, or outside the box, block it.
+# The box (weapon files: Size {w, h}, Offset {x, y}, centred on the offset, x negative = forward) does not start
+# at the weapon: (first, last) distance ahead it covers. A strut closer than the box is only cleared when the
+# weapon's body overlaps it (the game turns struts a device overlaps into background bracing): Vanilla-5's laser
+# (body 50 ahead, box from 130) never fired through the post 50 in front of it (test match 25.10.2026), while the
+# 20mm (body 108 ahead) in the same cell fired 126 shots.
+RECESSION = {"machinegun": (42.5, 62.5), "minigun": (130, 330), "sniper": (200, 400), "sniper2": (200, 400),
+             "cannon": (200, 400), "cannon20mm": (200, 400), "laser": (130, 330), "firebeam": (130, 330),
+             "flak": (60, 140), "shotgun": (70, 170), "rocket": (70, 170), "rocketemp": (70, 170)}
+# A weapon's body (the box the game turns overlapped struts into background bracing with): SelectionWidth (a
+# half-width in the game files) to both sides of a centre moved forward by SelectionOffset (sniper 40, cannons 18;
+# the laser and machine guns are centred), 2 x SelectionHeight high (BOX_TOP). The Vanilla-2 sniper's body cleared the
+# post 44 ahead of it (124 shots); the laser's (front edge 50 ahead) did not clear the post 50.4 ahead, so a strut
+# must reach BODY_MARGIN into the body. Diagonals sloping back over a weapon cross its body above the barrel.
+BODY_SHIFT = {"sniper": 40, "sniper2": 40, "cannon": 18, "cannon20mm": 18}
+BODY_MARGIN = 5
+# the earlier model: a strut built before a weapon counted as recessed up to 200 ahead (machine gun 20). Still used
+# for lobbed weapons (along their arc) and by the generator's cautious mode (fire_blockers)
+OLD_RECESSION = 200
+OLD_RECESSION_MG = 20
+
+
+def body_overlaps(name, p, a, b, enemy_dir=1):
+    """True if the strut a-b reaches into the weapon's body box (shrunk by BODY_MARGIN)."""
+    w = SIZE.get(name, (40, 40))[0] - BODY_MARGIN
+    cx = p[0] + enemy_dir * BODY_SHIFT.get(name, 0)
+    top = p[1] - BOX_TOP.get(name, 81)
+    n = max(2, int(math.dist(a, b) / 2))
+    for k in range(n + 1):
+        x, y = a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n
+        if abs(x - cx) < w and top < y < p[1] - BODY_MARGIN:
+            return True
+    return False
+
+
+def recessed(name, dist, p, a, b, enemy_dir=1):
+    """True if a strut built before the weapon, dist ahead of it in its line of fire, stops blocking it once the
+    weapon is placed (inside its recession box, or overlapped by its body)."""
+    first, last = RECESSION.get(name, (0, 0))
+    return first <= dist <= last or body_overlaps(name, p, a, b, enemy_dir)
 # mortar arc checked from the muzzle: steeply up and forward (dx, up); long enough to reach over a tower
 # standing 150 in front of a lower mortar
 MORTAR_ARC = (300, 520)
@@ -182,18 +219,24 @@ def fire_lines(name, p, enemy_dir=1):
     return []
 
 
-def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1):
+def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1, cautious=False):
     """Foreground struts that block a weapon: built after it anywhere in its line of fire, or (built before)
-    beyond its recession length; doors close in front of it are its own (opened to fire)."""
+    outside its recession box and its body (recessed()); doors in front of it are its own (opened to fire).
+    cautious (the generator's clear_fire_lines): also every strut the earlier model called blocking (beyond
+    OLD_RECESSION, machine gun OLD_RECESSION_MG), so plans that fired in test matches keep every strut they cleared."""
     out = []
-    rec = RECESSION_LEN.get(name, DEFAULT_RECESSION_LEN)
     for p0, p1 in fire_lines(name, p, enemy_dir):
         for m, a, b, k, pair in _blocking(links, pos, p0, p1):
             dist = _cross_dist(p0, p1, a, b)
             if m == "door":
                 continue                    # the AI opens all doors in the way before firing (OpenWeaponDoors)
-            if k < k_dev and dist <= rec:
-                continue                    # recessed by the game when the weapon is placed
+            if k < k_dev:                   # built before the weapon: recessed by the game when it is placed?
+                if name not in DIRECT:
+                    if dist <= OLD_RECESSION:
+                        continue
+                elif recessed(name, dist, p, a, b, enemy_dir) and not (
+                        cautious and dist > (OLD_RECESSION_MG if name == "machinegun" else OLD_RECESSION)):
+                    continue
             out.append((m, a, b, k, pair, dist))
     return out
 
@@ -229,7 +272,7 @@ def check_plan(actions, enemy_dir=1, terrain=None):
         for m, a, b, k, pr, dist in fire_blockers(links, pos, name, p, kd, enemy_dir)[:1]:
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
                 where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
-                " (built after the weapon, not recessed)" if k > kd else " (beyond the recession box)"))
+                " (built after the weapon, not recessed)" if k > kd else " (outside the recession box and the body)"))
         # nothing solid inside the device's box above its strut
         top = BOX_TOP.get(name)
         if top and name not in TURBINES:

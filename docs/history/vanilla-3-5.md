@@ -38,3 +38,26 @@ Second rush test: the 20mm was built at 220 s and reported ready; every `TryFire
   available or not ready although energy and the line of fire were free (the wood post in front of it, see above).
 - Vanilla-3 then had three roof turbines on the plain tower roof (`turbine_avoid` on the seam column), enough for the
   munitions plant and both heavy weapons; the cage (25.10.2026) has two, upgraded.
+
+## Vanilla-5, first test (25.10.2026)
+
+Against a player (difficulty 1; the player had 6 mines after 79 s, about 10 turbines, an armoury, an upgrade centre, a
+factory at 163 s, lasers at 374 and 438 s, firebeams at 427 and 545 s): **the player won at 629 s**. The AI's build ran
+as planned: workshop 3 s, battery 18 s, factory 80 s, store 118 s, mine 141 s, laser placed 219 s (built 339 s),
+machine gun 341 s, cage turbines 369 and 427 s, sandbags 410-414 s, sniper 459 s. Metal averaged 402 (below 150 in 44 %
+of the snapshots; player 511), energy 5,820.
+
+- **The laser never fired.** Ten tries from 340 s on, all `FIRETRY laser ... fired=0 ray=RAY_HIT_STRUCTURE:2:bracing@3086,79`:
+  the ray hit our own post 111-114 (x -3100, floor 105 to -20, foreground bracing since 157 s), 50.4 ahead of the
+  laser's centre. The laser file's `RecessionBox` (`Size {200, 25}`, `Offset {-230, -60}`) covers 130-330 ahead and
+  its body (`SelectionWidth` 50, centred) reaches 50, so the post was never recessed. `rules.py` had assumed the box
+  ran from the weapon to 200 and passed the plan. Vanilla-3's 20mm in the same cell fired because its body (90 + 18
+  forward) overlapped that post.
+- **The upgrade centre was refused** on the munitions slot (action 354: `CS_OCCUPIED`, then `CS_UNSTABLE`; the
+  `UNSTABLE` sag values are unusable in team-2 matches). The AI then waited on the turbine upgrades; from ~545 s it
+  sat at 1500 metal / 11,000 energy.
+- **The end:** the player fired the laser and the firebeam once each, together, at ~626 s: the starting fort's lower
+  front strut 69-71 first, then woodspam region 1 and the door 64-68; 62 struts, the workshop, factory, batteries,
+  store and the reactor within 4 s. The AI destroyed nothing; its sniper fired 28 times.
+- Fix: the laser's front post is now background bracing (`rules.py` models the recession boxes and bodies from the
+  weapon files; the generator clears such struts).

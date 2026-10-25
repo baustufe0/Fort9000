@@ -68,7 +68,7 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3100.00, y = 105.00 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10016, PosA = {x = -2945.00, y = 105.00 }, OriginalNodeBId = 56, PosB = { x = -3093.19, y = 205.21 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10014, PosA = { x = -3200.00, y = 105.00 }, OriginalNodeBId = 10017, NewNodePos = { x = -3200.00, y = -20.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_NODE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10018, NewNodePos = { x = -3100.00, y = -20.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_NODE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10018, NewNodePos = { x = -3100.00, y = -20.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10017, PosA = {x = -3200.00, y = -20.00 }, OriginalNodeBId = 10018, PosB = { x = -3100.00, y = -20.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10017, PosA = {x = -3200.00, y = -20.00 }, OriginalNodeBId = 10015, PosB = { x = -3100.00, y = 105.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10014, PosA = { x = -3200.00, y = 105.00 }, OriginalNodeBId = 10015, PosB = { x = -3100.00, y = 105.00 }, LinkT = 0.50, DeviceSaveName = "laser" },

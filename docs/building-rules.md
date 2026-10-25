@@ -75,9 +75,16 @@ checks use the table values as full widths.
 
 - Every direct-fire weapon needs a clear line straight ahead (`MinFireClearance` 500–1000): foreground struts in it
   stop the AI from firing (woodspam built after a cannon: 0 cannon shots).
-- When a weapon is placed, the game **recesses** foreground struts already in its way within its `RecessionBox` (200
-  long, 25 high at barrel height, starting 200 ahead; machine gun 20 high): bracing becomes background bracing, armour a
-  door. Struts built later, or further away, are not recessed and block it.
+- When a weapon is placed, the game **recesses** foreground struts already in its way within its `RecessionBox`:
+  bracing becomes background bracing, armour a door. The box (weapon files: `Size`, `Offset`, centred on the offset)
+  does **not start at the weapon**; ahead of its LinkT point it covers: machine gun 42.5-62.5, minigun, laser and
+  firebeam 130-330, sniper, AP sniper, cannon and 20mm 200-400, flak 60-140, rocket, EMP rocket and shotgun 70-170.
+- A strut closer than the box is only cleared if the weapon's **body** overlaps it: `SelectionWidth` (a half-width) to
+  both sides of a centre moved forward by `SelectionOffset` (sniper 40, cannon and 20mm 18, laser and machine guns 0),
+  2 × `SelectionHeight` high. So the sniper's body reaches 110 ahead, the 20mm's 108, but the laser's only 50: the
+  Vanilla-5 laser never fired through the wood post 50 in front of it (every try `RAY_HIT_STRUCTURE` on its own
+  bracing), while the 20mm in the same cell fired 126 shots. Struts built after the weapon, between its body and its
+  box, or beyond the box block it (`rules.recessed`).
 - Doors never block: the AI opens all doors in the way before firing (`OpenWeaponDoors`). Every direct-fire weapon
   gets a metal door in front of it. A wood post that was meant to become a door blocks (the 20mm did not fire for 2-3
   minutes until its post became a door).
@@ -214,7 +221,8 @@ writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build o
   for tall devices (rockets, flak, shotgun, smoke bomb), warning for the others. Expected warnings: the tech slots of
   the game's own plans (upgrade, factory, munitions), Abyss-4's top cannon.
 
-The generator fixes lines of fire itself (`clear_fire_lines`) and places mortars only where the arc is open
+The generator fixes lines of fire itself (`clear_fire_lines`, cautious: it also clears every strut the earlier model
+called blocking, so plans that fired keep their cleared struts) and places mortars only where the arc is open
 (`mortar_open_arc`). All current plans pass without errors. On the command line `rules.py` takes the enemy side from
 the plan header (team 2 plans such as VanillaLong face left) and ignores the terrain; `check_plan(..., terrain=...)`
 also lets rock block the wind rays (then every turbine on Abyss's top roof, next to the cliff wall, gets no wind from
@@ -237,6 +245,7 @@ Map-specific ones are in [maps/vanilla.md](maps/vanilla.md) and [maps/abyss.md](
 | Heavy weapon directly on another weapon cell | floor sagged 24–49, `CS_UNSTABLE`, given up |
 | Rule check "no device on a strut sharing a node with a strut carrying a device" (from the probe) | flagged the game's own plans and devices that were built; only true for the finished, loaded fort; not in `rules.py` |
 | Door or armour planned a few actions after its strut | no effect while the strut was under construction (a 20mm could not fire); now `SWAP_WINDOW` |
+| Line-of-fire check assuming the recession box runs from the weapon to 200 ahead | missed the post 50 in front of the Vanilla-5 laser (outside its body, before its box); the laser never fired. Now the boxes and bodies from the weapon files |
 
 ## Open problems
 

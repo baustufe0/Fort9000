@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | a laser | laser rush | not yet |
+| Vanilla-5 | a laser | laser rush | once: lost at 629 s, its laser never fired (post in front of it, now fixed) |
 
 ## Starting fort
 
@@ -137,11 +137,13 @@ launcher).
   then the upgrade centre, anti-air, woodspam and upgraded turbines.
 - Inner armour rebuilt as wood after the first mine (map default).
 
-## Vanilla-5 – laser rush (not yet tested)
+## Vanilla-5 – laser rush
 
 - Vanilla-3's layout with one laser in the rush 20mm's cell (x -3200..-3100, floor 105, LinkT 0.5), firing through the
   front cell over the reactor; own beams pass own background bracing (`CollidesWithFriendlyBeams = false`). The factory
   takes its proven slot below that column, the upgrade centre the munitions slot.
+- The laser cell's front post (x -3100, floor 105 to -20) is background bracing: the laser's body reaches only 50 ahead
+  and its recession box starts 130 ahead, so the solid post 50 in front of it blocked every shot in the first test.
 - Costs: factory 800 m / 6000 e / 60 s, laser 1000 m / 6000 e / 120 s, one beam 5000 e (reload 24 s): more energy than
   the starting cap and more metal than the metal cap.
 - Order: workshop, battery (cap 7000), factory, store (cap 1200) and a mine while it builds, the laser (after 57
@@ -149,6 +151,11 @@ launcher).
   anti-air, the cage turbines with their sandbags, a battery, a mine, the sniper; then the upgrade centre (battery,
   store, machine gun while it builds), upgraded turbines, miniguns, the AP sniper, the tower's woodspam, a mine, upgraded
   mines. Inner armour kept.
+- First test (one match, difficulty 1): the build ran as planned up to the upgrade centre (workshop 3 s, factory 80 s,
+  laser placed 219 s, built 339 s, cage turbines 369/427 s, sniper 459 s). The upgrade centre on the munitions slot
+  was refused (`CS_OCCUPIED`, then `CS_UNSTABLE`), so the upgraded turbines never came and the AI sat at its storage
+  caps (1500 / 11,000) from ~545 s. The player's laser and firebeam, fired together once at ~626 s, cut the lower
+  front with its woodspam and took the reactor in under 4 s; the AI destroyed nothing.
 
 ## Approaches that failed (Vanilla)
 
@@ -176,12 +183,19 @@ launcher).
 | Both near mines before the first turbine (Vanilla-4) | metal fine, energy 200-600; the first turbine was no earlier |
 | Munitions plant beside the workshop, right behind the starting fort | `CS_UNSTABLE` without stress or sag; the 20mm then `CS_PREQUISITENOTMET` |
 | Support by the shallowest chain (generator default) for the rush 20mm | pulled in the whole back block (100 struts instead of 42); now `support_cheapest` |
+| Solid post 50 in front of the laser (Vanilla-5) | outside the laser's body and before its recession box: every shot declined; now background bracing |
 
 ## Open problems
 
 - Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
-- Vanilla-3's sniper behind its split door, Vanilla-4's cannons against a player and the Vanilla-5 laser rush are not
-  yet tested; the cannons' doors stay full until a test shows where their barrel is.
+- Vanilla-3's sniper behind its split door, Vanilla-4's cannons against a player and Vanilla-5's laser with the cleared
+  post are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
+- Vanilla-5's upgrade centre on the munitions slot (x -3400..-3300, y 602) was refused (`CS_OCCUPIED`, then
+  `CS_UNSTABLE`) right after the mine at x -3412 below it was placed; the munitions plant stands on that slot in
+  Vanilla-3/-4. Cause not confirmed (likely the mine). Then the AI waits on the turbine
+  upgrades with full storage.
+- Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
+  4 s; woodspam does not stop that.
 - One armour piece of a 20mm door post (47 long, y 27..-20) was refused with `CS_NODESTOOCLOSE` and given up; the
   other door's identical piece was built. Cause unknown.
 - The AI has not yet beaten a human who builds heavy weapons by ~6 minutes at difficulty 1 (Vanilla-2 lost to a laser,

@@ -1783,7 +1783,7 @@ class Plan:
 
     def clear_fire_lines(self):
         """Every strut the plan builds that would block a weapon (rules.fire_blockers: built after the weapon,
-        or beyond the game's recession box) becomes background bracing; armour becomes a door."""
+        or outside the game's recession box and the weapon's body) becomes background bracing; armour becomes a door."""
         import re
         for _ in range(5):
             acts = parse_lines(self.actions)
@@ -1792,7 +1792,7 @@ class Plan:
             for name, ia, ib, t, pair, kd in devices:
                 if ia in pos and ib in pos:
                     p = rules._point(pos, ia, ib, t)
-                    for m, a, b, k, pr, dist in rules.fire_blockers(links, pos, name, p, kd):
+                    for m, a, b, k, pr, dist in rules.fire_blockers(links, pos, name, p, kd, cautious=True):
                         fix[pr] = "door" if m == "armour" else "backbracing"
             if not fix:
                 return
