@@ -385,8 +385,13 @@ VANILLA_VARIANTS = {
         # 25.10.2026), a turbine 127; 135 would make the 155-wide nest cell's diagonal longer than MAX_LINK. Two storeys only: the roof turbines of the five-storey tower waited for the
         # whole back block (~165 struts; storeys above the second wait for the first two over the full width,
         # tower_connect), the gallery needs ~30
+        # late game: the machine guns (anti-air) stand on the gallery roof, the only free place of the low fort
+        # (not on the nest roof: the mortar shells pass through it); they and the starting fort's machine gun
+        # become miniguns
+        "roof_weapons": {"machinegun"},
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
+                "roof_weapon_cells": [(-3200, -25), (-3400, -25)],
                 "weapon_cells": [(-3100, 205, "sniper")],
                 "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
@@ -401,7 +406,10 @@ VANILLA_VARIANTS = {
                 # at -3465, -3365, -3265 (100 apart, 95 from the sandbags)
                 "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.3), (1, "mid", 0.5)],
                 "turbine_floor_y": 105, "turbine_floor_t": 0.35,
-                "woodspam": None},
+                # woodspam: two wooden layers in front of the prow, from the nest roof down to the deck; foreground
+                # bracing in front of the nest (it only protects), background in front of the prow storey (the
+                # sniper fires through it)
+                "woodspam": {"wall_x": -2845, "layers": [-2805, -2765], "rows": [-25, 105], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
             # workshop at once; the sniper (100 m / 300 e, no tech) and the deck while the workshop builds; the
@@ -422,13 +430,18 @@ VANILLA_VARIANTS = {
             ("eco", ["turbine", "turbine"]),
             ("eco", ["mine"]),
             ("tech", ["upgrade"]),
-            ("eco", ["battery"]),
+            # late game: first the mortars (heavy mortars), then the miniguns (the starting fort's machine gun and
+            # two machine guns on the gallery roof, all upgraded), then the woodspam; storage and upgrades between
             ("upgrades", ["mortar2", "mortar2"]),
-            ("eco", ["mine", "store"]),
-            # late game
+            ("eco", ["battery", "mine", "store"]),
+            ("upgrades", ["minigun"]),
+            ("aa", ["machinegun", "machinegun"]),
+            ("upgrades", ["minigun", "minigun"]),
+            ("defence", ["woodspam"]),
             ("upgrades", ["sniper2", "turbine2", "turbine2", "turbine2"]),
             ("eco", ["battery", "mine"]),
             ("upgrades", ["mine2", "mine2"]),
+            ("defence", ["woodspam"]),
         ],
     },
     "kanone20mm": {
@@ -1331,7 +1344,10 @@ class Plan:
                  and self.devices.get(c) not in LOBBED_WEAPONS
                  and (self.devices.get(c) or "").rstrip("+") not in LARGE
                  and not any(self.roof_in_line(c, d) for d in weapons)
-                 and not (dev in LOBBED_WEAPONS and self.cfg.get("mortar_open_arc") and not self.arc_open(c, roof=True))]
+                 and not (dev in LOBBED_WEAPONS and self.cfg.get("mortar_open_arc") and not self.arc_open(c, roof=True))
+                 # roof_weapon_cells: [(left x, roof y)], the only roofs for roof weapons (e.g. out of mortar arcs)
+                 and (not self.cfg.get("roof_weapon_cells") or any(
+                     abs(self.cell_x(c)[0] - x0) < 2 and self.cfg["rows"][c[1]] == ry for x0, ry in self.cfg["roof_weapon_cells"]))]
         low = -1 if self.variant.get("roof_weapon_low_first") else 1
         cands.sort(key=lambda c: (low * self.cfg["rows"][c[1]], -c[0]))
         return cands[0] if cands else None
@@ -1371,6 +1387,8 @@ class Plan:
                 c = (min(ia[0], ib[0]), ia[1] - 1)
                 if c in self.all_cells:
                     self.devices[c] = dev
+                    # the plan can upgrade it (the AI upgrades whatever device stands on the planned strut)
+                    self.placed.append((dev, self.nodes[ia][1], self.nodes[ib][1], 0.5, c))
         # mortar_slots and the split sandbag cell are taken before any cell is reserved
         for c in self.mortar_slots_cells():
             if c is not None:
