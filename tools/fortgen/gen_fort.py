@@ -395,8 +395,12 @@ VANILLA_VARIANTS = {
                 # second was refused with CS_UNSTABLE, later CS_OCCUPIED (two test matches, 25.10.2026)
                 "mortar_slots": [((-3100, 105), (-3022, 105), 0.25), ((-3022, 105), (-2945, 105), 0.75)],
                 "split_cell": [(-2945, -25), (-3200, -25)],
-                "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.5), (1, "mid", 0.5)],
-                "turbine_floor_y": 105,
+                # devices at the same height need ~90 between them: the gallery's lower sandbags 70 from the first
+                # mortar were refused (CS_OBSTRUCTION, then CS_UNSTABLE; test match 25.10.2026), the nest's 89 from
+                # the second mortar were placed. Lower gallery sandbags at x -3170 (90 from the mortar), the turbines
+                # at -3465, -3365, -3265 (100 apart, 95 from the sandbags)
+                "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.3), (1, "mid", 0.5)],
+                "turbine_floor_y": 105, "turbine_floor_t": 0.35,
                 "woodspam": None},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
@@ -1558,9 +1562,9 @@ class Plan:
             c = self.choose_turbine_floor() if self.cfg.get("turbine_floor_y") is not None else None
             if c is not None and self.build_cell_path(c):
                 # turbine gallery: a row of turbines on the floor of one open storey (like big vanilla
-                # forts), so roofs stay free for mortars
+                # forts), so roofs stay free for mortars; turbine_floor_t: their LinkT (spacing to other devices)
                 self.devices[c] = dev
-                self.place_on_floor(c, dev)
+                self.place_on_floor(c, dev, self.cfg.get("turbine_floor_t", 0.5))
                 return
             c = self.choose_turbine_roof()
             if c is None or not self.build_cell_path(c):
