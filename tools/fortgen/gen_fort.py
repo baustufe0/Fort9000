@@ -357,22 +357,30 @@ _V_LARGE_TOGWM2 = [(-3200, -20, 0.5), (-3200, -145, 0.5)]
 # Less load on the starting fort's prow (it hangs over the cliff; test match 24.10.2026: its armour chain reached
 # 0.97 of its breaking limit after the first cannon was placed and the fort collapsed at 7.8 min, without enemy
 # fire): no prow storeys, no woodspam base on the prow, cannons at LinkT 0.5 instead of 0.75 (ToGWM2).
-_V_HIGH_ROWS = [-470, -370, -270, -145, -20, 105, 205, 308, 405, 503, 602, 700]
-_V_TALL_HIGH = _box(-3400, -2945, -370, 205)
+_V_HIGH_ROWS = [-500, -370, -270, -145, -20, 105, 205, 308, 405, 503, 602, 700]
+# Defence (as in Vanilla-2): the roof turbines stand in a hidden cage, a storey of background bracing on the tower
+# roof (130 high: a turbine is 127, two stacked sandbags 2 x 51), through which the wind blows and the player cannot
+# see; its front cell (x -3100..-2945) is split for two stacked sandbags in front of the turbines (128 from the
+# nearest one; devices at one height need ~90). That cell held a turbine: two turbines remain (the seam column
+# x -3300..-3200 refuses them), upgraded late (67.5 each instead of 45).
+_V_TALL_HIGH = _union(_box(-3400, -2945, -370, 205), _box(-3400, -2945, -500, -370))
+_V_CAGE_HIGH = {"turbine_floor_y": -370, "hidden_box": (-3400, -2945, -500, -370),
+                "split_cell": [(-3100, -500)], "sandbag_slots": [(0, "floor", 0.6), (0, "mid", 0.6)],
+                "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-370,)}}
 # The front cell on the starting fort's front post (x -3100..-2945, floor 105) refused the early sniper with
 # CS_UNSTABLE in every test match, also with a 125-high storey (24.10.2026: the AI gave up after 120 s; the links
 # at its front node were strained to 1.79 of their planned length); snipers stay out of it (a machine gun takes it).
 # split_doors: the doors of the sniper and the heavy weapons only as long as the shot needs (Vanilla-2's sniper door,
 # 61.5 instead of 99, fired 124 shots in a test match)
-_V_HIGH_CFG = {"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370, "split_doors": True,
+_V_HIGH_CFG = dict(_V_CAGE_HIGH, **{"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370, "split_doors": True,
                "weapon_avoid": [(-3100, 105, {"sniper"})],
                # the roof turbine on the seam column (x -3300..-3200, where the back and front parts of the tower
                # meet) was refused with CS_UNSTABLE in every test match (24.10.2026: three tries, the AI gave up
-               # after 120 s); the tower roof has three turbines without it
+               # after 120 s); the cage has two turbines without it and the sandbags' cell
                "turbine_avoid": [(-3300, -370)],
                "large_top_min": -270, "large_top_max": -145,
                "woodspam": {"wall_x": -2945, "layers": [-2905, -2865], "rows": [-370, -270, -145],
-                            "base": []}}
+                            "base": []}})
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -494,17 +502,22 @@ VANILLA_VARIANTS = {
             ("tech", ["munitions"]),
             ("eco", ["mine", "battery"]),
             ("weapons", ["cannon20mm"]),
-            # then the economy and the tower
+            # then the economy and the tower; the first turbine in the hidden cage on the tower roof, then the two
+            # stacked sandbags in front of it
             ("eco", ["turbine"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
             ("eco", ["mine"]),
-            ("eco", ["turbine", "turbine"]),
+            # two turbines fit in the cage: upgraded ones instead of more (67.5 energy instead of 45); the upgrade
+            # centre first, then what needs no tech while it builds (60 s)
+            ("tech", ["upgrade"]),
             ("eco", ["store", "battery"]),
             ("aa", ["machinegun"]),
             ("weapons", ["sniper"]),
+            ("upgrades", ["turbine2", "turbine2"]),
             ("defence", ["woodspam"]),
             ("weapons", ["cannon20mm"]),
             # late game: more anti-air, the woodspam completed
@@ -522,28 +535,37 @@ VANILLA_VARIANTS = {
             ("eco", ["mine"]),
             ("tech", ["workshop"]),
             ("eco", ["turbine"]),
+            # the two stacked sandbags in front of the hidden turbine cage
+            ("defence", ["sandbags", "sandbags"]),
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
             ("weapons", ["sniper"]),
+            # the munitions plant costs 800 metal and 5000 energy: both turbines first (two fit in the cage)
             ("eco", ["turbine"]),
             ("eco", ["mine", "battery"]),
-            # the munitions plant costs 800 metal and 5000 energy: turbines first
-            ("eco", ["turbine", "turbine"]),
             ("tech", ["munitions"]),
             ("eco", ["store", "battery"]),
             ("aa", ["machinegun"]),
             ("weapons", ["sniper"]),
             ("defence", ["woodspam"]),
             ("weapons", ["cannon", "cannon"]),
-            # late game: more anti-air, the woodspam completed
+            # late game: upgraded turbines (the upgrade centre first, anti-air and woodspam while it builds), more
+            # anti-air, the woodspam completed
+            ("tech", ["upgrade"]),
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
+            ("upgrades", ["turbine2", "turbine2"]),
         ],
     },
     "laser": {
         "title": "Laser deck: factory early, all turbines and extra batteries before the laser",
-        "shape": _union(_V_TALL, _V_BACK),
-        "cfg": {"split_doors": True},
+        "shape": _union(_V_TALL, _V_BACK, _box(-3400, -2945, -425, -295)),
+        # the roof turbines in a hidden cage with two stacked sandbags in its front cell, as in Vanilla-3/-4 (rows: a
+        # 130-high storey on the tower roof); three turbines fit, upgraded
+        "cfg": {"split_doors": True, "rows": [-425, -295, -195, -95, 5, 105, 205, 308, 405, 503, 602, 700],
+                "turbine_floor_y": -295, "hidden_box": (-3400, -2945, -425, -295),
+                "split_cell": [(-3100, -425)], "sandbag_slots": [(0, "floor", 0.6), (0, "mid", 0.6)],
+                "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-295,)}},
         # the factory takes the usual upgrade slot: upgrade centre on the munitions slot (no munitions here)
         "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
         "plan": [
@@ -552,6 +574,7 @@ VANILLA_VARIANTS = {
             ("eco", ["mine"]),
             ("tech", ["workshop"]),
             ("eco", ["turbine"]),
+            ("defence", ["sandbags", "sandbags"]),
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
             ("weapons", ["sniper"]),
@@ -560,9 +583,9 @@ VANILLA_VARIANTS = {
             ("tech", ["factory"]),
             # the laser needs an extra store and battery and a lot of energy per shot (test match: a laser
             # plan with 2-3 turbines never placed or never fired the laser): all turbines first
-            ("eco", ["turbine", "store", "battery"]),
+            ("eco", ["store", "battery"]),
             ("weapons", ["laser"]),
-            # only 4 turbine slots on the roof: upgraded turbines for more energy; the upgrade centre first,
+            # only 3 turbine slots in the cage: upgraded turbines for more energy; the upgrade centre first,
             # then devices that do not need it while it is built (60 s)
             ("tech", ["upgrade"]),
             ("aa", ["machinegun"]),
@@ -571,7 +594,7 @@ VANILLA_VARIANTS = {
             # late game: more anti-air, a sniper, more storage
             ("aa", ["machinegun"]),
             ("eco", ["battery"]),
-            ("upgrades", ["turbine2", "turbine2"]),
+            ("upgrades", ["turbine2"]),
             ("weapons", ["sniper"]),
             ("defence", ["woodspam"]),
         ],
@@ -783,7 +806,9 @@ class Plan:
         if not tc:
             return
         rows, n = self.cfg["rows"], tc["storeys"]
-        tower = [c for c in self.cells if rows[c[1] + 1] <= tc["base_y"]]
+        # skip_floors: storeys left out (e.g. the hidden turbine cage on the tower roof: it rests on the top storey
+        # only, which is joined already, and would otherwise wait for one more storey over the full width)
+        tower = [c for c in self.cells if rows[c[1] + 1] <= tc["base_y"] and rows[c[1] + 1] not in tc.get("skip_floors", ())]
         floors = sorted({rows[c[1] + 1] for c in tower}, reverse=True)       # lowest storey first
         storey = {c: floors.index(rows[c[1] + 1]) + 1 for c in tower}
         for c in tower:
@@ -1359,7 +1384,9 @@ class Plan:
         min_w = self.cfg.get("turbine_min_w", 0)
         cands = [c for c in sorted(self.cells)
                  if self.cfg["rows"][c[1] + 1] == y and not self.is_front(c) and c not in self.devices
-                 and self.cell_w(c) >= min_w]
+                 and self.cell_w(c) >= min_w
+                 # turbine_avoid: (left x, y) where turbines were refused in test matches (the roof = the floor here)
+                 and not any(abs(self.cell_x(c)[0] - x0) < 2 and ry == y for x0, ry in self.cfg.get("turbine_avoid", []))]
         cands.sort(key=lambda c: (self.unbuilt_support(c), -c[0]))
         return cands[0] if cands else None
 
