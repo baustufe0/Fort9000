@@ -188,7 +188,9 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 6. **Weapons:** direct-fire weapons at the front behind a door; struts in their line of fire background bracing (or
    built before the weapon within its recession box); heavy weapons in solid X-braced storeys on strong posts, never in
    the top storey, in storeys high enough for their box; mortars with a door roof or open arc, or in a low hidden nest
-   with sandbags. Cells where a device type failed in every test are left to others (`weapon_avoid`, `turbine_avoid`).
+   with sandbags. A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
+   weapon, so it never stands in an open cell. Cells where a device type failed in every test are left to others
+   (`weapon_avoid`, `turbine_avoid`).
 7. **Woodspam:** cheap wooden layers in front of what must be protected (the reactor's front, the starting fort's
    lower face, the weapon tower); background bracing in a line of fire, never within a turbine's wind rays.
 8. **Devices only on solid bracing**; batteries and stores on proven slots, not on the ground row; no strut on a mine

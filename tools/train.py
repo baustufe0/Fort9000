@@ -405,6 +405,7 @@ def collect(explicit=None):
 # matches that must not be learned from: game_key -> reason (see "python train.py report" for the keys)
 EXCLUDED = {
     "bc7865269925451008b6d73ad02883a4acb799a8": "Vanilla-5, 25.10.2026: the player's own fort collapsed at 2.2 min",
+    "2b33aeb25901fc710a0893b72da8f3c08d1e6c18": "Vanilla-5, 25.10.2026: the player's own fort collapsed at 5.2 min",
 }
 
 

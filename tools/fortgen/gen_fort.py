@@ -2018,6 +2018,14 @@ class Plan:
             if self.variant.get("reserve_tall"):
                 del self.devices[c]        # not reachable yet: leave the cell to a later device
             return
+        # a large weapon's fire lane (the cells ahead of it, with the door in the front wall) before the weapon: built
+        # later, the Vanilla-5 laser stood in an open cell for minutes and was sniped before it was finished
+        # (test match 25.10.2026)
+        if dev in LARGE and self.cfg.get("large_cells"):
+            k = c[0] + 1
+            while self.devices.get((k, c[1])) == "lane":
+                self.build_cell_path((k, c[1]))
+                k += 1
         # reset front/roof after the weapon choice (door instead of armour)
         i, j = c
         if self.is_front(c):

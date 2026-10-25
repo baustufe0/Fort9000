@@ -82,3 +82,15 @@ the player built mines, turbines, sandbags, a store and repair stations and fire
   (531 s), both miniguns (533-538 s), the AP sniper (543 s) and both upgraded mines (581-603 s) - the late game ran
   through (build index 384/422 at 600 s instead of stalling at 359).
 - Other shots: minigun 182, sniper 17, AP sniper 9; no AI device lost.
+
+## Vanilla-5, fourth test (25.10.2026): the laser stood unprotected
+
+Against a player with a sniper (from 132 s), missiles, a buzzsaw and a mortar; the player's own fort collapsed at
+5.2 min (`RESULT w=2`; excluded from training). The laser was placed at 219 s in its cell (x -3200..-3100, floor 105)
+with nothing in front of it: its fire lane, the cell ahead with the door in the front wall (x -2945), came only at plan
+action 166, 100 actions after the laser. The player's sniper shot into the open cell (7 sniper shots), the laser cell's
+struts broke at 283 s and the laser was destroyed at 292 s, before it was finished (339 s); it never fired.
+
+Fix: the generator builds a large weapon's fire-lane cells (door and armour in the front wall, background diagonals)
+right before the weapon. Vanilla-5's lane now comes at actions 63-68 and the laser at 70 (was 63); Vanilla-3's 20mm
+cannons get their lanes first the same way (same struts and devices, only the order changed).
