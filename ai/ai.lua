@@ -626,19 +626,38 @@ local function CAI_DestroyResultName(r)
 	return tostring(r)
 end
 
--- sell the own device whose platform is the strut a-b (either order) by its id: (result or nil, "scan=<devices>
--- match=<id|none>") for the log
+-- sell the own device on the strut a-b by its id: the one whose platform is that strut (either order), else the
+-- one standing closest to the strut, within 40 (test match 25.10.2026: the starting fort's machine gun matched
+-- neither node order nor the platform lookup). Returns result or nil and, for the log, "scan=<devices>
+-- match=<id|none>", with every device (type@platform:position) when none matched
 local function CAI_DestroyOnPlatform(team, a, b)
 	if type(GetDeviceCountSide) ~= "function" or type(DestroyDeviceById) ~= "function" then return nil, "scan=n/a" end
 	local count = GetDeviceCountSide(team) or 0
+	local pa, pb = NodePosition and NodePosition(a), NodePosition and NodePosition(b)
+	local best, bestD, seen = nil, 40, {}
 	for i = 0, count - 1 do
 		local id = GetDeviceIdSide(team, i)
-		local pa, pb = GetDevicePlatformA(id), GetDevicePlatformB(id)
-		if (pa == a and pb == b) or (pa == b and pb == a) then
+		local na, nb = GetDevicePlatformA(id), GetDevicePlatformB(id)
+		if (na == a and nb == b) or (na == b and nb == a) then
 			return DestroyDeviceById(id), "scan=" .. count .. " match=" .. tostring(id)
 		end
+		local q = GetDevicePosition and GetDevicePosition(id)
+		if pa and pb and q then
+			-- distance of the device from the strut a-b
+			local dx, dy = pb.x - pa.x, pb.y - pa.y
+			local len2 = dx * dx + dy * dy
+			local t = len2 > 0 and math.max(0, math.min(1, ((q.x - pa.x) * dx + (q.y - pa.y) * dy) / len2)) or 0
+			local ex, ey = q.x - (pa.x + t * dx), q.y - (pa.y + t * dy)
+			local d = math.sqrt(ex * ex + ey * ey)
+			if d < bestD then best, bestD = id, d end
+		end
+		seen[#seen + 1] = tostring(GetDeviceType(id)) .. "@" .. tostring(na) .. "-" .. tostring(nb)
+			.. (q and (":" .. math.floor(q.x) .. "," .. math.floor(q.y)) or "")
 	end
-	return nil, "scan=" .. count .. " match=none"
+	if best then
+		return DestroyDeviceById(best), "scan=" .. count .. " match=" .. tostring(best) .. " near=" .. math.floor(bestD)
+	end
+	return nil, "scan=" .. count .. " match=none devices=" .. table.concat(seen, ",")
 end
 
 local function CAI_NoteBuildError(kind, what, a, b, r)
