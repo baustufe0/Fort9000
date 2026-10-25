@@ -335,7 +335,7 @@ _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
 # floor (posts, diagonals, roof) background bracing, through which the enemy cannot see and the shells pass (test
 # match: on the open deck roof both mortars were built at 65-66 s and fired). The tower (turbines and the third
 # mortar on its roof) stands one column back, x -3500..-3100, on the back block.
-_V_RUSH_DECK = _union(_box(-3500, -3100, -295, 205), _box(-3100, -2845, 5, 205), _V_BACK)
+_V_RUSH_DECK = _union(_box(-3500, -3100, -320, 205), _box(-3100, -2845, -20, 205), _V_BACK)   # rows of the variant
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -381,26 +381,33 @@ VANILLA_VARIANTS = {
         # no mortar was placed): the nest floor over the front column is built in two halves (split_edges, braced
         # down to the starting fort's roof posts), one mortar on each (mortar_slots); the prow's nest cell is split
         # at half height (split_cell) and carries two stacked sandbags in front of both mortars (sandbag_slots).
+        # The nest storey is 125 high (rows), so each half has room for a sandbag (box 51 high): in a 100-high
+        # nest the upper sandbags were refused with CS_OBSTRUCTION, then CS_UNSTABLE (test match 25.10.2026).
+        # Rows above the deck: 105, -20 (nest roof), -120, -220, -320 (tower roof).
         # The third mortar takes the tower roof, without the random pick; woodspam in front of the tower's front
-        # wall (x -3100), its lowest row 100 above the deck roof, out of the mortars' arcs
+        # wall (x -3100), its lowest row 100 above the nest roof, out of the mortars' arcs
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
+                "rows": [-420, -320, -220, -120, -20, 105, 205, 308, 405, 503, 602, 700],
                 "weapon_cells": [(-3100, 205, "sniper")],
-                "hidden_box": (-3100, -2845, 5, 105),
+                "hidden_box": (-3100, -2845, -20, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
                                  "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]}],
                 "mortar_slots": [((-3100, 105), (-3022, 105), 0.5), ((-3022, 105), (-2945, 105), 0.5)],
-                "split_cell": (-2945, 5),
+                "split_cell": (-2945, -20),
                 "sandbag_slots": [("floor", 0.5), ("mid", 0.5)],
-                "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-295, -195, -95], "base": []}},
+                "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-320, -220, -120], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
-            # workshop at once; the sniper (100 m / 300 e, no tech), the deck and the sandbags (0 m / 300 e, no
-            # tech) while the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished
+            # workshop at once; the sniper (100 m / 300 e, no tech) and the deck while the workshop builds; the
+            # mortars (200 m / 1000 e each) as soon as it is finished, then the sandbags (0 m / 300 e) in front of
+            # them. With the sandbags first, the second mortar (its strut sharing a node with the sandbags' and the
+            # first mortar's) was refused with CS_UNSTABLE (test match 25.10.2026); two mortars alone on the deck
+            # were both placed (65-66 s)
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
-            ("defence", ["sandbags", "sandbags"]),
             ("weapons", ["mortar", "mortar"]),
+            ("defence", ["sandbags", "sandbags"]),
             # then the economy and the tower
             ("eco", ["mine"]),
             ("eco", ["turbine"]),
