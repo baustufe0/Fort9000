@@ -441,18 +441,20 @@ VANILLA_VARIANTS = {
             ("defence", ["sandbags", "sandbags"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),
-            ("eco", ["mine"]),
+            # the upgrade centre, then what needs no tech while it builds (60 s): every upgrade waits until it is
+            # finished, and the AI waits on a planned upgrade without moving on (test match 25.10.2026: upgrade
+            # centre placed at 254 s, the heavy mortars only at 306 s, with just a battery in between)
             ("tech", ["upgrade"]),
-            # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (the second
-            # machine gun on the gallery roof, both upgraded), then the woodspam; storage and upgrades between
-            ("upgrades", ["mortar2", "mortar2"]),
-            ("eco", ["battery", "mine", "store"]),
-            ("upgrades", ["sniper2"]),
+            ("eco", ["mine", "battery", "store"]),
             ("aa", ["machinegun"]),
+            # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (both
+            # machine guns on the gallery roof upgraded), then the woodspam
+            ("upgrades", ["mortar2", "mortar2"]),
+            ("upgrades", ["sniper2"]),
             ("upgrades", ["minigun", "minigun"]),
             ("defence", ["woodspam"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
-            ("eco", ["battery", "mine"]),
+            ("eco", ["battery", "mine", "mine"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
         ],
