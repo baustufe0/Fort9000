@@ -167,9 +167,10 @@ MAPS = {
         "mortar_open_arc": True,
         # one turbine per roof cell (test match: two side by side, 46-54 apart, failed with CS_OCCUPIED)
         "eco_orig": False,             # no battery/storage in cells of the starting fort
-        # the starting fort's machine gun stands on the prow's roof strut (LinkT 0.5): no device in the prow storey
-        # above it (test match 25.10.2026: a sniper planned there was refused with CS_UNSTABLE, then CS_OCCUPIED)
-        "orig_devices": [((-2945.11, 206.49), (-2846.18, 203.99), "machinegun")],
+        # the starting fort's machine gun stands on the strut (-2996,504)-(-2895,505) of its lower front, beside the
+        # workshop slot (test match 25.10.2026: the own devices listed by a failed sale, machinegun@64-65 at
+        # 2949,503 for the mirrored team 2); not on the prow's roof strut, as assumed before
+        "orig_devices": [((-2996.23, 503.57), (-2895.38, 505.41), "machinegun")],
         "weapon_min_w": 95,            # no weapons in narrow cells (<95 wide)
         "mortar_avoid_roof": True,
         "turbine_narrow_first": True,
@@ -394,10 +395,10 @@ VANILLA_VARIANTS = {
         # 25.10.2026), a turbine 127; 135 would make the 155-wide nest cell's diagonal longer than MAX_LINK. Two storeys only: the roof turbines of the five-storey tower waited for the
         # whole back block (~165 struts; storeys above the second wait for the first two over the full width,
         # tower_connect), the gallery needs ~30
-        # the starting fort's machine gun stands in the prow storey the sniper fires through: it is sold at the
-        # start (its refund helps the rush) and the storey stays a fire lane. The machine guns (anti-air) stand on
-        # the gallery roof, the only free place of the low fort (not on the nest roof: the mortar shells pass
-        # through it): the first one as soon as that roof stands, the second late; both become miniguns
+        # the prow storey (on the starting fort's roof) stays a fire lane for the sniper behind it (lane_cells).
+        # The machine guns (anti-air) stand on the gallery roof, the only free place of the low fort (not on the nest
+        # roof: the mortar shells pass through it): the first one as soon as that roof stands, the second late; both
+        # become miniguns. The starting fort's machine gun (lower front, not in the sniper's way) stays
         "roof_weapons": {"machinegun"},
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
@@ -406,6 +407,7 @@ VANILLA_VARIANTS = {
                 # clear corridor around the shot is narrowest (FireClearanceOffsetInner 20 at the muzzle, 40 at 1000);
                 # its body still overlaps the post at x -2945, which the game then turns into background bracing
                 "weapon_cells": [(-3100, 205, "sniper", 0.7)],
+                "lane_cells": [(-2945, 205)],
                 "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
                                  "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]},
@@ -438,7 +440,7 @@ VANILLA_VARIANTS = {
             # them. With the sandbags first, the second mortar (its strut sharing a node with the sandbags' and the
             # first mortar's) was refused with CS_UNSTABLE (test match 25.10.2026); two mortars alone on the deck
             # were both placed (65-66 s)
-            ("eco", ["rebrace", "sell:machinegun"]),
+            ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("weapons", ["mortar", "mortar"]),
@@ -1443,6 +1445,12 @@ class Plan:
                     self.devices[c] = "mine-platz"
         # cells whose floor strut already carries a device of the starting fort stay free (orig_devices); the cell
         # counts as holding that device, so a weapon there gets its door and clear diagonals like a planned one
+        for x0, floor_y in self.cfg.get("lane_cells", []):
+            # lane_cells: [(left x, floor y)], cells a weapon behind fires through (door in front, background
+            # diagonals, no device)
+            for c in self.all_cells:
+                if abs(self.cell_x(c)[0] - x0) < 2 and self.cfg["rows"][c[1] + 1] == floor_y:
+                    self.devices[c] = "lane"
         for pa, pb, dev in self.cfg.get("orig_devices", []):
             ia, ib = self.node_at(pa), self.node_at(pb)
             if ia and ib:
