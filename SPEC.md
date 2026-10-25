@@ -197,7 +197,15 @@ as half-extents around a centre `SelectionOffset` = (0, -SelectionHeight - 0.5):
   ~1.2 s), armour above it (37.5); the sniper moved forward on its strut (LinkT 0.7, `weapon_cells` takes a LinkT) so
   its muzzle is ~44 instead of ~74 behind the door. Test match 25.10.2026: the sniper was placed at its new
   position without errors and fired 124 shots, no clearance failures (`FIREWAIT`/`FIRETRY`): the armour above the
-  door did not get in the way. Next: split the weapon doors of the other plans the same way.
+  door did not get in the way. Vanilla-3/-4/-5 (`split_doors`, a final pass over the plan): the front post of a
+  sniper, cannon, 20mm cannon or laser is rebuilt in up to three pieces (armour, door, armour) through new nodes,
+  braced with background bracing to the cell's back corners; the door is the shortest that covers the shot. Where the
+  barrel is, is not certain: the door covers both the weapon file's `RecessionBox` height (machine gun 40, sniper 50,
+  20mm cannon and laser 60, cannon 70 above the strut) and `rules.py`'s muzzle (0.6 of the device's height), +-12.5
+  (the Vanilla-2 margin) plus ~5 degrees of aim per unit of distance beyond a muzzle 44 behind the door. Result:
+  Vanilla-3 20mm doors 78 instead of 125, the snipers' doors 62.5 instead of 100-125 (Vanilla-3/-4/-5); the cannons
+  (Vanilla-4) and the laser (Vanilla-5) keep their full doors, no split is shorter for both estimates. Machine guns
+  keep full doors: they only fire anti-air here, at steep angles. Not yet tested in a match.
 - The built-in AI only fires at a target whose ray from the weapon reaches an enemy device or structure
   (`FindTarget` -> `TargetObstructed`, flag `RAY_ALLIED_BG_BLOCKS`); otherwise `TryFireGun` declines without an
   error (`FIRETRY ... fired=0`, 2.4). A door that is still a wood post blocks: in two rush tests the finished 20mm

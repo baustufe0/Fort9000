@@ -34,6 +34,13 @@ import rules  # noqa: E402
 MAX_LINK = 205          # struts between existing nodes (the game allows StandardMaxLinkLength = 218)
 MAX_NEW_NODE = 150     # StandardMaxLength: a new node can be at most this far from the node it is built from
 MIN_LINK = 45
+MIN_STRUT = 37.5        # StandardMinLength: the shortest strut the game allows
+DOOR_MIN = 49           # the shortest door (MinLength of door in building_materials.lua)
+# direct-fire weapons whose door is cut to the shot (split_doors): barrel height above the strut (the RecessionBox
+# offset of the weapon file) and barrel length
+DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser"}
+BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60}
+BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58}
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
                   "flak", "shotgun", "rocketemp", "rocket"}
 # the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
@@ -354,7 +361,9 @@ _V_TALL_HIGH = _box(-3400, -2945, -370, 205)
 # The front cell on the starting fort's front post (x -3100..-2945, floor 105) refused the early sniper with
 # CS_UNSTABLE in every test match, also with a 125-high storey (24.10.2026: the AI gave up after 120 s; the links
 # at its front node were strained to 1.79 of their planned length); snipers stay out of it (a machine gun takes it).
-_V_HIGH_CFG = {"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370,
+# split_doors: the doors of the sniper and the heavy weapons only as long as the shot needs (Vanilla-2's sniper door,
+# 61.5 instead of 99, fired 124 shots in a test match)
+_V_HIGH_CFG = {"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370, "split_doors": True,
                "weapon_avoid": [(-3100, 105, {"sniper"})],
                # the roof turbine on the seam column (x -3300..-3200, where the back and front parts of the tower
                # meet) was refused with CS_UNSTABLE in every test match (24.10.2026: three tries, the AI gave up
@@ -532,6 +541,7 @@ VANILLA_VARIANTS = {
     "laser": {
         "title": "Laser deck: factory early, all turbines and extra batteries before the laser",
         "shape": _union(_V_TALL, _V_BACK),
+        "cfg": {"split_doors": True},
         # the factory takes the usual upgrade slot: upgrade centre on the munitions slot (no munitions here)
         "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
         "plan": [
@@ -1505,6 +1515,8 @@ class Plan:
         self.hide_box()
         if self.cfg.get("clear_fire_lines"):
             self.clear_fire_lines()
+        if self.cfg.get("split_doors"):
+            self.split_doors()
         return self
 
     def hide_box(self):
@@ -1533,6 +1545,132 @@ class Plan:
                     seen.add(pair)
                     line = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "backbracing"', line)
             out.append(line)
+        self.actions = out
+
+    def door_span(self, y_top, y_floor, y_hi, y_lo):
+        """The shortest door on a front post from y_top down to y_floor that covers y_hi..y_lo (the shot): (door top,
+        door bottom), at least DOOR_MIN long; the armour left above or below it is either none or at least
+        MIN_STRUT. None if no split is shorter than the whole post."""
+        best = None
+        tops = [y_top] + [y_top + MIN_STRUT + 0.5 * k for k in range(int((y_hi - y_top - MIN_STRUT) / 0.5) + 1)]
+        bots = [y_floor] + [y_floor - MIN_STRUT - 0.5 * k for k in range(int((y_floor - MIN_STRUT - y_lo) / 0.5) + 1)]
+        for dt in tops:
+            for db in bots:
+                if dt <= y_hi and db >= y_lo and db - dt >= DOOR_MIN:
+                    if best is None or db - dt < best[1] - best[0]:
+                        best = (dt, db)
+        if best is None or best == (y_top, y_floor):
+            return None
+        return best
+
+    def split_doors(self):
+        """split_doors: the door of a front post in front of a direct-fire weapon (DOOR_WEAPONS) is only as long
+        as the shot needs: a door opens and closes at DoorSpeed 50 per second, and the player snipes into it
+        while it is open. The post is rebuilt in up to three pieces (armour, door, armour) through new nodes, each
+        braced with background bracing to the cell's back corners. Where the barrel is, is not certain: the
+        door covers both estimates, the weapon file's RecessionBox height (BARREL_H) and rules.py's muzzle (0.6 of
+        the device's height), +- 12.5 (the margin of the Vanilla-2 sniper door, its muzzle 44 behind it, which
+        fired in a test match), plus ~5 degrees of aim per unit of distance beyond that. Machine guns keep their
+        full doors: in this mod they only fire anti-air, at steep angles."""
+        import re
+        node_re = re.compile(r"OriginalNodeAId = (\d+),.*OriginalNodeBId = (\d+),")
+        pts_re = re.compile(r"x = (-?[\d.]+), y = (-?[\d.]+)")
+        pos, made = {}, {}                       # node id -> position, -> index of the action creating it
+        for k, line in enumerate(self.actions):
+            m = node_re.search(line)
+            pts = [(float(a), float(b)) for a, b in pts_re.findall(line)]
+            if not m or len(pts) < 2:
+                continue
+            a, b = int(m.group(1)), int(m.group(2))
+            pos.setdefault(a, pts[0])
+            if "CREATE_NODE" in line:
+                pos[b] = pts[1]
+                made.setdefault(b, k)
+            elif "CREATE_LINK" in line:
+                pos.setdefault(b, pts[1])
+        # final material of every strut, and where it is first built
+        first, final = {}, {}
+        for k, line in enumerate(self.actions):
+            m = node_re.search(line)
+            if m and ("CREATE_NODE" in line or "CREATE_LINK" in line):
+                pair = frozenset((int(m.group(1)), int(m.group(2))))
+                first.setdefault(pair, k)
+                final[pair] = re.search(r'MaterialSaveName = "(\w+)"', line).group(1)
+        weapons = [(d, a, b, t) for d, a, b, t, c in self.placed if d in DOOR_WEAPONS]
+        edits = {}                                   # action index -> replacement lines; None drops it
+        appended = []                                # (insert after index, line)
+        for pair, mat in final.items():
+            if mat != "door":
+                continue
+            ia, ib = tuple(pair)
+            pa, pb = pos[ia], pos[ib]
+            if abs(pa[0] - pb[0]) > 8:
+                continue                             # only (nearly) vertical front posts
+            top_id, bot_id = (ia, ib) if pa[1] < pb[1] else (ib, ia)
+            y_top, y_floor, x = pos[top_id][1], pos[bot_id][1], (pa[0] + pb[0]) / 2
+            behind = [(d, a, b, t) for d, a, b, t in weapons if abs((a[1] + b[1]) / 2 - y_floor) < 8
+                      and x - 320 < a[0] + (b[0] - a[0]) * t < x]
+            if not behind:
+                continue
+            d, a, b, t = max(behind, key=lambda w: w[1][0] + (w[2][0] - w[1][0]) * w[3])
+            muzzle = a[0] + (b[0] - a[0]) * t + BARREL_LEN[d]
+            margin = 12.5 + 0.09 * max(0.0, x - muzzle - 44)
+            y_strut = (a[1] + b[1]) / 2
+            h_lo, h_hi = sorted((BARREL_H[d], 0.6 * rules.SIZE.get(d, (40, 40))[1]))
+            span = self.door_span(y_top, y_floor, y_strut - h_hi - margin, y_strut - h_lo + margin)
+            if span is None:
+                continue
+            dt, db = span
+            # the pieces from the top down, with their materials
+            ys = [y_top] + ([dt] if dt > y_top else []) + ([db] if db < y_floor else []) + [y_floor]
+            mats = []
+            for y0, y1 in zip(ys, ys[1:]):
+                mats.append("door" if y0 >= dt - 0.01 and y1 <= db + 0.01 else "armour")
+            ids = [top_id]
+            for y in ys[1:-1]:
+                ids.append(self.next_id)
+                pos[self.next_id] = (x, y)
+                self.next_id += 1
+            ids.append(bot_id)
+            k0 = first[pair]
+            # build from the end that exists first: the source of a CREATE_NODE, or either end of a CREATE_LINK
+            created = "CREATE_NODE" in self.actions[k0]
+            src = int(node_re.search(self.actions[k0]).group(1)) if created else bot_id
+            chain = list(zip(ids, ids[1:], mats))
+            if src == bot_id:
+                chain = [(q, p_, m_) for p_, q, m_ in reversed(chain)]
+            lines = []
+            for n, (p_, q, m_) in enumerate(chain):
+                last = n == len(chain) - 1
+                if last and not created:
+                    lines.append('{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
+                                 % (p_, self._fmt(pos[p_]), q, self._fmt(pos[q]), m_))
+                else:
+                    lines.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+                                 % (p_, self._fmt(pos[p_]), q, self._fmt(pos[q]), m_))
+            edits[k0] = lines
+            for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
+                m = node_re.search(line)
+                if k != k0 and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
+                    edits[k] = None
+            # braces from each new node to the cell's back corners (the nearest nodes behind at the post's ends)
+            for mid in ids[1:-1]:
+                for y_end in (y_top, y_floor):
+                    back = [n for n, q in pos.items() if abs(q[1] - y_end) < 8 and x - 220 < q[0] < x - 60]
+                    if not back:
+                        continue
+                    corner = max(back, key=lambda n: pos[n][0])
+                    after = max(k0, made.get(corner, -1))
+                    appended.append((after, '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "backbracing" },'
+                                     % (mid, self._fmt(pos[mid]), corner, self._fmt(pos[corner]))))
+            self.problems.append("door of %s at x %.0f: y %.1f..%.1f (%.1f of %.1f)" % (d, x, dt, db, db - dt, y_floor - y_top))
+        out = []
+        for k, line in enumerate(self.actions):
+            if k in edits:
+                out.extend(edits[k] or [])
+            else:
+                out.append(line)
+            out.extend(l for after, l in appended if after == k)
         self.actions = out
 
     def clear_fire_lines(self):
