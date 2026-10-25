@@ -326,16 +326,13 @@ _V_STEPS = _v_terrace((5, -2845), (-95, -2845), (-195, -3100))
 # The back block (x -3600..-3100) ends at the starting fort's roof. The prow (-2945..-2845, beyond the
 # cliff edge at -2900) carries two light storeys.
 _V_TALL = _union(_box(-3400, -2945, -295, 205), _box(-2945, -2845, 5, 205))
-# sniper and mortar rush (Vanilla-2): the mortars cannot wait for the five-storey tower (~165 struts before its
-# roof). A two-storey deck on the starting fort (front column x -3100..-2945 on its roof posts, and the prow): the
-# sniper in the front column on the starting fort's roof beam (-3093,205)-(-2945,206), like the game's Template-2,
-# firing through the prow storey (the starting fort's machine gun, door in front); on the prow it was refused with
-# CS_UNSTABLE in both test matches (25.10.2026). The second storey (y 105..5) is a hidden mortar nest: two mortars on
-# its floor, each with sandbags at the front end of its strut against sniper fire, and the whole storey above its
-# floor (posts, diagonals, roof) background bracing, through which the enemy cannot see and the shells pass (test
-# match: on the open deck roof both mortars were built at 65-66 s and fired). The tower (turbines and the third
-# mortar on its roof) stands one column back, x -3500..-3100, on the back block.
-_V_RUSH_DECK = _union(_box(-3500, -3100, -320, 205), _box(-3100, -2845, -20, 205), _V_BACK)   # rows of the variant
+# sniper and mortar rush (Vanilla-2): the mortars cannot wait for a five-storey tower (~165 struts before its roof).
+# Two storeys over the starting fort's roof and one column back (x -3500..-2845; rows of the variant: 205, 105, -25):
+# the first one solid (the sniper on the starting fort's roof beam, like the game's Template-2, firing through the
+# prow storey with the starting fort's machine gun; on the prow it was refused with CS_UNSTABLE in both test matches,
+# 25.10.2026), the second one hidden behind background bracing: the mortar nest over the deck and the turbine gallery
+# behind it, each behind two stacked sandbags (details in VANILLA_VARIANTS).
+_V_RUSH_DECK = _union(_box(-3500, -2845, -25, 205), _V_BACK)
 # heavy weapons placed like weapon_pack's own ToGWM2 (shifted into this frame: 20mm on a 100-wide cell at
 # x -3303..-3203, LinkT 0.75; cannon a column back, LinkT 0.74): (left x, floor y, LinkT). They stand behind
 # the 155-wide front cells and fire through them (fire lanes, mark_large). The second one stands directly
@@ -373,7 +370,7 @@ VANILLA_VARIANTS = {
     # after 5.4 min, then minutes at the storage cap). The raised back towers give extra front
     # cells that look out over the deck.
     "artillerie": {
-        "title": "Sniper and mortar rush: low mortar deck on the starting fort, sniper on the prow, tower behind it",
+        "title": "Sniper and mortar rush: hidden mortar nest and turbine gallery behind sandbags, sniper on the starting fort",
         "shape": _V_RUSH_DECK,
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         # the sniper takes the front column on the starting fort's roof beam (weapon_cells). The game allows one
@@ -381,23 +378,26 @@ VANILLA_VARIANTS = {
         # no mortar was placed): the nest floor over the front column is built in two halves (split_edges, braced
         # down to the starting fort's roof posts), one mortar on each (mortar_slots); the prow's nest cell is split
         # at half height (split_cell) and carries two stacked sandbags in front of both mortars (sandbag_slots).
-        # The nest storey is 125 high (rows), so each half has room for a sandbag (box 51 high): in a 100-high
-        # nest the upper sandbags were refused with CS_OBSTRUCTION, then CS_UNSTABLE (test match 25.10.2026).
-        # Rows above the deck: 105, -20 (nest roof), -120, -220, -320 (tower roof).
-        # The third mortar takes the tower roof, without the random pick; woodspam in front of the tower's front
-        # wall (x -3100), its lowest row 100 above the nest roof, out of the mortars' arcs
+        # Behind the nest, on the same floor (y 105), the turbine gallery: turbines on the floor of an open storey of
+        # background bracing (wind passes through it, nothing rests on it), its front cell (x -3200..-3100) split for
+        # two stacked sandbags against sniper fire. Nest and gallery are one hidden storey (hidden_box), 130 high
+        # (rows): each sandbag half 65 (box 51; a 100-high split cell refused the upper sandbags, test match
+        # 25.10.2026), a turbine 127; 135 would make the 155-wide nest cell's diagonal longer than MAX_LINK. Two storeys only: the roof turbines of the five-storey tower waited for the
+        # whole back block (~165 struts; storeys above the second wait for the first two over the full width,
+        # tower_connect), the gallery needs ~30
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
-                "rows": [-420, -320, -220, -120, -20, 105, 205, 308, 405, 503, 602, 700],
+                "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
                 "weapon_cells": [(-3100, 205, "sniper")],
-                "hidden_box": (-3100, -2845, -20, 105),
+                "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
                                  "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]}],
                 # at the outer ends of the halves: 116 apart like the game's own plans; 77 apart (LinkT 0.5 each) the
                 # second was refused with CS_UNSTABLE, later CS_OCCUPIED (two test matches, 25.10.2026)
                 "mortar_slots": [((-3100, 105), (-3022, 105), 0.25), ((-3022, 105), (-2945, 105), 0.75)],
-                "split_cell": (-2945, -20),
-                "sandbag_slots": [("floor", 0.7), ("mid", 0.7)],
-                "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-320, -220, -120], "base": []}},
+                "split_cell": [(-2945, -25), (-3200, -25)],
+                "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.5), (1, "mid", 0.5)],
+                "turbine_floor_y": 105,
+                "woodspam": None},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
             # workshop at once; the sniper (100 m / 300 e, no tech) and the deck while the workshop builds; the
@@ -410,24 +410,21 @@ VANILLA_VARIANTS = {
             ("weapons", ["sniper"]),
             ("weapons", ["mortar", "mortar"]),
             ("defence", ["sandbags", "sandbags"]),
-            # then the economy and the tower
-            ("eco", ["mine"]),
+            # then energy: each mortar shot costs 200 energy and every strut 0.5 per unit length; with the roof
+            # turbines waiting for the tower, energy ran down to 2-20 (test match 25.10.2026). The first turbine,
+            # the gallery's sandbags, then more turbines before the next mine (2000 energy each)
             ("eco", ["turbine"]),
-            ("aa", ["machinegun"]),
+            ("defence", ["sandbags", "sandbags"]),
+            ("eco", ["turbine", "turbine"]),
             ("eco", ["mine"]),
-            ("eco", ["turbine"]),
             ("tech", ["upgrade"]),
             ("eco", ["battery"]),
             ("upgrades", ["mortar2", "mortar2"]),
-            ("eco", ["mine", "turbine", "store"]),
-            ("defence", ["woodspam"]),
+            ("eco", ["mine", "store"]),
             # late game
-            ("aa", ["machinegun", "machinegun"]),
-            ("weapons", ["mortar", "sniper"]),
-            ("upgrades", ["mortar2", "sniper2"]),
-            ("eco", ["battery"]),
-            ("upgrades", ["mine2", "mine2", "turbine2", "turbine2"]),
-            ("defence", ["woodspam"]),
+            ("upgrades", ["sniper2", "turbine2", "turbine2", "turbine2"]),
+            ("eco", ["battery", "mine"]),
+            ("upgrades", ["mine2", "mine2"]),
         ],
     },
     "kanone20mm": {
@@ -899,10 +896,18 @@ class Plan:
         y = self.cfg.get("turbine_floor_y")
         return y is not None and self.cfg.get("turbine_row_open") and self.cfg["rows"][c[1] + 1] == y
 
-    def is_split(self, c):
-        """Front cell of the turbine row, split at half height for two stacked sandbags."""
+    def split_cells(self):
+        """split_cell: one (left x, top y) or a list of them, in the order sandbag_slots refers to them."""
         sc = self.cfg.get("split_cell")
-        return bool(sc) and self.cell_x(c)[0] == sc[0] and self.cfg["rows"][c[1]] == sc[1]
+        return [] if not sc else ([sc] if isinstance(sc[0], (int, float)) else list(sc))
+
+    def split_index(self, c):
+        return next((k for k, (x0, top) in enumerate(self.split_cells())
+                     if abs(self.cell_x(c)[0] - x0) < 2 and self.cfg["rows"][c[1]] == top), None)
+
+    def is_split(self, c):
+        """Cell split at half height for two stacked sandbags (in front of a turbine row or a mortar nest)."""
+        return self.split_index(c) is not None
 
     def build_split_cell(self, c):
         """Cell with a background-bracing strut at half height: both side edges in two halves,
@@ -929,7 +934,7 @@ class Plan:
         self.link(tl, tr, self.edge_material(c, "top"))
         self.link(tl, mids[1], "backbracing")
         self.link(mids[0], br, "backbracing")
-        self.split_slots = {"mid": (mids[0], mids[1]), "floor": (bl, br)}
+        self.split_slots[c] = {"mid": (mids[0], mids[1]), "floor": (bl, br)}
 
     def edge_material(self, c, edge):
         """Material for a cell edge: front/roof armoured, doors in front of weapons."""
@@ -1341,6 +1346,7 @@ class Plan:
         self.late_crossbrace = []
         self.roof_device = {}
         self.roof_count = {}           # turbines per roof cell (roof_turbine_t: their LinkT positions)
+        self.split_slots = {}          # split cell -> its sandbag struts ("floor", "mid")
         self.mines_done = 0
         self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
         # the starting fort counts as built
@@ -1607,15 +1613,19 @@ class Plan:
         if dev == "woodspam":
             return self.add_woodspam()
         if dev == "sandbags":
-            # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts)
+            # sandbags at the front of the turbine row (shield the turbines, like big vanilla forts); sandbag_slots:
+            # [(slot, LinkT)] in the (first) split cell, or [(split cell index, slot, LinkT)]
             slots = self.cfg.get("sandbag_slots", [])
-            c = next((c for c in self.all_cells if self.is_split(c)), None)
             n = sum(1 for p in self.placed if p[0] == "sandbags")
-            if c is None or n >= len(slots) or not self.build_cell_path(c):
+            if n >= len(slots):
                 self.problems.append("no room for sandbags")
                 return
-            slot, t = slots[n]
-            a, b = (self.nodes[k] for k in self.split_slots[slot])
+            k, slot, t = (0,) + tuple(slots[n]) if len(slots[n]) == 2 else slots[n]
+            c = next((c for c in sorted(self.all_cells) if self.split_index(c) == k), None)
+            if c is None or not self.build_cell_path(c):
+                self.problems.append("no room for sandbags")
+                return
+            a, b = (self.nodes[q] for q in self.split_slots[c][slot])
             self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "sandbags" },'
                                 % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t))
             self.placed.append(("sandbags", a[1], b[1], t, c))
