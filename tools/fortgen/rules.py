@@ -52,6 +52,10 @@ DEFAULT_RECESSION_LEN = 200
 # standing 150 in front of a lower mortar
 MORTAR_ARC = (300, 520)
 TURBINE_SPACING = 90       # two turbines 46-54 apart failed with CS_OCCUPIED; the game's plan uses ~100
+# mortars 77 apart on the two halves of a split strut: the second refused (CS_UNSTABLE, later CS_OCCUPIED) in two
+# test matches (25.10.2026); the game's own plans space them 91-122 apart (Abyss-1: 91-96), 127 apart both were placed
+MORTAR_SPACING = 90
+LOBBED = {"mortar", "mortar2", "smokebomb"}
 # Wind test of the game (devices/windturbine.lua): rays to both sides from MinTestDistance 25 to MaxTestDistance
 # 600, between MinWindAngle -10 and MaxWindAngle 10 degrees. Everything except background bracing, shields,
 # rope and fuse collides with the wind (CollidesWithWind = false in building_materials.lua).
@@ -97,6 +101,10 @@ def build_state(actions):
             if base:
                 devices = [d for d in devices if not (d[0] == base and d[4] == pair and abs(d[3] - a["LinkT"]) < 0.02)]
             devices.append((name, ida, idb, a["LinkT"], pair, k))
+        elif a["Type"] == "DESTROY_DEVICE":
+            # the game's own plans sell a device to free its strut (Abyss-1: sandbags, then a laser there)
+            pair = frozenset((ida, idb))
+            devices = [d for d in devices if not (d[0] == a.get("DeviceSaveName") and d[4] == pair)]
     return pos, links, devices, ground
 
 
@@ -245,7 +253,7 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             elif blocked:
                 warnings.append("%s: wind blocked on the %s side (%s)" % (where, blocked[0], info))
 
-    # devices on the same strut must not overlap; turbines need ~100 between them
+    # one device per strut; devices on neighbouring struts must not overlap; turbines and mortars need ~100 between them
     for k, (n1, a1, b1, t1, pr1, _) in enumerate(devices):
         for n2, a2, b2, t2, pr2, _ in devices[k + 1:]:
             if a1 not in pos or b1 not in pos or a2 not in pos or b2 not in pos:
@@ -253,14 +261,16 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             p1, p2 = _point(pos, a1, b1, t1), _point(pos, a2, b2, t2)
             need = (SIZE.get(n1, (40,))[0] + SIZE.get(n2, (40,))[0]) / 2
             if pr1 == pr2:
-                if math.dist(p1, p2) < need - 1:
-                    errors.append("%s at %s and %s at %s overlap on one strut" % (n1, _fmt(p1), n2, _fmt(p2)))
+                # the game allows one device per strut (test match 25.10.2026: sandbags beside a mortar took it)
+                errors.append("%s at %s and %s at %s share one strut (one device per strut)" % (n1, _fmt(p1), n2, _fmt(p2)))
             elif abs(p1[1] - p2[1]) < 10 and abs(p1[0] - p2[0]) < need - 1:
                 # side by side on neighbouring struts at the same height (a device wider than the rest of its
                 # strut reaches over the shared node)
                 errors.append("%s at %s and %s at %s overlap (neighbouring struts)" % (n1, _fmt(p1), n2, _fmt(p2)))
             if n1 in TURBINES and n2 in TURBINES and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < TURBINE_SPACING:
                 errors.append("turbines at %s and %s only %.0f apart (need %d)" % (_fmt(p1), _fmt(p2), math.dist(p1, p2), TURBINE_SPACING))
+            if n1 in LOBBED and n2 in LOBBED and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < MORTAR_SPACING:
+                errors.append("%s at %s and %s at %s only %.0f apart (need %d)" % (n1, _fmt(p1), n2, _fmt(p2), math.dist(p1, p2), MORTAR_SPACING))
 
     # nothing lying on the rock across a mine site (the mine would be blocked)
     for name, g in ground:

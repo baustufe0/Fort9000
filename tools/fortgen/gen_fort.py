@@ -392,9 +392,11 @@ VANILLA_VARIANTS = {
                 "hidden_box": (-3100, -2845, -20, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
                                  "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]}],
-                "mortar_slots": [((-3100, 105), (-3022, 105), 0.5), ((-3022, 105), (-2945, 105), 0.5)],
+                # at the outer ends of the halves: 116 apart like the game's own plans; 77 apart (LinkT 0.5 each) the
+                # second was refused with CS_UNSTABLE, later CS_OCCUPIED (two test matches, 25.10.2026)
+                "mortar_slots": [((-3100, 105), (-3022, 105), 0.25), ((-3022, 105), (-2945, 105), 0.75)],
                 "split_cell": (-2945, -20),
-                "sandbag_slots": [("floor", 0.5), ("mid", 0.5)],
+                "sandbag_slots": [("floor", 0.7), ("mid", 0.7)],
                 "woodspam": {"wall_x": -3100, "layers": [-3060, -3020], "rows": [-320, -220, -120], "base": []}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
