@@ -582,44 +582,56 @@ VANILLA_VARIANTS = {
         ],
     },
     "laser": {
-        "title": "Laser deck: factory early, all turbines and extra batteries before the laser",
-        "shape": _union(_V_TALL, _V_BACK, _box(-3400, -2945, -425, -295)),
-        # the roof turbines in a hidden cage with two stacked sandbags in its front cell, as in Vanilla-3/-4 (rows: a
-        # 130-high storey on the tower roof); three turbines fit, upgraded
-        "cfg": {"split_doors": True, "rows": [-425, -295, -195, -95, 5, 105, 205, 308, 405, 503, 602, 700],
-                "turbine_floor_y": -295, "hidden_box": (-3400, -2945, -425, -295),
-                "split_cell": [(-3100, -425)], "sandbag_slots": [(0, "floor", 0.6), (0, "mid", 0.6)],
-                "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-295,)}},
-        # the factory takes the usual upgrade slot: upgrade centre on the munitions slot (no munitions here)
+        "title": "Laser rush: workshop, factory and the laser before anything else, then turbines, anti-air and woodspam",
+        "shape": _union(_V_TALL_HIGH, _V_BACK),
+        # the layout of the 20mm rush (Vanilla-3, whose low 20mm was built and fired 126 shots): the laser on floor 105
+        # of the column right behind the starting fort (x -3200..-3100, a 125-high storey; the laser's box is 101),
+        # hanging on the starting fort's back posts (support_cheapest), firing through the front cell over the reactor
+        # (fire lane). Own beams pass the own background bracing (CollidesWithFriendlyBeams = false). The factory
+        # takes its proven slot below that column, the upgrade centre the munitions slot (no munitions here).
+        # Defence from the Vanilla-2 tests: the inner armour in front of the reactor stays (rebrace_after_mine off;
+        # sold, it fell first when rockets broke through), the hidden turbine cage with two stacked sandbags, and
+        # woodspam in front of the reactor (0: prow band y 205..310) and the starting fort's lower front (1: y 411..700,
+        # cut through by one laser beam at ~451 s in a lost match) early, the tower front (2) late
+        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5)], support_cheapest=True, sniper_t=0.28,
+                    rebrace_after_mine=[],
+                    weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})],
+                    woodspam=[{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
+                               "outside": "bracing"},
+                              {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
+                               "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}},
+                              _V_HIGH_CFG["woodspam"]]),
         "tech_slots": {"upgrade": [((-3400, 602), (-3299, 604), 0.49)]},
         "plan": [
-            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
-            # first roof turbine, the anti-air machine gun, then the second mine
-            ("eco", ["mine"]),
+            # laser rush: the tech chain (workshop 60 s, factory 60 s, laser 120 s) sets the pace. The factory and the
+            # laser cost 6000 energy each, more than the starting cap (5000): a battery first (+2000); the laser costs
+            # 1000 metal, more than the metal cap (900): a store while the factory builds, and a mine (+4 metal/s)
             ("tech", ["workshop"]),
+            ("eco", ["battery"]),
+            ("tech", ["factory"]),
+            ("eco", ["store", "mine"]),
+            ("weapons", ["laser"]),
+            # while the laser builds (120 s): woodspam in front of the reactor and the lower front (both lost Vanilla-2
+            # matches ended there), anti-air, then energy: one beam costs 5000 (reload 24 s), the starting economy
+            # gives ~100 per second, so the cage turbines and their sandbags next
+            ("defence", ["woodspam:0", "woodspam:1"]),
+            ("aa", ["machinegun"]),
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
-            ("aa", ["machinegun"]),
+            ("eco", ["turbine", "battery"]),
             ("eco", ["mine"]),
             ("weapons", ["sniper"]),
-            ("eco", ["turbine"]),
-            ("eco", ["mine", "turbine", "battery"]),
-            ("tech", ["factory"]),
-            # the laser needs an extra store and battery and a lot of energy per shot (test match: a laser
-            # plan with 2-3 turbines never placed or never fired the laser): all turbines first
-            ("eco", ["store", "battery"]),
-            ("weapons", ["laser"]),
-            # only 3 turbine slots in the cage: upgraded turbines for more energy; the upgrade centre first,
-            # then devices that do not need it while it is built (60 s)
+            # upgraded turbines (two fit in the cage); the upgrade centre first, then what needs no tech while it builds
             ("tech", ["upgrade"]),
+            ("eco", ["battery", "store"]),
             ("aa", ["machinegun"]),
-            ("defence", ["woodspam"]),
             ("upgrades", ["turbine2", "turbine2"]),
-            # late game: more anti-air, a sniper, more storage
-            ("aa", ["machinegun"]),
-            ("eco", ["battery"]),
-            ("upgrades", ["turbine2"]),
-            ("weapons", ["sniper"]),
+            # late game: miniguns (no room for a third machine gun), the AP sniper, the tower's woodspam, more metal
+            ("upgrades", ["minigun", "minigun"]),
+            ("upgrades", ["sniper2"]),
+            ("defence", ["woodspam"]),
+            ("eco", ["mine"]),
+            ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
         ],
     },
