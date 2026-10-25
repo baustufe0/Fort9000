@@ -474,9 +474,14 @@ VANILLA_VARIANTS = {
             ("weapons", ["sniper"]),
             ("defence", ["sandbags", "sandbags"]),
             ("weapons", ["mortar", "mortar"]),
-            # then energy: each mortar shot costs 200 energy and every strut 0.5 per unit length; with the roof
-            # turbines waiting for the tower, energy ran down to 2-20 (test match 25.10.2026). The first turbine,
-            # the gallery's sandbags, then more turbines before the next mine (2000 energy each)
+            # then metal: all three free mine sites (300 m each, +4 metal/s) before the turbines and the gallery.
+            # With the mines after the upgrade centre the first one came at 347 s, metal stayed below 150 for 62% of
+            # the match and the plan stalled for 4 minutes, while energy stood at 2400-5000 and at its cap from 260 s
+            # (15th test match, 25.10.2026; the player had six mines after 55 s)
+            ("eco", ["mine", "mine", "mine"]),
+            # then energy: each mortar shot costs 200 energy and every strut 0.5 per unit length (with the roof
+            # turbines waiting for the tower, energy once ran down to 2-20); the first turbine, the gallery's
+            # sandbags, then more turbines
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
             ("defence", ["woodspam"]),
@@ -486,7 +491,7 @@ VANILLA_VARIANTS = {
             # finished, and the AI waits on a planned upgrade without moving on (test match 25.10.2026: upgrade
             # centre placed at 254 s, the heavy mortars only at 306 s, with just a battery in between)
             ("tech", ["upgrade"]),
-            ("eco", ["mine", "battery", "store"]),
+            ("eco", ["battery", "store"]),
             ("aa", ["machinegun"]),
             # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (both
             # machine guns on the gallery roof upgraded), then the woodspam
@@ -495,7 +500,7 @@ VANILLA_VARIANTS = {
             ("upgrades", ["minigun", "minigun"]),
             ("defence", ["woodspam"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
-            ("eco", ["battery", "mine", "mine"]),
+            ("eco", ["battery"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
         ],
