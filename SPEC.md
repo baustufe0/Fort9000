@@ -188,6 +188,15 @@ as half-extents around a centre `SelectionOffset` = (0, -SelectionHeight - 0.5):
   door. Struts built **after** the weapon, or further away, are not recessed and block it.
 - Doors never block: the AI opens all doors in the way before firing (`OpenWeaponDoors`) and closes them
   afterwards. Every direct-fire weapon gets a metal door in front of it.
+- **Small doors**: a door opens and closes at `DoorSpeed` 50 per second (`building_materials.lua`), so a 100-long door
+  stands open ~2 s per shot, long enough for the player to snipe through it; `MinLength` 49. Only the part the shot
+  passes needs to be a door: the game wants a clear corridor around the shot, ~20 to each side at the muzzle widening
+  to 40 at 1000 (`FireClearanceOffsetInner/Outer`); the sniper's barrel is ~50 above its strut and 100 long, and its
+  `RecessionBox` (200 x 25) starts 200 ahead, so a door closer than that must be planned. Vanilla-2 (first try):
+  the sniper's door post is split (`split_edges` with `materials`): door from the strut up to y 142.5 (61.5 long,
+  ~1.2 s), armour above it (37.5); the sniper moved forward on its strut (LinkT 0.7, `weapon_cells` takes a LinkT) so
+  its muzzle is ~44 instead of ~74 behind the door. Not yet tested whether the game's clearance still lets it fire
+  (the armour reaches ~8 into the corridor).
 - The built-in AI only fires at a target whose ray from the weapon reaches an enemy device or structure
   (`FindTarget` -> `TargetObstructed`, flag `RAY_ALLIED_BG_BLOCKS`); otherwise `TryFireGun` declines without an
   error (`FIRETRY ... fired=0`, 2.4). A door that is still a wood post blocks: in two rush tests the finished 20mm
@@ -437,7 +446,9 @@ weapon_pack's ToGA1 puts some far out on the right instead (open on both sides).
     (low fort, no tall tower) the AI won the eighth test without losing a device; energy was no longer short. The
     gallery's lower sandbags, now 90 instead of 70 from the first mortar, and the late block (miniguns on the gallery
     roof, the AP sniper, woodspam below the deck and its load on the prow) and selling the starting machine gun
-    (no anti-air from the start until the first roof machine gun, ~141 struts) are not yet tested.
+    (no anti-air from the start until the first roof machine gun, ~141 struts) are not yet tested. The small sniper
+    door (61.5 instead of 99, sniper at LinkT 0.7) is not yet tested; once it works, split the weapon doors of the
+    other plans the same way.
   - The `UNSTABLE` diagnostics (`sag`, `strain`) compare with wrong plan positions in team-2 matches with a
     shifted game plan (`shift=-3950,-3300`): all nodes appear 80-120 off.
   - With the storey-by-storey tower the first roof turbine comes at about 170 s; energy is the limit early on.

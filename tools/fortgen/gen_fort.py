@@ -393,10 +393,20 @@ VANILLA_VARIANTS = {
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
                 "roof_weapon_cells": [(-3200, -25), (-3400, -25)],
-                "weapon_cells": [(-3100, 205, "sniper")],
+                # the sniper at LinkT 0.7 (was 0.5): its muzzle ~44 behind the door instead of ~74, where the game's
+                # clear corridor around the shot is narrowest (FireClearanceOffsetInner 20 at the muzzle, 40 at 1000);
+                # its body still overlaps the post at x -2945, which the game then turns into background bracing
+                "weapon_cells": [(-3100, 205, "sniper", 0.7)],
                 "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
-                                 "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]}],
+                                 "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]},
+                                # the sniper's door: the prow storey's front post only as a door where the shot passes
+                                # (barrel ~50 above its strut, y ~155): door 61.5 long (y 204..142.5, ~1.2 s to open
+                                # at DoorSpeed 50 instead of ~2 s for the whole 99), armour above it (37.5, the
+                                # minimum strut length); the mid node braced to the storey's back corners
+                                {"a": (-2846.18, 203.99), "b": (-2845, 105), "mid": (-2845, 142.5),
+                                 "materials": {"a": "door", "b": "armour"},
+                                 "braces": [((-2945.11, 206.49), "backbracing"), ((-2945, 105), "backbracing")]}],
                 # at the outer ends of the halves: 116 apart like the game's own plans; 77 apart (LinkT 0.5 each) the
                 # second was refused with CS_UNSTABLE, later CS_OCCUPIED (two test matches, 25.10.2026)
                 "mortar_slots": [((-3100, 105), (-3022, 105), 0.25), ((-3022, 105), (-2945, 105), 0.75)],
@@ -839,6 +849,22 @@ class Plan:
                 return None             # the caller builds a neighbouring cell first
             cand = sorted(near, key=lambda dc: (self.chain(self.nodes[dc[1]][0]), dc[2] != (0, 1), dc[0]))
         src = self.nodes[cand[0][1]]
+        e = self.split_of(cand[0][1], ij) if self.cfg.get("split_edges") else None
+        if e is not None:
+            # built along a split edge: through its mid node, each half in its own material
+            key = self.split_mid(e)
+            mats = e.get("materials", {})
+            from_a = self.node_at(e["a"]) == cand[0][1]
+            m_src = mats.get("a" if from_a else "b", via_material)
+            m_new = mats.get("b" if from_a else "a", via_material)
+            mid = self.nodes[key]
+            if mid[0] not in self.built_nodes:
+                self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+                                    % (src[0], self._fmt(src[1]), mid[0], self._fmt(mid[1]), m_src))
+                self.built_nodes.add(mid[0])
+                self.note_node(src[0], mid[0], "new")
+                self.links[frozenset((src[0], mid[0]))] = m_src
+            src, via_material = mid, m_new
         self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
                             % (src[0], self._fmt(src[1]), nid, self._fmt(p), via_material))
         self.built_nodes.add(nid)
@@ -853,31 +879,48 @@ class Plan:
     SWAP_WINDOW = 20
 
     def split_edge(self, a_ij, b_ij, material):
-        """split_edges: [{"a", "b", "mid", "braces"}] (positions): the strut a-b is built in two halves through a
-        node at mid, braced by struts from mid to the given (point, material) pairs, since a node held only by
-        two struts in line would hinge; one device fits on each half (the game allows one device per strut).
-        Returns True if a_ij-b_ij is such an edge."""
-        pa, pb = self.nodes[a_ij][1], self.nodes[b_ij][1]
-        for e in self.cfg.get("split_edges", []):
-            if {self.node_at(e["a"]), self.node_at(e["b"])} != {a_ij, b_ij}:
-                continue
-            key = ("split",) + tuple(e["mid"])
-            if key not in self.nodes:
-                self.nodes[key] = (None, tuple(e["mid"]), "new")
-            nid, p, _ = self.node(key)
-            if nid not in self.built_nodes:
-                src = self.nodes[a_ij] if self.nodes[a_ij][0] in self.built_nodes else self.nodes[b_ij]
-                self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
-                                    % (src[0], self._fmt(src[1]), nid, self._fmt(p), material))
-                self.built_nodes.add(nid)
-                self.note_node(src[0], nid, "new")
-                self.links[frozenset((src[0], nid))] = material
-            self.link(a_ij, key, material)
-            self.link(key, b_ij, material)
-            for q, m in e.get("braces", []):
+        """split_edges: [{"a", "b", "mid", "braces", "materials"}] (positions): the strut a-b is built in two halves
+        through a node at mid, braced by struts from mid to the given (point, material) pairs, since a node held
+        only by two struts in line would hinge; one device fits on each half (the game allows one device per strut).
+        "materials" {"a": ..., "b": ...} gives the halves a-mid and mid-b their own material (e.g. a short door
+        only where a weapon fires through, armour on the rest). Returns True if a_ij-b_ij is such an edge."""
+        e = self.split_of(a_ij, b_ij)
+        if e is None:
+            return False
+        key = self.split_mid(e)
+        mats = e.get("materials", {})
+        ma, mb = mats.get("a", material), mats.get("b", material)
+        ka, kb = self.node_at(e["a"]), self.node_at(e["b"])
+        nid = self.nodes[key][0]
+        if nid not in self.built_nodes:
+            src, m = (ka, ma) if self.nodes[ka][0] in self.built_nodes else (kb, mb)
+            self.actions.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+                                % (self.nodes[src][0], self._fmt(self.nodes[src][1]), nid, self._fmt(self.nodes[key][1]), m))
+            self.built_nodes.add(nid)
+            self.note_node(self.nodes[src][0], nid, "new")
+            self.links[frozenset((self.nodes[src][0], nid))] = m
+        if self.nodes[ka][0] in self.built_nodes:
+            self.link(ka, key, ma)
+        if self.nodes[kb][0] in self.built_nodes:
+            self.link(key, kb, mb)
+        for q, m in e.get("braces", []):
+            if self.node_at(q) and self.nodes[self.node_at(q)][0] in self.built_nodes:
                 self.link(key, self.node_at(q), m)
-            return True
-        return False
+        return True
+
+    def split_of(self, a_ij, b_ij):
+        """The split_edges entry for the edge a_ij-b_ij, or None."""
+        for e in self.cfg.get("split_edges", []):
+            if {self.node_at(e["a"]), self.node_at(e["b"])} == {a_ij, b_ij}:
+                return e
+        return None
+
+    def split_mid(self, e):
+        key = ("split",) + tuple(e["mid"])
+        if key not in self.nodes:
+            self.nodes[key] = (None, tuple(e["mid"]), "new")
+        self.node(key)
+        return key
 
     def link(self, a_ij, b_ij, material):
         if self.cfg.get("split_edges") and self.split_edge(a_ij, b_ij, material):
@@ -1197,9 +1240,12 @@ class Plan:
             return self.explicit_large_cell()
         # weapon_cells: [(left x, floor y, device)], cells given for a weapon (also cells that are not at the front:
         # the weapon fires through the cells ahead of it, whose struts the game recesses when it is placed)
-        for x0, floor_y, d in self.cfg.get("weapon_cells", []):
+        for wc in self.cfg.get("weapon_cells", []):          # (left x, floor y, device[, LinkT])
+            x0, floor_y, d = wc[:3]
             for c in sorted(self.cells):
                 if d == dev and abs(self.cell_x(c)[0] - x0) < 10 and rows[c[1] + 1] == floor_y and c not in self.devices:
+                    if len(wc) > 3:
+                        self.weapon_t_at[c] = wc[3]
                     return c
         mw = self.cfg.get("weapon_min_w", 0)
         if mw:
@@ -1370,6 +1416,7 @@ class Plan:
         self.roof_device = {}
         self.roof_count = {}           # turbines per roof cell (roof_turbine_t: their LinkT positions)
         self.split_slots = {}          # split cell -> its sandbag struts ("floor", "mid")
+        self.weapon_t_at = {}          # cell -> LinkT of its weapon (weapon_cells)
         self.mines_done = 0
         self.mortar_cells = set()      # top cells reserved for mortars (no turbine on their door roof)
         # the starting fort counts as built
@@ -1693,7 +1740,7 @@ class Plan:
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
         if dev in LOBBED_WEAPONS and self.is_top(c):
             self.link((i, j), (i + 1, j), "door")
-        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else 0.5)
+        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else self.weapon_t_at.get(c, 0.5))
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 
