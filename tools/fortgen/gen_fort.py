@@ -427,6 +427,7 @@ VANILLA_VARIANTS = {
                 # its body still overlaps the post at x -2945, which the game then turns into background bracing
                 "weapon_cells": [(-3100, 205, "sniper", 0.7)],
                 "lane_cells": [(-2945, 205)],
+                "rebrace_after_mine": [],
                 "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
                                  "braces": [((-3093.19, 205.21), "backbracing"), ((-2945.11, 206.49), "backbracing")]},
@@ -448,8 +449,10 @@ VANILLA_VARIANTS = {
                 "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.3), (1, "mid", 0.5)],
                 "turbine_floor_y": 105, "turbine_floor_t": 0.35,
                 # woodspam, never in the turbines' wind (in the hidden storey it stood at their hub height, 460-600
-                # in front of them): 0 = two layers in front of the starting fort's prow below the deck (y 205..310,
-                # in front of the reactor); 1 = two layers hanging in front of the starting fort's lower front (y
+                # in front of them), both regions early, right after the gallery's sandbags (the reactor's front was
+                # where the player broke through in both lost test matches): 0 = two layers in front of the starting
+                # fort's prow below the deck (y 205..310, in front of the reactor); 1 = two layers hanging in front of
+                # the starting fort's lower front (y
                 # 411..700, the face at x -2892..-2900, so the layers at -2852/-2812 keep every strut at least 40; the rock
                 # ends there), early: in a test match one laser beam
                 # cut through that unprotected face at ~451 s and the starting fort with the reactor collapsed
@@ -460,13 +463,13 @@ VANILLA_VARIANTS = {
                              {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
                               "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}}]},
         "plan": [
-            # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
-            # workshop at once; the sniper (100 m / 300 e, no tech), the deck and the nest's sandbags (0 m / 300 e)
+            # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The workshop at once (the
+            # inner armour in front of the reactor is kept: rebrace_after_mine off; sold for the rush, it fell first
+            # when the player's rockets broke through to the reactor, test match 25.10.2026); the sniper (100 m / 300 e, no tech), the deck and the nest's sandbags (0 m / 300 e)
             # while the workshop builds; the mortars (200 m / 1000 e each) as soon as it is finished. Placed before
             # their sandbags, both mortars were destroyed 3-5 s later by the player's machine guns, whose fire passes
             # the background bracing of the nest (test match 25.10.2026); the second mortar once refused beside the
             # sandbags stood 77 from the first, now 116 (89-90 from the sandbags worked)
-            ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("defence", ["sandbags", "sandbags"]),
@@ -476,7 +479,7 @@ VANILLA_VARIANTS = {
             # the gallery's sandbags, then more turbines before the next mine (2000 energy each)
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
-            ("defence", ["woodspam:1"]),
+            ("defence", ["woodspam"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),
             # the upgrade centre, then what needs no tech while it builds (60 s): every upgrade waits until it is

@@ -18,18 +18,18 @@ for o in before after; do for e in fort-t1f1-Abyss-1.lua fort-t1f1-Abyss-ToGA1.l
   check "Plan swap $o $e team 102"               "first action = 2120.4, -250.0"  "$LUA" t_plan_swap.lua $o $e 102
 done; done
 for o in before after; do for e in fort-t1f1-Template-1.lua fort-t1f1-Template-2.lua; do
-  check "Plan swap Vanilla $o $e team 1"         "first action = -2892.2, 411.1"  "$LUA" t_vanilla.lua $o $e 1
-  check "Plan swap Vanilla $o $e team 102"       "first action = 2892.2, 411.1"   "$LUA" t_vanilla.lua $o $e 102
+  check "Plan swap Vanilla $o $e team 1"         "first action = -3096.1, 502.5"  "$LUA" t_vanilla.lua $o $e 1
+  check "Plan swap Vanilla $o $e team 102"       "first action = 3096.1, 502.5"   "$LUA" t_vanilla.lua $o $e 102
 done; done
 # plans of the weapon_pack mod (other FortPos, same starting fort); only if the mod is installed
 if [ -d "$WP" ]; then for o in before after; do for e in ToGAF1 ToGWM2; do
   f="mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-$e.lua"
-  check "Plan swap Vanilla $o weapon_pack $e team 1"   "first action = -2892.2, 411.1" "$LUA" t_vanilla.lua $o $f 1
-  check "Plan swap Vanilla $o weapon_pack $e team 102" "first action = 2892.2, 411.1"  "$LUA" t_vanilla.lua $o $f 102
+  check "Plan swap Vanilla $o weapon_pack $e team 1"   "first action = -3096.1, 502.5" "$LUA" t_vanilla.lua $o $f 1
+  check "Plan swap Vanilla $o weapon_pack $e team 102" "first action = 3096.1, 502.5"  "$LUA" t_vanilla.lua $o $f 102
 done; done; fi
 for o in before after; do
-  check "Plan swap VanillaLong $o team 1"        "first action = -3792.2, -538.9" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
-  check "Plan swap VanillaLong $o team 102"      "first action = 3792.2, -538.9"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
+  check "Plan swap VanillaLong $o team 1"        "first action = -3996.1, -447.5" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
+  check "Plan swap VanillaLong $o team 102"      "first action = 3996.1, -447.5"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
 done
 check "Fire control"                             "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
