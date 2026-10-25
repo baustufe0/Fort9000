@@ -30,6 +30,7 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 
 - **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run. "Insufficient resources" only counts as waiting while metal is still rising; if metal stays flat above `BuildSkipMinMetal` for `StarvedFlatTicks` think ticks (e.g. at the storage cap, when an action costs more than can be stored), the clocks run again.
 - **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
+- **Rebuild cap:** the built-in AI queues every lost device for rebuilding (`CheckDeviceForRebuild` schedules `QueueDeviceRebuild`, which the mod wraps). Losses are counted per plan action; a loss within `RebuildCap.Window` (180 s, game time) of the one before continues the streak, a longer survival starts a new one. Once a streak passes `RebuildCap.Max[type]` (machine gun and minigun: 3 rebuilds), the device stays lost for the rest of the match and its metal goes into the plan (`REBUILD_CAP action <k> <type> losses=<n> window=<s>s`). Types without an entry (turbines, mines, weapons other than these) are always rebuilt. Reason: on Vanilla-5 (25.10.2026) one machine gun on the prow was lost and rebuilt ten times in four minutes under mortar fire, while the AI was below 150 metal most of the match.
 
 ## Reactive build modules
 
@@ -78,9 +79,8 @@ its trigger.
    when it starts waiting `MODULE_WAIT <name> trigger=<type:n,...> requires=<k> now=<plan action>`.
    The built-in AI keeps no other state by action index (`data.Rebuild` and `data.Frustration` are the only tables
    indexed that way in `data/ai/ai.lua`).
-6. **Rebuild cap (not yet implemented).** A device destroyed and rebuilt more than `Strategy.RebuildCap[type]` times at one plan action is
-   not rebuilt again (`REBUILD_CAP` in the log): the Vanilla-5 machine gun rebuilt ten times in one match fed the loss
-   and starved the plan of metal.
+6. **Rebuild cap:** see [Build safety valves](#build-safety-valves); index-keyed like the rest (`st.rebuilds` moves
+   with an insert).
 
 **Generator:** a variant lists `modules` ([generator.md](generator.md#reactive-build-modules)): each is generated
 with the plan's step syntax on the plan as it stands after a given step, and `rules.py` checks it inside the plan,

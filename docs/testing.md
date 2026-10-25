@@ -6,7 +6,7 @@
 - The Forts log (`log.txt`) is UTF-16; for grep and other line tools convert a copy first
   (`iconv -f UTF-16 -t UTF-8 log.txt | tr -d '\r'`). Frames are 25 per second (`f=2500` = 100 s).
 - Read the log before restarting Forts (it is overwritten on start; `train.py collect` archives it). Look at
-  `PLAN`, `BUILT`/`LOST`, `BUILD_ERROR`, `UNSTABLE`, `GAVE_UP`/`SKIPPED`, the `THINK` lines (build index,
+  `PLAN`, `BUILT`/`LOST`, `BUILD_ERROR`, `UNSTABLE`, `GAVE_UP`/`SKIPPED`/`REBUILD_CAP`, the `THINK` lines (build index,
   metal, energy) and the `shots=` of the `SNAP` lines.
 - Several matches without restarting Forts land in one log: count only from the latest `PLAN` line (its
   `actions=` shows which version of the plan the game loaded; a plan file is read at match start).

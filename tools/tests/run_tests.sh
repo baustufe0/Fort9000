@@ -61,7 +61,9 @@ check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$" 
 check "Aggression keeps machine guns at 0"       "after think: MG offensive.0$"  "$LUA" t_fire_mg.lua
 check "Safety valve waits when metal is short"   "Rebuild\[59\] =.true"          "$LUA" t_failsafe_poor.lua
 check "Safety valve gives up when metal is there" "GAVE_UP action 59"            "$LUA" t_failsafe_rich.lua
-check "Construction is skipped when stuck"       "SKIPPED action 386"            "$LUA" t_skip.lua
+check "Rebuild cap stops a device that keeps dying" "REBUILD_CAP action 10 machinegun losses=4 window=180s$" "$LUA" t_rebuildcap.lua
+check "Rebuild cap counts losses in a row only"  "^queued: mg=3 turbine=6 mg-slow=4 devices-left=0$" "$LUA" t_rebuildcap.lua
+check "Construction is skipped when stuck"      "SKIPPED action 386"            "$LUA" t_skip.lua
 check "Tempo + reset for assist AI"              "after assist AI:.3.11.13.10"   "$LUA" t_tempo.lua
 check "Build error log"                          "BUILD_ERROR link armour"       "$LUA" t_builderrors.lua
 check "Sale tries the strut the other way round" "sold 0 tried 55-58,58-55$"     "$LUA" t_destroy.lua

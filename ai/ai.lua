@@ -35,6 +35,10 @@ local CAI_Defaults =
 	AntiAirThreatShots = 6, AntiAirBoostMax = 1.4,
 	RebuildGiveUpSeconds = 120,
 	BuildSkipSeconds = 90, BuildSkipMinMetal = 300, StarvedFlatTicks = 4,
+	-- RebuildCap: a device of these types lost more than Max[type] times in a row at one plan action (each loss
+	-- within Window seconds of the one before) is not rebuilt again (Vanilla-5, 25.10.2026: one machine gun
+	-- rebuilt ten times under mortar fire)
+	RebuildCap = { Window = 180, Max = { machinegun = 3, minigun = 3 } },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
 	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one
@@ -1424,6 +1428,7 @@ local function CAI_InsertActions(fi, actions)
 	ShiftKeys(data.Frustration)
 	if data.CAI then
 		ShiftKeys(data.CAI.rebuildSince)
+		ShiftKeys(data.CAI.rebuilds)
 		data.CAI.buildIndex = nil   -- the skip valve starts a new clock
 	end
 	if type(data.Devices) == "table" then
@@ -1690,6 +1695,41 @@ function OnDeviceHit(deviceTeamId, deviceId, saveName, newHealth, projectileNode
 			add = add + Strategy.ThreatPerReactorHit
 		end
 		st.threat[weapon] = (st.threat[weapon] or 0) + add
+	end
+end
+
+-- Rebuild cap: the built-in AI queues every lost device for rebuilding (CheckDeviceForRebuild schedules
+-- QueueDeviceRebuild). A device that keeps dying at one place only eats metal; past Strategy.RebuildCap it stays lost.
+function CAI_RebuildCapped(deviceId)
+	local st = data.CAI
+	local k = data.Devices and data.Devices[deviceId]
+	local cap = Strategy.RebuildCap
+	if st == nil or k == nil or Fort == nil or Fort[k] == nil or type(cap) ~= "table" then return false end
+	local dev = Fort[k].DeviceSaveName
+	local max = cap.Max and cap.Max[dev]
+	if max == nil then return false end
+	local now = st.ticks * Strategy.ThinkInterval
+	st.rebuilds = st.rebuilds or {}
+	local r = st.rebuilds[k]
+	local n = 1
+	if r and now - r.last <= (cap.Window or 180) then n = r.n + 1 end
+	st.rebuilds[k] = { n = n, last = now }
+	if n <= max then return false end
+	CAI_Log("REBUILD_CAP action " .. k .. " " .. tostring(dev) .. " losses=" .. n .. " window=" .. tostring(cap.Window or 180) .. "s")
+	return true
+end
+
+local CAI_BaseQueueDeviceRebuild = QueueDeviceRebuild
+if CAI_BaseQueueDeviceRebuild then
+	function QueueDeviceRebuild(deviceId)
+		local ok, capped = pcall(CAI_RebuildCapped, deviceId)
+		if not ok then
+			CAI_Log("ERROR rebuild cap: " .. tostring(capped))
+		elseif capped then
+			data.Devices[deviceId] = nil
+			return
+		end
+		return CAI_BaseQueueDeviceRebuild(deviceId)
 	end
 end
 
