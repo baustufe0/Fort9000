@@ -94,3 +94,19 @@ struts broke at 283 s and the laser was destroyed at 292 s, before it was finish
 Fix: the generator builds a large weapon's fire-lane cells (door and armour in the front wall, background diagonals)
 right before the weapon. Vanilla-5's lane now comes at actions 63-68 and the laser at 70 (was 63); Vanilla-3's 20mm
 cannons get their lanes first the same way (same struts and devices, only the order changed).
+
+## Vanilla-5, fifth test (25.10.2026): rockets, the laser lost 3 s after it was finished
+
+The first match with the lane built first. Against a player with an armoury (65 s), two EMP rockets (128/152 s,
+upgraded to rockets at 295 s), two flak upgraded to shotguns and an upgrade centre: **the player won at 449 s**
+(rockets 32, EMP rockets 8, shotgun 120, flak 20). The AI's build: workshop 3 s, battery 18 s, factory 77 s, store
+114 s, mine 137 s, laser placed 231 s and finished 371 s; then only three machine guns (386-443 s). Metal averaged 186
+(below 150 in 63 % of the snapshots), energy fell to 0 several times; the build index stood at 290 from 365 s on.
+
+- The laser fired no shot: one try at 371 s (`fired=0`, the ray reached the player's fort), then at 374 s a rocket
+  volley broke its own floor strut (130-132) and the struts around its front node, and the laser and the machine gun
+  beside it were lost together. Rockets come in from above, so the lane's door does not protect against them.
+- Anti-air: only the starting machine gun until 386 s, while EMP rockets fired from 210 s and rockets from 335 s.
+- The end: 113 struts in all; the reactor, workshop, batteries and stores at 449 s.
+- The AI destroyed nothing. Vanilla-5 has now been played four times against an active player and its laser has
+  fired in none of them (the one match with 7 laser shots was the one where the player did not fight).
