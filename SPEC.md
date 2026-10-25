@@ -512,7 +512,15 @@ weapon_pack's ToGA1 puts some far out on the right instead (open on both sides).
     upgrades in order after the upgrade centre, all four sandbags, and won every match it played to the end (against
     a player at difficulty 1 at 390 and 568 s without losing a device, against an idle player at 190 s). Not yet
     tested: whether the sandbags stop the player's snipers, and the late block's woodspam below the deck (its load
-    on the prow).
+    on the prow). Thirteenth test (25.10.2026, against a player who built a sniper, machine guns (504 shots), an
+    armoury, a factory and a laser at ~355 s): **the player won at 453 s**. The AI's sniper was destroyed at 50 s
+    (rebuilt 63 s); both mortars were destroyed 3-5 s after they were placed (65-66 s), before their sandbags (78-80 s):
+    the hidden nest does not stop machine-gun fire (background bracing lets projectiles through), only sandbags do,
+    so the sandbags must come before the mortars (the spacing that once refused the second mortar is fixed, 89-90
+    apart worked). Rebuilt at 82-83 s behind the sandbags they survived and fired 63 times, upgrades and miniguns as
+    planned; kills: a machine gun, a turbine, sandbags. The end: one laser beam at ~451 s cut through the starting
+    fort's lower front (first strut lost: the armour at x -2900, y 512..606 of the starting fort) and the whole
+    starting fort with the reactor collapsed within 2 s; nothing protected the lower front.
   - The `UNSTABLE` diagnostics (`sag`, `strain`) compare with wrong plan positions in team-2 matches with a
     shifted game plan (`shift=-3950,-3300`): all nodes appear 80-120 off.
   - Vanilla-3/-4/-5: the turbine cage, its sandbags and the 20mm doors worked in a Vanilla-3 match (energy plenty);
