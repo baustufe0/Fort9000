@@ -12,7 +12,7 @@
 -- Force:           force a plan (for testing), e.g. Force = { Abyss = "fort-t1f1-Abyss-2.lua" },
 -- Probe:           CS_UNSTABLE probe (testing only, sandbox without combat; never commit it switched on):
 --                  once the plan is finished (or after At seconds) the AI stops and tries each device at each
---                  LinkT on every strut of its fort (SPEC.md 2.8, tools/fortgen/probe.py), e.g.
+--                  LinkT on every strut of its fort (docs/debugging.md, tools/fortgen/probe.py), e.g.
 --                  Probe = { At = 480, Devices = { "sniper", "cannon" }, LinkT = { 0.2, 0.5, 0.8 },
 --                            Materials = { "bracing", "armour" }, MaxAngle = 20, Interval = 0.2, Hold = 0, Max = 3000,
 --                            Box = { x0, y0, x1, y1 } },   -- Box (world coordinates), Hold, Max optional;

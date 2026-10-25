@@ -1,7 +1,8 @@
 # CLAUDE.md – FORT 9000
 
 Mod for the game **Forts** (Steam) that extends the built-in AI, records matches and retrains its parameters.
-Full feature list and architecture: [SPEC.md](SPEC.md). Read it before making larger changes.
+Specification: [SPEC.md](SPEC.md) is a short index of `docs/` (topic files, `docs/maps/<map>.md` for the current
+state of each map's plans, `docs/history/` for test matches). Read the index, then only the files the task needs.
 
 This folder is both the git repo and the installed mod:
 `<Steam>/steamapps/common/Forts/data/mods/fort-9000` (Windows). The Forts install is three levels up.
@@ -30,11 +31,11 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
   (needs Lua 5.1; see the header of `run_tests.sh`; `LuaPlusC.exe` in the Forts folder may also work, untested).
   The plan-swap tests need the game's `data/maps` and `data/ai` folders.
 - Generate plans: see the docstring of `tools/fortgen/gen_fort.py`; check them with `rules.py` (fort building rules,
-  SPEC.md 2.13 – read that section before changing plans or the generator) and `render_all.py`.
+  `docs/building-rules.md` – read it before changing plans or the generator; for one map also `docs/maps/<map>.md`) and `render_all.py`.
 - Plan from a player's build: build the fort (sandbox, no combat), then
-  `python tools/fortgen/rec_fort.py --map Vanilla --out fortplans/Vanilla/fort-t1f1-Vanilla-<n>.lua` (SPEC.md 2.10).
+  `python tools/fortgen/rec_fort.py --map Vanilla --out fortplans/Vanilla/fort-t1f1-Vanilla-<n>.lua` (`docs/recorder-training.md`).
 - Map where the game refuses devices (`CS_UNSTABLE`): set `Probe` in `ai/fortplans.lua`, let the plan build in a sandbox,
-  then `python tools/fortgen/probe.py [--csv out.csv] [--png out.png]` (SPEC.md 2.8). Never commit `Probe` switched on.
+  then `python tools/fortgen/probe.py [--csv out.csv] [--png out.png]` (`docs/debugging.md`). Never commit `Probe` switched on.
 - The Forts log is `<Forts>/users/<steam-id>/log.txt`; it is overwritten on every game start.
   Run `train.py collect` after each play session.
 
@@ -71,7 +72,8 @@ tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 1. Make the change; keep it small and focused.
 2. Run the tests (see above) and, for AI changes, play or replay a match and check the `[CAI]` lines in the log.
-3. If behaviour changed, update `SPEC.md` in the same commit.
+3. If behaviour changed, update the docs in the same commit: the topic file in `docs/` and, for a plan, its map file
+   in `docs/maps/`. A test match goes into `docs/history/<plan>.md`; add a new file to the index in `SPEC.md`.
 4. Commit with a short imperative message in English; `git push` to `origin main`.
 
 ## Notes
@@ -79,4 +81,4 @@ tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 - Old archived logs in `tools/logs/` contain German `[CAI]` tokens from before the translation; `train.py`
   does not parse them, so they remain usable.
 - Two related skills exist for this project: `forts-karte-optimieren` (generate/install per-map plans and settings)
-  and `forts-partie-auswerten` (evaluate a match and train). They may still mention old German log tokens.
+  and `forts-partie-auswerten` (evaluate a match and train). They may still mention old German log tokens and refer to the old single-file SPEC.md (now split into `docs/`).

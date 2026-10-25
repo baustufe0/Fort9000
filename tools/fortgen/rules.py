@@ -1,4 +1,4 @@
-"""FORT 9000 - rule checks for Forts AI build plans (lessons from test matches, see SPEC.md 2.13).
+"""FORT 9000 - rule checks for Forts AI build plans (lessons from test matches, see docs/building-rules.md).
 
 check_plan(actions, enemy_dir=+1, terrain=None) -> (errors, warnings)
   actions: parsed plan actions (fortplan.parse_plan) in plan coordinates, team 1 (enemy to the right).

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FORT 9000 - read the PROBE lines of a CS_UNSTABLE probe run (SPEC.md 2.8).
+"""FORT 9000 - read the PROBE lines of a CS_UNSTABLE probe run (docs/debugging.md).
 
 With FortPlanConfig.Probe set in ai/fortplans.lua the AI tries every probe device at every LinkT on every strut
 of its finished fort and writes (world coordinates, node ids are the engine's):
