@@ -69,10 +69,12 @@ of the snapshots; player 511), energy 5,820.
 ## Vanilla-5, second and third test (25.10.2026): both fixes confirmed
 
 Two matches in one log: in the first the player's own fort collapsed at 2.2 min (`RESULT w=2`, no AI weapon placed
-yet; does not count). The player restarted, which the log shows only as `Restoring replay key frame at physics frame 2`
-with no new `[CREC] START`, so `summary.py` and `train.py` see one match (the `END` counters add up both). In the
-second match the AI won at 10.6 min; the player built mines, turbines, sandbags, a store and repair stations and fired
-no shot (no `shots=` on side 1).
+yet; does not count). The player restarted: the game logs `RevertMap Vanilla` and `Restoring
+replay key frame at physics frame 2`, rewinds the game (the AI's own state included, its `END` counts only the second
+match) but keeps the recorder's state, so the recorder wrote no new `START` and, having seen `RESULT`, no more snapshots
+(only the final one). `summary.py` and `train.py` saw one match; they now split at `RevertMap`, the recorder writes
+`START restart=1`, and the collapsed match is in `EXCLUDED` (train.py). In the second match the AI won at 10.6 min;
+the player built mines, turbines, sandbags, a store and repair stations and fired no shot.
 
 - **Laser:** placed 210 s, then every `FIRETRY` ray reached the enemy (`RAY_HIT_STRUCTURE:1:...`) instead of our own
   post; 7 laser shots, limited by energy (a beam 5000; energy down to 145-550 between shots).

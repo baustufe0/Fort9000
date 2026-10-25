@@ -26,20 +26,31 @@ def read_log(path):
 
 
 def split_matches(lines):
-    """A match runs from the [CAI] lines before its START to its RESULT (instant replays after it are cut off)."""
-    starts = [i for i, l in enumerate(lines) if re.match(r"\[CREC\] f=0 START", l)]
-    matches = []
-    for k, s in enumerate(starts):
-        end = starts[k + 1] if k + 1 < len(starts) else len(lines)
-        body_start = max(0, s - 40) if k == 0 else max(starts[k - 1] + 1, s - 40)
-        # the last RESULT of the match: a match can log more than one (the game went on after a reactor was lost
-        # at 2.2 min and ended at 10.6 min, 25.10.2026); an instant replay after it starts with "Starting instant replay"
-        results = [j for j in range(s, end) if re.match(r"\[CREC\] f=\d+ RESULT", lines[j])]
-        replay = next((j for j in range(s, end) if "Starting instant replay" in lines[j]), end)
-        results = [j for j in results if j < replay] or results
-        if results:
-            end = results[-1] + 3
-        matches.append(lines[body_start:end])
+    """Matches in a log, each as a list of lines. A match starts at "[CREC] f=0 START" or at a restart ("RevertMap":
+    the game rewinds to frame 2 and logs no new plan, so the previous match's map/plan lines are kept) and ends at
+    its last RESULT before the next match or an instant replay ("Starting instant replay"; its lines are left out).
+    The recorder's own "START restart=1" right after a restart belongs to that restart."""
+    starts, restart_at = [], None
+    for i, l in enumerate(lines):
+        if l.startswith("RevertMap "):
+            starts.append((i, True))
+            restart_at = i
+        elif re.match(r"\[CREC\] f=\d+ START", l):
+            if restart_at is not None and "restart=1" in l and i - restart_at < 60:
+                continue
+            starts.append((i, False))
+            restart_at = None
+    matches, header = [], []
+    for k, (s, restart) in enumerate(starts):
+        nxt = starts[k + 1][0] if k + 1 < len(starts) else len(lines)
+        body_start = s if restart else max(starts[k - 1][0] + 1 if k else 0, s - 40)
+        replay = next((j for j in range(s, nxt) if "Starting instant replay" in lines[j]), nxt)
+        results = [j for j in range(s, replay) if re.match(r"\[CREC\] f=\d+ RESULT", lines[j])]
+        end = results[-1] + 3 if results else replay
+        body = lines[body_start:min(end, nxt)]
+        if not restart:
+            header = [l for l in body if re.search(r"Loading map |ConfigureAI |\[CAI\] T\d+ PLAN ", l)]
+        matches.append((header if restart else []) + body)
     return matches
 
 

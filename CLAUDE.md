@@ -57,7 +57,7 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
 ## Log format contract (parsed by `train.py`)
 
 Do not change these without updating `train.py` and the tests:
-- `[CREC] f=<frame> START|SNAP|BUILT|LOST|RESULT ...` (recorder lines)
+- `[CREC] f=<frame> START|SNAP|BUILT|LOST|RESULT ...` (recorder lines; `START ... restart=1` after a restart)
 - `[CREC] f=<frame> NODE|LINK|DEV|GDEV|UNNODE|UNLINK|DEL ...` (build events, parsed by `tools/fortgen/rec_fort.py`)
 - `[CAI] T<team> PLAN map=<map> file=<plan> ...`
 - `[CAI] T<team> END winner=<n> ...`

@@ -52,3 +52,6 @@
   player with fewer than ~40 shots probably did not defend (ask before training on it); the same action given up in
   several matches with one plan is a plan bug.
 - After `RESULT`, an instant replay may repeat `[CAI]`/`[CREC]` lines (`Starting instant replay`); count up to `RESULT`.
+- A restart (`RevertMap <map>`, then `START ... restart=1`) is a new match with the same plan; `summary.py` and
+  `train.py` split there. A match that should not count (own fort collapsed, nobody fought) goes into `EXCLUDED` in
+  `train.py`.

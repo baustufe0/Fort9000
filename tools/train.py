@@ -104,6 +104,12 @@ CAI_RE = re.compile(r"\[CAI\] T(\d+) (\w+)(.*)")
 # from the game itself: which teams are AI (team members 0) and which build plan they get
 PLAN_RE = re.compile(r"\[CAI\] T(\d+) PLAN map=\S+ file=(\S+)")
 ACT_RE = re.compile(r"ActivateAI team (\d+) team members (\d+) fort (.*)")
+# a restart: the game rewinds to frame 2 and keeps the scripts' state, so no new ActivateAI/PLAN lines follow (the
+# recorder writes "START ... restart=1" since 25.10.2026; older logs only have the game's own line)
+RESTART_MARK = "RevertMap "
+# an instant replay after a match logs the match again (and jumps around while scrubbed): not a new match
+REPLAY_MARK = "Starting instant replay"
+NEW_MAP_MARK = "Loading map "
 
 
 # ---------------------------------------------------------------- Reading logs
@@ -163,7 +169,24 @@ def parse_games(lines, source):
     g = None
     pending_ai = {}
     pending_plan = {}
+    in_replay = False
+    restarted = None      # the match created by a restart, until its first event (its START restart=1 joins it)
     for line in lines:
+        if REPLAY_MARK in line:
+            in_replay = True
+            continue
+        if NEW_MAP_MARK in line:
+            in_replay = False
+        if RESTART_MARK in line:
+            in_replay = False
+            # the same AI teams and plans as the match that is restarted
+            g = Game(source)
+            g.ai_sides = dict(games[-1].ai_sides) if games else {}
+            games.append(g)
+            restarted = g
+            continue
+        if in_replay:
+            continue
         a = ACT_RE.search(line)
         if a:
             team, members, fort = int(a.group(1)), int(a.group(2)), a.group(3).strip()
@@ -178,6 +201,10 @@ def parse_games(lines, source):
         if m:
             frame, kind, rest = int(m.group(1)), m.group(2), m.group(3)
             kv = parse_kv(rest)
+            if kind == "START" and g is not None and g is restarted:
+                restarted = None
+                continue
+            restarted = None
             if kind == "START" or g is None:
                 g = Game(source)
                 # the FORT 9000 AI's own plan takes precedence over the one chosen by the game
@@ -375,6 +402,12 @@ def collect(explicit=None):
     return added
 
 
+# matches that must not be learned from: game_key -> reason (see "python train.py report" for the keys)
+EXCLUDED = {
+    "bc7865269925451008b6d73ad02883a4acb799a8": "Vanilla-5, 25.10.2026: the player's own fort collapsed at 2.2 min",
+}
+
+
 def game_key(g):
     """Fingerprint of a match so that the same match from several logs counts only once."""
     parts = [str(g.winner), str(sorted(g.ai_sides.items()))]
@@ -385,11 +418,14 @@ def game_key(g):
 
 
 def load_archive():
-    games, logs, seen, dupes = [], 0, set(), 0
+    games, logs, seen, dupes, excluded = [], 0, set(), 0, 0
     for path in sorted(glob.glob(os.path.join(ARCHIVE, "*.txt"))):
         logs += 1
         for g in parse_games(read_log(path), os.path.basename(path)):
             k = game_key(g)
+            if k in EXCLUDED:
+                excluded += 1
+                continue
             if k in seen:
                 dupes += 1
                 continue
@@ -397,6 +433,8 @@ def load_archive():
             games.append(g)
     if dupes:
         print("  %d duplicate match(es) from overlapping logs skipped" % dupes)
+    if excluded:
+        print("  %d match(es) excluded (EXCLUDED in train.py)" % excluded)
     return games, logs
 
 

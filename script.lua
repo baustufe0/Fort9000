@@ -4,7 +4,8 @@
 -- tools/train.py learns from it. The recorder only reads and changes nothing in the game.
 --
 -- Line format (f = game frame):
---   [CREC] f=0 START v=1
+--   [CREC] f=0 START v=3            (restart=1 when the player restarts the match: the game rewinds to frame 2
+--                                    and keeps the mod script's state, so the recorder starts over itself)
 --   [CREC] f=250 SNAP s=1 m=1200 e=3400 dev=cannon:2,mortar:1 shots=cannon:3
 --   [CREC] f=260 BUILT s=2 d=sniper
 --   [CREC] f=300 LOST s=1 i=17 d=mortar
@@ -95,10 +96,25 @@ local function RecSnapshot()
 	end
 end
 
-local function RecStart()
+local function RecStart(restart)
 	if recStarted then return end
 	recStarted = true
-	RecLog("START v=" .. REC_VERSION)
+	RecLog("START v=" .. REC_VERSION .. (restart and " restart=1" or ""))
+end
+
+-- A restart ("RevertMap" in the log) rewinds the game to frame 2 without reloading this script: the frame jumps back
+-- to the beginning. Start a new match then (an instant replay scrubbed back to its start looks the same; train.py
+-- ignores what is logged during an instant replay).
+local REC_RESTART_FRAMES = 2 * REC_SNAP_FRAMES
+local function RecCheckRestart(frame)
+	if recStarted and frame < recFrame and frame < REC_RESTART_FRAMES then
+		recStarted = false
+		recEnded = false
+		recLastSnap = -100000
+		recShots = { [1] = {}, [2] = {} }
+		recFrame = frame
+		RecStart(true)
+	end
 end
 
 local recPrevLoad = Load
@@ -110,7 +126,10 @@ end
 local recPrevUpdate = Update
 function Update(frame)
 	if recPrevUpdate then recPrevUpdate(frame) end
-	if type(frame) == "number" then recFrame = frame end
+	if type(frame) == "number" then
+		RecCheckRestart(frame)
+		recFrame = frame
+	end
 	RecStart()
 	if not recEnded and recFrame - recLastSnap >= REC_SNAP_FRAMES then
 		recLastSnap = recFrame

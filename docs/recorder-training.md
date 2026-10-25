@@ -6,7 +6,7 @@
 
 | Line | Content |
 |---|---|
-| `START v=3` | Start |
+| `START v=3` | Start; `restart=1` when the player restarts the match (the game rewinds to frame 2 without reloading the script, the frame jumps back) |
 | `SNAP s=… m=… e=… dev=… shots=…` | every 125 frames: metal, energy, devices and shots per side |
 | `BUILT` / `LOST s=… i=<device id> d=…` | device completed / destroyed |
 | `NODE` / `LINK` / `DEV` / `GDEV` | node, strut, device on a strut (nodes, LinkT, `u=` upgraded device), ground device built (both sides; positions, team `t=`) |
@@ -24,6 +24,10 @@ It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--stre
 - Usage: `python tools/train.py` (collect + train), `collect` (archive `log.txt` into `tools/logs/`; `--log <file>` for
   another log such as `log1.txt`), `train`, `report` (show the evaluation, write nothing). The output lists the AI's
   wins per plan, the learned target values and the aggression per phase.
+- Matches: a new one starts at `START` or at the game's `RevertMap` line (a restart, also in logs from before the
+  recorder wrote `restart=1`; it keeps the AI plan of the restarted match). Lines after `Starting instant replay` are
+  ignored until the next map is loaded. Matches that must not be learned from (e.g. the player's own fort collapsed)
+  go into `EXCLUDED` in `train.py` by their `game_key`; `report` prints how many were excluded.
 - Learning is global, not per map (the map is in the log as `Loading map maps/<Map>/...`). The build tempo is not
   learned; it comes from the defaults (`DEFAULTS["Tempo"]` in `train.py`) and per-map `Strategy` overrides.
 
