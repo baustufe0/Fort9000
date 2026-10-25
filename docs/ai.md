@@ -69,9 +69,12 @@ its trigger.
    `GetDeviceIdSide`, `GetDeviceType`; already used for targeting). This is game state, so it is deterministic and
    replay-safe.
 4. **Trigger.** A module fires once per match when the enemy has at least `Count` devices of its `Types` together
-   (counted every think step, `CAI_UpdateModules`, not during a probe). If the AI has not yet passed plan action
-   `Requires` (the last plan action whose nodes the module uses; progress = the `CAI_K` of the last plan action
-   before `data.fortIndex`), it waits. Several modules ready in the same step go in the order listed in the plan.
+   (counted every think step, `CAI_UpdateModules`, not during a probe), or when the game time (seconds since the AI
+   started) reaches `Time`: a module that is part of the plan's goal comes even against a player who builds nothing,
+   and the enemy's devices only pull it forward. `After = <name>`: only once that module has gone in (e.g. heavy
+   mortars after the mortars). If the AI has not yet passed plan action `Requires` (progress = the `CAI_K` of the
+   last plan action before `data.fortIndex`), it waits. Several modules ready in the same step go in the order listed
+   in the plan. The log names the reason: `trigger=mortar:2` or `trigger=time:150`.
 5. **Insertion.** The module's `n` actions are inserted at `data.fortIndex` (copies, so a rebuild works on them like
    any plan action). All index-keyed state at or after that index moves up by `n`: keys of `data.Rebuild`,
    `data.Frustration` and `st.rebuildSince`, values of `data.Devices`; `st.buildIndex` is reset so the skip valve

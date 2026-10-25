@@ -37,6 +37,9 @@ plan.FortModules = {
     { Type = 5, OriginalNodeAId = 47, PosA = { x = -2996.23, y = 503.57 }, OriginalNodeBId = 20000, PosB = { x = -3000, y = 400 }, LinkT = 0.5, DeviceSaveName = "mortar" } } },
   { Name = "antiair", Trigger = { Types = { "missile", "missile2" } }, Requires = 0, Actions = {
     { Type = 5, OriginalNodeAId = 55, PosA = { x = -2945.11, y = 206.49 }, OriginalNodeBId = 58, PosB = { x = -2846.18, y = 203.99 }, LinkT = 0.5, DeviceSaveName = "machinegun" } } },
+  -- the plan's goal: comes by time even if the enemy builds nothing, but only after the anti-air module
+  { Name = "goal", Trigger = { Time = 100, After = "antiair" }, Requires = 0, Actions = {
+    { Type = 5, OriginalNodeAId = 55, PosA = { x = -2945.11, y = 206.49 }, OriginalNodeBId = 58, PosB = { x = -2846.18, y = 203.99 }, LinkT = 0.3, DeviceSaveName = "sniper" } } },
 }
 teamId = 102
 local E = FortPos
@@ -70,8 +73,11 @@ print(string.format("shifted: rebuild=%s,%s frustration=%s devices=%d,%d since=%
   tostring(data.Rebuild[3]), tostring(data.Rebuild[fi + 5]), tostring(data.Frustration[fi + 3]),
   data.Devices[77] - fi, data.Devices[78], tostring(data.CAI.rebuildSince[fi + 5])))
 CAI_Think()
--- a missile: the anti-air module goes in front of what is left, both modules once only
+-- past the goal's time: it still waits for the anti-air module
+for i = 1, 16 do CAI_Think() end
+print("goal before anti-air: " .. tostring(data.CAIModules.list[3].fired))
+-- a missile: the anti-air module goes in front of what is left, the goal right after it, each module once only
 enemy = { "mortar", "mortar2", "missile" }
 data.fortIndex = fi + 3
 CAI_Think(); CAI_Think()
-print(string.format("anti-air at %d: %s, total=%d", data.fortIndex - fi, Fort[fi + 3].DeviceSaveName, #Fort))
+print(string.format("anti-air at %d: %s, then %s, total=%d", data.fortIndex - fi, Fort[fi + 3].DeviceSaveName, Fort[fi + 4].DeviceSaveName, #Fort))

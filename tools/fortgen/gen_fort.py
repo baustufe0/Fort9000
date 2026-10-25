@@ -620,7 +620,7 @@ VANILLA_VARIANTS = {
         # it; only its top is open: two mortars on the hidden cage's roof once the plan has built it (the plan keeps
         # those two roof struts solid). The prow roof would be open, but it stands in the laser's line of fire.
         "modules": [
-            {"name": "counterbattery", "after": 10, "trigger": (("mortar", "mortar2"), 2),
+            {"name": "counterbattery", "after": 10, "trigger": {"types": ("mortar", "mortar2"), "count": 2},
              "variant": {"roof_weapons": ("mortar",)}, "cfg": {"roof_weapon_cells": [(-3400, -500), (-3200, -500)]},
              "plan": [("weapons", ["mortar", "mortar"])]},
         ],
@@ -662,6 +662,67 @@ VANILLA_VARIANTS = {
 }
 
 
+# Vanilla-6, the modular fort: Vanilla-2's low fort (the most tested layout: the hidden mortar nest and turbine gallery
+# two storeys over the starting fort, nothing in the mortars' arc), but its weapons are reactive build modules
+# (docs/ai.md). The fixed core builds the economy, the tech, the defence and the empty slots the weapons need (the
+# sniper's cell, the nest cell with the mortar struts, the gallery roof). Each module goes in when the player builds
+# what it answers, and at the latest at its time, so the AI reaches its goal also against a player who builds
+# nothing: an artillery fort (sniper, two mortars, anti-air, then heavy mortars, an AP sniper, more anti-air and
+# miniguns). The times set the order without threats; the player's devices pull a module forward. A fixed plan loses
+# to whatever the player picks against it (Vanilla-5: four lost matches against four different weapons).
+_V6_MISSILES = ("missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp")
+VANILLA_VARIANTS["modular"] = {
+    "title": "Modular fort: Vanilla-2's low fort as a core, its weapons as reactive modules",
+    "shape": VANILLA_VARIANTS["artillerie"]["shape"],
+    "tech_slots": VANILLA_VARIANTS["artillerie"]["tech_slots"],
+    "roof_weapons": {"machinegun"},
+    "cfg": dict(VANILLA_VARIANTS["artillerie"]["cfg"]),
+    "plan": [
+        # core: the workshop (mortars need it, 60 s), the nest's sandbags (0 metal) and the two weapon cells over the
+        # starting fort (the sniper's cell on its roof beam, the nest cell with the split mortar struts above it)
+        ("tech", ["workshop"]),                                     # 1
+        ("build", [(-3100, 205, "sniper"), (-3100, 105)]),          # 2 (before anything builds the sniper's cell)
+        ("defence", ["sandbags", "sandbags"]),                      # 3
+        # metal first (15th Vanilla-2 test: with the mines late the AI starved), then energy and the gallery
+        ("eco", ["mine", "mine", "mine"]),                          # 4
+        ("eco", ["turbine"]),                                       # 5
+        ("defence", ["sandbags", "sandbags"]),                      # 6
+        ("defence", ["woodspam"]),                                  # 7
+        ("eco", ["turbine", "turbine"]),                            # 8
+        ("tech", ["upgrade"]),                                      # 9
+        ("eco", ["battery", "store"]),                              # 10
+        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 11
+        ("eco", ["battery"]),                                       # 12
+        ("upgrades", ["mine2", "mine2"]),                           # 13
+        ("defence", ["woodspam"]),                                  # 14
+    ],
+    # "after": generated on the core as it stands after that many steps (its cells built, nothing duplicated)
+    "modules": [
+        # the sniper answers snipers and heavy direct weapons (it outranges them and hits a laser while it is built)
+        {"name": "sniper", "after": 3,
+         "trigger": {"types": ("sniper", "sniper2", "laser", "firebeam", "cannon", "cannon20mm"), "count": 1, "time": 45},
+         "plan": [("weapons", ["sniper"])]},
+        # two mortars on the nest's split struts: counter-battery and the fort's offence
+        {"name": "artillery", "after": 3, "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 150},
+         "plan": [("weapons", ["mortar", "mortar"])]},
+        # anti-air on the gallery roof against missiles and rockets (the gallery's front cell needs ~90 actions of
+        # support from the back block, so it comes with the gallery's sandbags; until then the starting fort's
+        # machine gun)
+        {"name": "antiair", "after": 6, "trigger": {"types": _V6_MISSILES, "count": 1, "time": 240},
+         "plan": [("aa", ["machinegun"])]},
+        {"name": "heavyartillery", "after": 9, "trigger": {"time": 330, "after": "artillery"},
+         "plan": [("upgrades", ["mortar2", "mortar2"])]},
+        {"name": "antiair2", "after": 8, "trigger": {"types": _V6_MISSILES, "count": 3, "time": 420, "after": "antiair"},
+         "plan": [("aa", ["machinegun"])]},
+        {"name": "sniper2", "after": 9, "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 2, "time": 450,
+                                                    "after": "sniper"},
+         "plan": [("upgrades", ["sniper2"])]},
+        {"name": "miniguns", "after": 9, "trigger": {"time": 540, "after": "antiair2"},
+         "plan": [("upgrades", ["minigun", "minigun"])]},
+    ],
+}
+
+
 # ----------------------------------------------------------------------------- Generator
 
 class Plan:
@@ -681,6 +742,7 @@ class Plan:
         self.placed = []       # (device, a, b, t)
         self.problems = []
         self.tech_done = set()
+        self.slot_cells = {}   # cell -> device it was built for, by a "build" step (a module places it)
 
     # --- Grid
     def colx(self, i, j):
@@ -1355,7 +1417,8 @@ class Plan:
         for wc in self.cfg.get("weapon_cells", []):          # (left x, floor y, device[, LinkT])
             x0, floor_y, d = wc[:3]
             for c in sorted(self.cells):
-                if d == dev and abs(self.cell_x(c)[0] - x0) < 10 and rows[c[1] + 1] == floor_y and c not in self.devices:
+                if d == dev and abs(self.cell_x(c)[0] - x0) < 10 and rows[c[1] + 1] == floor_y and (
+                        c not in self.devices or self.slot_cells.get(c) == d):
                     if len(wc) > 3:
                         self.weapon_t_at[c] = wc[3]
                     return c
@@ -1653,6 +1716,9 @@ class Plan:
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
             self.split_doors()
+        # in the variant's order: the order the AI goes by when several modules fire at once
+        names = [m["name"] for m in variant.get("modules", [])]
+        self.modules.sort(key=lambda m: names.index(m["name"]))
         self.module_requires()
         return self
 
@@ -1672,6 +1738,8 @@ class Plan:
         rng_state = self.rng.getstate()
         n0, p0 = len(self.actions), len(self.problems)
         self.action_floor = n0
+        # the devices of earlier modules count as placed (a later module may upgrade them, trigger "after")
+        self.placed = self.placed + self.module_placed
         for step, items in m["plan"]:
             for dev in items:
                 self.add(step, dev)
@@ -1679,7 +1747,7 @@ class Plan:
         problems = ["module %s: %s" % (m["name"], pr) for pr in self.problems[p0:]]
         cells = [c for c, d in self.devices.items() if saved["devices"].get(c) != d]
         mortar_cells = self.mortar_cells - saved["mortar_cells"]
-        placed = [p for p in self.placed if p not in saved["placed"]]
+        placed = [p for p in self.placed if p not in saved["placed"] and p not in saved["module_placed"]]
         for k in [k for k in self.__dict__ if k not in keep and k not in saved]:
             delattr(self, k)
         self.__dict__.update(saved)
@@ -1690,7 +1758,9 @@ class Plan:
         self.mortar_cells |= mortar_cells
         self.module_placed += placed
         self.problems += problems
-        self.modules.append({"name": m["name"], "types": list(m["trigger"][0]), "count": m["trigger"][1], "lines": lines})
+        tr = m["trigger"]
+        self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
+                             "time": tr.get("time"), "after": tr.get("after"), "lines": lines})
 
     def module_requires(self):
         """Requires of each module: the last plan action it builds on (nodes, struts), and its devices' tech (a
@@ -1707,6 +1777,20 @@ class Plan:
                         self.problems.append("module %s: %s needs %s, which the plan does not build" % (m["name"], a["DeviceSaveName"], need))
                     else:
                         req = max(req, k)
+            # a plan strut in a module weapon's line of fire, built after the module, is not recessed by the game:
+            # the module waits until it stands
+            for _ in range(20):
+                acts = plan[:req] + mod + plan[req:]
+                pos, links, devices, _g = rules.build_state(acts)
+                later = req
+                for name, ia, ib, t, pair, kd in devices:
+                    if req <= kd < req + len(mod) and ia in pos and ib in pos:
+                        for b in rules.fire_blockers(links, pos, name, rules._point(pos, ia, ib, t), kd):
+                            if b[3] >= req + len(mod):
+                                later = max(later, b[3] - len(mod) + 1)
+                if later == req:
+                    break
+                req = later
             m["requires"] = req
             # struts the plan builds too (only after the module's snapshot): the module then builds them without the
             # plan's later changes (hidden cage, woodspam, cleared fire lines); move its "after" past them
@@ -1902,7 +1986,9 @@ class Plan:
         or outside the game's recession box and the weapon's body) becomes background bracing; armour becomes a door."""
         import re
         for _ in range(5):
-            acts = parse_lines(self.actions)
+            # the modules' weapons too (appended: every plan strut counts as built before them; struts built after
+            # one hold its module back instead, module_requires)
+            acts = parse_lines(self.actions + [ln for m in getattr(self, "modules", []) for ln in m["lines"]])
             pos, links, devices, _g = rules.build_state(acts)
             fix = {}
             for name, ia, ib, t, pair, kd in devices:
@@ -1963,6 +2049,18 @@ class Plan:
         self.actions = out
 
     def add(self, step, dev):
+        if step == "build":
+            # ("build", [(left x, floor y[, device]), ...]): a cell and the cells on its way, no device yet (a slot a
+            # module fills); with a device the cell is built for it (its door, background diagonals) and the
+            # device's module takes it (weapon_cells)
+            rows = self.cfg["rows"]
+            c = next((c for c in sorted(self.all_cells) if abs(self.cell_x(c)[0] - dev[0]) < 2 and rows[c[1] + 1] == dev[1]), None)
+            if c is not None and len(dev) > 2:
+                self.devices[c] = dev[2]
+                self.slot_cells[c] = dev[2]
+            if c is None or not self.build_cell_path(c):
+                self.problems.append("cell at x %d, floor %d not built" % tuple(dev[:2]))
+            return
         need = self.prereq(dev)
         if need and need not in self.tech_done and dev not in UPGRADE_OF:
             self.problems.append("%s without %s - moved forward" % (dev, need))
@@ -2389,9 +2487,14 @@ def main():
             m_errors = p.validate()
             p.actions = plan_actions
             m_rule_errors, m_rule_warnings = rules.check_plan(parse_lines(p.with_module(m)))
+            m_rule_errors = [e for e in m_rule_errors if e not in rule_errors]          # the plan's own are listed above
+            m_rule_warnings = [w for w in m_rule_warnings if w not in rule_warnings]
             devs = [ln.split('DeviceSaveName = "')[1].split('"')[0] for ln in m["lines"] if "CREATE_DEVICE" in ln]
-            print("   module %s: %d actions (%s), trigger %s x%d, requires plan action %d"
-                  % (m["name"], len(m["lines"]), ", ".join(devs), "/".join(m["types"]), m["count"], m["requires"]))
+            trig = ["%s x%d" % ("/".join(m["types"]), m["count"])] if m["types"] else []
+            trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
+            print("   module %s: %d actions (%s), trigger %s%s, requires plan action %d"
+                  % (m["name"], len(m["lines"]), ", ".join(devs), " or ".join(trig),
+                     " (once %s is in)" % m["after"] if m.get("after") else "", m["requires"]))
             for e in m_errors:
                 print("      ERROR:", e)
             for e in m_rule_errors:

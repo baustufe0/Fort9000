@@ -45,7 +45,9 @@ Options of the Vanilla tower variants (Vanilla-3/-4/-5; details in [maps/vanilla
 ## Reactive build modules
 
 A variant's `modules` are written after the plan's `Fort` table as `FortModules` (the AI side: [ai.md](ai.md#reactive-build-modules)):
-`{"name", "after": <n>, "trigger": ((types...), count), "plan": [steps], "cfg": {...}, "variant": {...}}`.
+`{"name", "after": <n>, "trigger": {"types": (...), "count": n, "time": s, "after": "<module>"}, "plan": [steps],
+"cfg": {...}, "variant": {...}}` (each trigger key optional; the file lists the modules in the variant's order, the
+order the AI goes by when several fire at once).
 - The module's steps are generated on the plan as it stands after its first `after` steps (`gen_module`); then the plan
   state is restored and the plan goes on unchanged, except that the module's device cells stay reserved
   (`devices[c] = "module"`), its mortar cells count as mortar cells, its devices are kept clear by eco devices
@@ -54,7 +56,12 @@ A variant's `modules` are written after the plan's `Fort` table as `FortModules`
   `roof_weapon_cells`). A module never rewrites the plan's actions (`action_floor`).
 - New nodes of module k get ids from 20000 + 1000 k, so the plan's ids and text stay the same with or without modules.
 - `Requires` (`module_requires`): the last plan action that creates a node or strut the module uses without building
-  it, and the plan action placing the tech its devices need (a mortar needs the workshop).
+  it, the plan action placing the tech its devices need (a mortar needs the workshop), and any plan strut in a module
+  weapon's line of fire or mortar arc that the plan builds after it (the game would not recess it).
+- Plan step `("build", [(left x, floor y[, device]), ...])`: a cell and the cells on its way, without a device: the
+  empty slot a module fills. With a device the cell is built for it (door, background diagonals, as if the weapon
+  stood there) and that device's module takes it through `weapon_cells`; build such a slot before any other step
+  builds the cell. `clear_fire_lines` also clears the lines of fire of the modules' weapons.
 - Note `builds N struts the plan also builds later`: `after` is too early, the module would build plan cells without
   the plan's later changes (hidden cage, woodspam, cleared fire lines). Move `after` past them.
 - `gen_fort.py` prints each module (actions, devices, trigger, `Requires`) and checks it inside the plan, right after

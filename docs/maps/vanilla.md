@@ -11,6 +11,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
 | Vanilla-5 | a laser | laser rush | 4 lost against an active player (laser blocked; sniped while building; destroyed by rockets 3 s after it was finished; mortars, one laser shot); 1 no-combat test: 7 shots |
+| Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | not yet |
 
 ## Starting fort
 
@@ -169,6 +170,33 @@ launcher).
   fire. So the module can only come once the plan has built the cage roof (`Requires` 235 of 307); at the last
   match's pace that is about 10 minutes in. The player's mortars (25.10.2026) hit the prow cell with the anti-air
   machine gun and the front woodspam, not the back block, so an armour roof over the back block would not have helped.
+
+## Vanilla-6 – modular fort
+
+- The idea: a fixed plan loses to whatever the player picks against it (Vanilla-5 lost to four different weapons).
+  Vanilla-6 keeps a fixed core and turns its weapons into reactive build modules ([ai.md](../ai.md#reactive-build-modules)).
+- Geometry: Vanilla-2's low fort, strut for strut (the most tested layout; the hidden mortar nest and turbine gallery
+  two storeys over the starting fort, nothing in the mortars' arc); the weapons stand where Vanilla-2's stand.
+- Core (231 actions): workshop; the sniper's cell (built for a sniper: door, background diagonals) and the nest cell
+  with the split mortar struts (`build` step, before anything else builds them); the nest's sandbags; three mines;
+  a turbine; the gallery's sandbags; woodspam; two turbines; upgrade centre; battery, store; upgraded turbines; a
+  battery; upgraded mines; woodspam.
+- Modules (enemy devices, or at the latest the time; `Requires` = plan action):
+
+  | Module | Builds | Enemy builds | Time | Requires |
+  |---|---|---|---|---|
+  | sniper | sniper on the starting fort's roof beam | sniper, AP sniper, laser, firebeam, cannon, 20mm | 45 s | 5 |
+  | artillery | two mortars in the nest | mortar, heavy mortar | 150 s | 30 |
+  | antiair | machine gun on the gallery roof | missile, EMP missile, rocket, EMP rocket | 240 s | 145 |
+  | heavyartillery | heavy mortars (after artillery) | - | 330 s | 199 |
+  | antiair2 | second gallery-roof machine gun (after antiair) | 3 of the missile types | 420 s | 192 |
+  | sniper2 | AP sniper (after sniper) | 2 AP snipers, lasers or firebeams | 450 s | 199 |
+  | miniguns | both machine guns upgraded (after antiair2) | - | 540 s | 199 |
+
+  Against a player who builds nothing the AI still reaches its goal, Vanilla-2's artillery fort, in this order.
+- Anti-air on the gallery roof needs the gallery's front cell (~90 actions of support from the back block): it cannot
+  come before plan action 145; until then only the starting fort's machine gun covers the sky.
+- The times are first guesses (Vanilla-2's rush placed its sniper and mortars right after the workshop).
 
 ## Approaches that failed (Vanilla)
 

@@ -1438,31 +1438,46 @@ local function CAI_InsertActions(fi, actions)
 	end
 end
 
--- one think step: fire the modules whose trigger the enemy has reached, once per match each
+-- one think step: fire the modules whose trigger is reached, once per match each. Trigger: the enemy has Count
+-- devices of Types together, or the game time has reached Time (seconds; a module that is also the plan's goal comes
+-- even if the enemy never builds its trigger); After = <module name>: only once that module has gone in.
 function CAI_UpdateModules()
 	local mods = data.CAIModules
 	if mods == nil or type(data.fortIndex) ~= "number" or Fort == nil then return end
+	local elapsed = data.CAI and data.CAI.ticks * Strategy.ThinkInterval or 0
 	local seen, progress
+	local fired = {}
+	for _, m in ipairs(mods.list) do
+		if m.fired then fired[m.name] = true end
+	end
 	local ready = {}
 	for _, m in ipairs(mods.list) do
-		if not m.fired then
+		local tr = m.trigger
+		if not m.fired and (tr.After == nil or fired[tr.After]) then
 			seen = seen or CAI_EnemyDevices()
 			local hits, total = {}, 0
-			for _, t in ipairs(m.trigger.Types or {}) do
+			for _, t in ipairs(tr.Types or {}) do
 				if seen[t] then
 					hits[#hits + 1] = t .. ":" .. seen[t]
 					total = total + seen[t]
 				end
 			end
-			if #hits > 0 and total >= (m.trigger.Count or 1) then
+			local why
+			if #hits > 0 and total >= (tr.Count or 1) then
+				why = table.concat(hits, ",")
+			elseif tr.Time and elapsed >= tr.Time then
+				why = "time:" .. tr.Time
+			end
+			if why then
 				progress = progress or CAI_PlanProgress()
 				if progress >= m.requires then
 					m.fired = true
-					m.why = table.concat(hits, ",")
+					fired[m.name] = true
+					m.why = why
 					ready[#ready + 1] = m
 				elseif not m.waiting then
 					m.waiting = true
-					CAI_Log("MODULE_WAIT " .. m.name .. " trigger=" .. table.concat(hits, ",") .. " requires=" .. m.requires .. " now=" .. progress)
+					CAI_Log("MODULE_WAIT " .. m.name .. " trigger=" .. why .. " requires=" .. m.requires .. " now=" .. progress)
 				end
 			end
 		end

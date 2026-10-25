@@ -23,16 +23,20 @@ def parse_plan(path):
 
 def parse_modules(path):
     """The plan's reactive build modules (FortModules, written by gen_fort.py): a list of dicts with name, types,
-    count, requires and actions (parsed like the plan's)."""
+    count, time, after (None if not set), requires and actions (parsed like the plan's)."""
     parts = open(path, encoding="latin-1").read().split(MODULES_MARK)
     if len(parts) < 2:
         return []
     mods = []
     for line in parts[1].splitlines():
-        m = re.match(r'\s*\{ Name = "(\w+)", Trigger = \{ Types = \{ ([^}]*) \}, Count = (\d+) \}, Requires = (\d+), Actions = \{', line)
+        m = re.match(r'\s*\{ Name = "(\w+)", Trigger = \{ (.*) \}, Requires = (\d+), Actions = \{', line)
         if m:
-            mods.append({"name": m.group(1), "types": re.findall(r'"(\w+)"', m.group(2)), "count": int(m.group(3)),
-                         "requires": int(m.group(4)), "lines": []})
+            tr = m.group(2)
+            types = re.search(r"Types = \{ ([^}]*) \}", tr)
+            count, time, after = (re.search(k + r' = "?(\w+)"?', tr) for k in ("Count", "Time", "After"))
+            mods.append({"name": m.group(1), "types": re.findall(r'"(\w+)"', types.group(1)) if types else [],
+                         "count": int(count.group(1)) if count else 1, "time": int(time.group(1)) if time else None,
+                         "after": after.group(1) if after else None, "requires": int(m.group(3)), "lines": []})
         elif mods and line.strip().startswith("{ Type"):
             mods[-1]["lines"].append(line.strip())
     for m in mods:
@@ -41,13 +45,20 @@ def parse_modules(path):
 
 
 def format_modules(mods):
-    """FortModules table for the plan file, after the Fort table (mods: name, types, count, requires, lines)."""
+    """FortModules table for the plan file, after the Fort table (mods: name, types, count, time, after, requires,
+    lines; time and after may be None)."""
     if not mods:
         return ""
     out = ["FortModules =", "{"]
     for m in mods:
-        out.append('{ Name = "%s", Trigger = { Types = { %s }, Count = %d }, Requires = %d, Actions = {'
-                   % (m["name"], ", ".join('"%s"' % t for t in m["types"]), m["count"], m["requires"]))
+        tr = []
+        if m.get("types"):
+            tr.append("Types = { %s }, Count = %d" % (", ".join('"%s"' % t for t in m["types"]), m.get("count", 1)))
+        if m.get("time") is not None:
+            tr.append("Time = %d" % m["time"])
+        if m.get("after"):
+            tr.append('After = "%s"' % m["after"])
+        out.append('{ Name = "%s", Trigger = { %s }, Requires = %d, Actions = {' % (m["name"], ", ".join(tr), m["requires"]))
         out.extend(m["lines"])
         out.append("} },")
     out.append("}")
