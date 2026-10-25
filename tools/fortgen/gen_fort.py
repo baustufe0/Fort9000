@@ -385,9 +385,10 @@ VANILLA_VARIANTS = {
         # 25.10.2026), a turbine 127; 135 would make the 155-wide nest cell's diagonal longer than MAX_LINK. Two storeys only: the roof turbines of the five-storey tower waited for the
         # whole back block (~165 struts; storeys above the second wait for the first two over the full width,
         # tower_connect), the gallery needs ~30
-        # late game: the machine guns (anti-air) stand on the gallery roof, the only free place of the low fort
-        # (not on the nest roof: the mortar shells pass through it), and become miniguns. The starting fort's
-        # machine gun stays one: it stands in front of the sniper, which is upgraded instead
+        # the starting fort's machine gun stands in the prow storey the sniper fires through: it is sold at the
+        # start (its refund helps the rush) and the storey stays a fire lane. The machine guns (anti-air) stand on
+        # the gallery roof, the only free place of the low fort (not on the nest roof: the mortar shells pass
+        # through it): the first one as soon as that roof stands, the second late; both become miniguns
         "roof_weapons": {"machinegun"},
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
@@ -418,7 +419,7 @@ VANILLA_VARIANTS = {
             # them. With the sandbags first, the second mortar (its strut sharing a node with the sandbags' and the
             # first mortar's) was refused with CS_UNSTABLE (test match 25.10.2026); two mortars alone on the deck
             # were both placed (65-66 s)
-            ("eco", ["rebrace"]),
+            ("eco", ["rebrace", "sell:machinegun"]),
             ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
             ("weapons", ["mortar", "mortar"]),
@@ -428,15 +429,16 @@ VANILLA_VARIANTS = {
             # the gallery's sandbags, then more turbines before the next mine (2000 energy each)
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
+            ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),
             ("eco", ["mine"]),
             ("tech", ["upgrade"]),
-            # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (two
-            # machine guns on the gallery roof, upgraded), then the woodspam; storage and upgrades between
+            # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (the second
+            # machine gun on the gallery roof, both upgraded), then the woodspam; storage and upgrades between
             ("upgrades", ["mortar2", "mortar2"]),
             ("eco", ["battery", "mine", "store"]),
             ("upgrades", ["sniper2"]),
-            ("aa", ["machinegun", "machinegun"]),
+            ("aa", ["machinegun"]),
             ("upgrades", ["minigun", "minigun"]),
             ("defence", ["woodspam"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
@@ -1571,6 +1573,8 @@ class Plan:
                     return
             self.problems.append("no %s to upgrade to %s" % (base, dev))
             return
+        if dev.startswith("sell:"):
+            return self.sell_orig(dev[5:])
         if dev == "mine":
             return self.add_mine()
         if dev == "rebrace":
@@ -1762,6 +1766,23 @@ class Plan:
             if ij and self.nodes[ij][0] in self.built_nodes:
                 self.link(key(x, rows[-1]), ij, m)
                 self.link(key(cols[k], rows[-1]), ij, m)
+
+    def sell_orig(self, dev):
+        """Plan step "sell:<device>": sell a device of the starting fort (orig_devices) with DESTROY_DEVICE, as the
+        game's Abyss-1 sells its sandbags; its cell becomes a fire lane ("lane": no device, door in front,
+        background diagonals), e.g. for a weapon behind it."""
+        for pa, pb, d in self.cfg.get("orig_devices", []):
+            ia, ib = self.node_at(pa), self.node_at(pb)
+            if d != dev or not ia or not ib:
+                continue
+            a, b = self.nodes[ia], self.nodes[ib]
+            self.actions.append('{ Type = DESTROY_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, DeviceSaveName = "%s" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), dev))
+            c = (min(ia[0], ib[0]), ia[1] - 1)
+            if c in self.all_cells:
+                self.devices[c] = "lane"
+            return
+        self.problems.append("no %s of the starting fort to sell" % dev)
 
     def rebrace(self):
         """rebrace_after_mine: starting-fort struts rebuilt as wood bracing (the game swaps the material and refunds

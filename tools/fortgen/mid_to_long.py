@@ -47,6 +47,10 @@ def convert(src, long_orig, dst):
             pa, pb = npos(A, a["PosA"]), npos(B, a["PosB"])
             out.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
                        % (nid(B), f(pb), nid(A), f(pa), 1.0 - a["LinkT"], a["DeviceSaveName"]))
+        elif t == "DESTROY_DEVICE":         # selling a device (e.g. of the starting fort): A/B swapped like devices
+            A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
+            out.append('{ Type = DESTROY_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, DeviceSaveName = "%s" },'
+                       % (nid(B), f(npos(B, a["PosB"])), nid(A), f(npos(A, a["PosA"])), a["DeviceSaveName"]))
         else:
             raise ValueError(a["raw"])
     head = ("-- Fort recorded for AI replay\n"
