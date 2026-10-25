@@ -32,10 +32,13 @@ def split_matches(lines):
     for k, s in enumerate(starts):
         end = starts[k + 1] if k + 1 < len(starts) else len(lines)
         body_start = max(0, s - 40) if k == 0 else max(starts[k - 1] + 1, s - 40)
-        for j in range(s, end):
-            if re.match(r"\[CREC\] f=\d+ RESULT", lines[j]):
-                end = j + 3
-                break
+        # the last RESULT of the match: a match can log more than one (the game went on after a reactor was lost
+        # at 2.2 min and ended at 10.6 min, 25.10.2026); an instant replay after it starts with "Starting instant replay"
+        results = [j for j in range(s, end) if re.match(r"\[CREC\] f=\d+ RESULT", lines[j])]
+        replay = next((j for j in range(s, end) if "Starting instant replay" in lines[j]), end)
+        results = [j for j in results if j < replay] or results
+        if results:
+            end = results[-1] + 3
         matches.append(lines[body_start:end])
     return matches
 
@@ -43,14 +46,14 @@ def split_matches(lines):
 def info(m, team):
     t = "\n".join(m)
     plan = re.search(r"\[CAI\] T%d PLAN (?:map=(\S+) )?file=(\S+)" % team, t)
-    res = re.search(r"\[CREC\] f=(\d+) RESULT w=(-?\d+)", t)
+    res = (re.findall(r"\[CREC\] f=(\d+) RESULT w=(-?\d+)", t) or [None])[-1]
     diff = re.search(r"ConfigureAI Team 2: Fort , Difficulty ([\d.]+)", t)
     mp = re.search(r"Loading map maps/([^/]+)/", t)
     return {
         "map": mp.group(1) if mp else (plan.group(1) if plan and plan.group(1) else "?"),
         "plan": plan.group(2) if plan else "?",
-        "winner": res.group(2) if res else "-",
-        "minutes": int(res.group(1)) / FPS / 60 if res else 0,
+        "winner": res[1] if res else "-",
+        "minutes": int(res[0]) / FPS / 60 if res else 0,
         "difficulty": diff.group(1) if diff else "?",
         "text": t,
     }

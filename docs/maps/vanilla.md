@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | a laser | laser rush | once: lost at 629 s, its laser never fired (post in front of it, now fixed) |
+| Vanilla-5 | a laser | laser rush | lost once (laser blocked, upgrade centre refused; both fixed), then a no-combat test: laser fired 7 times, all upgrades built |
 
 ## Starting fort
 
@@ -191,9 +191,9 @@ launcher).
 ## Open problems
 
 - Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
-- Vanilla-3's sniper behind its split door, Vanilla-4's cannons against a player and Vanilla-5's laser with the cleared
-  post are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
-- Vanilla-5's moved upgrade centre (x -3500..-3400) is not yet tested.
+- Vanilla-3's sniper behind its split door and Vanilla-4's cannons against a player are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
+- Vanilla-5 has not yet been tested against a player who fights back with the fixes; its laser is limited by energy
+  (a beam costs 5000; 7 shots in about 6 minutes in the second test).
 - Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
   4 s; woodspam does not stop that.
 - One armour piece of a 20mm door post (47 long, y 27..-20) was refused with `CS_NODESTOOCLOSE` and given up; the

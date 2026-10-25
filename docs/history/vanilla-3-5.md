@@ -65,3 +65,17 @@ of the snapshots; player 511), energy 5,820.
   back (x -3500..-3400), and the generator keeps batteries and stores clear of it.
 - Fix: the laser's front post is now background bracing (`rules.py` models the recession boxes and bodies from the
   weapon files; the generator clears such struts).
+
+## Vanilla-5, second test (25.10.2026): both fixes confirmed
+
+A build-and-fire test rather than a fight: the player's fort fell at 2.2 min with no AI weapon placed yet (`RESULT w=2`;
+own collapse), the game then rewound to frame 2 (`Restoring replay key frame`) and ran again to 10.6 min, in which the
+player built only mines, turbines, sandbags and repair stations and fired nothing (second `RESULT w=2`; the `END`
+counters add up both runs). `train.py` counts it as an AI win.
+
+- **Laser:** placed 210 s, then every `FIRETRY` ray reached the enemy (`RAY_HIT_STRUCTURE:1:...`) instead of our own
+  post; 7 laser shots, limited by energy (a beam 5000; energy down to 145-550 between shots).
+- **Upgrade centre** at x -3500..-3400: one first-try `CS_OCCUPIED`, placed at 470 s; then both upgraded turbines
+  (531 s), both miniguns (533-538 s), the AP sniper (543 s) and both upgraded mines (581-603 s) - the late game ran
+  through (build index 384/422 at 600 s instead of stalling at 359).
+- Other shots: minigun 182, sniper 17, AP sniper 9; no AI device lost.
