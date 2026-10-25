@@ -42,6 +42,25 @@ Options of the Vanilla tower variants (Vanilla-3/-4/-5; details in [maps/vanilla
 - `SWAP_WINDOW` (20, a constant): a strut whose material the plan changes within that many actions is placed with its final material at once.
 - `cfg`: a variant's overrides of any map option.
 
+## Reactive build modules
+
+A variant's `modules` are written after the plan's `Fort` table as `FortModules` (the AI side: [ai.md](ai.md#reactive-build-modules)):
+`{"name", "after": <n>, "trigger": ((types...), count), "plan": [steps], "cfg": {...}, "variant": {...}}`.
+- The module's steps are generated on the plan as it stands after its first `after` steps (`gen_module`); then the plan
+  state is restored and the plan goes on unchanged, except that the module's device cells stay reserved
+  (`devices[c] = "module"`), its mortar cells count as mortar cells, its devices are kept clear by eco devices
+  (`module_placed`), and `hide_box` keeps the struts its devices stand on solid (the plan builds them, the module
+  only adds the device). `cfg` / `variant` override options while the module is generated (e.g. `roof_weapons`,
+  `roof_weapon_cells`). A module never rewrites the plan's actions (`action_floor`).
+- New nodes of module k get ids from 20000 + 1000 k, so the plan's ids and text stay the same with or without modules.
+- `Requires` (`module_requires`): the last plan action that creates a node or strut the module uses without building
+  it, and the plan action placing the tech its devices need (a mortar needs the workshop).
+- Note `builds N struts the plan also builds later`: `after` is too early, the module would build plan cells without
+  the plan's later changes (hidden cage, woodspam, cleared fire lines). Move `after` past them.
+- `gen_fort.py` prints each module (actions, devices, trigger, `Requires`) and checks it inside the plan, right after
+  its `Requires`; `rules.py <plan>` does the same for installed plans; `mid_to_long.py` converts the modules too.
+  The tools read the plan without its modules (`fortplan.parse_plan`; the modules: `parse_modules`).
+
 ## Adding a map
 
 - Plan files are named `fort-t<team>f<fort>-<Map>-<n|name>.lua`. Generator and plan swap support **t1f1** (one fort

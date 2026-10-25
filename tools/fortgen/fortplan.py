@@ -8,13 +8,72 @@ def parse_vec(s, key):
     m = re.search(key + r"\s*=\s*\{\s*x\s*=\s*(" + NUM + r")\s*,\s*y\s*=\s*(" + NUM + r")\s*\}", s)
     return (float(m.group(1)), float(m.group(2))) if m else None
 
+MODULES_MARK = "\nFortModules ="
+
+
 def parse_plan(path):
-    text = open(path, encoding="latin-1").read()
+    """Header and the actions of the Fort table (reactive build modules after it are left out, see parse_modules)."""
+    text = open(path, encoding="latin-1").read().split(MODULES_MARK)[0]
     header = {}
     m = re.search(r"FortTeam = (\d+); FortId = (\d+); FortPos = \{ x = (" + NUM + "), y = (" + NUM + ")", text)
     if m:
         header = {"team": int(m.group(1)), "fort": int(m.group(2)), "pos": (float(m.group(3)), float(m.group(4)))}
     return header, parse_lines(text.splitlines())
+
+
+def parse_modules(path):
+    """The plan's reactive build modules (FortModules, written by gen_fort.py): a list of dicts with name, types,
+    count, requires and actions (parsed like the plan's)."""
+    parts = open(path, encoding="latin-1").read().split(MODULES_MARK)
+    if len(parts) < 2:
+        return []
+    mods = []
+    for line in parts[1].splitlines():
+        m = re.match(r'\s*\{ Name = "(\w+)", Trigger = \{ Types = \{ ([^}]*) \}, Count = (\d+) \}, Requires = (\d+), Actions = \{', line)
+        if m:
+            mods.append({"name": m.group(1), "types": re.findall(r'"(\w+)"', m.group(2)), "count": int(m.group(3)),
+                         "requires": int(m.group(4)), "lines": []})
+        elif mods and line.strip().startswith("{ Type"):
+            mods[-1]["lines"].append(line.strip())
+    for m in mods:
+        m["actions"] = parse_lines(m["lines"])
+    return mods
+
+
+def format_modules(mods):
+    """FortModules table for the plan file, after the Fort table (mods: name, types, count, requires, lines)."""
+    if not mods:
+        return ""
+    out = ["FortModules =", "{"]
+    for m in mods:
+        out.append('{ Name = "%s", Trigger = { Types = { %s }, Count = %d }, Requires = %d, Actions = {'
+                   % (m["name"], ", ".join('"%s"' % t for t in m["types"]), m["count"], m["requires"]))
+        out.extend(m["lines"])
+        out.append("} },")
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+def module_requires(plan_actions, module_actions):
+    """The last plan action (1-based) whose node or strut the module uses without building it itself: the module
+    may only go in once the AI has passed it. Nodes of the starting fort need no plan action."""
+    made = {a["OriginalNodeBId"] for a in module_actions if a["Type"] == "CREATE_NODE"}
+    own = {frozenset((a["OriginalNodeAId"], a["OriginalNodeBId"])) for a in module_actions
+           if a["Type"] in ("CREATE_NODE", "CREATE_LINK")}
+    nodes, struts = set(), set()
+    for a in module_actions:
+        ids = [a[k] for k in ("OriginalNodeAId", "OriginalNodeBId") if k in a]
+        nodes.update(x for x in ids if x not in made)
+        if a["Type"] == "CREATE_DEVICE" and len(ids) == 2 and frozenset(ids) not in own:
+            struts.add(frozenset(ids))
+    first = {}
+    for k, a in enumerate(plan_actions, 1):
+        if a["Type"] == "CREATE_NODE":
+            first.setdefault(("n", a["OriginalNodeBId"]), k)
+        if a["Type"] in ("CREATE_NODE", "CREATE_LINK"):
+            first.setdefault(("s", frozenset((a["OriginalNodeAId"], a["OriginalNodeBId"]))), k)
+    req = [first.get(("n", x), 0) for x in nodes] + [first.get(("s", s), 0) for s in struts]
+    return max(req or [0])
 
 
 def parse_lines(lines):

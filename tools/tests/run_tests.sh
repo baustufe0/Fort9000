@@ -39,7 +39,8 @@ check "Module is inserted at the build index"  "MODULE counterbattery trigger=mo
 check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
 check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
 check "Each module fires once"                 "^anti-air at 3: machinegun, total=250$" "$LUA" t_modules.lua
-check "Fire control"                             "fired:.11,12,14,15"            "$LUA" t_fire.lua
+check "Plan file with modules loads in Lua"     "^307 counterbattery 2 235 mortar$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
+check "Fire control"                            "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua
 check "Fire diagnostics: door action pending"    "FIREWAIT sniper 23 avail=1 ready=1 code=- queue=1" "$LUA" t_firewait.lua
@@ -95,6 +96,8 @@ if [ -n "$PY" ]; then
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
   check "Recorded plan loads in Lua"             "^actions 9 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
+  check "Tools read plan modules apart from the plan" "^307 counterbattery mortar,mortar2 2 235$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
+  check "Plan modules pass the building rules"   "module counterbattery \(2 actions, requires 235\): 0 errors" $PY "$MOD/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
   "$LUA" t_probe.lua | sed '/PROBE END/q' > probe.txt
   check "Probe parser finds the CS_UNSTABLE split" "unstable if s > 0.260 \(100 %\)" $PY "$MOD/tools/fortgen/probe.py" probe.txt
   check "Probe parser splits by devices nearby"  "devices at its nodes +2 / 2$" $PY "$MOD/tools/fortgen/probe.py" probe.txt

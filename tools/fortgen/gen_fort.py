@@ -19,6 +19,7 @@ The AI executes plans robustly: what does not work, it skips after a few
 attempts ("frustration"). A slightly faulty plan therefore does not break the game.
 """
 import argparse
+import copy
 import math
 import os
 import random
@@ -28,7 +29,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fwe import read_blocks            # noqa: E402
 from terrain import Terrain              # noqa: E402
-from fortplan import parse_plan, parse_lines, node_positions  # noqa: E402
+from fortplan import parse_plan, parse_lines, node_positions, format_modules, module_requires  # noqa: E402
 import rules  # noqa: E402
 
 MAX_LINK = 205          # struts between existing nodes (the game allows StandardMaxLinkLength = 218)
@@ -613,6 +614,16 @@ VANILLA_VARIANTS = {
         # (x -3196; both 90 to each side) and was refused in the first test match (25.10.2026), and the AI then
         # waited on the turbine upgrades with full storage
         "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
+        # reactive build modules (docs/ai.md), generated on the plan as it stands after its first "after" steps.
+        # counterbattery: the player's mortars beat the plan (test match 25.10.2026: 63 mortar shots on the prow and
+        # the front woodspam, the AI had no answer). The tower blocks the mortar arc of every place behind or below
+        # it; only its top is open: two mortars on the hidden cage's roof once the plan has built it (the plan keeps
+        # those two roof struts solid). The prow roof would be open, but it stands in the laser's line of fire.
+        "modules": [
+            {"name": "counterbattery", "after": 10, "trigger": (("mortar", "mortar2"), 2),
+             "variant": {"roof_weapons": ("mortar",)}, "cfg": {"roof_weapon_cells": [(-3400, -500), (-3200, -500)]},
+             "plan": [("weapons", ["mortar", "mortar"])]},
+        ],
         "plan": [
             # laser rush: the tech chain (workshop 60 s, factory 60 s, laser 120 s) sets the pace. The factory and the
             # laser cost 6000 energy each, more than the starting cap (5000): a battery first (+2000); the laser costs
@@ -1019,7 +1030,8 @@ class Plan:
             return
         if key in self.links:
             ids = re.compile(r"OriginalNodeAId = (\d+),.*OriginalNodeBId = (\d+),")
-            for k in range(len(self.actions) - 1, max(-1, len(self.actions) - 1 - self.SWAP_WINDOW), -1):
+            # a module never rewrites the plan's actions (action_floor: the first action of the module)
+            for k in range(len(self.actions) - 1, max(getattr(self, "action_floor", 0) - 1, len(self.actions) - 1 - self.SWAP_WINDOW), -1):
                 act = self.actions[k]
                 m = ids.search(act)
                 if m and ("CREATE_NODE" in act or "CREATE_LINK" in act) and {int(m.group(1)), int(m.group(2))} == set(key):
@@ -1433,7 +1445,7 @@ class Plan:
         # upgrade centre before it was built)
         later = {d for kind, devs in self.variant.get("plan", []) if kind == "tech" for d in devs} - self.tech_done
         reserved = [(d,) + tuple(self.tech_slots[d][0]) for d in sorted(later) if self.tech_slots.get(d)]
-        for d, a, b, t, *_c in self.placed + reserved:
+        for d, a, b, t, *_c in self.placed + reserved + getattr(self, "module_placed", []):
             if d in ("mine", "mine2"):
                 continue
             q = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
@@ -1619,9 +1631,14 @@ class Plan:
             # up to the top of the starting fort; left for later, the turbines and mines were not reachable
             for c in sorted(c for cs in self.reserved.values() for c in cs):
                 self.build_cell_path(c)
-        for step, items in variant["plan"]:
+        self.modules = []
+        self.module_placed = []        # devices of the modules (kept clear by the plan's eco devices)
+        for si, (step, items) in enumerate(variant["plan"]):
             for dev in items:
                 self.add(step, dev)
+            for m in variant.get("modules", []):
+                if m["after"] == si + 1:
+                    self.gen_module(m)
         # finish building the remaining cells of the shape (structure + armour);
         # bottom_up: lower layers first, so the fort does not grow top-heavy
         sign = -1 if self.cfg.get("bottom_up") else 1
@@ -1636,7 +1653,74 @@ class Plan:
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
             self.split_doors()
+        self.module_requires()
         return self
+
+    def gen_module(self, m):
+        """A reactive build module (docs/ai.md): its steps are generated on the plan as it stands after m["after"]
+        steps, then the plan state is restored and the plan goes on as if the module did not exist. Its devices'
+        cells stay reserved, so the plan puts nothing there. Its new nodes get ids of their own (20000 + 1000 per
+        module): module and plan never share an id, and the plan stays the same with or without modules (the AI may
+        build the module before or after any later part of the plan; nodes at one place are snapped together by the
+        game's AI). m["cfg"] / m["variant"]: overrides while the module is generated (e.g. weapon_cells, roof_weapons)."""
+        keep = ("t", "cfg", "variant", "rng")
+        saved = copy.deepcopy({k: v for k, v in self.__dict__.items() if k not in keep})
+        saved_cfg, saved_variant = self.cfg, self.variant
+        self.cfg = dict(self.cfg, **m.get("cfg", {}))
+        self.variant = dict(self.variant, **m.get("variant", {}))
+        self.next_id = 20000 + 1000 * len(self.modules)
+        rng_state = self.rng.getstate()
+        n0, p0 = len(self.actions), len(self.problems)
+        self.action_floor = n0
+        for step, items in m["plan"]:
+            for dev in items:
+                self.add(step, dev)
+        lines = self.actions[n0:]
+        problems = ["module %s: %s" % (m["name"], pr) for pr in self.problems[p0:]]
+        cells = [c for c, d in self.devices.items() if saved["devices"].get(c) != d]
+        mortar_cells = self.mortar_cells - saved["mortar_cells"]
+        placed = [p for p in self.placed if p not in saved["placed"]]
+        for k in [k for k in self.__dict__ if k not in keep and k not in saved]:
+            delattr(self, k)
+        self.__dict__.update(saved)
+        self.cfg, self.variant = saved_cfg, saved_variant
+        self.rng.setstate(rng_state)
+        for c in cells:
+            self.devices[c] = "module"
+        self.mortar_cells |= mortar_cells
+        self.module_placed += placed
+        self.problems += problems
+        self.modules.append({"name": m["name"], "types": list(m["trigger"][0]), "count": m["trigger"][1], "lines": lines})
+
+    def module_requires(self):
+        """Requires of each module: the last plan action it builds on (nodes, struts), and its devices' tech (a
+        mortar only after the plan's workshop)."""
+        plan = parse_lines(self.actions)
+        for m in self.modules:
+            mod = parse_lines(m["lines"])
+            req = module_requires(plan, mod)
+            for a in mod:
+                need = self.prereq(a.get("DeviceSaveName", ""))
+                if need:
+                    k = next((k for k, b in enumerate(plan, 1) if b.get("DeviceSaveName") == need), None)
+                    if k is None:
+                        self.problems.append("module %s: %s needs %s, which the plan does not build" % (m["name"], a["DeviceSaveName"], need))
+                    else:
+                        req = max(req, k)
+            m["requires"] = req
+            # struts the plan builds too (only after the module's snapshot): the module then builds them without the
+            # plan's later changes (hidden cage, woodspam, cleared fire lines); move its "after" past them
+            plan_struts = {frozenset((tuple(a.get("PosA") or ()), tuple(a.get("NewNodePos") or a.get("PosB") or ())))
+                           for a in plan if a["Type"] in ("CREATE_NODE", "CREATE_LINK")}
+            dup = sum(1 for a in mod if a["Type"] in ("CREATE_NODE", "CREATE_LINK") and frozenset(
+                (tuple(a.get("PosA") or ()), tuple(a.get("NewNodePos") or a.get("PosB") or ()))) in plan_struts)
+            if dup:
+                self.problems.append("module %s builds %d struts the plan also builds later" % (m["name"], dup))
+
+    def with_module(self, m):
+        """The plan's actions with the module inserted right after its Requires (the earliest the AI may build it)."""
+        k = m["requires"]
+        return self.actions[:k] + m["lines"] + self.actions[k:]
 
     def hide_box(self):
         """hidden_box (x0, x1, y_top, y_floor): every strut of these cells except their floor and struts carrying a
@@ -1650,7 +1734,8 @@ class Plan:
         x0, x1, y_top, y_floor = box
         inside = lambda p: x0 - 1 <= p[0] <= x1 + 1 and y_top - 1 <= p[1] <= y_floor + 3
         # struts that carry a device stay solid (background bracing cannot carry devices)
-        carry = {frozenset((tuple(a), tuple(b))) for d, a, b, t, c in self.placed if c is not None}
+        # (also the platforms of the modules' devices: the plan builds them, the module only adds the device)
+        carry = {frozenset((tuple(a), tuple(b))) for d, a, b, t, c in self.placed + self.module_placed if c is not None}
         seen, out = set(), []
         for line in self.actions:
             pts = [(float(x), float(y)) for x, y in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
@@ -2252,7 +2337,8 @@ class Plan:
                 "CREATE_NODE = 1\nDESTROY_NODE = 2\nCREATE_LINK = 3\nDESTROY_LINK = 4\nCREATE_DEVICE = 5\nDESTROY_DEVICE = 6\n")
         tail = "-- Generated by Claude AI (tools/fortgen/gen_fort.py): %s\n" % title
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
-            f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail)
+            f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail
+                    + format_modules(getattr(self, "modules", [])))
 
 
 def main():
@@ -2296,6 +2382,22 @@ def main():
             print("   RULE WARN:", w)
         for pr in p.problems:
             print("   Note:", pr)
+        # each module checked inside the plan, right after its Requires (build order, nodes, the fort-building rules)
+        for m in p.modules:
+            plan_actions = p.actions
+            p.actions = p.with_module(m)
+            m_errors = p.validate()
+            p.actions = plan_actions
+            m_rule_errors, m_rule_warnings = rules.check_plan(parse_lines(p.with_module(m)))
+            devs = [ln.split('DeviceSaveName = "')[1].split('"')[0] for ln in m["lines"] if "CREATE_DEVICE" in ln]
+            print("   module %s: %d actions (%s), trigger %s x%d, requires plan action %d"
+                  % (m["name"], len(m["lines"]), ", ".join(devs), "/".join(m["types"]), m["count"], m["requires"]))
+            for e in m_errors:
+                print("      ERROR:", e)
+            for e in m_rule_errors:
+                print("      RULE ERROR:", e)
+            for w in m_rule_warnings:
+                print("      RULE WARN:", w)
 
 
 if __name__ == "__main__":

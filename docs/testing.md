@@ -24,7 +24,7 @@
   `FIREFAIL_BUILDING`), `queue=1` for a pending door action, `fired=0` with the ray result when the built-in AI
   declined (no target, chance or cost).
 - `MODULES` (after `PLAN`) lists a plan's reactive build modules; `MODULE_WAIT` and `MODULE ... at=<index>` show when
-  the enemy's devices triggered one and where it went into the plan ([ai.md](ai.md#reactive-build-modules-mod-side-implemented-generator-support-and-rebuild-cap-not-yet)).
+  the enemy's devices triggered one and where it went into the plan ([ai.md](ai.md#reactive-build-modules)).
 - To map where a plan's fort refuses devices, let it build in a sandbox with `Probe` set ([debugging.md](debugging.md)) and read the run
   with `tools/fortgen/probe.py`.
 - Render plans with `render_all.py` and compare with the game's Template-1.

@@ -163,6 +163,12 @@ launcher).
   was refused (`CS_OCCUPIED`, then `CS_UNSTABLE`), so the upgraded turbines never came and the AI sat at its storage
   caps (1500 / 11,000) from ~545 s. The player's laser and firebeam, fired together once at ~626 s, cut the lower
   front with its woodspam and took the reactor in under 4 s; the AI destroyed nothing.
+- Module `counterbattery` (enemy has 2 mortars or heavy mortars): two mortars on the hidden cage's roof struts
+  (x -3400..-3300 and -3200..-3100, y -500), which the plan now builds as solid bracing instead of background bracing.
+  The tower blocks the mortar arc of every place behind or below it; the prow roof is open but in the laser's line of
+  fire. So the module can only come once the plan has built the cage roof (`Requires` 235 of 307); at the last
+  match's pace that is about 10 minutes in. The player's mortars (25.10.2026) hit the prow cell with the anti-air
+  machine gun and the front woodspam, not the back block, so an armour roof over the back block would not have helped.
 
 ## Approaches that failed (Vanilla)
 

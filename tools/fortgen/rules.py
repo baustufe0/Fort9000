@@ -10,7 +10,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fortplan import parse_plan   # noqa: E402
+from fortplan import parse_plan, parse_modules   # noqa: E402
 
 # Sizes from the game files (SelectionWidth / SelectionHeight); weapon_pack is always installed.
 SIZE = {
@@ -342,6 +342,16 @@ def main():
             print("   RULE ERROR:", e)
         for w in warnings:
             print("   RULE WARN: ", w)
+        # reactive build modules: checked inside the plan, right after their Requires (the earliest the AI builds them)
+        for m in parse_modules(path):
+            k = m["requires"]
+            errors, warnings = check_plan(acts[:k] + m["actions"] + acts[k:], enemy_dir=-1 if head.get("team") == 2 else 1)
+            print("   module %s (%d actions, requires %d): %d errors, %d warnings"
+                  % (m["name"], len(m["actions"]), k, len(errors), len(warnings)))
+            for e in errors:
+                print("      RULE ERROR:", e)
+            for w in warnings:
+                print("      RULE WARN: ", w)
 
 
 if __name__ == "__main__":
