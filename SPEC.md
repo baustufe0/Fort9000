@@ -530,7 +530,14 @@ weapon_pack's ToGA1 puts some far out on the right instead (open on both sides).
     layers (x -2852/-2812) hanging in front of the starting fort's lower face (y 411..700; the rock ends at the face),
     foreground bracing except the band 411..505 in front of the starting machine gun (`woodspam` takes a list of
     regions, plan step `woodspam:<k>`; `outside` takes a material per band; wall nodes outside the grid are found
-    among the starting fort's nodes). Not yet tested.
+    among the starting fort's nodes). Fourteenth test (25.10.2026, against a player with rockets (34 shots, 4 uranium
+    rockets), a shotgun (80), machine guns (315)): **the player won at 338 s**. The nest's sandbags stood at 24-26 s,
+    the mortars (65-66 s) survived until 324-338 s and fired 43 times; the lower woodspam was built (~185 s). From
+    270 s the player's rockets took the front apart (75 struts in ~70 s): the lower woodspam at 315 s, the inner layer
+    in front of the reactor at 320 s (the struts `rebrace` had turned from armour into wood for the rush), the outer
+    armour at 337 s, the reactor at 338 s. The AI's sniper was destroyed three times, five machine guns lost; kills:
+    three machine guns, a rocket launcher, two turbines. In both lost matches the end came through the reactor's
+    front.
   - The `UNSTABLE` diagnostics (`sag`, `strain`) compare with wrong plan positions in team-2 matches with a
     shifted game plan (`shift=-3950,-3300`): all nodes appear 80-120 off.
   - Vanilla-3/-4/-5: the turbine cage, its sandbags and the 20mm doors worked in a Vanilla-3 match (energy plenty);
