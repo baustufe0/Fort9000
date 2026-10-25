@@ -1,7 +1,5 @@
 # FORT 9000 – Fort generator
 
-## Fort generator
-
 `tools/fortgen/` generates build plan variants (`gen_fort.py`), checks plans against the fort building rules (`rules.py`, see [building-rules.md](building-rules.md)), converts plans between coordinate systems (`mid_to_long.py`: the VanillaLong plans are the Vanilla plans converted, `mid_to_long.py fortplans/Vanilla/fort-t1f1-Vanilla-N.lua <Forts>/data/ai/forts/vanilla/long/fort-t2f1-Template-1.lua fortplans/VanillaLong/fort-t2f3-VanillaLong-N.lua`; convert them again whenever the Vanilla plans change; device sales, `DESTROY_DEVICE`, are converted like devices) renders them as images for review (`render_all.py`, `view.py`) and shows from a match log how the fort deformed (`shape.py`, see [debugging.md](debugging.md)).
 weapon_pack's armoury line is supported: flak and EMP rockets need the armoury (on Abyss on the munitions slot), shotgun and rocket are their upgrades (upgrade centre); the smoke bomb (DLC `dlc_smokebomb`, active in all matches so far) follows the armoury as in the game's own plans (Crevice-Howie, Mountain King 3v3), is treated as lobbed and assumed as tall as a turbine. **Tall devices** (`TALL`: rockets, flak, shotgun, smoke bomb; boxes 112-127 high, see [building-rules.md](building-rules.md)) only go into storeys at least `TALL_MIN_H` (125) high. Variant options: `roof_weapons` places these devices on an open roof like a turbine (nothing above them limits their height; the highest roof first, `roof_weapon_max_y`, never on a strut that already carries a device), never in the line of fire of a weapon behind it on the same level, and keeps direct weapons from firing across such roofs; `reserve_tall` reserves the tall storeys for the tall front weapons first, the lowest first, and builds them right away (on Abyss the storey above the reactor is the way up the starting fort; left for later, the top roof and the mines were not reachable). A node that cannot be built within 150 of a built neighbour is no longer built from farther away: the cell waits until a neighbouring cell is built.
 Optional per-map rules (used for Vanilla, following the Steam guide "How to be a PRO at Vanilla Forts"):
@@ -35,3 +33,11 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `woodspam`: one region or a list; plan step `woodspam` builds all regions, `woodspam:<k>` region k; `outside` gives the material where no grid cell stands behind a band, one material or `{band top y: material}`; wall nodes of the starting fort outside the grid are found too (`orig_node_at`).
 - `orig_devices [(node A, node B, device)]`: devices of the starting fort (Vanilla: the machine gun on its lower front); their cells stay free. Plan step `sell:<device>` sells one (`DESTROY_DEVICE`) and makes its cell a fire lane (unused now: the planned sale came from a wrong position).
 - `rebrace_after_mine`: starting-fort armour struts rebuilt as wood after the first mine (or plan step `rebrace`) for metal; Vanilla-2 turns it off (`[]`): the inner armour in front of the reactor fell first in both lost matches.
+
+Options of the Vanilla tower variants (Vanilla-3/-4/-5; details in [maps/vanilla.md](maps/vanilla.md)):
+- `reserve_large`, `large_top_min` / `large_top_max`: large weapons take their cells first, only in storeys between these cell tops.
+- `weapon_avoid [(left x, floor y, devices)]`, `turbine_avoid [(left x, roof y)]`: cells or roofs these devices skip (where they were refused in every test).
+- `support_cheapest`: a node rests on the support with the fewest cells below it instead of the shallowest chain.
+- `tower_connect {base_y, storeys, skip_floors}`: storey-by-storey build order of a tower on two foundations.
+- `SWAP_WINDOW` (20, a constant): a strut whose material the plan changes within that many actions is placed with its final material at once.
+- `cfg`: a variant's overrides of any map option.

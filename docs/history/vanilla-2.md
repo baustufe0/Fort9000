@@ -37,3 +37,23 @@ First test match (25.10.2026, difficulty 1, the version with the sniper in the f
     526 s), metal stayed below 150 in 62% of the snapshots (average 198, player 643) and the plan stalled from 285
     to 525 s (actions 316-333), while energy stood at 2400-5000 and at its cap from 260 s. Now all three mines
     come right after the mortars, before the first turbine and the gallery. Not yet tested.
+
+## Notes moved from the current-state docs (condensed 25.10.2026)
+
+- Before the rush layout (24.10.2026) Vanilla-2 put its mortars in the top cells of the five-storey tower and waited for
+  the whole storey-by-storey tower: sniper after 165 struts, mortars after 175-183. The low deck brought the sniper to
+  14 struts, both mortars to 19 and the sandbags to 33.
+- The roof turbines of the five-storey tower had waited for the whole back block (first turbine after 163 struts,
+  ~9,700 energy in struts); the gallery's first turbine came after 92 struts (~5,500 energy). A turbine in the
+  gallery's front cell itself (hanging on the starting fort's back posts) would have come after 63 struts, with only
+  the nest's sandbags in front of it.
+- Economy model of the rush before the armour was kept: sniper ~12 s, mortars ~63/70 s, sandbags ~99 s (metal-limited;
+  mortar cells under door roofs would have cost ~700 metal more for doors and armour).
+- Until 25.10.2026 the starting fort's machine gun was assumed on the prow's roof strut (-2945,206)-(-2846,204), from a
+  probe log whose machine gun there had been built by the Vanilla-3 plan; that moved devices off the prow storey and
+  led to a planned sale of it, which failed three times (`DD_NOTFOUND`). A failed sale listed the own devices at match
+  start: `machinegun@64-65:2949,503` for the mirrored team 2. Both changes were reverted.
+- The sniper's split door (first try): test match 25.10.2026, the sniper placed at its new position (LinkT 0.7)
+  without errors, 124 shots, no clearance failures; the armour above the door did not get in the way.
+- Late-game upgrade order: in a test match the heavy mortars came 52 s after the upgrade centre was placed, with only a
+  battery in between (every upgrade waits for the finished upgrade centre).

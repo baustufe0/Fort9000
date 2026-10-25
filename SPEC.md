@@ -45,5 +45,5 @@ A test result goes into the history file of its plan; what it changes in the cur
 ## Known limitations
 
 - Plans only for Abyss, Vanilla and VanillaLong.
-- Training learns from few matches (currently 11); `--strength` limits the deviation.
+- Training learns from few matches (35 with a result on 25.10.2026); `--strength` limits the deviation.
 - Assumes 25 frames per second for the game phases in training.
