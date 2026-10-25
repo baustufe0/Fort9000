@@ -386,8 +386,8 @@ VANILLA_VARIANTS = {
         # whole back block (~165 struts; storeys above the second wait for the first two over the full width,
         # tower_connect), the gallery needs ~30
         # late game: the machine guns (anti-air) stand on the gallery roof, the only free place of the low fort
-        # (not on the nest roof: the mortar shells pass through it); they and the starting fort's machine gun
-        # become miniguns
+        # (not on the nest roof: the mortar shells pass through it), and become miniguns. The starting fort's
+        # machine gun stays one: it stands in front of the sniper, which is upgraded instead
         "roof_weapons": {"machinegun"},
         "cfg": {"small_low_first": True, "weapon_pick_best": True,
                 "rows": [-425, -325, -225, -125, -25, 105, 205, 308, 405, 503, 602, 700],
@@ -406,10 +406,11 @@ VANILLA_VARIANTS = {
                 # at -3465, -3365, -3265 (100 apart, 95 from the sandbags)
                 "sandbag_slots": [(0, "floor", 0.7), (0, "mid", 0.7), (1, "floor", 0.3), (1, "mid", 0.5)],
                 "turbine_floor_y": 105, "turbine_floor_t": 0.35,
-                # woodspam: two wooden layers in front of the prow, from the nest roof down to the deck; foreground
-                # bracing in front of the nest (it only protects), background in front of the prow storey (the
-                # sniper fires through it)
-                "woodspam": {"wall_x": -2845, "layers": [-2805, -2765], "rows": [-25, 105], "base": []}},
+                # woodspam: two wooden layers in front of the starting fort's prow below the deck (y 205..310, in
+                # front of the reactor), foreground bracing; not in the hidden storey: there it stood in the turbines'
+                # wind (at hub height, 460-600 in front of them)
+                "woodspam": {"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
+                             "outside": "bracing"}},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The armour sale and the
             # workshop at once; the sniper (100 m / 300 e, no tech) and the deck while the workshop builds; the
@@ -430,15 +431,15 @@ VANILLA_VARIANTS = {
             ("eco", ["turbine", "turbine"]),
             ("eco", ["mine"]),
             ("tech", ["upgrade"]),
-            # late game: first the mortars (heavy mortars), then the miniguns (the starting fort's machine gun and
-            # two machine guns on the gallery roof, all upgraded), then the woodspam; storage and upgrades between
+            # late game: first the mortars (heavy mortars) and the sniper (AP sniper), then the miniguns (two
+            # machine guns on the gallery roof, upgraded), then the woodspam; storage and upgrades between
             ("upgrades", ["mortar2", "mortar2"]),
             ("eco", ["battery", "mine", "store"]),
-            ("upgrades", ["minigun"]),
+            ("upgrades", ["sniper2"]),
             ("aa", ["machinegun", "machinegun"]),
             ("upgrades", ["minigun", "minigun"]),
             ("defence", ["woodspam"]),
-            ("upgrades", ["sniper2", "turbine2", "turbine2", "turbine2"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2"]),
             ("eco", ["battery", "mine"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
@@ -1387,8 +1388,6 @@ class Plan:
                 c = (min(ia[0], ib[0]), ia[1] - 1)
                 if c in self.all_cells:
                     self.devices[c] = dev
-                    # the plan can upgrade it (the AI upgrades whatever device stands on the planned strut)
-                    self.placed.append((dev, self.nodes[ia][1], self.nodes[ib][1], 0.5, c))
         # mortar_slots and the split sandbag cell are taken before any cell is reserved
         for c in self.mortar_slots_cells():
             if c is not None:
@@ -1526,7 +1525,7 @@ class Plan:
                 k = rows.index(round(lo)) if round(lo) in rows else -1
                 mats = [band.get(round(lo))] + ([band[rows[k - 1]]] if k > 0 else [])
                 return "backbracing" if "backbracing" in mats else mats[0]
-            top = max(y for y in rows if y <= lo + 1)
+            top = max([y for y in rows if y <= lo + 3] or rows[:1])     # starting-fort nodes sit a few units off
             return band[top]
         seen, out = set(), []
         for line in self.actions:
@@ -1705,7 +1704,9 @@ class Plan:
                 if dev in DIRECT_WEAPONS or dev in ("reserved", "lane") or self.in_turbine_row(c):
                     return "backbracing"
                 return ws.get("material", "bracing")
-        return "backbracing"
+        # no grid cell behind this band (e.g. the starting fort's prow, a keep-out zone): "outside" (default
+        # background bracing)
+        return ws.get("outside", "backbracing")
 
     def ws_node(self, key, p, src_key, mat):
         """Woodspam node: created from src_key (already built) unless it exists."""
