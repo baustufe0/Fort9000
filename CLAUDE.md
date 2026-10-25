@@ -65,7 +65,7 @@ Do not change these without updating `train.py` and the tests:
 
 `[CAI] T<team> PROBE START|NODE|LINK|TRY|LOAD|WAIT|END ...` are parsed by `tools/fortgen/probe.py` (and make `train.py` skip the match).
 
-Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `BUILD_ERROR`, `SHAPE`, `STRESS`, `FIRE`, `FIREWAIT`, `FIRETRY`, `TEMPO`, ...) are used by the
+Other `[CAI]` messages (`THINK`, `GAVE_UP`, `SKIPPED`, `MODULES`, `MODULE`, `MODULE_WAIT`, `BUILD_ERROR`, `SHAPE`, `STRESS`, `FIRE`, `FIREWAIT`, `FIRETRY`, `TEMPO`, ...) are used by the
 tests in `tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 ## Workflow

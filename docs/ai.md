@@ -31,7 +31,7 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 - **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run. "Insufficient resources" only counts as waiting while metal is still rising; if metal stays flat above `BuildSkipMinMetal` for `StarvedFlatTicks` think ticks (e.g. at the storage cap, when an action costs more than can be stored), the clocks run again.
 - **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
 
-## Reactive build modules (design, not implemented)
+## Reactive build modules (mod side implemented; generator support and rebuild cap not yet)
 
 A plan is a fixed fort, and a player who sees it picks its gap: Vanilla-5 lost to a sniped laser, to laser plus
 firebeam, to rockets and to mortars (`docs/history/vanilla-3-5.md`). Modules let the AI answer the weapons the enemy
@@ -53,31 +53,36 @@ its trigger.
 - Index-keyed state: `data.Rebuild[index]`, `data.Frustration[index]` (keys), `data.Devices[deviceId] = index`
   (values), and the mod's `st.rebuildSince[index]`, `st.buildIndex`.
 
-**Design:**
-1. **Plan file.** After the `Fort` table the generator writes `FortModules = { <name> = { Trigger = {...}, Requires =
-   <plan action>, Actions = { ... } }, ... }`. The `Fort` table and its header are unchanged, so the line-sensitive
-   part stays as it is. `CAI_LoadPlanFile` also reads `FortModules`.
-2. **Load.** On the swap (`CAI_TrySwapPlan`) the module actions are appended to `Fort`, each tagged
-   `CAI_Module = <name>`, and shifted like the plan's own actions. The game's transform then renumbers and moves them
-   with the rest. In `CAI_Init` (after the base `Load`) the tagged actions are cut out of `Fort` into
-   `data.CAI.modules[name]`, so the built-in AI never reaches them on its own, and `CAI_PlanPos` is rebuilt so SHAPE
-   diagnostics know the module nodes.
+**How it works:**
+1. **Plan file.** After the `Fort` table a plan may define `FortModules = { { Name = "counterbattery", Trigger =
+   { Types = { "mortar", "mortar2" }, Count = 2 }, Requires = <plan action>, Actions = { ... } }, ... }` (a list, so the
+   order is deterministic; `Count` defaults to 1). The `Fort` table and its header are unchanged, so the
+   line-sensitive part stays as it is. `CAI_LoadPlanFile` also reads `FortModules`.
+2. **Load.** On the swap (`CAI_TrySwapPlan`) every plan action is tagged with its number (`CAI_K`), and the module
+   actions are appended to `Fort`, tagged `CAI_Module = <list index>` and shifted like the plan's own actions. The
+   game's transform then renumbers and moves them with the rest. Right after the base `Load`
+   (`CAI_ExtractModules`) the tagged actions are cut out of `Fort` into `data.CAIModules`, so the built-in AI never
+   reaches them on its own, and `CAI_PlanPos` is rebuilt on next use so SHAPE diagnostics know the module nodes. Log:
+   `MODULES <name>:<actions>,...`. The `PLAN ... actions=` count leaves the modules out.
 3. **Scouting.** Each think step counts the enemy's devices by type (`GetDeviceCountSide(enemyTeamId)`,
    `GetDeviceIdSide`, `GetDeviceType`; already used for targeting). This is game state, so it is deterministic and
    replay-safe.
-4. **Trigger.** A module fires once per match when the enemy has at least `count` devices of its `types`
-   (e.g. `{ types = { "mortar", "mortar2" }, count = 2 }`). If the plan has not yet passed `Requires` (the last plan
-   action whose nodes the module uses), it waits. Several triggered modules go in the order listed in the plan.
+4. **Trigger.** A module fires once per match when the enemy has at least `Count` devices of its `Types` together
+   (counted every think step, `CAI_UpdateModules`, not during a probe). If the AI has not yet passed plan action
+   `Requires` (the last plan action whose nodes the module uses; progress = the `CAI_K` of the last plan action
+   before `data.fortIndex`), it waits. Several modules ready in the same step go in the order listed in the plan.
 5. **Insertion.** The module's `n` actions are inserted at `data.fortIndex` (copies, so a rebuild works on them like
    any plan action). All index-keyed state at or after that index moves up by `n`: keys of `data.Rebuild`,
    `data.Frustration` and `st.rebuildSince`, values of `data.Devices`; `st.buildIndex` is reset so the skip valve
-   starts a new clock. Log: `[CAI] T<team> MODULE <name> trigger=<type:n,...> at=<index> actions=<n>`, and
-   `MODULE_WAIT <name> requires=<k>` while waiting.
-6. **Rebuild cap.** A device destroyed and rebuilt more than `Strategy.RebuildCap[type]` times at one plan action is
+   starts a new clock. Log: `[CAI] T<team> MODULE <name> trigger=<type:n,...> at=<index> actions=<n>`, and once
+   when it starts waiting `MODULE_WAIT <name> trigger=<type:n,...> requires=<k> now=<plan action>`.
+   The built-in AI keeps no other state by action index (`data.Rebuild` and `data.Frustration` are the only tables
+   indexed that way in `data/ai/ai.lua`).
+6. **Rebuild cap (not yet implemented).** A device destroyed and rebuilt more than `Strategy.RebuildCap[type]` times at one plan action is
    not rebuilt again (`REBUILD_CAP` in the log): the Vanilla-5 machine gun rebuilt ten times in one match fed the loss
    and starved the plan of metal.
 
-**Generator** (`gen_fort.py`): a variant lists `modules` with the same step syntax as its plan, a trigger and,
+**Generator** (`gen_fort.py`, not yet implemented): a variant lists `modules` with the same step syntax as its plan, a trigger and,
 optionally, a preferred place. They are generated after the plan, on its final geometry, with node ids above the
 plan's, and `rules.py` checks the plan with each module added (fire lanes, overlap, support). `Requires` is the
 highest plan action index the module's actions reference; the generator prefers anchors in the starting fort or the
@@ -95,9 +100,11 @@ early plan so a module can come early.
 and kept consistent with what is already built); building counters by searching free places at runtime (no rule
 checks in the game, and the fort-building rules are what most failures came from).
 
-**Open questions, to test in a sandbox before the first module:** what `CREATE_LINK` returns for a link that already
-exists (module and plan sharing a strut); whether the base AI keeps other index-keyed state (grep for
-`data.<table>[index]` in `data/ai/ai.lua` before implementing); what a module costs against a starved economy.
+**Open questions, to test in a sandbox with the first generated module:** what `CREATE_LINK` returns for a link
+that already exists (module and plan sharing a strut); what a module costs against a starved economy; whether a
+restart (key frame restore) keeps `Fort` and `data.CAIModules` consistent.
+
+Test: `tools/tests/t_modules.lua` (hand-written module on Vanilla-2, team 102, mirrored).
 
 ## Custom build plan variants per map
 

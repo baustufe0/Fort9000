@@ -31,6 +31,14 @@ for o in before after; do
   check "Plan swap VanillaLong $o team 1"        "first action = -3996.1, -447.5" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
   check "Plan swap VanillaLong $o team 102"      "first action = 3996.1, -447.5"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
 done
+check "Modules load and are cut out after Load" "^after load: actions=246 expected=246 tagged=0$" "$LUA" t_modules.lua
+check "Modules are moved by the transform"     "^module mirrored: 3000.0, 400.0$" "$LUA" t_modules.lua
+check "Module waits for its Requires"          "MODULE_WAIT counterbattery trigger=mortar:1,mortar2:1 requires=50 now=9$" "$LUA" t_modules.lua
+check "Module wait is logged once"             "^1$" bash -c "\"$LUA\" t_modules.lua | grep -c MODULE_WAIT"
+check "Module is inserted at the build index"  "MODULE counterbattery trigger=mortar:1,mortar2:1 at=65 actions=3$" "$LUA" t_modules.lua
+check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
+check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
+check "Each module fires once"                 "^anti-air at 3: machinegun, total=250$" "$LUA" t_modules.lua
 check "Fire control"                             "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua

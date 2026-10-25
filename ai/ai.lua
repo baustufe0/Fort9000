@@ -83,7 +83,7 @@ end
 -- Direct access to the plan variables (rawget/rawset do not exist in Forts)
 local function CAI_GetPlanGlobals()
 	return { Fort = Fort, FortTeam = FortTeam, FortId = FortId, FortPos = FortPos,
-		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines }
+		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines, FortModules = FortModules }
 end
 
 local function CAI_SetPlanGlobals(t)
@@ -93,6 +93,7 @@ local function CAI_SetPlanGlobals(t)
 	FortPos = t.FortPos
 	FortTableStartLine = t.FortTableStartLine
 	FortTableCommentLines = t.FortTableCommentLines
+	FortModules = t.FortModules
 end
 
 local function CAI_LoadPlanFile(path)
@@ -262,16 +263,29 @@ function CAI_TrySwapPlan(where)
 	local function Shift(p)
 		if p then p.x = p.x + dx; p.y = p.y + dy end
 	end
-	for _, a in ipairs(ours.Fort) do
+	for k, a in ipairs(ours.Fort) do
 		Shift(a.PosA); Shift(a.PosB); Shift(a.NewNodePos); Shift(a.GroundPosition)
+		a.CAI_K = k   -- plan action number, for the modules' Requires
 	end
+	-- reactive build modules: appended so the game's transform renumbers and moves them with the plan,
+	-- cut out again after Load (CAI_ExtractModules)
+	local nMod = 0
+	for i, m in ipairs(type(ours.FortModules) == "table" and ours.FortModules or {}) do
+		for _, a in ipairs(m.Actions or {}) do
+			Shift(a.PosA); Shift(a.PosB); Shift(a.NewNodePos); Shift(a.GroundPosition)
+			a.CAI_Module = i
+			table.insert(ours.Fort, a)
+			nMod = nMod + 1
+		end
+	end
+	CAI_Plan.modules = ours.FortModules
 	CAI_SetPlanGlobals({
 		Fort = ours.Fort,
 		FortTeam = ours.FortTeam or FortTeam,
 		FortId = ours.FortId or FortId,
 		FortPos = { x = E.x, y = E.y },
 	})
-	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " actions=" .. #ours.Fort .. " instead=" .. tostring(engineFile)
+	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " actions=" .. (#ours.Fort - nMod) .. " instead=" .. tostring(engineFile)
 		.. " choice=" .. why .. " detected=" .. how .. " at=" .. where .. " shift=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5))
 end
 
@@ -1343,6 +1357,121 @@ end
 --------------------------------------------------------------------------------
 -- Think loop
 
+--------------------------------------------------------------------------------
+-- Reactive build modules (docs/ai.md): pre-generated snippets in the plan file (FortModules), put in front
+-- of the rest of the plan when the enemy builds the devices of their trigger.
+
+-- After the base Load: cut the module actions (appended on the swap, renumbered and moved by the game's
+-- transform) out of Fort, so the built-in AI never reaches them on its own.
+function CAI_ExtractModules()
+	local defs = CAI_Plan.modules
+	CAI_Plan.modules = nil
+	if type(defs) ~= "table" or #defs == 0 or type(Fort) ~= "table" then return end
+	local mods = { list = {} }
+	for i, m in ipairs(defs) do
+		mods.list[i] = { name = tostring(m.Name or i), trigger = m.Trigger or {}, requires = m.Requires or 0, actions = {} }
+	end
+	local kept = {}
+	for _, a in ipairs(Fort) do
+		local i = a.CAI_Module
+		if i and mods.list[i] then
+			table.insert(mods.list[i].actions, a)
+		else
+			table.insert(kept, a)
+		end
+	end
+	for k = #Fort, 1, -1 do Fort[k] = nil end
+	for k, a in ipairs(kept) do Fort[k] = a end
+	data.CAIModules = mods
+	CAI_PlanPos = nil   -- rebuilt with the module nodes on next use (SHAPE diagnostics)
+	local parts = {}
+	for _, m in ipairs(mods.list) do parts[#parts + 1] = m.name .. ":" .. #m.actions end
+	CAI_Log("MODULES " .. table.concat(parts, ","))
+end
+
+-- enemy devices by type (game state, deterministic)
+local function CAI_EnemyDevices()
+	local count = {}
+	for i = 0, GetDeviceCountSide(enemyTeamId) - 1 do
+		local t = GetDeviceType(GetDeviceIdSide(enemyTeamId, i))
+		if t then count[t] = (count[t] or 0) + 1 end
+	end
+	return count
+end
+
+-- the plan action number the AI has got to: the last plan action before data.fortIndex
+local function CAI_PlanProgress()
+	for k = math.min(data.fortIndex - 1, #Fort), 1, -1 do
+		if Fort[k].CAI_K then return Fort[k].CAI_K end
+	end
+	return 0
+end
+
+-- insert n actions at index fi and move everything the built-in AI and the mod keep by action index
+local function CAI_InsertActions(fi, actions)
+	local n = #actions
+	for j = n, 1, -1 do table.insert(Fort, fi, actions[j]) end
+	local function ShiftKeys(t)
+		if type(t) ~= "table" then return end
+		local moved = {}
+		for k, v in pairs(t) do
+			if type(k) == "number" and k >= fi then moved[k] = v end
+		end
+		for k in pairs(moved) do t[k] = nil end
+		for k, v in pairs(moved) do t[k + n] = v end
+	end
+	ShiftKeys(data.Rebuild)
+	ShiftKeys(data.Frustration)
+	if data.CAI then
+		ShiftKeys(data.CAI.rebuildSince)
+		data.CAI.buildIndex = nil   -- the skip valve starts a new clock
+	end
+	if type(data.Devices) == "table" then
+		for id, k in pairs(data.Devices) do
+			if type(k) == "number" and k >= fi then data.Devices[id] = k + n end
+		end
+	end
+end
+
+-- one think step: fire the modules whose trigger the enemy has reached, once per match each
+function CAI_UpdateModules()
+	local mods = data.CAIModules
+	if mods == nil or type(data.fortIndex) ~= "number" or Fort == nil then return end
+	local seen, progress
+	local ready = {}
+	for _, m in ipairs(mods.list) do
+		if not m.fired then
+			seen = seen or CAI_EnemyDevices()
+			local hits, total = {}, 0
+			for _, t in ipairs(m.trigger.Types or {}) do
+				if seen[t] then
+					hits[#hits + 1] = t .. ":" .. seen[t]
+					total = total + seen[t]
+				end
+			end
+			if #hits > 0 and total >= (m.trigger.Count or 1) then
+				progress = progress or CAI_PlanProgress()
+				if progress >= m.requires then
+					m.fired = true
+					m.why = table.concat(hits, ",")
+					ready[#ready + 1] = m
+				elseif not m.waiting then
+					m.waiting = true
+					CAI_Log("MODULE_WAIT " .. m.name .. " trigger=" .. table.concat(hits, ",") .. " requires=" .. m.requires .. " now=" .. progress)
+				end
+			end
+		end
+	end
+	if #ready == 0 then return end
+	local fi = data.fortIndex
+	local all = {}
+	for _, m in ipairs(ready) do
+		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions)
+		for _, a in ipairs(m.actions) do all[#all + 1] = a end
+	end
+	CAI_InsertActions(fi, all)
+end
+
 function CAI_Think()
 	if data.gameEnded or data.CAI == nil then
 		return
@@ -1432,6 +1561,11 @@ function CAI_Think()
 	st.fireAttempts = 0
 	CAI_Log(table.concat(parts, " "))
 
+	if CAI_Probe == nil then
+		local okM, errM = pcall(CAI_UpdateModules)
+		if not okM then CAI_Log("ERROR modules: " .. tostring(errM)) end
+	end
+
 	-- shape snapshot once per game minute (see CAI_LogShape)
 	if elapsed >= (st.nextShape or 60) then
 		st.nextShape = elapsed + 60
@@ -1462,6 +1596,8 @@ function Load(gameStart)
 	local okSwap, errSwap = pcall(CAI_TrySwapPlan, "Load")
 	if not okSwap then Log("[CAI] PLAN-ERROR " .. tostring(errSwap)) end
 	CAI_BaseLoad(gameStart)
+	local okX, errX = pcall(CAI_ExtractModules)
+	if not okX then Log("[CAI] ERROR modules: " .. tostring(errX)) end
 	-- Assist AI on the side of a human player (e.g. anti-air assistant): do not touch
 	if data.HumanAssist then
 		Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT 9000 AI inactive (assist AI of a player)")
