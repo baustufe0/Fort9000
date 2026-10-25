@@ -59,6 +59,17 @@ UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar",
 TALL = {"rocketemp", "rocket", "flak", "shotgun", "smokebomb"}
 TALL_MIN_H = 125
 
+def _segment_hits_box(p, q, box):
+    """True if the segment p-q passes through the box (x0, x1, y_top, y_bottom), sampled every ~2 units."""
+    x0, x1, yt, yb = box
+    n = max(2, int(math.dist(p, q) / 2))
+    for k in range(n + 1):
+        x, y = p[0] + (q[0] - p[0]) * k / n, p[1] + (q[1] - p[1]) * k / n
+        if x0 < x < x1 and yt < y < yb:
+            return True
+    return False
+
+
 # ----------------------------------------------------------------------------- Map configuration
 
 MAPS = {
@@ -489,7 +500,9 @@ VANILLA_VARIANTS = {
         # workshop's strut) and the AI gave up on it
         # the machine gun stays out of the sniper's cell (front column, floor -145): the sniper was built there,
         # while one on the top front cell (floor -270) was refused once the tower stood below it
-        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True,
+        # the sniper at LinkT 0.28 (was 0.5): the brace of its split door (from the door's top node back to the cell's
+        # top corner) then clears its box; its muzzle is still ~12 behind the door
+        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True, sniper_t=0.28,
                     weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})]),
         "plan": [
             # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
@@ -1683,21 +1696,41 @@ class Plan:
                 else:
                     lines.append('{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
                                  % (p_, self._fmt(pos[p_]), q, self._fmt(pos[q]), m_))
-            edits[k0] = lines
-            for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
-                m = node_re.search(line)
-                if k != k0 and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
-                    edits[k] = None
-            # braces from each new node to the cell's back corners (the nearest nodes behind at the post's ends)
+            # braces from each new node to the cell's back corners (the nearest nodes behind at the post's ends), but
+            # none through the box of a device standing in that cell: a brace through the sniper's spot made the game
+            # refuse it (CS_OCCUPIED, then CS_UNSTABLE; Vanilla-3 test match 25.10.2026). A new node without any
+            # brace would be a hinge in a post that carries the storeys above: then the door is not split
+            boxes = []
+            for dv, da, db_, dtt, dc in self.placed:
+                y0 = (da[1] + db_[1]) / 2
+                dx = da[0] + (db_[0] - da[0]) * dtt
+                if dv in rules.BOX_TOP and (abs(y0 - y_floor) < 8 or abs(y0 - y_top) < 8) and x - 220 < dx < x:
+                    half = rules.SIZE.get(dv, (40, 40))[0] / 2
+                    boxes.append((dx - half, dx + half, y0 - rules.BOX_TOP[dv], y0))
+            braces = []
             for mid in ids[1:-1]:
+                n_before = len(braces)
                 for y_end in (y_top, y_floor):
                     back = [n for n, q in pos.items() if abs(q[1] - y_end) < 8 and x - 220 < q[0] < x - 60]
                     if not back:
                         continue
                     corner = max(back, key=lambda n: pos[n][0])
-                    after = max(k0, made.get(corner, -1))
-                    appended.append((after, '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "backbracing" },'
-                                     % (mid, self._fmt(pos[mid]), corner, self._fmt(pos[corner]))))
+                    if any(_segment_hits_box(pos[mid], pos[corner], bx) for bx in boxes):
+                        continue
+                    braces.append((max(k0, made.get(corner, -1)), '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "backbracing" },'
+                                   % (mid, self._fmt(pos[mid]), corner, self._fmt(pos[corner]))))
+                if len(braces) == n_before:
+                    braces = None
+                    break
+            if braces is None:
+                self.problems.append("door of %s at x %.0f: not split (no brace clear of the devices)" % (d, x))
+                continue
+            appended.extend(braces)
+            edits[k0] = lines
+            for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
+                m = node_re.search(line)
+                if k != k0 and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
+                    edits[k] = None
             self.problems.append("door of %s at x %.0f: y %.1f..%.1f (%.1f of %.1f)" % (d, x, dt, db, db - dt, y_floor - y_top))
         out = []
         for k, line in enumerate(self.actions):
@@ -1915,7 +1948,9 @@ class Plan:
             self.link((i + 1, j), (i + 1, j + 1), self.edge_material(c, "right"))
         if dev in LOBBED_WEAPONS and self.is_top(c):
             self.link((i, j), (i + 1, j), "door")
-        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else self.weapon_t_at.get(c, 0.5))
+        # sniper_t: LinkT of snipers (e.g. further back, so a split door's brace clears its box)
+        t = self.weapon_t_at.get(c, self.cfg.get("sniper_t", 0.5) if dev in ("sniper", "sniper2") else 0.5)
+        self.place_on_floor(c, dev, self.large_t(c) if dev in LARGE else t)
         if dev in LARGE and self.cfg.get("crossbrace_large"):
             self.brace_below(c)
 
