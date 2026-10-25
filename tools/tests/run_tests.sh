@@ -55,6 +55,8 @@ check "Safety valve gives up when metal is there" "GAVE_UP action 59"           
 check "Construction is skipped when stuck"       "SKIPPED action 386"            "$LUA" t_skip.lua
 check "Tempo + reset for assist AI"              "after assist AI:.3.11.13.10"   "$LUA" t_tempo.lua
 check "Build error log"                          "BUILD_ERROR link armour"       "$LUA" t_builderrors.lua
+check "Sale tries the strut the other way round" "sold 0 tried 55-58,58-55$"     "$LUA" t_destroy.lua
+check "Failed sale is logged"                    "BUILD_ERROR destroy  1-2 DD_NOTFOUND action=3$" "$LUA" t_destroy.lua
 check "Shape snapshot on CS_UNSTABLE"            "SHAPE t=0 why=unstable:cannon mirrored=0 part=1/2 1:0,0 2:0,-4$" "$LUA" t_shape.lua
 check "Shape snapshot mirrored back"             "why=minute mirrored=1 part=2/2 10000:-30,12$" "$LUA" t_shape.lua
 check "Shape snapshots once per place, capped"   "^shapes=2$"                    "$LUA" t_shape.lua

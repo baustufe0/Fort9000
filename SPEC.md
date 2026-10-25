@@ -52,7 +52,7 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 - Per-map strategy overrides (`Maps[<Map>].Strategy`), e.g. a slower start on wide maps.
 
 ### 2.8 Debugging
-Build functions (`CreateLink`, `CreateNode`, `CreateDeviceWithFlags`, `CreateGroundDevice`, `UpgradeDevice`) are hooked; failed attempts are written to the log with the error code as `BUILD_ERROR` (once per case, max. 200).
+Build functions (`CreateLink`, `CreateNode`, `CreateDeviceWithFlags`, `CreateGroundDevice`, `UpgradeDevice`, `DestroyDevice`) are hooked; a sale (`DestroyDevice`) that finds nothing on the strut is tried with the nodes the other way round (a device is found only in the node order it was built with, `GetDeviceIdOnPlatform`; the built-in `DestroyAttachedDevices` does the same), and a failed sale is logged as `BUILD_ERROR destroy` with its `DD_*` code; failed attempts are written to the log with the error code as `BUILD_ERROR` (once per case, max. 200).
 A device that fails with `CS_UNSTABLE` additionally writes `UNSTABLE <device> <nodeA>-<nodeB> N<id> sag=<distance from planned position> v=<speed> ... links=<n> strain=<min>..<max> stretched=<link> compressed=<link> action=<k>` (up to 3 samples per device and place): strain is current/planned length of all links at the two nodes (bracing breaks below 0.90 or above 1.10, background bracing below 0.92 or above 1.08); `<link>` = `N<id>(x,y)-N<id>(x,y) <planned material>` for the most stretched / most compressed link (current world positions; `start-fort` if the plan does not build it). Background bracing cannot carry devices (`SupportsDevices = false`).
 Shape snapshots: `SHAPE t=<s> why=<minute|unstable:<device>> mirrored=<0|1> part=<k>/<n> <plan node id>:<dx>,<dy> ...` lists how far every plan node (starting fort and new) has moved from its planned position, on the first `CS_UNSTABLE` of a device and place and once per game minute (at most `CAI_SHAPE_MAX` = 40 snapshots, 25 nodes per line). dx/dy are in the plan's own frame (x mirrored back when the game mirrored the plan; `MirrorFort` sets `CAI_FortMirrored`), so they can be laid over the plan file: `python tools/fortgen/shape.py [log] [--team 102] [--match -1] [--png out.png]` prints per snapshot the average forward/down movement of each storey row and the nodes that moved most, and draws the offsets as arrows.
 Real stress: on the same first `CS_UNSTABLE` of a device and place (at most `CAI_STRESS_MAX` = 20 times) the mod also enumerates the fort's struts with the engine's own stress (`EnumerateLinks`, callback `CAI_EnumStress`) and writes `STRESS <device> <a>-<b> links=<n> at=<link> ... top=<link> ...`: `at` = every strut at the device's two nodes, `top` = the `CAI_STRESS_TOP` = 8 most stressed struts of the fort (by |stress|); `<link>` = `<node>-<node>:<material>:<stress>` with `P<plan node id>` for plan nodes, else `N<actual id>`. The strain in the `UNSTABLE` line only compares with plan lengths, which is meaningless for struts built between nodes that had already moved; `shape.py` prints the `STRESS` lines with plan positions.
@@ -195,8 +195,9 @@ as half-extents around a centre `SelectionOffset` = (0, -SelectionHeight - 0.5):
   `RecessionBox` (200 x 25) starts 200 ahead, so a door closer than that must be planned. Vanilla-2 (first try):
   the sniper's door post is split (`split_edges` with `materials`): door from the strut up to y 142.5 (61.5 long,
   ~1.2 s), armour above it (37.5); the sniper moved forward on its strut (LinkT 0.7, `weapon_cells` takes a LinkT) so
-  its muzzle is ~44 instead of ~74 behind the door. Not yet tested whether the game's clearance still lets it fire
-  (the armour reaches ~8 into the corridor).
+  its muzzle is ~44 instead of ~74 behind the door. Test match 25.10.2026: the sniper was placed at its new
+  position without errors and fired 124 shots, no clearance failures (`FIREWAIT`/`FIRETRY`): the armour above the
+  door did not get in the way. Next: split the weapon doors of the other plans the same way.
 - The built-in AI only fires at a target whose ray from the weapon reaches an enemy device or structure
   (`FindTarget` -> `TargetObstructed`, flag `RAY_ALLIED_BG_BLOCKS`); otherwise `TryFireGun` declines without an
   error (`FIRETRY ... fired=0`, 2.4). A door that is still a wood post blocks: in two rush tests the finished 20mm
@@ -447,8 +448,10 @@ weapon_pack's ToGA1 puts some far out on the right instead (open on both sides).
     gallery's lower sandbags, now 90 instead of 70 from the first mortar, and the late block (miniguns on the gallery
     roof, the AP sniper, woodspam below the deck and its load on the prow) and selling the starting machine gun
     (no anti-air from the start until the first roof machine gun, ~141 struts) are not yet tested. The small sniper
-    door (61.5 instead of 99, sniper at LinkT 0.7) is not yet tested; once it works, split the weapon doors of the
-    other plans the same way.
+    door worked in the ninth test (124 shots); the other plans' doors are not split yet. In that test the sale of the
+    starting machine gun failed until the AI gave up (`GAVE_UP ... type=6` after 120 s, the machine gun stayed): most
+    likely the node order (now tried both ways); the sniper (17 s) and mortars (75 s) came ~6-10 s later than without
+    the sale.
   - The `UNSTABLE` diagnostics (`sag`, `strain`) compare with wrong plan positions in team-2 matches with a
     shifted game plan (`shift=-3950,-3300`): all nodes appear 80-120 off.
   - With the storey-by-storey tower the first roof turbine comes at about 170 s; energy is the limit early on.

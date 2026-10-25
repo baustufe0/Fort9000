@@ -617,6 +617,15 @@ local function CAI_ResultName(r)
 	return tostring(r)
 end
 
+-- name of a DestroyDevice result (DD_*), for the log
+local function CAI_DestroyResultName(r)
+	for name, v in pairs({ DD_FIRING = DD_FIRING, DD_INVALIDPLATFORM = DD_INVALIDPLATFORM, DD_INVALIDSCRIPT = DD_INVALIDSCRIPT,
+			DD_MOVING = DD_MOVING, DD_NORECLAIM = DD_NORECLAIM, DD_NOTFOUND = DD_NOTFOUND, DD_NOTOWNED = DD_NOTOWNED }) do
+		if v == r then return name end
+	end
+	return tostring(r)
+end
+
 local function CAI_NoteBuildError(kind, what, a, b, r)
 	if data.CAI == nil or data.HumanAssist then return end
 	local key = kind .. ":" .. tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b) .. ":" .. tostring(r)
@@ -871,6 +880,25 @@ function CAI_InstallBuildLogging()
 			return r
 		end
 		table.insert(hooked, "UpgradeDevice")
+	end
+	if type(DestroyDevice) == "function" then
+		-- A device is found on a strut only in the node order it was built with (GetDeviceIdOnPlatform); a plan
+		-- may name the strut the other way round (selling a device of the starting fort, whose order the plan
+		-- does not know), so a sale that finds nothing is tried the other way round, as the built-in
+		-- DestroyAttachedDevices does. Test match 25.10.2026: the sale of the starting machine gun failed until
+		-- the AI gave up.
+		local CAI_BaseDestroyDevice = DestroyDevice
+		DestroyDevice = function(team, nodeA, nodeB, ...)
+			local r = CAI_BaseDestroyDevice(team, nodeA, nodeB, ...)
+			if r ~= nil and r == DD_NOTFOUND then
+				r = CAI_BaseDestroyDevice(team, nodeB, nodeA, ...)
+			end
+			if r ~= nil and r ~= DD_SUCCESS then
+				pcall(CAI_NoteBuildError, "destroy", "", nodeA, nodeB, CAI_DestroyResultName(r))
+			end
+			return r
+		end
+		table.insert(hooked, "DestroyDevice")
 	end
 	return (#hooked > 0) and table.concat(hooked, ",") or "no build functions found"
 end
