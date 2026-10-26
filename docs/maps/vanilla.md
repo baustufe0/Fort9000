@@ -172,10 +172,10 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   between the plan's recorded positions; the game allows 218). The player builds it early in every match (16-74 s,
   three logs); the starting fort has nothing across those storeys, and its lower front gave way in two lost matches.
   Only in Vanilla-5 for now, as a test.
-- Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (39, 47; left to
-  the final pass they came only at the end), the first turbine (96; energy, second test), smoke and its shield
-  (97-99), two mines, upgrade centre (107), rockets (108-109), the gallery's sandbags, flak (152), woodspam, machine
-  gun (194), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+- Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
+  the final pass they came only at the end), the first turbine (97; energy, second test), smoke and its shield
+  (98-100), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, flak (153), woodspam, machine
+  gun (195), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).
