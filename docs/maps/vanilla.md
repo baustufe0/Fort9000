@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | three times, all lost: 394 s (no armoury, no weapon), 486 s (energy starved), 373 s (the front stack fell to ~15 heavy mortar shots) |
+| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
 ## Starting fort
@@ -161,9 +161,10 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
     sandbags gone); its door is cut into that post (`door_posts`): y -6.5..75 (81.5 of 130), background bracing above it
     (`door_rest`; the hidden storey). The door costs the gallery turbines wind on the right side: two of three keep
     9-18 % of their rays there; the left side stays open.
-  - Flak on the nest roof (x -3100..-2945, y -55, `weapon_slots`), early (plan action 57), behind a shield on the roof
-    edge (x -2945, y -55..-120, braced to the prow roof with background bracing; plan step `struts`), built before the
-    flak: it stands in the flak's line of fire, so it is a door the flak opens. Third test: ~15 heavy mortar shells
+  - Flak on the nest roof (x -3100..-2945, y -55, `weapon_slots`), early (plan action 57), behind a full-height door
+    on the roof edge (x -2945, y -55..-185, 130 high; the flak stands ~118 tall), braced to the prow roof with background
+    bracing (plan step `struts`), built before the flak; the AI opens it to fire. The 65-high shield before (fourth
+    test) let the player snipe the flak above it. Third test: ~15 heavy mortar shells
     brought the front stack down; anti-air shoots the shells, an armour roof would not stop them. The flak fires at
     the player's fort only while the player has nothing it should shoot down (`Fire.AntiAirFirst`, [ai.md](../ai.md#fire-control)).
   - The smoke launcher on one more storey on the gallery's back corner (x -3500..-3400, y -155..-55, armour in front;

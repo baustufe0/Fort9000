@@ -196,3 +196,26 @@ at 373 s** (6.2 min) after only 30 shots (heavy mortar 18, machine gun 7, sniper
   rockets' cells, the prow lanes with their doors, the hidden nest); their nodes stood ~28 forward of the plan (x -2917
   instead of -2945, -2819 instead of -2845) and 10-12 lower. The reactor below was lost at 373 s. The rockets were
   lost at 335/344 s.
+
+## Vanilla-5 rockets, fourth test (26.10.2026): flak early, lost at 587 s, nothing destroyed
+
+The layout with the flak on the nest roof behind a 65-high shield, the smoke launcher on its own storey and the flak /
+smoke fire rules. Difficulty 1, against a player with a workshop (58 s), an upgrade centre (97 s), machine guns (89-303 s,
+later miniguns), a mortar (146 s, three more 259-269 s, heavy mortars 369-371 s), missiles (213/320 s), a sniper (279 s)
+and a buzzsaw (325 s): **the player won at 587 s** (9.8 min, the rocket plan's longest match). Log archived as
+`log_20261026-170302_e3ed91a30460.txt`.
+
+| | AI | player |
+|---|---|---|
+| Shots | 264: machine gun 140, flak 84 (12 + 72 shrapnel), smoke 24, rocket 16 | 313: machine gun 145, minigun 78, heavy mortar 46, missile 20, mortar 10, sniper 8, buzzsaw 6 |
+| Destroyed | nothing | flak 2x, smoke launcher, rockets 2x, machine guns 3, then the reactor |
+| Metal avg (below 150) | 344 (39 %) | 603 (6 %) |
+
+- Built: armoury 20 s, EMP rockets 80/84 s, flak 129 s, turbine 179 s, mines 208/224 s, upgrade centre 258 s, rockets
+  318/319 s, smoke 360 s (its storey after the gallery), machine gun 394 s.
+- `FLAK_HOLD on threats=mortar:1` when the player's first mortar came, later `on threats=missile:1`; `SMOKE_WAIT energy
+  rockets=2` once. The rockets fired 16 times and destroyed nothing.
+- The player sniped the flak above its 65-high shield (lost 382 s and 427 s). The deck and nest front fell from minute
+  7 (x -2900..-3000, y 0..200), the starting fort's lower front in minute 9; the reactor at 587 s.
+- Metal stayed short (39 % of the snapshots below 150).
+- Change: the flak's shield is a full-height door (130 high).

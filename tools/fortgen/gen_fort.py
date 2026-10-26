@@ -658,7 +658,9 @@ VANILLA_VARIANTS = {
             ("weapons", ["rocketemp", "rocketemp"]),
             # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
             ("build", [(-2945, 205), (-2945, 75)]),
-            ("struts", [((-2945, -55), (-2945, -120), "armour"), ((-2945, -120), (-2845, -55), "backbracing")]),
+            # the flak's shield: a full-height door (130, the flak stands ~118 tall) the AI opens to fire, like the
+            # machine guns' full doors; the 65-high shield before let the player snipe the flak above it (fourth test)
+            ("struts", [((-2945, -55), (-2945, -185), "door"), ((-2945, -185), (-2845, -55), "backbracing")]),
             ("aa", ["flak"]),
             ("eco", ["turbine"]),
             ("eco", ["mine", "mine"]),
