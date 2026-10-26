@@ -78,7 +78,7 @@ DEFAULTS = {
     "BuildSkipMinMetal": 300,
     "StarvedFlatTicks": 4,
     # a device lost more than Max[type] times in a row at one plan action is not rebuilt (ai.lua, RebuildCap)
-    "RebuildCap": {"Window": 180, "Max": {"machinegun": 3, "minigun": 3}},
+    "RebuildCap": {"Window": 180, "Max": {"machinegun": 3, "minigun": 3, "smokebomb": 3}},
     "Fire": {"Enabled": True, "Interval": 1.0, "WeaponsPerTick": 3, "AlwaysOffensive": True, "RebuildFireFactor": 2.5,
              "NoOffence": {"machinegun": True},
              # smoke before rockets (ai.lua, Fire.SmokeCover)

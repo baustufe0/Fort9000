@@ -37,8 +37,8 @@ local CAI_Defaults =
 	BuildSkipSeconds = 90, BuildSkipMinMetal = 300, StarvedFlatTicks = 4,
 	-- RebuildCap: a device of these types lost more than Max[type] times in a row at one plan action (each loss
 	-- within Window seconds of the one before) is not rebuilt again (Vanilla-5, 25.10.2026: one machine gun
-	-- rebuilt ten times under mortar fire)
-	RebuildCap = { Window = 180, Max = { machinegun = 3, minigun = 3 } },
+	-- rebuilt ten times under mortar fire; Vanilla-5, 26.10.2026: a smoke launcher on an open roof five times)
+	RebuildCap = { Window = 180, Max = { machinegun = 3, minigun = 3, smokebomb = 3 } },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
 	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one

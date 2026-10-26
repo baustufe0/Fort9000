@@ -632,14 +632,19 @@ VANILLA_VARIANTS = {
             "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "smokebomb")],
             "roof_weapon_cells": [(-3300, -55), (-3200, -55)]},
         "plan": [
-            # the armoury, a mine while it builds, then the EMP rockets (deck, nest) and the smoke
+            # the armoury, a mine while it builds, the EMP rockets (deck, nest), then energy at once: the rockets and the
+            # smoke cost energy per shot, and with the first turbine at 293 s energy stayed below 900 from 90 to 330 s
+            # while metal sat at its cap (second test, 26.10.2026); then the smoke launcher with an armour shield on the
+            # roof edge in front of it (it was destroyed every ~50 s on the open roof), braced to the prow roof
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
-            ("weapons", ["rocketemp", "rocketemp", "smokebomb"]),
-            # metal and energy (rockets and smoke cost energy per shot), then the upgrade centre: the EMP rockets fire
-            # while it builds and become rockets as soon as it stands
-            ("eco", ["mine", "mine"]),
+            ("weapons", ["rocketemp", "rocketemp"]),
+            # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
+            ("build", [(-2945, 205), (-2945, 75)]),
             ("eco", ["turbine"]),
+            ("weapons", ["smokebomb"]),
+            ("struts", [((-2945, -55), (-2945, -120), "armour"), ((-2945, -120), (-2845, -55), "backbracing")]),
+            ("eco", ["mine", "mine"]),
             ("tech", ["upgrade"]),
             ("upgrades", ["rocket", "rocket"]),
             # the gallery with its sandbags, anti-air on its roof behind the rockets (flak first, then the machine gun;
@@ -2105,6 +2110,22 @@ class Plan:
         self.actions = out
 
     def add(self, step, dev):
+        if step == "struts":
+            # ("struts", [(point A, point B, material), ...]): one extra strut each (e.g. a shield in front of a roof
+            # weapon); A must stand, B is created from A if no node is there yet
+            pa, pb, mat = dev
+            ka = self.node_at(pa, tol=5)
+            if ka is None or self.nodes[ka][0] not in self.built_nodes:
+                self.problems.append("strut from (%d,%d): node not built" % tuple(pa))
+                return
+            kb = self.node_at(pb, tol=5)
+            if kb is None:
+                self.ws_node(("strut",) + tuple(pb), tuple(pb), ka, mat)
+            elif self.nodes[kb][0] not in self.built_nodes:
+                self.problems.append("strut to (%d,%d): node not built" % tuple(pb))
+            else:
+                self.link(ka, kb, mat)
+            return
         if step == "build":
             # ("build", [(left x, floor y[, device]), ...]): a cell and the cells on its way, no device yet (a slot a
             # module fills); with a device the cell is built for it (its door, background diagonals) and the

@@ -152,3 +152,29 @@ armoury on the starting fort's workshop slot. Difficulty 1, against a player wit
   the prow woodspam; at 394 s the fort fell with the reactor. No strut had fallen before.
 - Changes: the armoury on the munitions slot in the back block; two 130-high storeys over the starting fort instead
   of three (rocket 1 on the starting fort's roof beam, rocket 2 in the nest, smoke on the nest roof).
+
+## Vanilla-5 rockets, second test (26.10.2026): rockets fired, energy starved, lost at 486 s
+
+The two-storey layout (rocket 1 on the starting fort's roof beam, rocket 2 in the nest, smoke on the nest roof, armoury
+on the munitions slot). Difficulty 1, against a player with machine guns (97-202 s), a repair station (180 s), a sniper
+(227 s), a missile (278 s), three mortars (299-301 s), an upgrade centre (341 s) and heavy mortars (414-416 s): **the
+player won at 486 s** (8.1 min). Log archived as `log_20261026-123716_b43a1618425c.txt`.
+
+| | AI | player |
+|---|---|---|
+| Shots | 76: smoke 43, EMP rocket 17, machine gun 16 | 359: machine gun 287, missile 28, mortar 36, sniper 8 |
+| Destroyed | 1 machine gun | smoke launcher 5x, EMP rocket 2, machine gun 3, then the reactor |
+| Metal avg (below 150) | 516 (18 %) | 523 (15 %) |
+| Energy avg | 1251 | 3789 |
+
+- The armoury stood at 20 s on the munitions slot, the EMP rockets at 80/84 s, the smoke launcher at 92 s. The rockets
+  fired 17 times; twice `SMOKE_TIMEOUT` (fired without smoke after 30 s).
+- Energy was the bottleneck: below 900 from 90 to 330 s (the first turbine only at 293 s), while metal sat at its cap
+  (900) from 150 s. The build stood at index 157 for 60 s (a mine site `CS_OCCUPIED`, skipped after 90 s) and around
+  200-209 from 245 to 425 s.
+- The smoke launcher on the open nest roof was destroyed at 255, 318, 371, 400 and 448 s and rebuilt each time; the
+  EMP rockets were lost at 374/382 s, after the player's mortars came up, and not rebuilt (`CS_OCCUPIED`,
+  `CS_INVALIDNODES`: their structure was damaged).
+- The rockets' lanes with their doors were only built in the plan's final pass, so the rockets stood without doors.
+- Changes: the lanes and doors right after the rockets, the first turbine next, the smoke launcher behind an armour
+  shield, `RebuildCap` for smoke launchers (3).
