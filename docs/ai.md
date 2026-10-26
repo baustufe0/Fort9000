@@ -93,7 +93,7 @@ right after its `Requires`.
 
 | Trigger (enemy builds) | Module | Lost to it |
 |---|---|---|
-| mortars | counter-battery mortars (Vanilla-5: `counterbattery`, on the tower top, from plan action 235) | Vanilla-5, 25.10.2026 |
+| mortars | counter-battery mortars (Vanilla-6: `artillery`; the laser Vanilla-5's tower-top `counterbattery` went with that plan) | Vanilla-5, 25.10.2026 |
 | rockets, EMP rockets | a second anti-air position (machine gun or flak) | Vanilla-5 |
 | snipers, lasers, firebeams | a door or armour in front of the exposed weapons, an own sniper | Vanilla-5 (twice) |
 

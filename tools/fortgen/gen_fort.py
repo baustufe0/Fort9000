@@ -587,80 +587,63 @@ VANILLA_VARIANTS = {
             ("upgrades", ["turbine2", "turbine2"]),
         ],
     },
-    "laser": {
-        "title": "Laser rush: workshop, factory and the laser before anything else, then turbines, anti-air and woodspam",
-        "shape": _union(_V_TALL_HIGH, _V_BACK),
-        # the layout of the 20mm rush (Vanilla-3, whose low 20mm was built and fired 126 shots): the laser on floor 105
-        # of the column right behind the starting fort (x -3200..-3100, a 125-high storey; the laser's box is 101),
-        # hanging on the starting fort's back posts (support_cheapest), firing through the front cell over the reactor
-        # (fire lane). Own beams pass the own background bracing (CollidesWithFriendlyBeams = false). The factory
-        # takes its proven slot below that column, the upgrade centre the munitions slot (no munitions here).
-        # Defence from the Vanilla-2 tests: the inner armour in front of the reactor stays (rebrace_after_mine off;
-        # sold, it fell first when rockets broke through), the hidden turbine cage with two stacked sandbags, and
-        # woodspam in front of the reactor (0: prow band y 205..310) and the starting fort's lower front (1: y 411..700,
-        # cut through by one laser beam at ~451 s in a lost match) early, the tower front (2) late
-        # the anti-air machine gun before the laser on the starting fort's prow roof strut (no new struts; on the lane's
-        # roof it pulled ~70 tower struts in front of the laser)
-        "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5)], support_cheapest=True, sniper_t=0.28,
-                    weapon_cells=[(-2945, 205, "machinegun")],
-                    rebrace_after_mine=[],
-                    weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})],
-                    woodspam=[{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
-                               "outside": "bracing"},
-                              {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
-                               "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}},
-                              _V_HIGH_CFG["woodspam"]]),
-        # the upgrade centre one strut behind the munitions slot: on it (x -3351) it overlapped the factory's box
-        # (x -3196; both 90 to each side) and was refused in the first test match (25.10.2026), and the AI then
-        # waited on the turbine upgrades with full storage
-        "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
-        # reactive build modules (docs/ai.md), generated on the plan as it stands after its first "after" steps.
-        # counterbattery: the player's mortars beat the plan (test match 25.10.2026: 63 mortar shots on the prow and
-        # the front woodspam, the AI had no answer). The tower blocks the mortar arc of every place behind or below
-        # it; only its top is open: two mortars on the hidden cage's roof once the plan has built it (the plan keeps
-        # those two roof struts solid). The prow roof would be open, but it stands in the laser's line of fire.
-        "modules": [
-            {"name": "counterbattery", "after": 10, "trigger": {"types": ("mortar", "mortar2"), "count": 2},
-             "variant": {"roof_weapons": ("mortar",)}, "cfg": {"roof_weapon_cells": [(-3400, -500), (-3200, -500)]},
-             "plan": [("weapons", ["mortar", "mortar"])]},
-        ],
+    # Vanilla-5, rockets (replaces the laser rush: a laser took ~5 minutes on Vanilla and lost four test matches, 25.10.2026):
+    # EMP rockets as early as possible, a smoke launcher beside them and anti-air behind them, later upgraded to
+    # rockets. The smoke goes up first, so the enemy's anti-air cannot see the rockets (ai.lua, Fire.SmokeCover);
+    # the EMP rockets fire already while the upgrade centre is built. Vanilla-2's low fort (the most tested layout,
+    # nothing above its roofs at y -25), without its sniper and mortars: the armoury on the starting fort's proven
+    # workshop slot (no workshop needed), so it costs no structure; the nest storey's roof is split in two halves
+    # (one device per strut) and carries the two EMP rockets (prow and front half) and the smoke launcher (rear half),
+    # 85-90 apart (devices need 80; 89 worked for sandbags, 77 failed for mortars); flak and the machine gun stand on the
+    # gallery roof behind them, where Vanilla-2's machine guns stood.
+    "rockets": {
+        "title": "Rocket rush: armoury at once, two EMP rockets and a smoke launcher on the front roof, flak behind, then rockets",
+        "shape": _V_RUSH_DECK,
+        "tech_slots": {"armoury": [((-3096, 503), (-2996, 504), 0.05)],
+                       "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+        "roof_weapons": {"flak", "machinegun"},
+        # Vanilla-2's config with these changes (merged below the table)
+        "cfg": {
+            "weapon_cells": [], "mortar_slots": [],
+            "split_edges": [{"a": (-3100, -25), "b": (-2945, -25), "mid": (-3022, -25),
+                             "braces": [((-3100, 105), "backbracing"), ((-2945, 105), "backbracing")]}],
+            "weapon_slots": [((-2945, -25), (-2845, -25), 0.5, "rocketemp"),
+                             ((-3022, -25), (-2945, -25), 0.5, "rocketemp"),
+                             ((-3100, -25), (-3022, -25), 0.3, "smokebomb")],
+            # one cell further back than Vanilla-2's machine guns: on x -3200..-3100 the flak overlapped the smoke launcher
+            "roof_weapon_cells": [(-3300, -25), (-3500, -25)]},
         "plan": [
-            # laser rush: the tech chain (workshop 60 s, factory 60 s, laser 120 s) sets the pace. The factory and the
-            # laser cost 6000 energy each, more than the starting cap (5000): a battery first (+2000); the laser costs
-            # 1000 metal, more than the metal cap (900): a store while the factory builds, and a mine (+4 metal/s)
-            # Before the laser: all three free mine sites and the anti-air machine gun. With only one mine before it the
-            # rush left the AI at ~186 metal (below 150 most of the time) and with the starting machine gun as its only
-            # anti-air until ~386 s; the player's (EMP) rockets destroyed the laser 3 s after it was finished (test
-            # match 25.10.2026). The laser comes later, but with metal and cover behind it.
-            ("tech", ["workshop"]),
-            ("eco", ["battery"]),
-            ("tech", ["factory"]),
-            ("eco", ["store", "mine", "mine", "mine"]),
-            ("aa", ["machinegun"]),
-            ("weapons", ["laser"]),
-            # while the laser builds (120 s): woodspam in front of the reactor and the lower front (both lost Vanilla-2
-            # matches ended there), then energy: one beam costs 5000 (reload 24 s), the starting economy gives ~100
-            # per second, so the cage turbines and their sandbags next
-            ("defence", ["woodspam:0", "woodspam:1"]),
-            ("eco", ["turbine"]),
+            # the armoury (no structure), a mine while it builds, then the front roof: EMP rocket, smoke, EMP rocket
+            ("tech", ["armoury"]),
+            ("eco", ["mine"]),
+            ("weapons", ["rocketemp", "smokebomb", "rocketemp"]),
             ("defence", ["sandbags", "sandbags"]),
-            ("eco", ["turbine", "battery"]),
-            ("weapons", ["sniper"]),
-            # upgraded turbines (two fit in the cage); the upgrade centre first, then what needs no tech while it builds
+            # metal and energy (rockets and smoke cost energy per shot), then the upgrade centre: the EMP rockets fire
+            # while it builds and become rockets as soon as it stands
+            ("eco", ["mine", "mine"]),
+            ("eco", ["turbine"]),
             ("tech", ["upgrade"]),
-            ("eco", ["battery", "store"]),
-            ("aa", ["machinegun"]),
-            ("upgrades", ["turbine2", "turbine2"]),
-            # late game: miniguns (no room for a third machine gun), the AP sniper, the tower's woodspam, more metal
-            ("upgrades", ["minigun", "minigun"]),
-            ("upgrades", ["sniper2"]),
+            ("upgrades", ["rocket", "rocket"]),
+            # the gallery with its sandbags, anti-air on its roof behind the rockets (flak first, then the machine gun;
+            # the gallery roof needs ~90 actions of support from the back block, so until then the starting fort's
+            # machine gun covers the sky), woodspam in front of the reactor and the lower front
+            ("defence", ["sandbags", "sandbags"]),
+            ("aa", ["flak"]),
             ("defence", ["woodspam"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["turbine", "turbine"]),
+            ("eco", ["battery", "store"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["minigun"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
         ],
     },
 }
 
+
+VANILLA_VARIANTS["rockets"]["cfg"] = dict(VANILLA_VARIANTS["artillerie"]["cfg"], **VANILLA_VARIANTS["rockets"]["cfg"])
 
 # Vanilla-6, the modular fort: Vanilla-2's low fort (the most tested layout: the hidden mortar nest and turbine gallery
 # two storeys over the starting fort, nothing in the mortars' arc), but its weapons are reactive build modules
@@ -1344,6 +1327,37 @@ class Plan:
             out.append(next((c for c in sorted(self.all_cells) if ia in ((c[0], c[1] + 1), (c[0] + 1, c[1] + 1))
                              and self.cell_x(c)[0] <= min(pa[0], pb[0]) + 1 and self.cell_x(c)[1] >= max(pa[0], pb[0]) - 1), None))
         return out
+
+    def weapon_slot(self, dev):
+        """weapon_slots [(node A, node B, LinkT, device)]: explicit roof struts for these weapons (also a half of a
+        split edge, so two devices share one cell's roof), taken in order. The cell below the strut is built first;
+        its upgrade goes on the same strut. False if dev has no free slot."""
+        used = self.__dict__.setdefault("weapon_slots_used", set())
+        rows = self.cfg["rows"]
+        for n, (pa, pb, t, d) in enumerate(self.cfg.get("weapon_slots", [])):
+            if d != dev or n in used:
+                continue
+            x0, x1, y = min(pa[0], pb[0]), max(pa[0], pb[0]), (pa[1] + pb[1]) / 2
+            c = next((c for c in sorted(self.all_cells) if abs(rows[c[1]] - y) < 2
+                      and self.cell_x(c)[0] <= x0 + 1 and self.cell_x(c)[1] >= x1 - 1), None)
+            if c is None or not self.build_cell_path(c):
+                self.problems.append("weapon slot %d (%s) not reachable" % (n, dev))
+                return False
+            i, j = c
+            self.link((i, j), (i + 1, j), "bracing")         # the roof (a split edge: both halves and the mid node)
+            ka, kb = self.node_at(pa), self.node_at(pb)
+            if not ka or not kb or self.nodes[ka][0] not in self.built_nodes or self.nodes[kb][0] not in self.built_nodes:
+                self.problems.append("weapon slot %d (%s): strut not built" % (n, dev))
+                return False
+            a, b = self.nodes[ka], self.nodes[kb]
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, dev))
+            self.placed.append((dev, a[1], b[1], t, ("slot", ka, kb)))
+            self.roof_count[c] = 99            # no turbine beside it on this roof
+            self.roof_device[c] = dev
+            used.add(n)
+            return True
+        return False
 
     def mortar_slot(self, dev):
         """The next free mortar_slots strut: its cell (with its floor, maybe split) is built, then the mortar."""
@@ -2190,6 +2204,8 @@ class Plan:
             self.placed.append(("sandbags", a[1], b[1], t, c))
             return
         # Weapons
+        if self.weapon_slot(dev):
+            return
         roof = self.choose_weapon_roof(dev) if dev in self.variant.get("roof_weapons", ()) else None
         if roof is None and dev in LOBBED_WEAPONS and dev in self.variant.get("roof_weapons", ()):
             self.problems.append("no roof for %s" % dev)

@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | a laser | laser rush | 4 lost against an active player (laser blocked; sniped while building; destroyed by rockets 3 s after it was finished; mortars, one laser shot); 1 no-combat test: 7 shots |
+| Vanilla-5 | two EMP rockets (later rockets), smoke, flak | rocket rush: armoury at once, rockets at plan actions 25/34 | not yet (the laser rush it replaced: 4 lost) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
 ## Starting fort
@@ -33,7 +33,7 @@ use the same fort, shifted by -3950/-3300.
   Vanilla-2 matches the breach came through exactly that layer. Vanilla-3 does it at once (plan step `rebrace`).
 - The breach in every lost Vanilla-2 match came through the reactor's front (laser, rockets, laser + firebeam).
 
-## Shared tower (Vanilla-3/-4/-5)
+## Shared tower (Vanilla-3/-4)
 
 - **Shape:** a back block on the ground (x -3600..-3100, back to the rock edge) up to the starting fort's roof (y=205),
   and a solid, fully X-braced weapon tower (x -3400..-2945) on the back block and the starting fort's roof posts. No
@@ -54,11 +54,11 @@ use the same fort, shifted by -3950/-3300.
   `mark_large`, door in front, background diagonals), LinkT 0.5, one above the other. Stacked in the weapon column with
   100-high storeys, or one column back (the seam), the upper one was refused.
 - **Snipers:** never in the front cell on the starting fort's front post (x -3100..-2945, floor 105; refused in every
-  match, `weapon_avoid`). Vanilla-3 and -5 put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
+  match, `weapon_avoid`). Vanilla-3 (and the former laser plan) put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
   machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. Vanilla-4's goes to the
   top front cell (floor -270), where it is refused once the tower stands below it.
 - **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's 20mm doors 78 instead of 125 (126 shots
-  through them), its sniper's 62.5. Cannons (Vanilla-4) and the laser (Vanilla-5) keep full doors (no split covers
+  through them), its sniper's 62.5. Cannons (Vanilla-4) and the former laser keep full doors (no split covers
   both barrel estimates); in the 100-high storeys no brace clears the sniper, so its door stays full.
 - **Woodspam** (region 2): two layers (x -2905/-2865) in front of the tower front, rows -370..-145, late.
 - **Late block:** every plan ends with more anti-air, weapons, upgrades and storage, so the AI does not sit idle at the
@@ -138,38 +138,35 @@ launcher).
   then the upgrade centre, anti-air, woodspam and upgraded turbines.
 - Inner armour rebuilt as wood after the first mine (map default).
 
-## Vanilla-5 – laser rush
+## Vanilla-5 – rocket rush
 
-- Vanilla-3's layout with one laser in the rush 20mm's cell (x -3200..-3100, floor 105, LinkT 0.5), firing through the
-  front cell over the reactor; own beams pass own background bracing (`CollidesWithFriendlyBeams = false`). The factory
-  takes its proven slot below that column. The upgrade centre stands one strut behind the munitions slot
-  (x -3500..-3400, y 602, LinkT 0.5): on the munitions slot it overlapped the factory and was refused; the batteries
-  and stores keep clear of it (y 503).
-- The laser's fire lane (the cell ahead of it, x -3100..-2945, with its split door) is built right before the laser:
-  built later, the laser stood in an open cell and was sniped before it was finished.
-- The laser cell's front post (x -3100, floor 105 to -20) is background bracing: the laser's body reaches only 50 ahead
-  and its recession box starts 130 ahead, so the solid post 50 in front of it blocked every shot in the first test.
-- Costs: factory 800 m / 6000 e / 60 s, laser 1000 m / 6000 e / 120 s, one beam 5000 e (reload 24 s): more energy than
-  the starting cap and more metal than the metal cap.
-- Order: workshop, battery (cap 7000), factory, then while it builds a store (cap 1200) and all three free mine sites,
-  the anti-air machine gun on the starting fort's prow roof strut (`weapon_cells`, one light cell, no tower struts),
-  the laser's lane and the laser (action 78); while it builds woodspam regions 0 and 1 (as Vanilla-2, in front of the
-  reactor and the lower front), the cage turbines with their sandbags, a battery, the sniper (front column, floor
-  -145); then the upgrade centre (battery, store, second machine gun while it builds), upgraded turbines, miniguns,
-  the AP sniper, the tower's woodspam, upgraded mines. Inner armour kept. Before the rework (25.10.2026) only one mine
-  and no anti-air came before the laser: the AI was broke and a player's rockets destroyed the laser 3 s after it was
-  finished.
-- First test (one match, difficulty 1): the build ran as planned up to the upgrade centre (workshop 3 s, factory 80 s,
-  laser placed 219 s, built 339 s, cage turbines 369/427 s, sniper 459 s). The upgrade centre on the munitions slot
-  was refused (`CS_OCCUPIED`, then `CS_UNSTABLE`), so the upgraded turbines never came and the AI sat at its storage
-  caps (1500 / 11,000) from ~545 s. The player's laser and firebeam, fired together once at ~626 s, cut the lower
-  front with its woodspam and took the reactor in under 4 s; the AI destroyed nothing.
-- Module `counterbattery` (enemy has 2 mortars or heavy mortars): two mortars on the hidden cage's roof struts
-  (x -3400..-3300 and -3200..-3100, y -500), which the plan now builds as solid bracing instead of background bracing.
-  The tower blocks the mortar arc of every place behind or below it; the prow roof is open but in the laser's line of
-  fire. So the module can only come once the plan has built the cage roof (`Requires` 235 of 307); at the last
-  match's pace that is about 10 minutes in. The player's mortars (25.10.2026) hit the prow cell with the anti-air
-  machine gun and the front woodspam, not the back block, so an armour roof over the back block would not have helped.
+Replaced the laser rush on 26.10.2026: a laser took about five minutes on Vanilla and the laser plan lost all four
+matches against an active player (its tests and lessons: [history/vanilla-3-5.md](../history/vanilla-3-5.md); the
+plan file kept its name, so `train.py`'s wins per plan mix both plans).
+
+- Idea: EMP rockets as early as possible, a smoke launcher beside them and anti-air behind them; the EMP rockets fire
+  while the upgrade centre is built and are then upgraded to rockets. The AI fires the smoke first and holds the
+  rockets until they are under smoke, so the enemy's anti-air cannot see them ([ai.md](../ai.md#fire-control),
+  `Fire.SmokeCover`).
+- Geometry: Vanilla-2's low fort (hidden nest and turbine gallery two storeys over the starting fort, nothing above
+  their roofs at y -25), without Vanilla-2's sniper and mortars.
+- The armoury stands on the starting fort's proven workshop slot (x -3096..-2996, y 503, LinkT 0.05; this plan needs
+  no workshop), so it costs no structure. Its box (170 high) reaches the starting fort's inner strut 100 above it
+  (`rules.py` warning; the munitions plant, same size, was built that way in Vanilla-3/-4).
+- The nest storey's roof (x -3100..-2945, y -25) is split in two halves (`split_edges`, its mid node braced to the
+  nest floor's corners). On the front roof (`weapon_slots`): EMP rocket on the prow strut (x -2945..-2845, LinkT 0.5),
+  EMP rocket on the front half (LinkT 0.5), smoke launcher on the rear half (LinkT 0.3); 85-90 apart (devices need 80;
+  89 worked for sandbags, 77 failed for mortars). The hidden box keeps these struts solid.
+- Anti-air on the gallery roof behind them: flak (x -3300..-3200) and a machine gun (x -3500..-3400), one cell further
+  back than Vanilla-2's machine guns (on x -3200..-3100 the flak overlapped the smoke launcher). The gallery roof
+  needs ~90 actions of support from the back block, so until plan action 161 only the starting fort's machine gun
+  covers the sky.
+- Order (235 actions): armoury (2), mine, EMP rocket (25), smoke (33), EMP rocket (34), the nest's sandbags, two
+  mines, a turbine (100), upgrade centre (106), rockets (107-108), the gallery's sandbags, flak (161), woodspam,
+  machine gun (198), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+- Not tested. Open: whether the rockets on the front roof fire past each other (the prow rocket stands ~88 ahead of
+  the second one at the same height; `rules.py` checks only struts in the line of fire, not devices), whether the
+  armoury is placed on the workshop slot, and how long the smoke cover lasts (the timings are guesses).
 
 ## Vanilla-6 – modular fort
 
@@ -237,16 +234,15 @@ launcher).
 | Both near mines before the first turbine (Vanilla-4) | metal fine, energy 200-600; the first turbine was no earlier |
 | Munitions plant beside the workshop, right behind the starting fort | `CS_UNSTABLE` without stress or sag; the 20mm then `CS_PREQUISITENOTMET` |
 | Support by the shallowest chain (generator default) for the rush 20mm | pulled in the whole back block (100 struts instead of 42); now `support_cheapest` |
-| Upgrade centre on the munitions slot beside the factory (Vanilla-5) | the two 90-wide boxes overlapped (155 apart, need 180): `CS_OCCUPIED`, then `CS_UNSTABLE`; the AI then sat at full storage waiting on the turbine upgrades. Now one strut back |
-| Laser placed before its fire lane (Vanilla-5) | stood in an open cell from 219 s, sniped and destroyed at 292 s before it was finished; now the lane (with its door) first |
-| Solid post 50 in front of the laser (Vanilla-5) | outside the laser's body and before its recession box: every shot declined; now background bracing |
+| Upgrade centre on the munitions slot beside the factory (former laser Vanilla-5) | the two 90-wide boxes overlapped (155 apart, need 180): `CS_OCCUPIED`, then `CS_UNSTABLE`; the AI then sat at full storage waiting on the turbine upgrades. Now one strut back |
+| Laser placed before its fire lane (former laser Vanilla-5) | stood in an open cell from 219 s, sniped and destroyed at 292 s before it was finished; now the lane (with its door) first |
+| Solid post 50 in front of the laser (former laser Vanilla-5) | outside the laser's body and before its recession box: every shot declined; now background bracing |
 
 ## Open problems
 
 - Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
 - Vanilla-3's sniper behind its split door and Vanilla-4's cannons against a player are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
-- Vanilla-5 with the mines and the anti-air machine gun before the laser is not yet tested; whether one machine gun
-  stops (EMP) rockets, and whether the laser survives rockets from above at all, is open.
+- Vanilla-5's rocket rush is untested (see its section for the open points).
 - Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
   4 s; woodspam does not stop that.
 - One armour piece of a 20mm door post (47 long, y 27..-20) was refused with `CS_NODESTOOCLOSE` and given up; the

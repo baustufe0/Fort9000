@@ -41,7 +41,7 @@ check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true fru
 check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=251$" "$LUA" t_modules.lua
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
-check "Plan file with modules loads in Lua"     "^307 counterbattery 2 235 mortar$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
+check "Plan file with modules loads in Lua"     "^231 sniper 1 5 sniper$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
 check "Modular plan loads with time triggers"  "^231 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
@@ -101,8 +101,8 @@ if [ -n "$PY" ]; then
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
   check "Recorded plan loads in Lua"             "^actions 9 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
-  check "Tools read plan modules apart from the plan" "^307 counterbattery mortar,mortar2 2 235$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
-  check "Plan modules pass the building rules"   "module counterbattery \(2 actions, requires 235\): 0 errors" $PY "$MOD/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
+  check "Tools read plan modules apart from the plan" "^231 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 5$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 5\): 0 errors" $PY "$MOD/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   "$LUA" t_probe.lua | sed '/PROBE END/q' > probe.txt
   check "Probe parser finds the CS_UNSTABLE split" "unstable if s > 0.260 \(100 %\)" $PY "$MOD/tools/fortgen/probe.py" probe.txt
   check "Probe parser splits by devices nearby"  "devices at its nodes +2 / 2$" $PY "$MOD/tools/fortgen/probe.py" probe.txt

@@ -128,3 +128,9 @@ planned: mines 141/164/183 s, anti-air machine gun 201 s, laser 294 s.
   did the damage.
 - Conclusion: a fixed plan loses to whichever weapon the player picks against it. Next step is reactive build
   modules (`docs/ai.md`) and a rebuild cap per device.
+
+## Vanilla-5 replaced (26.10.2026)
+
+The laser rush is gone: a laser took about five minutes on Vanilla and the plan lost all four matches against an
+active player. `fort-t1f1-Vanilla-5.lua` is now a rocket rush (EMP rockets, smoke, flak on Vanilla-2's low fort;
+[maps/vanilla.md](../maps/vanilla.md#vanilla-5--rocket-rush)). Its tests continue below.
