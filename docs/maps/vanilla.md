@@ -161,12 +161,15 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
     sandbags gone); its door is cut into that post (`door_posts`): y -6.5..75 (81.5 of 130), background bracing above it
     (`door_rest`; the hidden storey). The door costs the gallery turbines wind on the right side: two of three keep
     9-18 % of their rays there; the left side stays open.
-  - The smoke launcher on the nest roof (x -3100..-2945, y -55, `weapon_slots`), in neither rocket's row, behind an
-    armour shield on the roof edge (x -2945, y -55..-120, braced to the prow roof with background bracing; plan step
-    `struts`); its arc passes high over it. On the open roof it was destroyed every ~50 s (second test).
-  - Flak (x -3200..-3100) and the machine gun (x -3300..-3200) on the gallery roof (they fire at the sky). The gallery
-    roof needs ~90 actions of support from the back block, so until plan action 135 only the starting fort's machine
-    gun covers the sky.
+  - Flak on the nest roof (x -3100..-2945, y -55, `weapon_slots`), early (plan action 57), behind a shield on the roof
+    edge (x -2945, y -55..-120, braced to the prow roof with background bracing; plan step `struts`), built before the
+    flak: it stands in the flak's line of fire, so it is a door the flak opens. Third test: ~15 heavy mortar shells
+    brought the front stack down; anti-air shoots the shells, an armour roof would not stop them. The flak fires at
+    the player's fort only while the player has nothing it should shoot down (`Fire.AntiAirFirst`, [ai.md](../ai.md#fire-control)).
+  - The smoke launcher (x -3200..-3100) and the machine gun (x -3300..-3200) on the gallery roof, in neither rocket's
+    row. The gallery roof needs ~90 actions of support from the back block, so they come at plan actions 153 and 195;
+    the smoke launcher fires only as cover for rockets that can follow it (energy for both). On the open nest roof
+    (second test) it was destroyed every ~50 s.
 - A long background brace through the starting fort's front column (`struts`, `long_struts`): from its node at
   (-2996, 504) down to the front ground node (-2900, 700), across both lower storeys, 217-218 long in the game (218.7
   between the plan's recorded positions; the game allows 218). The player builds it early in every match (16-74 s,
@@ -174,9 +177,9 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   Only in Vanilla-5 for now, as a test. Third test: refused once (`CS_NODESTOOFAR`), built on the retry at 91 s
   (216.6 long).
 - Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
-  the final pass they came only at the end), the first turbine (97; energy, second test), smoke and its shield
-  (98-100), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, flak (153), woodspam, machine
-  gun (195), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+  the final pass they came only at the end), the flak's shield and the flak (55-57), the first turbine (100; energy,
+  second test), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, smoke (153), woodspam,
+  machine gun (195), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).

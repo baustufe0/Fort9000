@@ -81,6 +81,10 @@ DEFAULTS = {
     "RebuildCap": {"Window": 180, "Max": {"machinegun": 3, "minigun": 3, "smokebomb": 3}},
     "Fire": {"Enabled": True, "Interval": 1.0, "WeaponsPerTick": 3, "AlwaysOffensive": True, "RebuildFireFactor": 2.5,
              "NoOffence": {"machinegun": True},
+             # flak/shotgun fire at the enemy fort only while it has nothing they should shoot down (ai.lua, Fire.AntiAirFirst)
+             "AntiAirFirst": {"Types": {"flak": True, "shotgun": True},
+                              "Threats": {k: True for k in ["mortar", "mortar2", "missile", "missile2", "missileinv",
+                                                            "missile2inv", "rocket", "rocketemp"]}},
              # smoke before rockets (ai.lua, Fire.SmokeCover)
              "SmokeCover": {"Enabled": True, "Smoke": {"smokebomb": True, "smokebomb2": True},
                             "Rockets": {"rocket": True, "rocketemp": True}, "MinDelay": 2, "Window": 10, "MaxHold": 30}},

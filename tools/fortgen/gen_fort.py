@@ -610,11 +610,11 @@ VANILLA_VARIANTS = {
         # the armoury on the munitions slot (same size; the munitions plant was built there in Vanilla-3/-4)
         "tech_slots": {"armoury": [((-3400, 602), (-3299, 604), 0.49)],
                        "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        "roof_weapons": {"flak", "machinegun"},
+        "roof_weapons": {"smokebomb", "machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
             "mortar_slots": [], "split_edges": [],
-            # no top cell reserved for the smoke launcher (lobbed; it has its slot): the reservation took a rocket's cell
+            # no top cell reserved for the smoke launcher (lobbed): the reservation took a rocket's cell
             "reserve_mortar": False,
             # doors only as long as the rockets' shots need, like the snipers' (split_doors)
             "split_doors": True,
@@ -630,15 +630,18 @@ VANILLA_VARIANTS = {
             # the gallery's split cell only (the nest's prow cell is rocket 2's lane)
             "split_cell": [(-3200, -55)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
             "turbine_floor_y": 75,
-            "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "smokebomb")],
+            # flak early on the nest roof, behind the armour shield (third test: ~15 heavy mortar shells brought the
+            # front stack down; anti-air shoots the shells, an armour roof does not stop them); the smoke launcher
+            # and the machine gun on the gallery roof
+            "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "flak")],
             "roof_weapon_cells": [(-3300, -55), (-3200, -55)],
             # the player's brace across the starting fort's two lower storeys (217-218 long in the game, which allows 218)
             "long_struts": [((-2996, 504), (-2900, 700))]},
         "plan": [
-            # the armoury, a mine while it builds, the EMP rockets (deck, nest), then energy at once: the rockets and the
-            # smoke cost energy per shot, and with the first turbine at 293 s energy stayed below 900 from 90 to 330 s
-            # while metal sat at its cap (second test, 26.10.2026); then the smoke launcher with an armour shield on the
-            # roof edge in front of it (it was destroyed every ~50 s on the open roof), braced to the prow roof
+            # the armoury, a mine while it builds, the long brace, the EMP rockets (deck, nest) with their lanes and
+            # doors, then the flak behind its shield (the shield first: placing the flak turns the armour in front of
+            # it into a door it opens), then energy: the rockets cost energy per shot (second test: with the first
+            # turbine at 293 s energy stayed below 900 from 90 to 330 s while metal sat at its cap)
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
             # a long background brace through the starting fort's front column, from its node at y 504 down to the
@@ -648,9 +651,9 @@ VANILLA_VARIANTS = {
             ("weapons", ["rocketemp", "rocketemp"]),
             # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
             ("build", [(-2945, 205), (-2945, 75)]),
-            ("eco", ["turbine"]),
-            ("weapons", ["smokebomb"]),
             ("struts", [((-2945, -55), (-2945, -120), "armour"), ((-2945, -120), (-2845, -55), "backbracing")]),
+            ("aa", ["flak"]),
+            ("eco", ["turbine"]),
             ("eco", ["mine", "mine"]),
             ("tech", ["upgrade"]),
             ("upgrades", ["rocket", "rocket"]),
@@ -658,7 +661,8 @@ VANILLA_VARIANTS = {
             # the gallery roof needs ~90 actions of support from the back block, so until then the starting fort's
             # machine gun covers the sky), woodspam in front of the reactor and the lower front
             ("defence", ["sandbags", "sandbags"]),
-            ("aa", ["flak"]),
+            # the smoke launcher on the gallery roof (its arc passes over the flak and the shield)
+            ("weapons", ["smokebomb"]),
             ("defence", ["woodspam"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),

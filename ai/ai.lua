@@ -46,6 +46,11 @@ local CAI_Defaults =
 	-- first when a rocket is ready; after MaxHold seconds without smoke the rockets fire anyway
 	Fire = { Enabled = true, Interval = 1.0, WeaponsPerTick = 3, AlwaysOffensive = true, RebuildFireFactor = 2.5,
 		NoOffence = { machinegun = true },
+		-- AntiAirFirst: anti-air weapons that may also fire at the enemy fort (flak, its upgrade the shotgun) do so only
+		-- while the enemy has none of the Threats they should shoot down (mortar shells, missiles, rockets)
+		AntiAirFirst = { Types = { flak = true, shotgun = true },
+			Threats = { mortar = true, mortar2 = true, missile = true, missile2 = true, missileinv = true, missile2inv = true,
+				rocket = true, rocketemp = true } },
 		SmokeCover = { Enabled = true, Smoke = { smokebomb = true, smokebomb2 = true }, Rockets = { rocket = true, rocketemp = true },
 			MinDelay = 2, Window = 10, MaxHold = 30 } },
 	Tempo = { UpdatePeriod = 2.0, UpdatePeriodEasy = 4.0, UpdatePeriodNormal = 2.0, UpdatePeriodHard = 1.0, UpdateAfterRebuildDelay = 0.625, ConstructionMean = 20, ConstructionMin = 12,
@@ -389,7 +394,9 @@ function CAI_ApplyFire()
 		end
 	end
 	-- no offensive fire for NoOffence types (anti-air is separate: AntiAirFireProbability)
-	local no = f.NoOffence or CAI_Defaults.Fire.NoOffence or {}
+	-- a copy: AntiAirFirst adds and removes types during the match (CAI_UpdateAntiAirFirst)
+	local no = {}
+	for k, v in pairs(f.NoOffence or CAI_Defaults.Fire.NoOffence or {}) do no[k] = v end
 	data.CAI.noOffence = no
 	local noList = {}
 	for k in pairs(no) do
@@ -451,15 +458,47 @@ function CAI_RocketsMayFire()
 	return false
 end
 
--- a rocket is ready and waits for smoke: fire a ready smoke launcher (not if a shell is already on its way)
+-- true if the team can pay for the smoke shell and every ready rocket together (GetWeaponFireCost / CanAfford, as
+-- the built-in AI's SelectWeaponGroup checks a group); true where the game functions are missing (tests)
+local function CAI_CanAffordSmokeAndRockets(sid, rockets)
+	if type(GetWeaponFireCost) ~= "function" or type(CanAfford) ~= "function" then return true end
+	local total = GetWeaponFireCost(sid)
+	for _, rid in ipairs(rockets) do total = total + GetWeaponFireCost(rid) end
+	return CanAfford(GetTeamResources(teamId) - total)
+end
+
+-- a rocket is ready and waits for smoke: fire a ready smoke launcher (not if a shell is already on its way), but only
+-- if a rocket can fire right after it: at least one rocket ready, and energy for the smoke and the ready rockets
+-- together (a smoke shell the rockets cannot follow is wasted energy). Otherwise the rockets keep waiting (MaxHold).
+-- Log once per change: SMOKE_WAIT energy | SMOKE_WAIT off
 function CAI_FireSmokeFirst()
 	local st = data.CAI
 	local sc = st.smokeCover
 	if st.lastSmoke and st.fireClock - st.lastSmoke < sc.MinDelay then return false end
+	local rockets = {}
+	for _, rid in ipairs(CAI_WeaponsOf(sc.Rockets)) do
+		if CAI_Ready(rid) then rockets[#rockets + 1] = rid end
+	end
+	if #rockets == 0 then return false end
 	for _, sid in ipairs(CAI_WeaponsOf(sc.Smoke)) do
 		if CAI_Ready(sid) then
+			local ok, afford = pcall(CAI_CanAffordSmokeAndRockets, sid, rockets)
+			if ok and not afford then
+				if not st.smokeWaitEnergy then
+					st.smokeWaitEnergy = true
+					CAI_Log("SMOKE_WAIT energy rockets=" .. #rockets)
+				end
+				return false
+			end
+			if st.smokeWaitEnergy then
+				st.smokeWaitEnergy = nil
+				CAI_Log("SMOKE_WAIT off")
+			end
 			st.fireAttempts = st.fireAttempts + 1
-			TryFireGun(sid)
+			st.smokeFiring = true
+			local okF, errF = pcall(TryFireGun, sid)
+			st.smokeFiring = nil
+			if not okF then CAI_Log("ERROR smoke: " .. tostring(errF)) end
 			return true
 		end
 	end
@@ -473,7 +512,10 @@ function TryFireGun(id, useGroup)
 	if useGroup == nil and data.CAI and data.CAI.smokeCover then   -- a group already firing is not interrupted
 		local ok, res = pcall(function()
 			local sc = data.CAI.smokeCover
-			if not (sc.Enabled and type(GetDeviceType) == "function" and sc.Rockets[GetDeviceType(id)]) then return false end
+			if not (sc.Enabled and type(GetDeviceType) == "function") then return false end
+			-- a smoke launcher fires only as cover, from CAI_FireSmokeFirst (not when the built-in AI picks it)
+			if sc.Smoke[GetDeviceType(id)] then return not data.CAI.smokeFiring end
+			if not sc.Rockets[GetDeviceType(id)] then return false end
 			if CAI_RocketsMayFire() then
 				data.CAI.rocketHoldSince = nil
 				return false
@@ -562,6 +604,10 @@ function CAI_FireTick()
 		local sc = st.smokeCover
 		local skip = no
 		if sc and sc.Enabled then
+			-- smoke launchers only fire as cover for the rockets (CAI_FireSmokeFirst), never in the round robin
+			skip = {}
+			for k in pairs(no) do skip[k] = true end
+			for k in pairs(sc.Smoke) do skip[k] = true end
 			local rockets = {}
 			for _, id in ipairs(CAI_WeaponsOf(sc.Rockets)) do
 				if CAI_Ready(id) then rockets[#rockets + 1] = id end
@@ -577,8 +623,6 @@ function CAI_FireTick()
 					if CAI_FireSmokeFirst() then checked = checked + 1 end
 				end
 				-- fired or held: the round robin skips them without using up a turn
-				skip = {}
-				for k in pairs(no) do skip[k] = true end
 				for k in pairs(sc.Rockets) do skip[k] = true end
 			end
 		end
@@ -1492,6 +1536,43 @@ function CAI_UpdateModules()
 	CAI_InsertActions(fi, all)
 end
 
+-- Fire.AntiAirFirst: while the enemy has a device its anti-air should shoot down, these weapons only fire anti-air
+-- (no offensive fire, like NoOffence); otherwise they also fire at the enemy fort. Log on every change:
+-- FLAK_HOLD on threats=<type:n,...> | FLAK_HOLD off
+function CAI_UpdateAntiAirFirst()
+	local f = Strategy.Fire
+	local st = data.CAI
+	if type(f) ~= "table" or not f.Enabled or st == nil or st.noOffence == nil then return end
+	local aa = f.AntiAirFirst or CAI_Defaults.Fire.AntiAirFirst
+	if type(aa) ~= "table" then return end
+	local seen = CAI_EnemyDevices()
+	local hits = {}
+	for t in pairs(aa.Threats or {}) do
+		if seen[t] then hits[#hits + 1] = t .. ":" .. seen[t] end
+	end
+	table.sort(hits)
+	local hold = #hits > 0
+	if hold == (st.aaHold or false) then return end
+	st.aaHold = hold
+	for k in pairs(aa.Types or {}) do
+		if hold then
+			st.noOffence[k] = true
+			if data.OffensiveFireProbability[k] ~= nil then data.OffensiveFireProbability[k] = 0 end
+			if type(data.FireDuringRebuildProbability) == "table" and data.FireDuringRebuildProbability[k] ~= nil then
+				data.FireDuringRebuildProbability[k] = 0
+			end
+		else
+			st.noOffence[k] = nil
+			if st.baseOff[k] ~= nil then data.OffensiveFireProbability[k] = st.baseOff[k] end
+			local r = st.baseFire and st.baseFire.Rebuild and st.baseFire.Rebuild[k]
+			if r ~= nil and type(data.FireDuringRebuildProbability) == "table" then
+				data.FireDuringRebuildProbability[k] = CAI_Clamp(r * (f.RebuildFireFactor or 1), 0, 1)
+			end
+		end
+	end
+	CAI_Log("FLAK_HOLD " .. (hold and ("on threats=" .. table.concat(hits, ",")) or "off"))
+end
+
 function CAI_Think()
 	if data.gameEnded or data.CAI == nil then
 		return
@@ -1580,6 +1661,9 @@ function CAI_Think()
 	parts[#parts + 1] = "fire=" .. tostring(st.fireAttempts or 0)
 	st.fireAttempts = 0
 	CAI_Log(table.concat(parts, " "))
+
+	local okA, errA = pcall(CAI_UpdateAntiAirFirst)
+	if not okA then CAI_Log("ERROR anti-air first: " .. tostring(errA)) end
 
 	if CAI_Probe == nil then
 		local okM, errM = pcall(CAI_UpdateModules)

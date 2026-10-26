@@ -57,7 +57,16 @@ check "Miniguns still fire at the fort"         "minigun offensive.true$"       
 check "Machine guns stay anti-air"               "MG offensive.0.MG during rebuild.0.MG anti-air.0.7" "$LUA" t_fire_mg.lua
 check "Smoke fires first, rockets held"          "t1:.22,24$"                    "$LUA" t_smoke.lua
 check "Rockets held by the built-in AI too"      "base rocket held:.true$"       "$LUA" t_smoke.lua
-check "Rockets fire under smoke"                 "t3:.21,23$"                    "$LUA" t_smoke.lua
+check "Rockets fire under smoke"                 "t3:.21,23,24$"                 "$LUA" t_smoke.lua
+check "Smoke waits without energy for rockets"   "^400 energy:.$"                "$LUA" t_smokecost.lua
+check "Smoke wait is logged"                     "SMOKE_WAIT energy rockets=1$"  "$LUA" t_smokecost.lua
+check "Smoke fires when rockets can follow"      "^600 energy:.22$"              "$LUA" t_smokecost.lua
+check "No smoke while the rockets reload"        "^rocket reloading:.false$"     "$LUA" t_smokecost.lua
+check "Flak fires at the fort without threats"   "^no threats: flak offensive=0.4" "$LUA" t_flakhold.lua
+check "Flak holds for anti-air against mortars"  "^mortars: flak offensive=0 rebuild=0 anti-air=0.9" "$LUA" t_flakhold.lua
+check "Flak hold is logged"                      "FLAK_HOLD on threats=mortar:2$" "$LUA" t_flakhold.lua
+check "Flak fires again when threats are gone"   "^mortars gone: flak offensive=0.6 rebuild=0.5" "$LUA" t_flakhold.lua
+check "Machine guns stay off the fort"           "machinegun offensive=0$"       "$LUA" t_flakhold.lua
 check "Rockets held again after the window"      "t12:.24$"                      "$LUA" t_smoke.lua
 check "Rockets fire after MaxHold without smoke" "released after hold:.true$"    "$LUA" t_smoke.lua
 check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$"  "$LUA" t_smoke.lua
