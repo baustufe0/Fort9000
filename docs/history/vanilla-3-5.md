@@ -134,3 +134,21 @@ planned: mines 141/164/183 s, anti-air machine gun 201 s, laser 294 s.
 The laser rush is gone: a laser took about five minutes on Vanilla and the plan lost all four matches against an
 active player. `fort-t1f1-Vanilla-5.lua` is now a rocket rush (EMP rockets, smoke, flak on Vanilla-2's low fort;
 [maps/vanilla.md](../maps/vanilla.md#vanilla-5--rocket-rush)). Its tests continue below.
+
+## Vanilla-5 rockets, first test (26.10.2026): no weapon built, lost at 394 s
+
+The layout with a third storey on the prow (EMP rocket 1 in the nest, rocket 2 in that storey, smoke on top) and the
+armoury on the starting fort's workshop slot. Difficulty 1, against a player with machine guns (108-182 s), an armoury
+(139 s), an upgrade centre (200 s), EMP rockets (235/282 s, upgraded to rockets 288/318 s) and flak (320 s):
+**the player won at 394 s** after firing only 61 shots (rocket 8, flak/shrapnel 52, EMP rocket 1). Log archived as
+`log_20261026-121537_ff55787d592a.txt`.
+
+- The armoury was refused (action 118: `CS_UNSTABLE`, the strut behind the slot, N66-N70, strained to 1.002, then
+  `CS_OCCUPIED`) and given up after 120 s. Without it every EMP rocket, the smoke launcher and the flak failed with
+  `CS_PREQUISITENOTMET` and were given up; the AI fired 21 machine-gun shots in the whole match.
+- The front stack (three storeys, 360 high, on the starting fort's front posts; the gallery behind it only from plan
+  action ~100) swayed: its top nodes sank 30-40 (Vanilla-6's highest 20-33).
+- The end: two volleys of 4 rockets (365 s, 390 s) broke the starting fort's ground level (x -2900..-3100, y 700) and
+  the prow woodspam; at 394 s the fort fell with the reactor. No strut had fallen before.
+- Changes: the armoury on the munitions slot in the back block; two 130-high storeys over the starting fort instead
+  of three (rocket 1 on the starting fort's roof beam, rocket 2 in the nest, smoke on the nest roof).

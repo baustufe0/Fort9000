@@ -594,47 +594,45 @@ VANILLA_VARIANTS = {
     # while the upgrade centre is built. Vanilla-2's low fort (the most tested layout), without its sniper and mortars;
     # the armoury on the starting fort's proven workshop slot (no workshop needed), so it costs no structure.
     # A rocket needs a free lane ahead, like a 20mm, cannon or laser (no other rocket or smoke launcher in its row), and
-    # a door in front of it like a sniper (short, only where the shot passes; split_doors). Each rocket has its own cell
-    # at the front, one above the other: EMP rocket 1 in the nest storey (floor y 105, 130 high), firing through the
-    # prow cell (an empty lane); its door is cut into the lane's front post, background bracing above it (the hidden
-    # storey: the gallery turbines need the wind). EMP rocket 2 in one more storey on the prow roof (x -2945..-2845,
-    # y -155..-25, 130 high), with a door in its front post. The smoke launcher on the roof of that storey's other half
-    # (x -3100..-2945, y -155), in neither rocket's row, with an open arc; flak and the machine gun on the gallery roof
-    # (they fire at the sky).
+    # a short door in front of it like a sniper (split_doors). Two storeys over the starting fort like Vanilla-2, both
+    # 130 high (rows 205, 75, -55; a rocket's box is 112): EMP rocket 1 on the starting fort's roof beam, where
+    # Vanilla-2's sniper stood (124 shots through its split door), firing through the prow's deck cell; EMP rocket 2 in
+    # the nest above it, firing through the prow's nest cell, its door cut into that post (door_posts) with background
+    # bracing around it (the hidden storey: the gallery turbines need the wind); the smoke launcher on the nest roof
+    # (y -55), in neither rocket's row; flak and the machine gun on the gallery roof (they fire at the sky).
+    # The first rocket layout (26.10.2026) put a third storey on the prow for rocket 2: the armoury was refused on the
+    # starting fort's workshop slot (CS_UNSTABLE, the strut behind it strained to its limit), so no weapon was built,
+    # and the 360-high front stack swayed 30-40 (Vanilla-6: 20-33); the player's 8 rockets brought it down at 394 s.
     "rockets": {
-        "title": "Rocket rush: armoury at once, two EMP rockets behind doors one above the other, smoke on top, flak behind",
-        "shape": _union(_V_RUSH_DECK, _box(-3100, -2845, -155, -25)),
-        "tech_slots": {"armoury": [((-3096, 503), (-2996, 504), 0.05)],
+        "title": "Rocket rush: armoury, two EMP rockets behind short doors one above the other, smoke on the nest roof, flak behind",
+        "shape": _union(_box(-3500, -2845, -55, 205), _V_BACK),
+        # the armoury on the munitions slot (same size; the munitions plant was built there in Vanilla-3/-4)
+        "tech_slots": {"armoury": [((-3400, 602), (-3299, 604), 0.49)],
                        "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "roof_weapons": {"flak", "machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
             "mortar_slots": [], "split_edges": [],
-            # no top cell reserved for the smoke launcher (lobbed; it has its slot): the reservation took rocket 2's cell
+            # no top cell reserved for the smoke launcher (lobbed; it has its slot): the reservation took a rocket's cell
             "reserve_mortar": False,
             # doors only as long as the rockets' shots need, like the snipers' (split_doors)
             "split_doors": True,
-            # the storey over the nest 130 high (rocket 2's box is 112), its roof at y -155
-            "rows": [-425, -325, -225, -155, -25, 105, 205, 308, 405, 503, 602, 700],
-            # rocket 2 at LinkT 0.12 (x -2933): the brace from its split door's node to the cell's top back corner then
-            # passes over its box (at 0.4 every brace ran through it and the door stayed whole); its barrel (60) ends
-            # 28 behind the door
-            "weapon_cells": [(-3100, 105, "rocketemp"), (-2945, -25, "rocketemp", 0.12)],
-            "lane_cells": [(-2945, 205), (-2945, 105)],
-            # rocket 1's door in the lane's front post (background bracing in the hidden storey), background bracing
-            # around it: a full door there blocked the gallery turbines' wind on the right side (two of three from
-            # 36-45 % to 0 %)
-            "door_posts": [(-2845, -25, 105)],
-            "door_rest": [((-2845, -25, 105), "backbracing")],
-            # the gallery's split cell only (the prow cell is the nest rocket's lane)
-            "split_cell": [(-3200, -25)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
-            "weapon_slots": [((-3100, -155), (-2945, -155), 0.5, "smokebomb")],
-            "roof_weapon_cells": [(-3300, -25), (-3200, -25)],
-            # the storey over the nest rests on the nest only (like the tower cage): it must not wait for the deck and
-            # gallery over the whole width
-            "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-25,)}},
+            "rows": [-445, -345, -245, -155, -55, 75, 205, 308, 405, 503, 602, 700],
+            # LinkT 0.7 like Vanilla-2's sniper: the barrel (60) ends ~85 behind the door
+            "weapon_cells": [(-3100, 205, "rocketemp", 0.7), (-3100, 75, "rocketemp", 0.7)],
+            "lane_cells": [(-2945, 205), (-2945, 75)],
+            "hidden_box": (-3500, -2845, -55, 75),
+            # rocket 2's door in the nest prow's front post (background bracing in the hidden storey), background
+            # bracing around it: a full door there blocked the gallery turbines' wind on the right side
+            "door_posts": [(-2845, -55, 75)],
+            "door_rest": [((-2845, -55, 75), "backbracing")],
+            # the gallery's split cell only (the nest's prow cell is rocket 2's lane)
+            "split_cell": [(-3200, -55)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
+            "turbine_floor_y": 75,
+            "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "smokebomb")],
+            "roof_weapon_cells": [(-3300, -55), (-3200, -55)]},
         "plan": [
-            # the armoury (no structure), a mine while it builds, then the EMP rockets (nest, prow storey) and the smoke
+            # the armoury, a mine while it builds, then the EMP rockets (deck, nest) and the smoke
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
             ("weapons", ["rocketemp", "rocketemp", "smokebomb"]),

@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury at once, EMP rockets at plan actions 15/33 one above the other, smoke at 38 | not yet (the laser rush it replaced: 4 lost) |
+| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | once (earlier layout): lost at 394 s, the armoury was refused and no weapon built; the laser rush it replaced lost 4 |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
 ## Starting fort
@@ -148,35 +148,32 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   while the upgrade centre is built and are then upgraded to rockets. The AI fires the smoke first and holds the
   rockets until they are under smoke, so the enemy's anti-air cannot see them ([ai.md](../ai.md#fire-control),
   `Fire.SmokeCover`).
-- Geometry: Vanilla-2's low fort (hidden nest and turbine gallery two storeys over the starting fort), without
-  Vanilla-2's sniper and mortars, plus one small storey on the nest roof.
-- The armoury stands on the starting fort's proven workshop slot (x -3096..-2996, y 503, LinkT 0.05; this plan needs
-  no workshop), so it costs no structure. Its box (170 high) reaches the starting fort's inner strut 100 above it
-  (`rules.py` warning; the munitions plant, same size, was built that way in Vanilla-3/-4).
+- Geometry: Vanilla-2's low fort, two storeys over the starting fort, both 130 high (rows 205, 75, -55; a rocket's box
+  is 112): the deck (75..205) and the hidden nest and turbine gallery (-55..75), without Vanilla-2's sniper and mortars.
+- The armoury stands on the munitions slot in the back block (x -3400..-3300, y 602, LinkT 0.49; the munitions plant,
+  same size, was built there in Vanilla-3/-4), after 22 actions of structure. On the starting fort's workshop slot it
+  was refused (first test).
 - A rocket needs its row to itself, like a 20mm, cannon or laser, and a short door in front of it like a sniper
-  ([building-rules.md](../building-rules.md)). Each rocket has its own front cell, one above the other:
-  - EMP rocket 1 in the nest storey (x -3100..-2945, floor y 105, 130 high; `weapon_cells`, LinkT 0.5), firing through
-    the prow cell (an empty lane, `lane_cells`; its sandbags are gone). Its door is cut into the lane's front post
-    (`door_posts`): door y 20.5..105 (84.5 of 130), background bracing above it (`door_rest`; the hidden storey). The
-    door costs the gallery turbines wind on the right side: two of three keep 9-18 % of their rays there (45 % with
-    no door; a full door: 0 %); the left side stays open.
-  - EMP rocket 2 in one more storey on the prow roof (x -2945..-2845, y -155..-25, 130 high; the rocket's box is 112),
-    at LinkT 0.12 (x -2933; at 0.4 every brace of its split door ran through its box and the door stayed whole). Door
-    y -102.5..-25 (77.5 of 130), armour above it.
-  - The smoke launcher on the roof of that storey's other half (x -3100..-2945, y -155, `weapon_slots`), in neither
-    rocket's row, with an open arc. The storey rests on the nest only (`tower_connect.skip_floors` -25); under the tower
-    rule it waited for the deck and gallery over the whole width.
+  ([building-rules.md](../building-rules.md)). The two rockets stand one above the other:
+  - EMP rocket 1 on the starting fort's roof beam (x -3100..-2945, y 205, LinkT 0.7), where Vanilla-2's sniper stood,
+    firing through the prow's deck cell (a lane); door y 124.5..204 (79.5 of 129), armour above it.
+  - EMP rocket 2 in the nest above it (floor y 75, LinkT 0.7), firing through the prow's nest cell (a lane, its
+    sandbags gone); its door is cut into that post (`door_posts`): y -6.5..75 (81.5 of 130), background bracing above it
+    (`door_rest`; the hidden storey). The door costs the gallery turbines wind on the right side: two of three keep
+    9-18 % of their rays there; the left side stays open.
+  - The smoke launcher on the nest roof (x -3100..-2945, y -55, `weapon_slots`), in neither rocket's row.
   - Flak (x -3200..-3100) and the machine gun (x -3300..-3200) on the gallery roof (they fire at the sky). The gallery
-    roof needs ~90 actions of support from the back block, so until plan action 158 only the starting fort's machine
+    roof needs ~90 actions of support from the back block, so until plan action 135 only the starting fort's machine
     gun covers the sky.
-- Order (237 actions): armoury (2), mine, EMP rocket in the nest (15), EMP rocket in the prow storey (33), smoke (38), two
-  mines, a turbine (102), upgrade centre (108), rockets (109-110), the gallery's sandbags, flak (158), woodspam, machine
-  gun (200), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
-- Not tested. Open: whether the armoury is placed on the workshop slot, whether rocket 2's barrel fires cleanly through
-  its door (28 behind it), the turbines' energy with the lower door, and how long the smoke cover lasts.
-- Earlier layouts (26.10.2026, never played): both EMP rockets and the smoke launcher side by side on the front roof
-  (rejected: a rocket needs its row to itself, `rules.py` now flags it); then the rockets stacked without doors
-  (rejected: a rocket must stand behind a door).
+- Order (230 actions): armoury (24), mine, EMP rockets (32, 38), smoke (39), two mines, a turbine (84), upgrade centre
+  (90), rockets (91-92), the gallery's sandbags, flak (135), woodspam, machine gun (177), two turbines, battery and
+  store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+- Open: whether the armoury is placed on the munitions slot, whether the rockets fire through their doors, the
+  turbines' energy with rocket 2's door, and how long the smoke cover lasts.
+- Earlier layouts (26.10.2026): both EMP rockets and the smoke launcher side by side on the front roof (never played;
+  a rocket needs its row to itself, `rules.py` flags it); the rockets stacked without doors (never played); a third
+  storey on the prow for rocket 2 and the armoury on the workshop slot (played once, see the history: no weapon was
+  built, the 360-high front stack swayed).
 
 ## Vanilla-6 – modular fort
 
