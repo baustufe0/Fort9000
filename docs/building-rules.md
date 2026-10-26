@@ -191,9 +191,11 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 6. **Weapons:** direct-fire weapons at the front behind a door; struts in their line of fire background bracing (or
    built before the weapon within its recession box); heavy weapons in solid X-braced storeys on strong posts, never in
    the top storey, in storeys high enough for their box; mortars with a door roof or open arc, or in a low hidden nest
-   with sandbags. A rocket (EMP rocket) needs a free lane like a 20mm, cannon or laser: no other rocket or smoke
-   launcher in its row (rows closer than 50 in height count as one), and a short door in front of it like a sniper
-   (`split_doors`; barrel 65 above its strut, 60 long, from weapon_pack's rocket files). A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
+   with sandbags. **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
+   in height count as one): each weapon that fires at the enemy fort stands alone in its row or at its front. Allowed
+   behind another weapon: machine guns and miniguns (anti-air only in this mod) and a lobbed weapon behind a lobbed
+   one (the game's own plans put mortars side by side). A rocket (EMP rocket) also needs a short door in front of it
+   like a sniper (`split_doors`; barrel 65 above its strut, 60 long, from weapon_pack's rocket files). A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
    weapon, so it never stands in an open cell. Cells where a device type failed in every test are left to others
    (`weapon_avoid`, `turbine_avoid`).
 7. **Woodspam:** cheap wooden layers in front of what must be protected (the reactor's front, the starting fort's
@@ -223,7 +225,7 @@ writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build o
 - device on background bracing (warning: the game's Template-1 records one);
 - line of fire of direct-fire weapons and the arc of mortars: no foreground strut built after the weapon or beyond its
   recession box (doors are fine);
-- a rocket or EMP rocket in one row with another rocket or a smoke launcher (error);
+- a weapon in front of another weapon in the same row (error; machine guns behind, and lobbed behind lobbed, allowed);
 - turbine wind with the game's ray test (`wind_rays`: a side is open when at least half its rays are clear; error if
   both sides are blocked, warning if one is) and turbine spacing (≥ 90);
 - two devices on one strut (a `DESTROY_DEVICE` frees it), or overlapping devices side by side on neighbouring struts

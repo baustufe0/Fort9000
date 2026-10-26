@@ -166,10 +166,14 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
     flak: it stands in the flak's line of fire, so it is a door the flak opens. Third test: ~15 heavy mortar shells
     brought the front stack down; anti-air shoots the shells, an armour roof would not stop them. The flak fires at
     the player's fort only while the player has nothing it should shoot down (`Fire.AntiAirFirst`, [ai.md](../ai.md#fire-control)).
-  - The smoke launcher (x -3200..-3100) and the machine gun (x -3300..-3200) on the gallery roof, in neither rocket's
-    row. The gallery roof needs ~90 actions of support from the back block, so they come at plan actions 153 and 195;
-    the smoke launcher fires only as cover for rockets that can follow it (energy for both). On the open nest roof
-    (second test) it was destroyed every ~50 s.
+  - The smoke launcher on one more storey on the gallery's back corner (x -3500..-3400, y -155..-55, armour in front;
+    roof y -155, `weapon_slots`), alone in its row, over the back block's solid column (plan action 157; the storey
+    rests on the gallery only, `tower_connect.skip_floors` -55). On the gallery roof behind the flak (the layout before,
+    never played) it could not fire toward the enemy fort: a weapon blocks every weapon behind it in its row. It fires
+    only as cover for rockets that can follow it (energy for both). On the open nest roof (second test) it was
+    destroyed every ~50 s.
+  - The machine gun on the gallery roof (x -3200..-3100, plan action 194), behind the flak: allowed, it fires only
+    anti-air. The gallery roof needs ~90 actions of support from the back block.
 - A long background brace through the starting fort's front column (`struts`, `long_struts`): from its node at
   (-2996, 504) down to the front ground node (-2900, 700), across both lower storeys, 217-218 long in the game (218.7
   between the plan's recorded positions; the game allows 218). The player builds it early in every match (16-74 s,
@@ -178,8 +182,8 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   (216.6 long).
 - Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
   the final pass they came only at the end), the flak's shield and the flak (55-57), the first turbine (100; energy,
-  second test), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, smoke (153), woodspam,
-  machine gun (195), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+  second test), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, smoke on its storey (157),
+  woodspam, machine gun (194), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).

@@ -606,11 +606,12 @@ VANILLA_VARIANTS = {
     # and the 360-high front stack swayed 30-40 (Vanilla-6: 20-33); the player's 8 rockets brought it down at 394 s.
     "rockets": {
         "title": "Rocket rush: armoury, two EMP rockets behind short doors one above the other, smoke on the nest roof, flak behind",
-        "shape": _union(_box(-3500, -2845, -55, 205), _V_BACK),
+        # plus one small storey on the gallery's back corner for the smoke launcher (its own row, see below)
+        "shape": _union(_box(-3500, -2845, -55, 205), _V_BACK, _box(-3500, -3400, -155, -55)),
         # the armoury on the munitions slot (same size; the munitions plant was built there in Vanilla-3/-4)
         "tech_slots": {"armoury": [((-3400, 602), (-3299, 604), 0.49)],
                        "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
-        "roof_weapons": {"smokebomb", "machinegun"},
+        "roof_weapons": {"machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
             "mortar_slots": [], "split_edges": [],
@@ -631,10 +632,16 @@ VANILLA_VARIANTS = {
             "split_cell": [(-3200, -55)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
             "turbine_floor_y": 75,
             # flak early on the nest roof, behind the armour shield (third test: ~15 heavy mortar shells brought the
-            # front stack down; anti-air shoots the shells, an armour roof does not stop them); the smoke launcher
-            # and the machine gun on the gallery roof
-            "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "flak")],
+            # front stack down; anti-air shoots the shells, an armour roof does not stop them). A weapon blocks the
+            # line of fire of every weapon behind it in its row: on the gallery roof behind the flak the smoke launcher
+            # could not fire toward the enemy fort, so it stands on one more storey on the gallery's back corner
+            # (x -3500..-3400, roof y -155), over the back block's solid column; the machine gun (anti-air only) may
+            # stand behind the flak
+            "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "flak"),
+                             ((-3500, -155), (-3400, -155), 0.5, "smokebomb")],
             "roof_weapon_cells": [(-3300, -55), (-3200, -55)],
+            # the smoke launcher's storey rests on the gallery only (like the tower cage on Vanilla-3)
+            "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-55,)},
             # the player's brace across the starting fort's two lower storeys (217-218 long in the game, which allows 218)
             "long_struts": [((-2996, 504), (-2900, 700))]},
         "plan": [
@@ -661,7 +668,7 @@ VANILLA_VARIANTS = {
             # the gallery roof needs ~90 actions of support from the back block, so until then the starting fort's
             # machine gun covers the sky), woodspam in front of the reactor and the lower front
             ("defence", ["sandbags", "sandbags"]),
-            # the smoke launcher on the gallery roof (its arc passes over the flak and the shield)
+            # the smoke launcher on its storey on the gallery's back corner (its arc passes over everything ahead)
             ("weapons", ["smokebomb"]),
             ("defence", ["woodspam"]),
             ("aa", ["machinegun"]),
