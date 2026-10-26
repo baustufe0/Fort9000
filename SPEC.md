@@ -30,6 +30,7 @@ The specification is split into files so a session only loads what it needs.
 | [docs/maps/vanillalong.md](docs/maps/vanillalong.md) | VanillaLong: converted Vanilla plans | working on a VanillaLong plan |
 | [docs/history/vanilla-2.md](docs/history/vanilla-2.md) | Vanilla-2 test matches in order | debugging a regression, "did we try X?" |
 | [docs/history/vanilla-3-5.md](docs/history/vanilla-3-5.md) | Vanilla-3/-4/-5 test matches (tower, cannons, 20mm rush) | debugging a regression, "did we try X?" |
+| [docs/history/vanilla-6.md](docs/history/vanilla-6.md) | Vanilla-6 (modular fort) test matches | debugging a regression, "did we try X?" |
 | [docs/history/probe-runs.md](docs/history/probe-runs.md) | the `CS_UNSTABLE` probe runs and their numbers | working on `CS_UNSTABLE` |
 
 A test result goes into the history file of its plan; what it changes in the current state goes into the map file (and the topic file, if it is a general rule).

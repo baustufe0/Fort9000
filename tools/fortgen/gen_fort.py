@@ -719,6 +719,21 @@ VANILLA_VARIANTS["modular"] = {
          "plan": [("upgrades", ["sniper2"])]},
         {"name": "miniguns", "after": 9, "trigger": {"time": 540, "after": "antiair2"},
          "plan": [("upgrades", ["minigun", "minigun"])]},
+        # late game: in the first test match (26.10.2026) the plan was finished at ~485 s and the AI sat at its storage
+        # caps (1200 / 9000) for six minutes while the player's machine guns and mortars wore down the starting fort's
+        # lower front. Two more mortars on the free gallery-roof cells (100 from each machine gun; nothing above
+        # them), their upgrade, and one more woodspam layer in front of the lower front (earlier when the player
+        # has six machine guns: their fire wore it down)
+        {"name": "artillery2", "after": 14, "trigger": {"time": 480, "after": "heavyartillery"},
+         "variant": {"roof_weapons": {"machinegun", "mortar"}},
+         "cfg": {"roof_weapon_cells": [(-3300, -25), (-3500, -25)]},
+         "plan": [("weapons", ["mortar", "mortar"])]},
+        {"name": "heavyartillery2", "after": 14, "trigger": {"time": 560, "after": "artillery2"},
+         "plan": [("upgrades", ["mortar2", "mortar2"])]},
+        {"name": "frontlayer", "after": 14, "trigger": {"types": ("machinegun", "minigun"), "count": 6, "time": 600},
+         "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
+             {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602, 700], "base": [], "outside": "bracing"}]},
+         "plan": [("defence", ["woodspam:2"])]},
     ],
 }
 

@@ -11,7 +11,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
 | Vanilla-5 | a laser | laser rush | 4 lost against an active player (laser blocked; sniped while building; destroyed by rockets 3 s after it was finished; mortars, one laser shot); 1 no-combat test: 7 shots |
-| Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | not yet |
+| Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | once: lost at 896 s (the AI's longest Vanilla match), destroyed 33 devices; late modules added since |
 
 ## Starting fort
 
@@ -192,11 +192,21 @@ launcher).
   | antiair2 | second gallery-roof machine gun (after antiair) | 3 of the missile types | 420 s | 192 |
   | sniper2 | AP sniper (after sniper) | 2 AP snipers, lasers or firebeams | 450 s | 199 |
   | miniguns | both machine guns upgraded (after antiair2) | - | 540 s | 199 |
+  | artillery2 | two more mortars on the gallery roof, between the machine guns (after heavyartillery) | - | 480 s | 189 |
+  | heavyartillery2 | their upgrade (after artillery2) | - | 560 s | 199 |
+  | frontlayer | a third woodspam layer (x -2772) in front of the starting fort's lower front (y 411..700) | 6 machine guns or miniguns | 600 s | 167 |
 
   Against a player who builds nothing the AI still reaches its goal, Vanilla-2's artillery fort, in this order.
+- The late modules (since the first test, 26.10.2026): there the plan was finished at ~485 s and the AI sat at its
+  storage caps (1200 metal / 9000 energy) for six minutes while the player's machine guns and mortars wore down the
+  lower front. The gallery-roof struts under the two new mortars (x -3500..-3400 and -3300..-3200, y -25) are solid
+  bracing in the plan now instead of background bracing. The third woodspam layer hangs further out over the cliff
+  (more load on the starting fort's lower front); whether the front holds it is untested.
 - Anti-air on the gallery roof needs the gallery's front cell (~90 actions of support from the back block): it cannot
   come before plan action 145; until then only the starting fort's machine gun covers the sky.
-- The times are first guesses (Vanilla-2's rush placed its sniper and mortars right after the workshop).
+- The times: in the first test every module came at its time (none was pulled forward: the player's mortars and
+  missile came after the artillery and anti-air modules) and the build kept pace (heavy mortars 346 s, miniguns
+  570 s). With the late modules there is more to build after ~480 s, but once they are in, the AI only rebuilds.
 
 ## Approaches that failed (Vanilla)
 

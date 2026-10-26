@@ -42,7 +42,7 @@ check "Each module fires once"                 "^anti-air at 3: machinegun, then
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
 check "Plan file with modules loads in Lua"     "^307 counterbattery 2 235 mortar$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
-check "Modular plan loads with time triggers"  "^231 7 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
+check "Modular plan loads with time triggers"  "^231 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort-9000/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua
