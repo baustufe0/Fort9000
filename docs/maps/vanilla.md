@@ -10,7 +10,7 @@ rules are in [building-rules.md](../building-rules.md).
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
-| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | twice, both lost: 394 s (earlier layout, no armoury, no weapon), 486 s (rockets fired 17 times; energy starved) |
+| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | three times, all lost: 394 s (no armoury, no weapon), 486 s (energy starved), 373 s (the front stack fell to ~15 heavy mortar shots) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
 ## Starting fort
@@ -171,7 +171,8 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   (-2996, 504) down to the front ground node (-2900, 700), across both lower storeys, 217-218 long in the game (218.7
   between the plan's recorded positions; the game allows 218). The player builds it early in every match (16-74 s,
   three logs); the starting fort has nothing across those storeys, and its lower front gave way in two lost matches.
-  Only in Vanilla-5 for now, as a test.
+  Only in Vanilla-5 for now, as a test. Third test: refused once (`CS_NODESTOOFAR`), built on the retry at 91 s
+  (216.6 long).
 - Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
   the final pass they came only at the end), the first turbine (97; energy, second test), smoke and its shield
   (98-100), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, flak (153), woodspam, machine

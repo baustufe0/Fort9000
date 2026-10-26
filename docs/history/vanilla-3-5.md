@@ -178,3 +178,21 @@ player won at 486 s** (8.1 min). Log archived as `log_20261026-123716_b43a161842
 - The rockets' lanes with their doors were only built in the plan's final pass, so the rockets stood without doors.
 - Changes: the lanes and doors right after the rockets, the first turbine next, the smoke launcher behind an armour
   shield, `RebuildCap` for smoke launchers (3).
+
+## Vanilla-5 rockets, third test (26.10.2026): the front stack fell to heavy mortars, lost at 373 s
+
+The layout with the doors and the first turbine right after the rockets, the smoke shield and the long brace across the
+starting fort. Difficulty 1, against a player with sandbags, an upgrade centre (148 s), machine guns (166-282 s), three
+mortars (232-234 s, heavy mortars 265-267 s), a missile, a sniper (254 s) and an EMP missile (307 s): **the player won
+at 373 s** (6.2 min) after only 30 shots (heavy mortar 18, machine gun 7, sniper 5). Log archived as
+`log_20261026-163229_aa1093caae21.txt`.
+
+- Built: armoury 20 s, EMP rockets 80/84 s, the long brace at 91 s (216.6 long; the first try at ~37 s was refused
+  with `CS_NODESTOOFAR`, the retry stood), turbine 158 s (293 s in the second test), smoke 172 s, mines 198/218 s,
+  upgrade centre 254 s, rockets 314/315 s. The AI fired 53 times: smoke 45, EMP rocket 6, rocket 2.
+- Metal was now short (below 150 in 35 % of the snapshots, `econ=poor` from 105 to 225 s): the turbine's ~50 actions of
+  support came before the second and third mines. Energy was fine (avg 2509).
+- The end: at 336-354 s about 15 heavy mortar shots brought down the deck and nest over the starting fort (the
+  rockets' cells, the prow lanes with their doors, the hidden nest); their nodes stood ~28 forward of the plan (x -2917
+  instead of -2945, -2819 instead of -2845) and 10-12 lower. The reactor below was lost at 373 s. The rockets were
+  lost at 335/344 s.
