@@ -84,9 +84,9 @@ order the AI goes by when several fire at once).
 - Plan files are named `fort-t<team>f<fort>-<Map>-<n|name>.lua`. Generator and plan swap support **t1f1** (one fort
   per side, team 2 mirrored, `Symmetrical = true` in `<Map>.lua`); more forts per side or asymmetric maps need an
   extension. Check whether other maps use the same plans (same FortPos line; Abyss-ToGA1 == Abyss 2v2-ToGA1).
-- Terrain (`fwe.py`): block flags 0/1/2 = solid rock (per side), -1 = ground (solid on Vanilla: `solid_minus1`),
-  -2 = background (walkable). `.fwe` format if `fwe.py` fails: vertex = float x, float y, float z (0), u32, u32 length,
-  name bytes; a polygon = consecutive vertices; flag int32 at offset start-11; map bounds as 4 floats from offset 16.
+- Terrain (`fwe.py`, the full `.fwe` format in [map-files.md](map-files.md)): block id 1/2 = solid rock (per side),
+  -1 = neutral solid rock (solid on Vanilla: `solid_minus1`), -2 = background (walkable); edges marked `foundations`
+  take foundations. The map's starting fort is in its `.spr` (`spr.py`).
   In images y grows downwards; node ids below 10000 are the starting fort, from 10000 built by the plan.
 - Base plan = the plan recorded for exactly this map: its ground mines lie on solid edges and its FortPos (the front
   edge of the platform) matches the starting fort (Abyss: `-1` at x=-1995; `ToGA1` comes from Abyss 2v2 at x=-1495

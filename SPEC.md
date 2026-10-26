@@ -24,6 +24,7 @@ The specification is split into files so a session only loads what it needs.
 | [docs/debugging.md](docs/debugging.md) | build hooks, `BUILD_ERROR`, `UNSTABLE`, `SHAPE`, `STRESS`, the `CS_UNSTABLE` probe | diagnosing refused devices or a deforming fort |
 | [docs/generator.md](docs/generator.md) | `tools/fortgen/` tools and all generator / variant options | changing `gen_fort.py` |
 | [docs/physics.md](docs/physics.md) | `physics.py`: static physics check of a plan (sag, strut stress, refused struts, collapse in build order), its model, calibration against the engine and limits | checking whether a plan stands before a match, or a fort that sags or falls |
+| [docs/map-files.md](docs/map-files.md) | the map file formats `.spr` (starting forts: nodes, struts with rest lengths, devices) and `.fwe` (terrain blocks, views, props); readers `spr.py`, `fwe.py` | reading a map's starting fort or terrain |
 | [docs/building-rules.md](docs/building-rules.md) | game mechanics (materials, devices, economy, lines of fire, wind, `CS_UNSTABLE`), defence facts, design rules, `rules.py` validation, general failed approaches | before changing any plan or the generator |
 | [docs/testing.md](docs/testing.md) | how to test a plan and read the log of a match | analysing a match |
 | [docs/maps/vanilla.md](docs/maps/vanilla.md) | Vanilla: starting fort, shared shape, Vanilla-2 to -5 (current state), failed approaches, open problems | working on a Vanilla plan |

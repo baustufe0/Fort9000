@@ -7,7 +7,6 @@ Pure Python (no numpy), about 3 s for a 250-action plan.
 ```
 python tools/fortgen/physics.py check fortplans/Vanilla/*.lua [--png out.png] [--trace] [--no-modules]
 python tools/fortgen/physics.py calibrate --log <probe log> --plan <plan of that match> [-v]
-python tools/fortgen/physics.py startfort --log <probe log> --plan <plan of that match> --map Vanilla
 python tools/fortgen/physics.py selftest
 ```
 
@@ -16,8 +15,9 @@ python tools/fortgen/physics.py selftest
 ## Model (the game's own, `db/constants.lua` and the material and device files)
 
 - **Nodes** are hinges with mass: half the mass of every strut at them (`Mass` per length × rest length), the devices
-  on their struts split by `LinkT`, at least `MinimumMass` 15. Gravity 981 (y points down). Nodes on the rock
-  (within 5 of the terrain of the map's `.fwe`) are foundations and fixed.
+  on their struts split by `LinkT`, at least `MinimumMass` 15. Gravity 981 (y points down). Foundations are
+  fixed: the starting fort's from its `.spr` flag, a plan's new nodes when they lie on the rock (within 5 of the
+  terrain of the map's `.fwe`).
 - **Struts** are springs: force = `Stiffness` × (length − rest length), wood 200000, armour and doors 250000.
   Struts take no bending, so a cell without a diagonal folds (a *mechanism*).
 - **Stress** as the game reports it (`GetLinkStress`, `PROBE LINK`, the `STRESS` lines): strain divided by the
@@ -53,29 +53,26 @@ strut and the largest sag after every action.
 
 ## Starting fort
 
-Plans do not contain the starting fort. `tools/fortgen/startforts/<map>.json` holds its nodes (plan coordinates,
-team 1), struts and devices, extracted with `startfort` from a `CS_UNSTABLE` probe log (the probe logs every node and
-strut of the fort, [debugging.md](debugging.md)). Vanilla's comes from the probe of 24.10.2026
-(`log_20261024-211443`, Vanilla-3): starting-fort nodes are matched by position to the base plan
-(`gen_fort.MAPS[map]["base_plan"]`); struts between them that the plan does not create as a new node are the
-starting fort, with the material logged at the end of that plan (a swap the plan made, such as `rebrace`, stays in).
-The map stores the starting fort settled, so its rest lengths are set (`prestress`) such that it is in equilibrium
-at the positions of the base plan.
-Abyss's comes from a probe 5 s into a match (26.10.2026, `log_20261026-215802`, Abyss-2 forced, `Probe = { At = 3,
-Devices = { "machinegun" }, Max = 0 }`: only the dump, no attempts; the plan had built two nodes): 31 nodes, 69
-struts, reactor and machine gun. weapon_pack's ToGA1 plan is shifted by 500, but the probe logs world positions, so
-the nodes match the base plan Abyss-1 within 1 after mirroring x; 7 starting-fort nodes that Abyss-1 never references
-keep their logged positions (ids 9000 + runtime id). The Abyss starting fort hangs from the cliff wall: foundations
-at x −2100 (y 150-500) and −2120/−2150 at the top. A starting fort may carry a `warning` that `check` prints
-(`NOTE`). Team-2 plans such as VanillaLong are skipped.
+Plans do not contain the starting fort. `load_startfort` reads it from the map's `.spr` file (`spr.py`,
+[map-files.md](map-files.md)): team 1's nodes at the positions the map stores, its foundations, every strut with its
+material and **its own rest length**, and the devices on struts. The map stores the fort settled, in equilibrium with
+those rest lengths (solving it does not move it). Node ids become the plan's by position: nearest first, within 20, to
+the starting-fort nodes of the base plan (`gen_fort.MAPS[map]["base_plan"]`) and of the plan being checked (Vanilla's
+base plan was recorded from a settled fort: up to 6.5 off the map's nodes; Vanilla's file ids are the plan's − 1); a
+node no plan names keeps its file id + 90000. The replay measures a new node's offset from the plan's position of its
+source node, as the game does. Any map with a readable `.spr` works; team-2 plans such as VanillaLong are skipped.
+Until 27.10.2026 the starting forts came from probe dumps (`startforts/<map>.json`, rest lengths assumed); the map's
+own rest lengths fit the engine better (Abyss: correlation 0.92 → 0.99).
+`MAP_NOTES` in `physics.py` holds a note per map that `check` prints (`NOTE`).
 
 ## Calibration and validation (26.10.2026)
 
 - **Engine stress:** `calibrate` replays the plan of a probe match (Vanilla-3 as of commit d98ba24, 243 actions) and
   compares every strut with the stress the engine logged (`PROBE LINK`): 220 struts, correlation **0.89**, engine
-  stress = **0.97 ×** model, with the game's constants and no fitted factor. A spring law per unit strain
-  (force = `Stiffness` × strain × 100) fits worse (0.88, 0.93 ×), so `SPRING_LAW = "abs"`. The worst struts are
-  the starting fort's ground posts (armour 40-41: engine 0.62, model 0.50) and the back of the starting fort.
+  stress = **0.95 ×** model (0.97 with the earlier probe-extracted starting fort), with the game's constants and no
+  fitted factor. A spring law per unit strain (force = `Stiffness` × strain × 100) fits worse (0.88, 0.90 ×), so
+  `SPRING_LAW = "abs"`. The worst struts are the starting fort's ground posts (armour 40-41: engine 0.62, model
+  0.50) and the back of the starting fort.
 - **Positions:** median node 6 off the engine's; the top of the Vanilla-3 tower sags 93 (engine 103). A handful of
   back-block nodes appear ~100-400 off because the probe's plan ids there are shifted by one (an id-mapping quirk
   of the log, not of the model).
@@ -95,8 +92,8 @@ at x −2100 (y 150-500) and −2120/−2150 at the top. A starting fort may car
   front of the starting fort hang unbraced for 8+ actions (`UNBRACED`): the generator builds a layer's nodes before
   its braces.
 
-- **Abyss (not validated):** the bare starting fort matches the engine (71 struts, correlation 0.93, engine =
-  1.07 × model). The plans do not: the only in-game shape record (Abyss-5, 24.10.2026, an older plan version, stuck at
+- **Abyss (not validated):** the bare starting fort matches the engine (71 struts at 5 s into the match, correlation
+  0.99, engine = 1.05 × model, with the map's rest lengths). The plans do not: the only in-game shape record (Abyss-5, 24.10.2026, an older plan version, stuck at
   plan action ~60) shows the tower's front sagging 13-48 by 60 s, the model sags its front cantilever (x −1800..−1700
   over the starting fort's edge) by 100-160 by action 30 and swings it down at action 36 (no strut over its limit:
   the base struts of the tower at −0.72..−0.75 tilt the cantilever, and its cells are braced only after it has

@@ -18,16 +18,14 @@ devices Mass / WeaponMass from their files. The spring law and the scale of the 
 SPRING_LAW and STRESS_SCALE below come from `calibrate` (engine stress of every strut in a CS_UNSTABLE probe log,
 docs/physics.md).
 
-The plan alone does not contain the starting fort; startforts/<map>.json holds it (nodes, struts, devices),
-extracted from a probe log with `startfort`.
+The plan alone does not contain the starting fort; it comes from the map's .spr file (spr.py): the positions the map
+stores, its rest lengths, foundations and devices.
 
 Usage:
   physics.py check <plan.lua> ... [--map Vanilla] [--no-modules] [--png out.png] [--trace]
   physics.py calibrate --log <probe log> --plan <plan built in that match> [--map Vanilla]
-  physics.py startfort --log <probe log> --plan <plan built in that match> [--map Vanilla] [--out startforts/<map>.json]
 """
 import argparse
-import json
 import math
 import os
 import re
@@ -45,6 +43,12 @@ MAX_LINK_LENGTH = 218.0       # StandardMaxLinkLength (a strut between existing 
 MIN_LINK_LENGTH = 37.5
 SNAP = 20.0                   # SnapToNode
 COLLAPSE_BREAKS = 8           # struts broken in all: the fort has fallen, the replay stops
+# maps whose verdicts are known to be unreliable (printed as NOTE by check)
+MAP_NOTES = {
+    "Abyss": "Abyss is not validated: the starting fort matches the engine (stress correlation 0.99), but the towers "
+             "cantilevered over it sag far more than the one in-game record (Abyss-5, 24.10.2026); a FALLS here is "
+             "not reliable (docs/physics.md)",
+}
 UNBRACED_MAX = 8              # actions a node may hang unbraced before it is reported
 GROUND_TOL = 5.0
 
@@ -127,7 +131,7 @@ class Fort:
         self.fixed = set()
         self.links = {}
         self.devices = []          # [name, a, b, t]
-        self.warning = None        # caveat of the starting fort (startforts/<map>.json "warning")
+        self.warning = None        # caveat for the map (MAP_NOTES)
 
     def add_link(self, a, b, mat, rest=None):
         self.links[frozenset((a, b))] = [a, b, mat, rest if rest is not None else self.dist(a, b)]
@@ -368,26 +372,40 @@ def prestress(fort):
 # ---------------------------------------------------------------------------------------------------------------
 # starting fort and plan replay
 
-def startfort_path(map_name):
-    return os.path.join(HERE, "startforts", map_name + ".json")
-
-
-def load_startfort(map_name, terrain):
-    path = startfort_path(map_name)
+def load_startfort(map_name, terrain=None, plan_pos=None):
+    """The map's starting fort for team 1 (the side plans are written for) from its .spr file (spr.py): positions as
+    the map stores them (settled), the map's own rest lengths, foundations, devices on struts. Node ids are the
+    plan's: matched by position to the base plan's (and plan_pos's) starting-fort nodes; a node no plan names keeps
+    its file id + 90000. None if the map has no readable .spr."""
+    import spr
+    path = spr.spr_path(map_name)
     if not os.path.exists(path):
         return None
-    d = json.load(open(path))
+    try:
+        nodes, found, struts, devices, _ = spr.starting_fort(path, team=1)
+    except spr.SprError:
+        return None
+    known = dict(base_positions(map_name))
+    known.update(plan_pos or {})
+    # the base plan was recorded from a settled fort: its nodes lie up to ~7 from the map's (Vanilla); nearest first,
+    # each plan node once
+    pairs = sorted((math.hypot(q[0] - p[0], q[1] - p[1]), n, k) for n, p in nodes.items() for k, q in known.items())
+    ids, taken = {}, set()
+    for d, n, k in pairs:
+        if d < SNAP and n not in ids and k not in taken:
+            ids[n] = k
+            taken.add(k)
+    for n in nodes:
+        ids.setdefault(n, 90000 + n)
     f = Fort()
-    for n, p in d["nodes"].items():
-        f.pos[int(n)] = list(p)
-        if on_ground(terrain, p):
-            f.fixed.add(int(n))
-    for a, b, mat in d["links"]:
-        f.add_link(a, b, mat)
-    f.devices = [list(x) for x in d["devices"]]
-    if d.get("prestress", True):
-        prestress(f)
-    f.warning = d.get("warning")
+    for n, p in nodes.items():
+        f.pos[ids[n]] = list(p)
+        if n in found:
+            f.fixed.add(ids[n])
+    for a, b, mat, rest in struts:
+        f.add_link(ids[a], ids[b], mat, rest)
+    f.devices = [[name, ids[a], ids[b], t] for name, a, b, t in devices]
+    f.warning = MAP_NOTES.get(map_name)
     return f
 
 
@@ -398,6 +416,7 @@ class Replay:
         self.f = fort
         self.terrain = terrain
         self.plan_pos = {n: tuple(p) for n, p in fort.pos.items()}
+        self.planned = set()            # nodes whose plan position has been taken from the plan
         self.alias = {}                 # plan node id -> node it snapped to
         self.refused = []               # (action, kind, detail)
         self.peak = {}                  # pair -> (|stress|, action)
@@ -416,14 +435,17 @@ class Replay:
         A = self.node(a.get("OriginalNodeAId"))
         B = self.node(a.get("OriginalNodeBId"))
         for nid, key in ((a.get("OriginalNodeAId"), "PosA"), (a.get("OriginalNodeBId"), "PosB")):
-            if nid is not None and key in a:
-                self.plan_pos.setdefault(nid, a[key])
+            if nid is not None and key in a and nid not in self.planned:
+                # the plan's position of a starting-fort node (offsets of new nodes are measured from it)
+                self.plan_pos[nid] = a[key]
+                self.planned.add(nid)
         if t == "CREATE_NODE":
             if A not in f.pos:
                 self.refused.append((k, "node", "source %s missing" % A))
                 return False
             np_ = a["NewNodePos"]
             self.plan_pos[a["OriginalNodeBId"]] = np_
+            self.planned.add(a["OriginalNodeBId"])
             if on_ground(self.terrain, np_):
                 p = list(np_)
             else:
@@ -550,9 +572,10 @@ def check(path, map_name, terrain, modules=True, trace=False, verbose=True):
     if modules:
         for m in parse_modules(path):
             actions = actions + m["actions"]
-    fort = load_startfort(map_name, terrain)
+    fort = load_startfort(map_name, terrain, {n: p for n, p in node_positions(actions).items() if n < 10000})
     if fort is None:
-        print("%s: no starting fort for %s (startforts/%s.json)" % (os.path.basename(path), map_name, map_name))
+        print("%s: no readable starting fort for %s (data/maps/%s/%s.spr)" % (os.path.basename(path), map_name,
+                                                                             map_name, map_name))
         return None
     if header.get("team") == 2:      # team-2 plans (VanillaLong) stand mirrored on the map
         print("%s: team-2 plan, starting fort is team 1; skipped" % os.path.basename(path))
@@ -648,41 +671,11 @@ def map_probe(snap, actions, map_name):
 def base_positions(map_name):
     """Starting-fort node positions of the map's base plan (the game's own plan, gen_fort.MAPS)."""
     import gen_fort
-    cfg = gen_fort.MAPS[map_name]
+    cfg = gen_fort.MAPS.get(map_name)
+    if cfg is None:
+        return {}
     d = os.path.join(DATA, cfg["plan_dir"]) if cfg.get("plan_dir") else os.path.join(DATA, "maps", map_name)
     return {n: p for n, p in node_positions(parse_plan(os.path.join(d, cfg["base_plan"]))[1]).items() if n < 10000}
-
-
-def cmd_startfort(args, terrain):
-    _, actions = parse_plan(args.plan)
-    snap = read_probe(args.log)
-    ids, pos = map_probe(snap, actions, args.map)
-    plan_pos = dict(base_positions(args.map))
-    plan_pos.update(node_positions(actions))
-    built = {frozenset((a["OriginalNodeAId"], a["OriginalNodeBId"])) for a in actions
-             if a["Type"] == "CREATE_NODE"}
-    plan_dev = {(a.get("DeviceSaveName"), frozenset((a["OriginalNodeAId"], a["OriginalNodeBId"]))) for a in actions
-                if a["Type"] == "CREATE_DEVICE" and "OriginalNodeAId" in a}
-    nodes, links, devices = {}, [], []
-    for ra, rb, mat, _, devs in snap["links"]:
-        a, b = ids[ra], ids[rb]
-        if a >= 10000 or b >= 10000 or frozenset((a, b)) in built:
-            continue
-        for n in (a, b):
-            nodes[n] = list(plan_pos.get(n, pos[n]))
-        links.append([a, b, mat])
-        for name, t in devs:
-            if (name, frozenset((a, b))) not in plan_dev:
-                devices.append([name, a, b, t])
-    out = args.out or startfort_path(args.map)
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, "w") as fh:
-        json.dump({"map": args.map, "source": "%s (plan %s)" % (os.path.basename(args.log), os.path.basename(args.plan)),
-                   "note": "struts between starting-fort nodes in the probe snapshot; materials as logged at the end of "
-                           "the plan (a plan's swap of a starting-fort strut is not undone)",
-                   "prestress": True, "nodes": {str(k): v for k, v in sorted(nodes.items())},
-                   "links": links, "devices": devices}, fh, indent=1)
-    print("starting fort: %d nodes, %d struts, %d devices -> %s" % (len(nodes), len(links), len(devices), out))
 
 
 def _corr(xs, ys):
@@ -702,7 +695,8 @@ def cmd_calibrate(args, terrain):
     eng = {frozenset((ids[a], ids[b])): (s, mat) for a, b, mat, s, _ in snap["links"]}
     for law in ("abs", "strain"):
         SPRING_LAW, STRESS_SCALE = law, 1.0
-        rp = Replay(load_startfort(args.map, terrain), terrain).run(actions)
+        start = {n: p for n, p in node_positions(actions).items() if n < 10000}
+        rp = Replay(load_startfort(args.map, terrain, start), terrain).run(actions)
         st = stresses(rp.f)
         pairs = [(abs(st[k]), eng[k][0]) for k in st if k in eng]
         xs, ys = [p[0] for p in pairs], [p[1] for p in pairs]
@@ -801,7 +795,7 @@ def main():
     c.add_argument("--no-modules", action="store_true", help="leave out the plan's reactive build modules")
     c.add_argument("--png", help="draw the final fort (one plan) with stress colours")
     c.add_argument("--trace", action="store_true", help="print the worst strut after every action")
-    for name in ("calibrate", "startfort"):
+    for name in ("calibrate",):
         p = sub.add_parser(name)
         p.add_argument("--log", required=True)
         p.add_argument("--plan", required=True)
@@ -823,7 +817,7 @@ def main():
                 render_png(out[0], args.png, os.path.basename(path))
         sys.exit(1 if bad else 0)
     terrain = load_terrain(args.map)
-    (cmd_startfort if args.cmd == "startfort" else cmd_calibrate)(args, terrain)
+    cmd_calibrate(args, terrain)
 
 
 if __name__ == "__main__":

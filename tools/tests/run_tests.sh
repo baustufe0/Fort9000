@@ -122,6 +122,10 @@ if [ -n "$PY" ]; then
   check "Physics: an unbraced cell folds"        "^unbraced cell: mechanism=\[3\]$" cat phys.txt
   check "Physics: a short overhang holds"        "200-long overhang: converged=True broken=0" cat phys.txt
   check "Physics: a long overhang breaks"        "600-long overhang: converged=[A-Za-z]* broken=[1-9][0-9]* tip sag [0-9]{3}" cat phys.txt
+  # map files (tools/fortgen/spr.py, fwe.py, docs/map-files.md); need the game's data/maps
+  check "Map .spr: Abyss starting fort"          "team 1: 31 nodes \(9 foundations\), 69 struts, devices \['reactor 291-294@0.52', 'machinegun 292-293@0.35'\]" $PY "$MOD/tools/fortgen/spr.py" Abyss
+  check "Map .spr: Vanilla starting fort"        "team 1: 19 nodes \(4 foundations\), 36 struts" $PY "$MOD/tools/fortgen/spr.py" Vanilla
+  check "Map .fwe: Abyss terrain"                "version 20, gravity 981, .* 15 blocks, 3 views" $PY "$MOD/tools/fortgen/fwe.py" Abyss
   check "Physics: Vanilla-5's long brace refused" "REFUSED action [0-9]* link: 47-40 length 219" $PY "$MOD/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
 else
   echo "SKIP  recorded build -> plan, probe parser (no Python 3)"

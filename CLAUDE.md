@@ -33,7 +33,7 @@ Only exception: the German entry in `displayname.lua` (in-game localisation).
 - Generate plans: see the docstring of `tools/fortgen/gen_fort.py`; check them with `rules.py` (fort building rules,
   `docs/building-rules.md` – read it before changing plans or the generator; for one map also `docs/maps/<map>.md`) and `render_all.py`.
 - Physics check of plans (sag, strut stress, struts refused in build order, collapse): `python tools/fortgen/physics.py check fortplans/Vanilla/*.lua [--png out.png]`
-  (`docs/physics.md`; needs `tools/fortgen/startforts/<map>.json`, only Vanilla so far).
+  (`docs/physics.md`; the starting fort comes from the map's `.spr`: `tools/fortgen/spr.py`, `docs/map-files.md`).
 - Plan from a player's build: build the fort (sandbox, no combat), then
   `python tools/fortgen/rec_fort.py --map Vanilla --out fortplans/Vanilla/fort-t1f1-Vanilla-<n>.lua` (`docs/recorder-training.md`).
 - Map where the game refuses devices (`CS_UNSTABLE`): set `Probe` in `ai/fortplans.lua`, let the plan build in a sandbox,
