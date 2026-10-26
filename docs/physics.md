@@ -61,7 +61,13 @@ strut of the fort, [debugging.md](debugging.md)). Vanilla's comes from the probe
 starting fort, with the material logged at the end of that plan (a swap the plan made, such as `rebrace`, stays in).
 The map stores the starting fort settled, so its rest lengths are set (`prestress`) such that it is in equilibrium
 at the positions of the base plan.
-Only Vanilla has one so far (Abyss needs a probe run there; team-2 plans such as VanillaLong are skipped).
+Abyss's comes from a probe 5 s into a match (26.10.2026, `log_20261026-215802`, Abyss-2 forced, `Probe = { At = 3,
+Devices = { "machinegun" }, Max = 0 }`: only the dump, no attempts; the plan had built two nodes): 31 nodes, 69
+struts, reactor and machine gun. weapon_pack's ToGA1 plan is shifted by 500, but the probe logs world positions, so
+the nodes match the base plan Abyss-1 within 1 after mirroring x; 7 starting-fort nodes that Abyss-1 never references
+keep their logged positions (ids 9000 + runtime id). The Abyss starting fort hangs from the cliff wall: foundations
+at x −2100 (y 150-500) and −2120/−2150 at the top. A starting fort may carry a `warning` that `check` prints
+(`NOTE`). Team-2 plans such as VanillaLong are skipped.
 
 ## Calibration and validation (26.10.2026)
 
@@ -88,6 +94,16 @@ Only Vanilla has one so far (Abyss needs a probe run there; team-2 plans such as
   (10018-10068); the engine showed the starting fort's ground posts ~25 % above the model. The woodspam nodes in
   front of the starting fort hang unbraced for 8+ actions (`UNBRACED`): the generator builds a layer's nodes before
   its braces.
+
+- **Abyss (not validated):** the bare starting fort matches the engine (71 struts, correlation 0.93, engine =
+  1.07 × model). The plans do not: the only in-game shape record (Abyss-5, 24.10.2026, an older plan version, stuck at
+  plan action ~60) shows the tower's front sagging 13-48 by 60 s, the model sags its front cantilever (x −1800..−1700
+  over the starting fort's edge) by 100-160 by action 30 and swings it down at action 36 (no strut over its limit:
+  the base struts of the tower at −0.72..−0.75 tilt the cantilever, and its cells are braced only after it has
+  sagged). The base nodes match (10000: model 1, 8 / game 1, 11; 10001: −3, 19 / 2, 20). With 3 × the stiffness the
+  front matches and the base is too stiff, so no single stiffness fits. `check` therefore says Abyss-2 `WEAK`, -3 and
+  -5 `FALLS`, -4 `WEAK` (sag 164), but these verdicts are not reliable (the `NOTE` says so). What would settle it: a
+  probe at the end of an Abyss plan (engine stress and positions of a loaded Abyss tower, like the Vanilla calibration).
 
 ## Limits
 

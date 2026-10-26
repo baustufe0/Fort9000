@@ -127,6 +127,7 @@ class Fort:
         self.fixed = set()
         self.links = {}
         self.devices = []          # [name, a, b, t]
+        self.warning = None        # caveat of the starting fort (startforts/<map>.json "warning")
 
     def add_link(self, a, b, mat, rest=None):
         self.links[frozenset((a, b))] = [a, b, mat, rest if rest is not None else self.dist(a, b)]
@@ -154,6 +155,7 @@ class Fort:
         f.fixed = set(self.fixed)
         f.links = {k: list(v) for k, v in self.links.items()}
         f.devices = [list(d) for d in self.devices]
+        f.warning = self.warning
         return f
 
 
@@ -385,6 +387,7 @@ def load_startfort(map_name, terrain):
     f.devices = [list(x) for x in d["devices"]]
     if d.get("prestress", True):
         prestress(f)
+    f.warning = d.get("warning")
     return f
 
 
@@ -564,6 +567,8 @@ def check(path, map_name, terrain, modules=True, trace=False, verbose=True):
     if verbose:
         print("%s: %s  (struts %d, nodes %d, max stress %.2f, max sag %.0f at node %s)" % (
             os.path.basename(path), verdict, len(rp.f.links), len(rp.f.pos), final_max[0], sag, sag_node))
+        if fort.warning:
+            print("  NOTE %s" % fort.warning)
         for k, kind, d in rp.refused:
             print("  REFUSED action %d %s: %s" % (k, kind, d))
         for k, a, b, mat, s in rp.broken:
