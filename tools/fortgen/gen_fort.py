@@ -39,9 +39,10 @@ MIN_STRUT = 37.5        # StandardMinLength: the shortest strut the game allows
 DOOR_MIN = 49           # the shortest door (MinLength of door in building_materials.lua)
 # direct-fire weapons whose door is cut to the shot (split_doors): barrel height above the strut (the RecessionBox
 # offset of the weapon file) and barrel length
-DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser"}
-BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60}
-BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58}
+DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser", "rocketemp", "rocket"}
+# rockets: weapon_pack's rocket.lua / rocketemp.lua (RecessionBox Offset y -65, BarrelLength 60)
+BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60, "rocketemp": 65, "rocket": 65}
+BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58, "rocketemp": 60, "rocket": 60}
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
                   "flak", "shotgun", "rocketemp", "rocket"}
 # the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
@@ -592,35 +593,48 @@ VANILLA_VARIANTS = {
     # first, so the enemy's anti-air cannot see the rockets (ai.lua, Fire.SmokeCover); the EMP rockets fire already
     # while the upgrade centre is built. Vanilla-2's low fort (the most tested layout), without its sniper and mortars;
     # the armoury on the starting fort's proven workshop slot (no workshop needed), so it costs no structure.
-    # A rocket needs a free lane ahead, like a 20mm, cannon or laser: no other rocket or smoke launcher in its row. The
-    # low fort has two heights tall enough for a launcher, so the weapons are stacked: EMP rocket 1 inside the nest
-    # storey (floor y 105, 130 high), firing through the prow cell (an empty lane, its front wall background bracing in
-    # the hidden storey); EMP rocket 2 alone on the prow roof (y -25, the front-most place, nothing ahead); the smoke
-    # launcher on one more storey on the nest roof (x -3100..-2945, roof y -125), in neither row and with an open arc;
-    # flak and the machine gun on the gallery roof behind rocket 2 (they fire at the sky).
+    # A rocket needs a free lane ahead, like a 20mm, cannon or laser (no other rocket or smoke launcher in its row), and
+    # a door in front of it like a sniper (short, only where the shot passes; split_doors). Each rocket has its own cell
+    # at the front, one above the other: EMP rocket 1 in the nest storey (floor y 105, 130 high), firing through the
+    # prow cell (an empty lane); its door is cut into the lane's front post, background bracing above it (the hidden
+    # storey: the gallery turbines need the wind). EMP rocket 2 in one more storey on the prow roof (x -2945..-2845,
+    # y -155..-25, 130 high), with a door in its front post. The smoke launcher on the roof of that storey's other half
+    # (x -3100..-2945, y -155), in neither rocket's row, with an open arc; flak and the machine gun on the gallery roof
+    # (they fire at the sky).
     "rockets": {
-        "title": "Rocket rush: armoury at once, EMP rockets in the nest and on the prow roof, smoke on top, flak behind, then rockets",
-        "shape": _union(_V_RUSH_DECK, _box(-3100, -2945, -125, -25)),
+        "title": "Rocket rush: armoury at once, two EMP rockets behind doors one above the other, smoke on top, flak behind",
+        "shape": _union(_V_RUSH_DECK, _box(-3100, -2845, -155, -25)),
         "tech_slots": {"armoury": [((-3096, 503), (-2996, 504), 0.05)],
                        "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "roof_weapons": {"flak", "machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
             "mortar_slots": [], "split_edges": [],
-            "weapon_cells": [(-3100, 105, "rocketemp")],
+            # no top cell reserved for the smoke launcher (lobbed; it has its slot): the reservation took rocket 2's cell
+            "reserve_mortar": False,
+            # doors only as long as the rockets' shots need, like the snipers' (split_doors)
+            "split_doors": True,
+            # the storey over the nest 130 high (rocket 2's box is 112), its roof at y -155
+            "rows": [-425, -325, -225, -155, -25, 105, 205, 308, 405, 503, 602, 700],
+            # rocket 2 at LinkT 0.12 (x -2933): the brace from its split door's node to the cell's top back corner then
+            # passes over its box (at 0.4 every brace ran through it and the door stayed whole); its barrel (60) ends
+            # 28 behind the door
+            "weapon_cells": [(-3100, 105, "rocketemp"), (-2945, -25, "rocketemp", 0.12)],
             "lane_cells": [(-2945, 205), (-2945, 105)],
-            # the lane's front stays background bracing (the hidden storey): a door there blocked the gallery turbines'
-            # wind on the right side (two of three from 36-45 % to 0 %)
+            # rocket 1's door in the lane's front post (background bracing in the hidden storey), background bracing
+            # around it: a full door there blocked the gallery turbines' wind on the right side (two of three from
+            # 36-45 % to 0 %)
+            "door_posts": [(-2845, -25, 105)],
+            "door_rest": [((-2845, -25, 105), "backbracing")],
             # the gallery's split cell only (the prow cell is the nest rocket's lane)
             "split_cell": [(-3200, -25)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
-            "weapon_slots": [((-2945, -25), (-2845, -25), 0.5, "rocketemp"),
-                             ((-3100, -125), (-2945, -125), 0.5, "smokebomb")],
+            "weapon_slots": [((-3100, -155), (-2945, -155), 0.5, "smokebomb")],
             "roof_weapon_cells": [(-3300, -25), (-3200, -25)],
-            # the smoke launcher's storey rests on the nest only (like the tower cage): it must not wait for the
-            # deck and gallery over the whole width
+            # the storey over the nest rests on the nest only (like the tower cage): it must not wait for the deck and
+            # gallery over the whole width
             "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-25,)}},
         "plan": [
-            # the armoury (no structure), a mine while it builds, then the EMP rockets (prow roof, nest) and the smoke
+            # the armoury (no structure), a mine while it builds, then the EMP rockets (nest, prow storey) and the smoke
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
             ("weapons", ["rocketemp", "rocketemp", "smokebomb"]),
@@ -1920,13 +1934,21 @@ class Plan:
                 first.setdefault(pair, k)
                 final[pair] = re.search(r'MaterialSaveName = "(\w+)"', line).group(1)
         weapons = [(d, a, b, t) for d, a, b, t, c in self.placed if d in DOOR_WEAPONS]
+        # door_posts [(x, y_top, y_floor)]: front posts split like doors although they are not doors (e.g. background
+        # bracing in a hidden storey); door_rest [((x, y_top, y_floor), material)]: the material of a split post's
+        # pieces above and below its door (default armour; background bracing where turbines need the wind)
+        def listed(p, q, entries):
+            for x0, yt, yf in entries:
+                if abs(p[0] - x0) < 3 and abs(q[0] - x0) < 3 and {round(p[1]), round(q[1])} == {round(yt), round(yf)}:
+                    return True
+            return False
         edits = {}                                   # action index -> replacement lines; None drops it
         appended = []                                # (insert after index, line)
         for pair, mat in final.items():
-            if mat != "door":
-                continue
             ia, ib = tuple(pair)
             pa, pb = pos[ia], pos[ib]
+            if mat != "door" and not listed(pa, pb, self.cfg.get("door_posts", [])):
+                continue
             if abs(pa[0] - pb[0]) > 8:
                 continue                             # only (nearly) vertical front posts
             top_id, bot_id = (ia, ib) if pa[1] < pb[1] else (ib, ia)
@@ -1946,9 +1968,10 @@ class Plan:
             dt, db = span
             # the pieces from the top down, with their materials
             ys = [y_top] + ([dt] if dt > y_top else []) + ([db] if db < y_floor else []) + [y_floor]
+            rest = next((m_ for post, m_ in self.cfg.get("door_rest", []) if listed(pa, pb, [post])), "armour")
             mats = []
             for y0, y1 in zip(ys, ys[1:]):
-                mats.append("door" if y0 >= dt - 0.01 and y1 <= db + 0.01 else "armour")
+                mats.append("door" if y0 >= dt - 0.01 and y1 <= db + 0.01 else rest)
             ids = [top_id]
             for y in ys[1:-1]:
                 ids.append(self.next_id)

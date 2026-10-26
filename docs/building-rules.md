@@ -189,7 +189,8 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
    built before the weapon within its recession box); heavy weapons in solid X-braced storeys on strong posts, never in
    the top storey, in storeys high enough for their box; mortars with a door roof or open arc, or in a low hidden nest
    with sandbags. A rocket (EMP rocket) needs a free lane like a 20mm, cannon or laser: no other rocket or smoke
-   launcher in its row (rows closer than 50 in height count as one). A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
+   launcher in its row (rows closer than 50 in height count as one), and a short door in front of it like a sniper
+   (`split_doors`; barrel 65 above its strut, 60 long, from weapon_pack's rocket files). A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
    weapon, so it never stands in an open cell. Cells where a device type failed in every test are left to others
    (`weapon_avoid`, `turbine_avoid`).
 7. **Woodspam:** cheap wooden layers in front of what must be protected (the reactor's front, the starting fort's
