@@ -225,23 +225,136 @@ MAPS = {
 # shape(x0, y0, x1, y1) -> True if the cell with these corners should be built
 
 VARIANTS = {
+    # Abyss-2, mortar battery (rebuilt 27.10.2026; the old Abyss-2, mortars on the open roofs of a wide tower, lost all
+    # three test matches). The game's own Abyss-1 puts its three mortars on a storey over the starting fort's front
+    # roof (y 5..-95, x -2000..-1700); here that storey is a hidden nest like Vanilla-2's (background bracing: the
+    # player cannot see in, the shells pass out), 130 high, two mortars on its floor (the starting fort's roof struts,
+    # 95 apart) behind a split front cell with two stacked sandbags and two layers of solid woodspam (the mortars lob
+    # over them). Everything else hangs on the cliff: a one-cell spine tower against the wall (x -2100..-2000, from
+    # the starting fort's top node at -250 up to the ledge) carries the ledge roof with the three ledge mines under it
+    # and the turbines on it (the rock blocks their wind from the left, as for the game's Abyss-1); the third mortar
+    # on the tower's top roof (nothing above it). Every cell X-braced (a cell with a device has background diagonals,
+    # as stiff as solid ones); the machine guns (anti-air, later miniguns) in the tower's front cells behind doors,
+    # the starting fort's own machine gun upgraded too.
+    # After test 1 (27.10.2026, lost at 8.8 min, docs/history/abyss-2.md): an early sniper in the tower's first cell,
+    # sold by the AI once it finds nothing to hit (FortRetire); the upgrade centre's cell under the starting fort
+    # enclosed and shielded (it hung on a bare strut, open to snipers); two layers of wood in front of the starting
+    # fort's lower front face, the reactor's wall (the player's rockets broke it and the reactor fell); a turbine
+    # after each ledge mine (energy fell to ~300 with the turbines after all three mines).
     "artillerie": {
-        "title": "Artillery tower: wide tower, many mortars on top, workshop early",
+        "title": "Mortar battery: hidden mortar nest over the starting fort behind sandbags, spine tower on the cliff, miniguns",
         "shape": lambda x0, y0, x1, y1: (
-            (y0 >= -628 and y1 <= -250 and x0 >= -2100 and x1 <= -1800) or
-            (y0 >= -846 and y1 <= -628 and x0 >= -2400 and x1 <= -1900)),
+            (y0 >= -125 and y1 <= 5 and x0 >= -2000 and x1 <= -1700) or       # mortar nest
+            (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -2000) or     # spine tower on the cliff wall
+            (y0 >= -846 and y1 <= -746 and x0 >= -2500 and x1 <= -2100) or     # ledge roof (mines, turbines)
+            (y0 >= 305 and y1 <= 405 and x0 >= -2000 and x1 <= -1900)),        # upgrade centre's cell
+        # the early sniper is sold after 90 s in which it declined to fire with energy to spare (ai.lua, RETIRE)
+        "retire": {"sniper": 90},
+        # the upgrade centre on Abyss-1's factory slot (its own slot at y 5 is the nest floor, beside the first mortar)
+        "tech_slots": {"upgrade": [((-2002, 405), (-1901, 405), 0.94)]},
+        "cfg": {
+            # one more column, so the nest's front cell (x -1800..-1700) has a neighbour on the grid
+            "cols": [-2500, -2400, -2300, -2200, -2100, -2000, -1900, -1800, -1700, -1600],
+            # the nest 130 high (y 5..-125: two stacked sandbags need 2 x 51); its back post is the starting fort's
+            # node at (-1997, -96), onto which the grid point (-2000, -125) snaps
+            "rows": [-846, -746, -628, -502, -392, -250, -125, 5, 106, 206, 305, 405, 500, 600],
+            "weapon_pick_best": True,
+            "bottom_up": True,
+            "crossbrace_y": -1000,
+            # the sniper in the tower's first cell (floor -250, built ~10 actions in), firing through a short door in
+            # the tower's front post over the nest (LinkT 0.7 like Vanilla-2's sniper: muzzle close to the door)
+            "weapon_cells": [(-2100, -250, "sniper", 0.7)],
+            "split_doors": True,
+            "hidden_box": (-2000, -1700, -125, 5),
+            # one device per strut: each mortar on its own roof strut of the starting fort, 95 apart (Abyss-1: 91-96)
+            "mortar_slots": [((-2000, 5), (-1900, 5), 0.5), ((-1900, 5), (-1800, 5), 0.45)],
+            "split_cell": [(-1800, -125)],
+            "sandbag_slots": [(0, "floor", 0.5), (0, "mid", 0.5)],
+            # the third mortar on the tower's top roof
+            "weapon_slots": [((-2100, -846), (-2000, -846), 0.5, "mortar")],
+            # machine guns in the tower's front cells, from the middle storey (their doors look out over the nest)
+            "aa_y": -502,
+            # the starting fort's machine gun (LinkT from the map's .spr), upgraded to a minigun like the planned ones
+            "orig_devices": [((-1895, 110), (-1795, 114), "machinegun", 0.35)],
+            # batteries and stores inside the starting fort (Abyss-1's slots), behind its armour
+            "use_eco_slots": True,
+            "mortar_open_arc": True,
+            "clear_fire_lines": True,
+            # two solid layers in front of the nest's front post (x -1700): they shield the mortars and sandbags
+            # from flat fire; the mortars lob over them
+            # each layer braced down to the starting fort's front node (-1747, 110), like the nest's front node
+            # (no woodspam in front of the upgrade centre's cell: the device is 180 wide on a 100-wide cell, its box
+            # reaches 90 beyond the cell's front post, and a layer there would be built through it, rules.py warns)
+            "woodspam": {"wall_x": -1700, "layers": [-1660, -1620], "rows": [-125, 5],
+                         "base": [(-1747.27, 110.37), (-1747.27, 110.37)]},
+            # nothing on the nest's roof: the grid would add a connecting cell there (x -2000..-1900, y -250..-125,
+            # it touches the starting fort's node (-1997, -96)), in the first mortar's arc and resting on the
+            # background bracing of the nest
+            "keepout": [(-2000, -1900, -250, -125)],
+        },
         "plan": [
-            ("aa", ["machinegun", "machinegun"]),
-            ("eco", ["mine", "mine", "turbine", "turbine", "battery"]),
+            # mortar rush: the workshop (on the starting fort, no structure, 60 s) sets the pace; meanwhile the bottom
+            # mine (three struts), the tower's first cell and the nest with its sandbags (0 metal); the mortars as soon
+            # as the workshop is finished, after their sandbags (placed first, Vanilla-2's mortars were destroyed 3-5 s
+            # later)
             ("tech", ["workshop"]),
-            ("weapons", ["mortar", "mortar", "sniper", "mortar"]),
-            ("eco", ["mine", "turbine", "store", "battery", "mine"]),
+            ("eco", ["mine"]),
+            # the tower's first cell, its foot (-2000, -250) braced at once to the starting fort's nodes below it
+            # (-2049, -197) and (-1997, -96); otherwise it hangs on the wall node (-2120, -250) alone
+            ("build", [(-2100, -250, "sniper")]),
+            ("struts", [((-2000, -250), (-2049.41, -196.45), "bracing"), ((-2000, -250), (-1997.10, -95.84), "bracing")]),
+            # the early sniper (no tech) while the workshop builds: it picks off the enemy's first weapons
+            ("weapons", ["sniper"]),
+            # the nest from the back to the front, then the front cell's floor node (beyond the starting fort's roof)
+            # braced down to the starting fort's front node (-1747, 110), a triangle with the roof's front node
+            # (-1797, 9), before its sandbags: built first, the front cell hung on that one roof node and swung down
+            # (physics.py, sag ~320)
+            ("build", [(-2000, 5), (-1900, 5), (-1800, 5)]),
+            ("struts", [((-1700, 5), (-1747.27, 110.37), "bracing")]),
+            ("defence", ["sandbags", "sandbags"]),
+            ("weapons", ["mortar", "mortar"]),
+            # then metal (the AI averaged 100-260 metal on Abyss against the player's ~510) and energy (a mortar shot
+            # costs 200): the tower up to the ledge, a turbine on the ledge roof after each of its mines
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("defence", ["woodspam"]),
+            # two layers of wood in front of the starting fort's lower front face (nodes (-1746, 112), (-1695, 223),
+            # (-1752, 315)), the reactor's wall: layer A at x ~-1655, layer B 40 further out, X-braced, hung from the
+            # nest's woodspam above (those two posts background bracing: the starting fort's machine gun fires flat
+            # through that band)
+            ("struts", [((-1746.18, 112.27), (-1655, 112), "bracing"), ((-1694.52, 223.44), (-1650, 223), "bracing"),
+                        ((-1751.69, 314.55), (-1655, 315), "bracing"),
+                        ((-1655, 112), (-1650, 223), "bracing"), ((-1650, 223), (-1655, 315), "bracing"),
+                        ((-1746.18, 112.27), (-1650, 223), "bracing"), ((-1694.52, 223.44), (-1655, 112), "bracing"),
+                        ((-1694.52, 223.44), (-1655, 315), "bracing"), ((-1751.69, 314.55), (-1650, 223), "bracing"),
+                        ((-1660, 5), (-1655, 112), "backbracing"),
+                        ((-1655, 112), (-1615, 112), "bracing"), ((-1650, 223), (-1610, 223), "bracing"),
+                        ((-1655, 315), (-1615, 315), "bracing"),
+                        ((-1615, 112), (-1610, 223), "bracing"), ((-1610, 223), (-1615, 315), "bracing"),
+                        ((-1655, 112), (-1610, 223), "bracing"), ((-1650, 223), (-1615, 112), "bracing"),
+                        ((-1650, 223), (-1615, 315), "bracing"), ((-1610, 223), (-1655, 315), "bracing"),
+                        ((-1620, 5), (-1615, 112), "backbracing")]),
+            ("aa", ["machinegun"]),
+            ("weapons", ["mortar"]),
+            # the upgrade centre, then what needs no tech while it builds (60 s)
+            # the upgrade centre on Abyss-1's factory slot, enclosed under the starting fort: its cell and the cell in
+            # front of it (x -1900..-1800, where its 180-wide body reaches), with the armour front post at x -1800,
+            # built right after it (background diagonals behind the device; in test 1 it hung on a bare strut, open
+            # to snipers)
             ("tech", ["upgrade"]),
-            ("weapons", ["mortar", "sniper", "machinegun"]),
-            ("upgrades", ["mortar2", "mortar2", "minigun"]),
-            ("eco", ["turbine", "battery"]),
+            ("build", [(-1900, 405)]),
+            ("eco", ["battery", "store"]),
+            ("aa", ["machinegun"]),
+            ("upgrades", ["mortar2", "mortar2", "mortar2"]),
+            ("upgrades", ["minigun", "minigun", "minigun"]),
+            ("eco", ["turbine", "turbine"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2", "turbine2"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["mine2", "mine2"]),
         ],
-        "armour_roof": True,
     },
     "scharfschuetzen": {
         "title": "Sniper fortress: narrow tall tower with advanced front, many snipers and anti-air",
@@ -764,7 +877,119 @@ VANILLA_VARIANTS["modular"] = {
 }
 
 
+# Vanilla-7, the frame fort: the ideas of a player's fort that beat Vanilla-5 (26.10.2026, docs/history/vanilla-7.md),
+# generated with margin instead of replayed (the recording had 16 struts of 210-217 of the game's 218; the AI's fort
+# refused them as it bent differently and collapsed at ~465 s in its second test). From the player's fort:
+# - weapon_pack's armoury opens both the munitions plant and the factory (PrerequisiteAlt): no workshop at all;
+# - turbines stacked in a column of background bracing at the back: the wind passes it, so each turbine gets wind from
+#   behind (the tower blocks the front side: rules.py warns, the player's turbines ran like that all match);
+# - a cannon tower with the cannons stacked in one column behind open front cells (the player's eight cannons fired
+#   ~12 shots: their lanes were blocked by foreground bracing; here the lanes are kept clear);
+# - firebeams low at the front: one on the starting fort's lower front (where the player's front block stood), one on
+#   the starting fort's roof beam firing through the prow storey (Vanilla-2's sniper cell, 124 shots in a match);
+# - six mines (the player's fourth free site at x -2902, under the starting fort's front) and flak from the armoury.
+# The tower is Vanilla-3/-4's (125-high cannon storeys, cannons at x -3200..-3100 stacked like their 20mm cannons);
+# the turbine column x -3600..-3400 stands on the back block, one turbine per cell on every other floor (a turbine is
+# 127 high: the floor above it is background bracing anyway).
+_V7_SHAPE = _union(_box(-3400, -2945, -370, 205), _V_BACK, _box(-3600, -3400, -270, 205))
+VANILLA_VARIANTS["frame"] = {
+    "title": "Frame fort: turbines in a background-bracing column, cannon tower with clear lanes, low firebeams, armoury tech",
+    "shape": _V7_SHAPE,
+    # the armoury on the proven munitions slot (Vanilla-5), the munitions plant on the starting fort's back row (y 503)
+    # where the player had it, the upgrade centre on the game's proven slot; the factory (180 wide: beside the
+    # munitions plant or on the munitions slot it overlapped a device) a storey up in the back block, below the
+    # munitions plant's 170-high box and clear of the turbine column and the reactor
+    "tech_slots": {"armoury": [((-3400, 602), (-3299, 604), 0.49)],
+                   "munitions": [((-3300, 503), (-3200, 503), 0.52)],
+                   "factory": [((-3300, 308), (-3200, 308), 0.5)],
+                   "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+    "roof_weapons": {"flak", "machinegun"},
+    "cfg": dict(_V_HIGH_CFG, **{
+        # no turbine cage on the tower roof (the turbines stand in the back column)
+        "rows": [-370, -270, -145, -20, 105, 205, 308, 405, 503, 602, 700],
+        "turbine_floor_y": [503, 308, 105, -145], "turbine_floor_x": (-3600, -3400), "turbine_floor_t": 0.5,
+        "turbine_roof_max_y": -370,
+        "hidden_box": [(-3600, -3400, -270, 700)],
+        "split_cell": [], "sandbag_slots": [], "turbine_avoid": [],
+        "tower_connect": {"base_y": 205, "storeys": 2},
+        "prereq": {"cannon": "munitions", "cannon20mm": "munitions", "munitions": "armoury", "factory": "armoury"},
+        "mines": MAPS["Vanilla"]["mines"] + [{"ground": (-2901.81, 700.0)}],
+        "eco_slots": [((-3200, 403), (-3094, 407), 0.48)],
+        # three cannons stacked in the column behind the front cells (Vanilla-3 built its 20mm cannons at floors 105
+        # and -20 there); the column hangs on the starting fort's back posts (support_cheapest)
+        "large_cells": [(-3200, 105, 0.5), (-3200, -20, 0.5), (-3200, -145, 0.5)],
+        "large_top_min": -270, "large_top_max": -20, "support_cheapest": True,
+        # (its shot passes the door in the tower's front post and goes out over the prow: no lane cell there)
+        "weapon_cells": [(-3100, 205, "firebeam", 0.7)], "lane_cells": [],
+        "weapon_slots": [((-2998, 602), (-2898, 602), 0.6, "firebeam")],
+        "roof_weapon_cells": [(-3300, -370), (-3100, -370)],
+        # the inner armour in front of the reactor stays (it fell first in lost Vanilla-2 matches)
+        "rebrace_after_mine": [],
+    }),
+    "plan": [
+        # the player's opening: a mine, turbines, the armoury, more mines (the player had six mines and two turbines
+        # by ~75 s); then the munitions plant (800 m / 5000 e) and the first cannon
+        ("eco", ["mine"]),
+        ("eco", ["turbine", "turbine"]),
+        ("tech", ["armoury"]),
+        ("eco", ["mine", "mine"]),
+        ("eco", ["turbine"]),
+        ("tech", ["munitions"]),
+        ("eco", ["turbine"]),
+        ("weapons", ["cannon"]),
+        ("eco", ["mine"]),
+        ("tech", ["upgrade"]),
+        ("eco", ["battery", "store"]),
+        ("weapons", ["cannon"]),
+        ("upgrades", ["turbine2", "turbine2"]),
+        ("tech", ["factory"]),
+        ("eco", ["turbine", "turbine"]),
+        # the low firebeam stands where the starting fort's machine gun stood (its box reaches that strut): the
+        # machine gun sold, the post in front of the firebeam a door
+        ("struts", [((-2895.38, 505.41), (-2898.47, 602.31), "door")]),
+        ("eco", ["sell:machinegun"]),
+        ("weapons", ["firebeam", "firebeam"]),
+        ("aa", ["flak"]),
+        ("weapons", ["cannon"]),
+        ("aa", ["machinegun"]),
+        ("upgrades", ["mine2", "mine2", "mine2", "mine2"]),
+        ("upgrades", ["turbine2", "turbine2", "turbine2", "turbine2"]),
+        ("eco", ["turbine", "turbine"]),
+        ("eco", ["battery", "battery"]),
+        ("defence", ["woodspam"]),
+        ("upgrades", ["minigun"]),
+    ],
+}
+
+
 # ----------------------------------------------------------------------------- Generator
+
+
+def clear_fire_lines(actions, extra=(), cautious=True):
+    """Plan lines with every strut that would block a weapon (rules.fire_blockers: built after the weapon, or
+    outside the game's recession box and the weapon's body) turned into background bracing; armour becomes a door.
+    extra: lines appended for the check only (module weapons)."""
+    for _ in range(5):
+        acts = parse_lines(list(actions) + list(extra))
+        pos, links, devices, _g = rules.build_state(acts)
+        fix = {}
+        for name, ia, ib, t, pair, kd in devices:
+            if ia in pos and ib in pos:
+                p = rules._point(pos, ia, ib, t)
+                for m, a, b, k, pr, dist in rules.fire_blockers(links, pos, name, p, kd, cautious=cautious):
+                    fix[pr] = "door" if m == "armour" else "backbracing"
+        if not fix:
+            break
+        out = []
+        for line in actions:
+            ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
+            if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(ids) == 2:
+                m = fix.get(frozenset(int(x) for x in ids))
+                if m:
+                    line = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "%s"' % m, line)
+            out.append(line)
+        actions = out
+    return actions
 
 class Plan:
     def __init__(self, cfg, terrain, base_pos, seed):
@@ -1159,8 +1384,12 @@ class Plan:
 
     def in_turbine_row(self, c):
         """Cell in the turbine gallery storey: only background bracing inside (open for the wind)."""
+        return self.cfg.get("turbine_row_open") and self.cfg["rows"][c[1] + 1] in self.turbine_floors()
+
+    def turbine_floors(self):
+        """turbine_floor_y: one floor height or a list of them (stacked galleries, filled in that order)."""
         y = self.cfg.get("turbine_floor_y")
-        return y is not None and self.cfg.get("turbine_row_open") and self.cfg["rows"][c[1] + 1] == y
+        return [] if y is None else list(y) if isinstance(y, (list, tuple)) else [y]
 
     def split_cells(self):
         """split_cell: one (left x, top y) or a list of them, in the order sandbag_slots refers to them."""
@@ -1381,6 +1610,18 @@ class Plan:
             if d != dev or n in used:
                 continue
             x0, x1, y = min(pa[0], pb[0]), max(pa[0], pb[0]), (pa[1] + pb[1]) / 2
+            if not any(abs(rows[c[1]] - y) < 2 and self.cell_x(c)[0] <= x0 + 1 and self.cell_x(c)[1] >= x1 - 1
+                       for c in self.all_cells):
+                ka, kb = self.orig_node_at(pa), self.orig_node_at(pb)
+                if ka and kb:
+                    # a strut of the starting fort outside the grid (its lower front face): it stands already
+                    a, b = self.nodes[ka], self.nodes[kb]
+                    self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                        % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, dev))
+                    self.placed.append((dev, a[1], b[1], t, ("slot", ka, kb)))
+                    used.add(n)
+                    return True
+            x0, x1, y = min(pa[0], pb[0]), max(pa[0], pb[0]), (pa[1] + pb[1]) / 2
             c = next((c for c in sorted(self.all_cells) if abs(rows[c[1]] - y) < 2
                       and self.cell_x(c)[0] <= x0 + 1 and self.cell_x(c)[1] >= x1 - 1), None)
             if c is None or not self.build_cell_path(c):
@@ -1584,7 +1825,10 @@ class Plan:
             if d in ("mine", "mine2"):
                 continue
             q = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
-            if abs(q[1] - p[1]) < 10 and abs(centre(d, q) - centre(dev, p)) < w + rules.SIZE.get(d, (40, 40))[0] - 1:
+            # boxes reach BOX_TOP up from their strut: a tall one (armoury, munitions plant: 170) also covers the row above
+            above = lambda dd, y: y - rules.BOX_TOP.get(dd, 81)
+            same_band = abs(q[1] - p[1]) < 10 or (above(dev, p[1]) < q[1] - 10 and above(d, q[1]) < p[1] - 10)
+            if same_band and abs(centre(d, q) - centre(dev, p)) < w + rules.SIZE.get(d, (40, 40))[0] - 1:
                 return True
         return False
 
@@ -1610,16 +1854,22 @@ class Plan:
         return 1 + sum(self.unbuilt_support(d, seen) for d in getattr(self, "deps", {}).get(c, ()))
 
     def choose_turbine_floor(self):
-        """Free cell of the turbine gallery (floor at turbine_floor_y), cheapest to reach first."""
-        y = self.cfg["turbine_floor_y"]
+        """Free cell of the turbine gallery (floor at turbine_floor_y; a list: the first floor with room), cheapest
+        to reach first."""
         min_w = self.cfg.get("turbine_min_w", 0)
-        cands = [c for c in sorted(self.cells)
-                 if self.cfg["rows"][c[1] + 1] == y and not self.is_front(c) and c not in self.devices
-                 and self.cell_w(c) >= min_w
-                 # turbine_avoid: (left x, y) where turbines were refused in test matches (the roof = the floor here)
-                 and not any(abs(self.cell_x(c)[0] - x0) < 2 and ry == y for x0, ry in self.cfg.get("turbine_avoid", []))]
-        cands.sort(key=lambda c: (self.unbuilt_support(c), -c[0]))
-        return cands[0] if cands else None
+        # turbine_floor_x (x0, x1): only cells within these columns (a turbine column at the back)
+        fx0, fx1 = self.cfg.get("turbine_floor_x", (-1e9, 1e9))
+        for y in self.turbine_floors():
+            cands = [c for c in sorted(self.cells)
+                     if self.cfg["rows"][c[1] + 1] == y and not self.is_front(c) and c not in self.devices
+                     and self.cell_x(c)[0] >= fx0 - 1 and self.cell_x(c)[1] <= fx1 + 1
+                     and self.cell_w(c) >= min_w
+                     # turbine_avoid: (left x, y) where turbines were refused in test matches (the roof = the floor here)
+                     and not any(abs(self.cell_x(c)[0] - x0) < 2 and ry == y for x0, ry in self.cfg.get("turbine_avoid", []))]
+            cands.sort(key=lambda c: (self.unbuilt_support(c), -c[0]))
+            if cands:
+                return cands[0]
+        return None
 
     def choose_turbine_roof(self):
         min_w = self.cfg.get("turbine_min_w", 0)
@@ -1709,7 +1959,7 @@ class Plan:
             for c in self.all_cells:
                 if abs(self.cell_x(c)[0] - x0) < 2 and self.cfg["rows"][c[1] + 1] == floor_y:
                     self.devices[c] = "lane"
-        for pa, pb, dev in self.cfg.get("orig_devices", []):
+        for pa, pb, dev, *_ in self.cfg.get("orig_devices", []):
             ia, ib = self.node_at(pa), self.node_at(pb)
             if ia and ib:
                 c = (min(ia[0], ib[0]), ia[1] - 1)
@@ -1883,12 +2133,17 @@ class Plan:
         device becomes background
         bracing, built only once. The enemy cannot see through it, and mortar shells pass through it (the built-in
         AI checks only the terrain for lobbed weapons, TargetObstructed), so mortars on the floor stay hidden."""
-        box = self.cfg.get("hidden_box")
-        if not box:
+        boxes = self.cfg.get("hidden_box")
+        if not boxes:
             return
         import re
-        x0, x1, y_top, y_floor = box
-        inside = lambda p: x0 - 1 <= p[0] <= x1 + 1 and y_top - 1 <= p[1] <= y_floor + 3
+        if not isinstance(boxes[0], (list, tuple)):
+            boxes = [boxes]                # one box or a list of them
+        y_floor_of = lambda a, b: next(bx[3] for bx in boxes if all(
+            bx[0] - 1 <= p[0] <= bx[1] + 1 and bx[2] - 1 <= p[1] <= bx[3] + 3 for p in (a, b)))
+        def inside2(a, b):
+            return any(all(bx[0] - 1 <= p[0] <= bx[1] + 1 and bx[2] - 1 <= p[1] <= bx[3] + 3 for p in (a, b))
+                       for bx in boxes)
         # struts that carry a device stay solid (background bracing cannot carry devices)
         # (also the platforms of the modules' devices: the plan builds them, the module only adds the device)
         carry = {frozenset((tuple(a), tuple(b))) for d, a, b, t, c in self.placed + self.module_placed if c is not None}
@@ -1898,7 +2153,7 @@ class Plan:
             ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
             if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2:
                 a, b = pts[-2], pts[-1]
-                if inside(a) and inside(b) and min(a[1], b[1]) < y_floor - 3 and frozenset((a, b)) not in carry:
+                if inside2(a, b) and min(a[1], b[1]) < y_floor_of(a, b) - 3 and frozenset((a, b)) not in carry:
                     pair = frozenset(ids)
                     if pair in seen:
                         continue
@@ -2063,31 +2318,10 @@ class Plan:
         self.actions = out
 
     def clear_fire_lines(self):
-        """Every strut the plan builds that would block a weapon (rules.fire_blockers: built after the weapon,
-        or outside the game's recession box and the weapon's body) becomes background bracing; armour becomes a door."""
-        import re
-        for _ in range(5):
-            # the modules' weapons too (appended: every plan strut counts as built before them; struts built after
-            # one hold its module back instead, module_requires)
-            acts = parse_lines(self.actions + [ln for m in getattr(self, "modules", []) for ln in m["lines"]])
-            pos, links, devices, _g = rules.build_state(acts)
-            fix = {}
-            for name, ia, ib, t, pair, kd in devices:
-                if ia in pos and ib in pos:
-                    p = rules._point(pos, ia, ib, t)
-                    for m, a, b, k, pr, dist in rules.fire_blockers(links, pos, name, p, kd, cautious=True):
-                        fix[pr] = "door" if m == "armour" else "backbracing"
-            if not fix:
-                return
-            out = []
-            for line in self.actions:
-                ids = re.findall(r"OriginalNode[AB]Id = (\d+)", line)
-                if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(ids) == 2:
-                    m = fix.get(frozenset(int(x) for x in ids))
-                    if m:
-                        line = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "%s"' % m, line)
-                out.append(line)
-            self.actions = out
+        """Every strut the plan builds that would block a weapon becomes background bracing (clear_fire_lines);
+        the modules' weapons count too (appended: every plan strut counts as built before them; struts built
+        after one hold its module back instead, module_requires)."""
+        self.actions = clear_fire_lines(self.actions, [ln for m in getattr(self, "modules", []) for ln in m["lines"]])
 
     def woodspams(self):
         """woodspam: one region {wall_x, layers, rows, base, material, outside} or a list of them (plan step
@@ -2186,6 +2420,17 @@ class Plan:
                         self.devices[c] = dev
                         self.place_on_floor(c, dev, t)
                     return
+            # a device of the starting fort (orig_devices), each upgraded once (the AI upgrades whatever stands on the strut)
+            done = self.__dict__.setdefault("orig_upgraded", set())
+            for k, (pa, pb, d, *lt) in enumerate(self.cfg.get("orig_devices", [])):
+                ka, kb = self.node_at(pa) or self.orig_node_at(pa), self.node_at(pb) or self.orig_node_at(pb)
+                if d == base and k not in done and ka and kb:
+                    done.add(k)
+                    na, nb = self.nodes[ka], self.nodes[kb]
+                    t = lt[0] if lt else 0.5
+                    self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                        % (na[0], self._fmt(na[1]), nb[0], self._fmt(nb[1]), t, dev))
+                    return
             self.problems.append("no %s to upgrade to %s" % (base, dev))
             return
         if dev.startswith("sell:"):
@@ -2272,7 +2517,10 @@ class Plan:
                                 % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t))
             self.placed.append(("sandbags", a[1], b[1], t, c))
             return
-        # Weapons
+        # Weapons: lobbed ones (not roof weapons) take their mortar_slots before a weapon slot (Abyss-2: the nest's
+        # mortars before the tower-top slot)
+        if dev in LOBBED_WEAPONS and dev not in self.variant.get("roof_weapons", ()) and self.mortar_slot(dev):
+            return
         if self.weapon_slot(dev):
             return
         roof = self.choose_weapon_roof(dev) if dev in self.variant.get("roof_weapons", ()) else None
@@ -2393,7 +2641,7 @@ class Plan:
         # down to the storey below (the prow's top nodes), crossed like the storeys above
         m = band[rows[-1]]
         for k, (x, base) in enumerate(zip(ws["layers"], ws.get("base", []))):
-            ij = self.node_at(base, tol=5)
+            ij = self.node_at(base, tol=5) or self.orig_node_at(base)
             if ij and self.nodes[ij][0] in self.built_nodes:
                 self.link(key(x, rows[-1]), ij, m)
                 self.link(key(cols[k], rows[-1]), ij, m)
@@ -2402,16 +2650,17 @@ class Plan:
         """Plan step "sell:<device>": sell a device of the starting fort (orig_devices) with DESTROY_DEVICE, as the
         game's Abyss-1 sells its sandbags; its cell becomes a fire lane ("lane": no device, door in front,
         background diagonals), e.g. for a weapon behind it."""
-        for pa, pb, d in self.cfg.get("orig_devices", []):
+        for pa, pb, d, *_ in self.cfg.get("orig_devices", []):
             ia, ib = self.node_at(pa), self.node_at(pb)
             if d != dev or not ia or not ib:
                 continue
             a, b = self.nodes[ia], self.nodes[ib]
             self.actions.append('{ Type = DESTROY_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, DeviceSaveName = "%s" },'
                                 % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), dev))
-            c = (min(ia[0], ib[0]), ia[1] - 1)
-            if c in self.all_cells:
-                self.devices[c] = "lane"
+            if isinstance(ia[0], int) and isinstance(ib[0], int):      # a grid strut (not the fort's own face)
+                c = (min(ia[0], ib[0]), ia[1] - 1)
+                if c in self.all_cells:
+                    self.devices[c] = "lane"
             return
         self.problems.append("no %s of the starting fort to sell" % dev)
 
@@ -2539,6 +2788,10 @@ class Plan:
         head = ("-- Fort recorded for AI replay\n"
                 "CREATE_NODE = 1\nDESTROY_NODE = 2\nCREATE_LINK = 3\nDESTROY_LINK = 4\nCREATE_DEVICE = 5\nDESTROY_DEVICE = 6\n")
         tail = "-- Generated by Claude AI (tools/fortgen/gen_fort.py): %s\n" % title
+        # retire: {device: seconds}, the AI sells such a weapon once it has declined to fire that long (ai.lua)
+        retire = self.variant.get("retire")
+        if retire:
+            tail += "FortRetire = { %s }\n" % ", ".join("%s = %d" % kv for kv in sorted(retire.items()))
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
             f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail
                     + format_modules(getattr(self, "modules", [])))

@@ -92,7 +92,8 @@ end
 -- Direct access to the plan variables (rawget/rawset do not exist in Forts)
 local function CAI_GetPlanGlobals()
 	return { Fort = Fort, FortTeam = FortTeam, FortId = FortId, FortPos = FortPos,
-		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines, FortModules = FortModules }
+		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines, FortModules = FortModules,
+		FortRetire = FortRetire }
 end
 
 local function CAI_SetPlanGlobals(t)
@@ -103,6 +104,7 @@ local function CAI_SetPlanGlobals(t)
 	FortTableStartLine = t.FortTableStartLine
 	FortTableCommentLines = t.FortTableCommentLines
 	FortModules = t.FortModules
+	FortRetire = t.FortRetire
 end
 
 local function CAI_LoadPlanFile(path)
@@ -288,6 +290,7 @@ function CAI_TrySwapPlan(where)
 		end
 	end
 	CAI_Plan.modules = ours.FortModules
+	CAI_Plan.retire = type(ours.FortRetire) == "table" and ours.FortRetire or nil
 	CAI_SetPlanGlobals({
 		Fort = ours.Fort,
 		FortTeam = ours.FortTeam or FortTeam,
@@ -296,6 +299,12 @@ function CAI_TrySwapPlan(where)
 	})
 	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " actions=" .. (#ours.Fort - nMod) .. " instead=" .. tostring(engineFile)
 		.. " choice=" .. why .. " detected=" .. how .. " at=" .. where .. " shift=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5))
+	if CAI_Plan.retire then
+		local items = {}
+		for k, v in pairs(CAI_Plan.retire) do items[#items + 1] = tostring(k) .. ":" .. tostring(v) end
+		table.sort(items)
+		CAI_PlanNote("RETIRE-CONFIG " .. table.concat(items, ","))
+	end
 end
 
 local CAI_BaseOffsetFort = OffsetFort
@@ -587,6 +596,43 @@ local function CAI_FireNote(st, id, kind, line, why)
 	CAI_Log(line .. " m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e))
 end
 
+-- Retire: a weapon of a type in the plan's FortRetire table (type -> seconds) that declines to fire for that long
+-- (TryFireGun leaves it ready: no target in reach) while energy is at least CAI_RETIRE_MIN_ENERGY is sold
+-- (Abyss-2's early sniper, once the enemy's weapons are hidden or destroyed). Seconds with less energy do not count
+-- (the built-in AI also declines when it cannot pay a shot). A sold device is not rebuilt: the built-in AI only
+-- rebuilds a deleted device it marked itself (DeviceDeleteToRebuild); its plan entry is dropped as well.
+--   RETIRE <type> <id> idle=<s> shots=<n> result=<DestroyDeviceById result>
+CAI_RETIRE_MIN_ENERGY = 1000
+
+function CAI_RetireCheck(st, id, kind, fired)
+	local cfg = CAI_Plan.retire
+	local limit = cfg and kind and tonumber(cfg[kind])
+	if not limit or type(DestroyDeviceById) ~= "function" then return end
+	st.retire = st.retire or {}
+	local now = st.fireClock or 0
+	local r = st.retire[id]
+	if r == nil then
+		r = { idle = 0, at = now, shots = 0 }
+		st.retire[id] = r
+	end
+	local dt = now - r.at
+	r.at = now
+	if fired then
+		r.shots = r.shots + 1
+		r.idle = 0
+		return
+	end
+	local res = GetTeamResources(teamId)
+	local e = (type(res) == "table" or type(res) == "userdata") and res.energy or 0
+	if e >= CAI_RETIRE_MIN_ENERGY then r.idle = r.idle + dt end
+	if r.idle < limit then return end
+	st.retire[id] = nil
+	if data.Devices then data.Devices[id] = nil end
+	local result = DestroyDeviceById(id)
+	CAI_Log("RETIRE " .. tostring(kind) .. " " .. id .. " idle=" .. CAI_Round(r.idle) .. " shots=" .. r.shots
+		.. " result=" .. tostring(result))
+end
+
 function CAI_FireTick()
 	local st = data.CAI
 	local f = Strategy.Fire
@@ -652,6 +698,7 @@ function CAI_FireTick()
 						end
 						CAI_FireNote(st, id, kind, "FIRETRY " .. tostring(kind) .. " " .. id .. " fired=" .. (fired and 1 or 0)
 							.. " code=" .. after .. ray, "try" .. (fired and 1 or 0))
+						CAI_RetireCheck(st, id, kind, fired)
 					else
 						CAI_FireNote(st, id, kind, "FIREWAIT " .. tostring(kind) .. " " .. id .. " avail=" .. (avail and 1 or 0)
 							.. " ready=" .. (ready and 1 or 0) .. " code=" .. code .. " queue=" .. (queued and 1 or 0),

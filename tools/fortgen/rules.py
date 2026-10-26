@@ -266,12 +266,9 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             continue
         p = _point(pos, ia, ib, t)
         w, h = SIZE.get(name, (40, 40))
-        mat = links.get(pair, (None,))[0]
         where = "%s at %s" % (name, _fmt(p))
-        # background bracing cannot carry devices (SupportsDevices = false); the game's own Template-1
-        # nevertheless records a sniper on one (recorded plans may show the recessed material)
-        if mat == "backbracing":
-            warnings.append("%s stands on background bracing (SupportsDevices = false)" % where)
+        # a device may stand on background bracing despite SupportsDevices = false: the game's own plans put 937
+        # devices on it (507 turbines) and a player placed ~40 on it (docs/building-rules.md)
         # line of fire / mortar arc
         for m, a, b, k, pr, dist in fire_blockers(links, pos, name, p, kd, enemy_dir)[:1]:
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (

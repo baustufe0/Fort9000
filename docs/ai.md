@@ -23,6 +23,16 @@ The built-in AI only fires during build pauses and at most one weapon per cycle.
 **Anti-air first** (`Fire.AntiAirFirst`): flak and its upgrade, the shotgun, fire at the enemy fort only while the enemy has none of the `Threats` they should shoot down (mortars, heavy mortars, missiles, rockets, EMP rockets; counted every think step). With one of them they fire anti-air only, like `NoOffence` (offensive and rebuild fire probability 0); when the threats are gone their probabilities come back. Log on each change: `FLAK_HOLD on threats=<type:n,...>`, `FLAK_HOLD off`. Without a smoke launcher nothing changes. The timings are first guesses (the smoke bomb is a packed DLC weapon, its shell's flight time and cloud duration are not readable).
 **Fire diagnostics:** the fire timer logs why an offence weapon did not fire, at most one line per weapon every `CAI_FIREWAIT_EVERY` (30) seconds and at once when the reason changes: `FIREWAIT <type> <id> avail=<0|1> ready=<0|1> code=<FIREFAIL name|-> queue=<0|1> m= e=` when it is skipped (not available, not ready to fire with the engine's reason, or an action such as opening doors pending), `FIRETRY <type> <id> fired=<0|1> code= [ray=<hit>:<side>:<material>@<x>,<y>] m= e=` after `TryFireGun` (fired = no longer ready, i.e. reloading; `fired=0`: the built-in AI declined - no target, chance or cost; `ray` = what the targeting ray towards the enemy reactor hits first, cast with the flags of the built-in `TargetObstructed`, in which the team's own background bracing blocks the ray).
 
+**Retire idle weapons:** a plan may list weapon types to sell once they have nothing left to hit: `FortRetire = {
+sniper = 90 }` after the `Fort` table (written by `gen_fort.py` from a variant's `retire`; `CAI_LoadPlanFile` reads
+it, the plan swap logs `RETIRE-CONFIG sniper:90`). The fire control counts, per weapon of such a type, the seconds in
+which `TryFireGun` left it ready (the built-in AI declined: no target in reach) while the team had at least
+`CAI_RETIRE_MIN_ENERGY` (1000) energy (it also declines when it cannot pay a shot); a shot resets the count. At the
+limit the weapon is sold with `DestroyDeviceById` and its plan entry dropped (`RETIRE <type> <id> idle=<s> shots=<n>
+result=<r>`). The built-in AI does not rebuild it: it only rebuilds a deleted device it marked itself
+(`DeviceDeleteToRebuild`). Used by Abyss-2's early sniper (27.10.2026; the player's idea: snipe the enemy's first
+weapons, sell the sniper once none is reachable). Not yet seen in a match.
+
 ## Build tempo by difficulty
 
 Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolated linearly between Easy / Normal / Hard. Construction and pause durations are configurable.

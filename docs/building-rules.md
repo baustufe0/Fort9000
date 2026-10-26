@@ -12,12 +12,13 @@ changes, update this file, the generator and `rules.py` together. Map-specific f
 | Material | Stiffness | Mass/length | Breaks below / above | Hit points | Notes |
 |---|---|---|---|---|---|
 | `bracing` (foreground wood) | 200000 | 0.25 | 0.90 / 1.10 | 150 | stops most shots and the wind; a device built on it turns it into background bracing |
-| `backbracing` (background wood) | 200000 | 0.25 | 0.92 / 1.08 | 100 | **cannot carry devices** (`SupportsDevices = false`); most projectiles and the wind pass through it (not laser, buzzsaw, howitzer); burns |
+| `backbracing` (background wood) | 200000 | 0.25 | 0.92 / 1.08 | 100 | `SupportsDevices = false`, yet devices stand on it: the game's own plans put 937 devices on background bracing (507 turbines), a player ~40 (no material swap is logged); most projectiles and the wind pass through it (not laser, buzzsaw, howitzer); burns |
 | `armour` / `door` | 250000 | 0.5 | 0.90 / 1.10 | 400 | armour in a weapon's way is turned into a door when the weapon is placed |
 
 - Minimum strut length 37.5 (doors 49), so woodspam layers are at least ~40 apart. A new node may be at most 150 from
   the node it is built from (`StandardMaxLength`); struts between existing nodes up to 218 (`StandardMaxLinkLength`;
-  the generator uses 205, so a 155-wide cell may be at most 130 high).
+  the generator uses 205, so a 155-wide cell may be at most 130 high). A strut anchored to the ground may be as long
+  as a strut between nodes: a player built new foundations 181-212 away from their source node (26.10.2026).
 - Background bracing is as stiff and heavy as foreground bracing; it only breaks sooner, so in a sagging cell its
   diagonal is the first link near its limit.
 
@@ -26,7 +27,12 @@ changes, update this file, the generator and `rules.py` together. Map-specific f
 A device's box reaches **2 × `SelectionHeight` above its strut** (`rules.BOX_TOP`; the game gives half-extents around
 `SelectionOffset`): machine gun 81, sniper 91, mortar 61, laser 101, 20mm cannon 111, rocket/EMP rocket 112,
 flak/shotgun 118, cannon 121, turbine 127, munitions plant/armoury 170 (smoke bomb: packed, assumed 127). The overlap
-checks use the table values as full widths.
+checks use the table values as full widths, and the generator keeps eco devices out of a tall box above their row.
+
+**weapon_pack tech:** the armoury (400 m / 2000 e, 60 s) opens the munitions plant and the factory just as the workshop
+does (`PrerequisiteAlt = "armoury"`; with weapon_pack the factory costs 5000 energy and takes 90 s); firebeam and laser
+need the factory, cannons the munitions plant. A player reached cannons, firebeams and flak without a workshop
+(26.10.2026, Vanilla-7).
 
 | Device | Width × height (game values) | Mass |
 |---|---|---|
@@ -156,8 +162,8 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 
 ### Defence: hiding, sandbags, woodspam
 
-- **Background bracing hides** devices from the player and lets projectiles, mortar shells and the wind through; it
-  cannot carry a device. The built-in AI checks only the terrain before firing a lobbed weapon, so mortars fire from
+- **Background bracing hides** devices from the player and lets projectiles, mortar shells and the wind through; devices
+  can stand on it, so turbines stacked in a lattice of background bracing all get wind (Vanilla-7's turbine block). The built-in AI checks only the terrain before firing a lobbed weapon, so mortars fire from
   inside a nest of background bracing; direct-fire weapons fire through their own background diagonals.
 - **It does not stop projectiles:** hidden devices are still hit. Sandbags (or solid struts) must stand *before* the
   device they shield (mortars placed first were destroyed 3-5 s later).
@@ -168,6 +174,9 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 - **Players brace the starting fort:** in every recorded match the player built a background brace from the
   starting fort's node at (-2996, 504) down to its front ground node (-2900, 700), 217-218 long (the game's limit is
   218), within the first 16-74 s. The starting fort has nothing across those two storeys (Vanilla-5 tests it).
+- **A player's long-build fort sags:** a 1280-s player fort on Vanilla (26.10.2026) leaned back by ~65 at the starting
+  fort's roof and ~150 at the top of its cannon tower while it grew (a background-bracing frame on the starting fort,
+  the prow removed). Positions logged late are therefore not the positions the parts were built at.
 - **Beams cut unprotected walls in seconds:** one laser beam through a starting fort's bare face brought down the
   reactor within 2 s; layers of woodspam in front of it buy time.
 
@@ -222,7 +231,6 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 `python tools/fortgen/rules.py <plan.lua> ...` checks any plan file; `gen_fort.py` runs the same checks on every plan it
 writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build order, supports, prerequisites). Checked:
 - strut length (37.5, doors 49);
-- device on background bracing (warning: the game's Template-1 records one);
 - line of fire of direct-fire weapons and the arc of mortars: no foreground strut built after the weapon or beyond its
   recession box (doors are fine);
 - a weapon in front of another weapon in the same row (error; machine guns behind, and lobbed behind lobbed, allowed);

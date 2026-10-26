@@ -27,12 +27,14 @@ The specification is split into files so a session only loads what it needs.
 | [docs/map-files.md](docs/map-files.md) | the map file formats `.spr` (starting forts: nodes, struts with rest lengths, devices) and `.fwe` (terrain blocks, views, props); readers `spr.py`, `fwe.py` | reading a map's starting fort or terrain |
 | [docs/building-rules.md](docs/building-rules.md) | game mechanics (materials, devices, economy, lines of fire, wind, `CS_UNSTABLE`), defence facts, design rules, `rules.py` validation, general failed approaches | before changing any plan or the generator |
 | [docs/testing.md](docs/testing.md) | how to test a plan and read the log of a match | analysing a match |
-| [docs/maps/vanilla.md](docs/maps/vanilla.md) | Vanilla: starting fort, shared shape, Vanilla-2 to -5 (current state), failed approaches, open problems | working on a Vanilla plan |
+| [docs/maps/vanilla.md](docs/maps/vanilla.md) | Vanilla: starting fort, shared shape, Vanilla-2 to -7 (current state), failed approaches, open problems | working on a Vanilla plan |
 | [docs/maps/abyss.md](docs/maps/abyss.md) | Abyss: variants, cliff-ledge rules, failed approaches | working on an Abyss plan |
 | [docs/maps/vanillalong.md](docs/maps/vanillalong.md) | VanillaLong: converted Vanilla plans | working on a VanillaLong plan |
 | [docs/history/vanilla-2.md](docs/history/vanilla-2.md) | Vanilla-2 test matches in order | debugging a regression, "did we try X?" |
 | [docs/history/vanilla-3-5.md](docs/history/vanilla-3-5.md) | Vanilla-3/-4/-5 test matches (tower, cannons, 20mm rush, the former laser Vanilla-5, the rocket Vanilla-5) | debugging a regression, "did we try X?" |
 | [docs/history/vanilla-6.md](docs/history/vanilla-6.md) | Vanilla-6 (modular fort) test matches | debugging a regression, "did we try X?" |
+| [docs/history/vanilla-7.md](docs/history/vanilla-7.md) | Vanilla-7 (a player's fort: the source match, the recorded version's tests, the generated version) | debugging a regression, "did we try X?" |
+| [docs/history/abyss-2.md](docs/history/abyss-2.md) | Abyss-2 (mortar battery, rebuilt 27.10.2026) test matches | debugging a regression, "did we try X?" |
 | [docs/history/probe-runs.md](docs/history/probe-runs.md) | the `CS_UNSTABLE` probe runs and their numbers | working on `CS_UNSTABLE` |
 
 A test result goes into the history file of its plan; what it changes in the current state goes into the map file (and the topic file, if it is a general rule).

@@ -30,8 +30,12 @@ dev(900, "machinegun", 8, 9, 0.4)
 node(502, -3000, 30); link(500, 502, "bracing"); link(501, 502, "bracing")       -- scaffolding ...
 OnLinkDestroyed(team, "bracing", 500, 502, 0); OnLinkDestroyed(team, "bracing", 501, 502, 0); OnNodeDestroyed(502, true)
 dev(901, "sniper", 500, 501, 0.3); OnDeviceDeleted(team, 901, "sniper", 500, 501, 0.3)
+dev(904, "turbine", 500, 501, 0.5); dev(905, "turbine2", 500, 501, 0.5, 904)              -- upgraded, then scrapped:
+OnDeviceDeleted(team, 904, "turbine", 500, 501, 0.5); OnDeviceDeleted(team, 905, "turbine2", 500, 501, 0.5)   -- both left out
 dev(902, "mine", 90, 91, 0.5); OnGroundDeviceCreated(team, 902, "mine", V(-3029.41, 700))
 dev(903, "minigun", 8, 9, 0.4, 900); OnDeviceDeleted(team, 900, "machinegun", 8, 9, 0.4)   -- upgrade
 OnLinkDestroyed(team, "bracing", 7, 8, 0); link(7, 8, "armour")                   -- material change
 node(503, -3100, 5); link(500, 503, "bracing")
+dev(906, "sandbags", 7, 8, 0.5); OnDeviceDestroyed(team, 906, "sandbags", 7, 8, 0.5)  -- shot away: kept
+node(504, -3200, 5); link(500, 504, "bracing"); OnNodeDestroyed(504, true)       -- strut not reported: left out
 OnGameResult(team)

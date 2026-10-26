@@ -4,7 +4,7 @@
 #   Build Lua 5.1 (if necessary):
 #     git clone -q --depth 1 --branch 5.1.5 https://github.com/LuaDist/lua.git /tmp/lua51
 #     cd /tmp/lua51/src && cp luaconf.h.orig luaconf.h && make -s posix   -> /tmp/lua51/src/lua
-# The tests expect the shipped Abyss plans (fortplans/Abyss/fort-t1f1-Abyss-2.lua starts at -2120.45,-250).
+# The tests expect the shipped Abyss plans (fortplans/Abyss/fort-t1f1-Abyss-2.lua starts at -2000.99,304.82, the workshop strut).
 LUA="${1:-lua5.1}"; DATA="$2"
 HERE="$(cd "$(dirname "$0")" && pwd)"; MOD="$(cd "$HERE/../.." && pwd)"
 ROOT="$(mktemp -d)"; mkdir -p "$ROOT/mods"; ln -s "$MOD" "$ROOT/mods/fort-9000"; ln -s "$DATA/maps" "$ROOT/maps"; ln -s "$DATA/ai" "$ROOT/ai"
@@ -14,8 +14,8 @@ check() { local name="$1" pat="$2"; shift 2; if "$@" 2>&1 | grep -qE "$pat"; the
 check "Basic (targeting, aggression, end)"       "MOCK OK"                       "$LUA" t_basic.lua
 check "Assist AI is switched off"                "ASSIST"                        "$LUA" t_assist.lua
 for o in before after; do for e in fort-t1f1-Abyss-1.lua fort-t1f1-Abyss-ToGA1.lua; do
-  check "Plan swap $o $e team 1"                 "first action = -2120.4, -250.0" "$LUA" t_plan_swap.lua $o $e 1
-  check "Plan swap $o $e team 102"               "first action = 2120.4, -250.0"  "$LUA" t_plan_swap.lua $o $e 102
+  check "Plan swap $o $e team 1"                 "first action = -2001.0, 304.8"  "$LUA" t_plan_swap.lua $o $e 1
+  check "Plan swap $o $e team 102"               "first action = 2001.0, 304.8"   "$LUA" t_plan_swap.lua $o $e 102
 done; done
 for o in before after; do for e in fort-t1f1-Template-1.lua fort-t1f1-Template-2.lua; do
   check "Plan swap Vanilla $o $e team 1"         "first action = -3096.1, 502.5"  "$LUA" t_vanilla.lua $o $e 1
@@ -53,6 +53,9 @@ check "Fire diagnostics: ray flags as built-in"  "ray flags 7$" "$LUA" t_firewai
 check "Fire diagnostics: rate limit"             "^2$" bash -c "\"$LUA\" t_firewait.lua | grep -c 'FIREWAIT sniper 24'"
 check "Fire diagnostics: new reason at once"     "FIRETRY cannon20mm 22 fired=0 code=- ray=" "$LUA" t_firewait.lua
 check "Machine guns: no offensive fire"          "fired:.11,13,14,15,11,13$"      "$LUA" t_fire_mg.lua
+check "Retire: idle sniper sold, not rebuilt"   "sold: 31@50 devices31=nil devices33=9$" "$LUA" t_retire.lua
+check "Retire: read from the plan file"          "RETIRE-CONFIG sniper:90" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+check "Retire: log line"                         "RETIRE sniper 31 idle=20 shots=0 result=0" "$LUA" t_retire.lua
 check "Miniguns still fire at the fort"         "minigun offensive.true$"       "$LUA" t_fire_mg.lua
 check "Machine guns stay anti-air"               "MG offensive.0.MG during rebuild.0.MG anti-air.0.7" "$LUA" t_fire_mg.lua
 check "Smoke fires first, rockets held"          "t1:.22,24$"                    "$LUA" t_smoke.lua
@@ -106,10 +109,10 @@ check "Recorder logs upgrades"                   "DEV s=2 t=102 i=903 d=minigun 
 PY=""; for p in "py -3" python3 python; do $p --version >/dev/null 2>&1 && { PY="$p"; break; }; done
 if [ -n "$PY" ]; then
   for s in 1 2; do "$LUA" t_buildrec.lua $s > rec$s.txt; $PY "$MOD/tools/fortgen/rec_fort.py" --data "$DATA" --log rec$s.txt --out rec$s.lua > conv$s.txt 2>&1; done
-  check "Recorded build becomes a plan"          "side 1, 9 actions \(4 built and removed again"  cat conv1.txt
+  check "Recorded build becomes a plan"          "side 1, 10 actions \(7 built and removed again"  cat conv1.txt
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
-  check "Recorded plan loads in Lua"             "^actions 9 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
+  check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
   check "Tools read plan modules apart from the plan" "^231 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 5$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 5\): 0 errors" $PY "$MOD/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   "$LUA" t_probe.lua | sed '/PROBE END/q' > probe.txt

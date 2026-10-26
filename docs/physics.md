@@ -98,9 +98,11 @@ own rest lengths fit the engine better (Abyss: correlation 0.92 → 0.99).
   over the starting fort's edge) by 100-160 by action 30 and swings it down at action 36 (no strut over its limit:
   the base struts of the tower at −0.72..−0.75 tilt the cantilever, and its cells are braced only after it has
   sagged). The base nodes match (10000: model 1, 8 / game 1, 11; 10001: −3, 19 / 2, 20). With 3 × the stiffness the
-  front matches and the base is too stiff, so no single stiffness fits. `check` therefore says Abyss-2 `WEAK`, -3 and
+  front matches and the base is too stiff, so no single stiffness fits. `check` therefore says Abyss-3 and
   -5 `FALLS`, -4 `WEAK` (sag 164), but these verdicts are not reliable (the `NOTE` says so). What would settle it: a
   probe at the end of an Abyss plan (engine stress and positions of a loaded Abyss tower, like the Vanilla calibration).
+  The rebuilt Abyss-2 (27.10.2026) keeps its cantilever short (the nest over the starting fort's roof, its front node
+  braced down, a one-cell tower against the cliff) and `STANDS` (stress 0.54, sag 51).
 
 ## Limits
 

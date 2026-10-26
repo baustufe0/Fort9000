@@ -50,6 +50,10 @@ def convert(src, long_orig, dst):
             A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
             return ('{ Type = DESTROY_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, DeviceSaveName = "%s" },'
                     % (nid(B), f(npos(B, a["PosB"])), nid(A), f(npos(A, a["PosA"])), a["DeviceSaveName"]))
+        elif t == "DESTROY_LINK":           # removing a strut (recorded plans: the starting fort's prow)
+            A, B = a["OriginalNodeAId"], a["OriginalNodeBId"]
+            return ('{ Type = DESTROY_LINK, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, },'
+                    % (nid(A), f(npos(A, a["PosA"])), nid(B), f(npos(B, a["PosB"]))))
         raise ValueError(a["raw"])
     out = [conv(a) for a in acts]
     # reactive build modules: converted the same way (their own node ids, 20000 and up, keep their numbers)
