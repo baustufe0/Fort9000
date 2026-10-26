@@ -25,7 +25,7 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `split_edges [{a, b, mid, braces, materials}]`: the strut a-b is built in two halves through a node at mid (also when a node is created along it), braced to the given points; `materials {"a", "b"}` per half. Used for two mortars on one 155-wide floor and for Vanilla-2's short sniper door.
 - `mortar_slots [(node A, node B, LinkT)]`: explicit struts for the first mortars (the cell above is built first); their upgrades go on the same strut; `reserve_mortar` skips them.
 - `weapon_slots [(node A, node B, LinkT, device)]`: explicit roof struts for these weapons, taken in order (also a half of a
-  split edge, so two devices share one cell's roof; Vanilla-5's EMP rockets and smoke launcher); the cell below is
+  split edge, so two devices share one cell's roof; Vanilla-5's prow-roof EMP rocket and smoke launcher); the cell below is
   built first, the upgrade goes on the same strut.
 - `weapon_cells [(left x, floor y, device[, LinkT])]`: a weapon's cell, also one that is not at the front (it fires through the cells ahead); `lane_cells [(left x, floor y)]`: cells kept as a fire lane (door in front, background diagonals, no device).
 - `weapon_pick_best`: no random pick among the two best cells; `small_low_first`: small direct weapons in the lowest front cell first; `sniper_t`: LinkT of snipers.

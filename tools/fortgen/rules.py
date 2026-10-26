@@ -37,6 +37,8 @@ TALL = {"rocket", "rocketemp", "flak", "shotgun", "smokebomb"}
 DIRECT = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser", "flak", "shotgun",
           "rocket", "rocketemp", "firebeam"}
 LOBBED = {"mortar", "mortar2", "smokebomb"}
+ROCKETS = {"rocket", "rocketemp"}
+ROW_TOL = 50               # devices this close in height stand in one row
 TURBINES = {"turbine", "turbine2"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
               "shotgun": "flak", "rocket": "rocketemp"}
@@ -317,6 +319,11 @@ def check_plan(actions, enemy_dir=1, terrain=None):
                 errors.append("%s at %s and %s at %s overlap (neighbouring struts)" % (n1, _fmt(p1), n2, _fmt(p2)))
             if n1 in TURBINES and n2 in TURBINES and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < TURBINE_SPACING:
                 errors.append("turbines at %s and %s only %.0f apart (need %d)" % (_fmt(p1), _fmt(p2), math.dist(p1, p2), TURBINE_SPACING))
+            # a rocket needs a free lane like a 20mm, cannon or laser: no other rocket or smoke launcher in its row
+            # (the player's rule, 26.10.2026)
+            if ({n1, n2} & ROCKETS) and n1 in ROCKETS | {"smokebomb"} and n2 in ROCKETS | {"smokebomb"} \
+                    and abs(p1[1] - p2[1]) < ROW_TOL:
+                errors.append("%s at %s and %s at %s in one row (a rocket needs its row to itself)" % (n1, _fmt(p1), n2, _fmt(p2)))
             if n1 in LOBBED and n2 in LOBBED and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < MORTAR_SPACING:
                 errors.append("%s at %s and %s at %s only %.0f apart (need %d)" % (n1, _fmt(p1), n2, _fmt(p2), math.dist(p1, p2), MORTAR_SPACING))
 

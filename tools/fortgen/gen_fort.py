@@ -588,36 +588,42 @@ VANILLA_VARIANTS = {
         ],
     },
     # Vanilla-5, rockets (replaces the laser rush: a laser took ~5 minutes on Vanilla and lost four test matches, 25.10.2026):
-    # EMP rockets as early as possible, a smoke launcher beside them and anti-air behind them, later upgraded to
-    # rockets. The smoke goes up first, so the enemy's anti-air cannot see the rockets (ai.lua, Fire.SmokeCover);
-    # the EMP rockets fire already while the upgrade centre is built. Vanilla-2's low fort (the most tested layout,
-    # nothing above its roofs at y -25), without its sniper and mortars: the armoury on the starting fort's proven
-    # workshop slot (no workshop needed), so it costs no structure; the nest storey's roof is split in two halves
-    # (one device per strut) and carries the two EMP rockets (prow and front half) and the smoke launcher (rear half),
-    # 85-90 apart (devices need 80; 89 worked for sandbags, 77 failed for mortars); flak and the machine gun stand on the
-    # gallery roof behind them, where Vanilla-2's machine guns stood.
+    # EMP rockets as early as possible, a smoke launcher and anti-air, later upgraded to rockets. The smoke goes up
+    # first, so the enemy's anti-air cannot see the rockets (ai.lua, Fire.SmokeCover); the EMP rockets fire already
+    # while the upgrade centre is built. Vanilla-2's low fort (the most tested layout), without its sniper and mortars;
+    # the armoury on the starting fort's proven workshop slot (no workshop needed), so it costs no structure.
+    # A rocket needs a free lane ahead, like a 20mm, cannon or laser: no other rocket or smoke launcher in its row. The
+    # low fort has two heights tall enough for a launcher, so the weapons are stacked: EMP rocket 1 inside the nest
+    # storey (floor y 105, 130 high), firing through the prow cell (an empty lane, its front wall background bracing in
+    # the hidden storey); EMP rocket 2 alone on the prow roof (y -25, the front-most place, nothing ahead); the smoke
+    # launcher on one more storey on the nest roof (x -3100..-2945, roof y -125), in neither row and with an open arc;
+    # flak and the machine gun on the gallery roof behind rocket 2 (they fire at the sky).
     "rockets": {
-        "title": "Rocket rush: armoury at once, two EMP rockets and a smoke launcher on the front roof, flak behind, then rockets",
-        "shape": _V_RUSH_DECK,
+        "title": "Rocket rush: armoury at once, EMP rockets in the nest and on the prow roof, smoke on top, flak behind, then rockets",
+        "shape": _union(_V_RUSH_DECK, _box(-3100, -2945, -125, -25)),
         "tech_slots": {"armoury": [((-3096, 503), (-2996, 504), 0.05)],
                        "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "roof_weapons": {"flak", "machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
-            "weapon_cells": [], "mortar_slots": [],
-            "split_edges": [{"a": (-3100, -25), "b": (-2945, -25), "mid": (-3022, -25),
-                             "braces": [((-3100, 105), "backbracing"), ((-2945, 105), "backbracing")]}],
+            "mortar_slots": [], "split_edges": [],
+            "weapon_cells": [(-3100, 105, "rocketemp")],
+            "lane_cells": [(-2945, 205), (-2945, 105)],
+            # the lane's front stays background bracing (the hidden storey): a door there blocked the gallery turbines'
+            # wind on the right side (two of three from 36-45 % to 0 %)
+            # the gallery's split cell only (the prow cell is the nest rocket's lane)
+            "split_cell": [(-3200, -25)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
             "weapon_slots": [((-2945, -25), (-2845, -25), 0.5, "rocketemp"),
-                             ((-3022, -25), (-2945, -25), 0.5, "rocketemp"),
-                             ((-3100, -25), (-3022, -25), 0.3, "smokebomb")],
-            # one cell further back than Vanilla-2's machine guns: on x -3200..-3100 the flak overlapped the smoke launcher
-            "roof_weapon_cells": [(-3300, -25), (-3500, -25)]},
+                             ((-3100, -125), (-2945, -125), 0.5, "smokebomb")],
+            "roof_weapon_cells": [(-3300, -25), (-3200, -25)],
+            # the smoke launcher's storey rests on the nest only (like the tower cage): it must not wait for the
+            # deck and gallery over the whole width
+            "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-25,)}},
         "plan": [
-            # the armoury (no structure), a mine while it builds, then the front roof: EMP rocket, smoke, EMP rocket
+            # the armoury (no structure), a mine while it builds, then the EMP rockets (prow roof, nest) and the smoke
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
-            ("weapons", ["rocketemp", "smokebomb", "rocketemp"]),
-            ("defence", ["sandbags", "sandbags"]),
+            ("weapons", ["rocketemp", "rocketemp", "smokebomb"]),
             # metal and energy (rockets and smoke cost energy per shot), then the upgrade centre: the EMP rockets fire
             # while it builds and become rockets as soon as it stands
             ("eco", ["mine", "mine"]),
