@@ -116,6 +116,13 @@ if [ -n "$PY" ]; then
   check "Probe parser finds the CS_UNSTABLE split" "unstable if s > 0.260 \(100 %\)" $PY "$MOD/tools/fortgen/probe.py" probe.txt
   check "Probe parser splits by devices nearby"  "devices at its nodes +2 / 2$" $PY "$MOD/tools/fortgen/probe.py" probe.txt
   check "Probe parser lists the refused strut"   "\(100,-100\)-\(0,-100\)  t=0.20,0.80  s=0.400" $PY "$MOD/tools/fortgen/probe.py" probe.txt
+  # static physics check (tools/fortgen/physics.py, docs/physics.md)
+  $PY "$MOD/tools/fortgen/physics.py" selftest > phys.txt 2>&1
+  check "Physics: a braced cell stands"          "^braced cell: converged=True mechanism=\[\] broken=0" cat phys.txt
+  check "Physics: an unbraced cell folds"        "^unbraced cell: mechanism=\[3\]$" cat phys.txt
+  check "Physics: a short overhang holds"        "200-long overhang: converged=True broken=0" cat phys.txt
+  check "Physics: a long overhang breaks"        "600-long overhang: converged=[A-Za-z]* broken=[1-9][0-9]* tip sag [0-9]{3}" cat phys.txt
+  check "Physics: Vanilla-5's long brace refused" "REFUSED action [0-9]* link: 47-40 length 219" $PY "$MOD/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
 else
   echo "SKIP  recorded build -> plan, probe parser (no Python 3)"
 fi

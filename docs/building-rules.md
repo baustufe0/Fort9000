@@ -243,6 +243,9 @@ the plan header (team 2 plans such as VanillaLong face left) and ignores the ter
 also lets rock block the wind rays (then every turbine on Abyss's top roof, next to the cliff wall, gets no wind from
 the left; the game's Abyss-1 uses the same spots).
 
+Whether a plan carries its own weight in its build order (sag, strut stress, struts refused because the fort has
+moved) is checked by `physics.py` ([physics.md](physics.md)), not by `rules.py`.
+
 ## Approaches that failed (do not repeat)
 
 Map-specific ones are in [maps/vanilla.md](maps/vanilla.md) and [maps/abyss.md](maps/abyss.md).
