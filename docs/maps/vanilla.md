@@ -167,7 +167,12 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   - Flak (x -3200..-3100) and the machine gun (x -3300..-3200) on the gallery roof (they fire at the sky). The gallery
     roof needs ~90 actions of support from the back block, so until plan action 135 only the starting fort's machine
     gun covers the sky.
-- Order (232 actions): armoury (24), mine, EMP rockets (32, 38), their lanes with the doors at once (39, 47; left to
+- A long background brace through the starting fort's front column (`struts`, `long_struts`): from its node at
+  (-2996, 504) down to the front ground node (-2900, 700), across both lower storeys, 217-218 long in the game (218.7
+  between the plan's recorded positions; the game allows 218). The player builds it early in every match (16-74 s,
+  three logs); the starting fort has nothing across those storeys, and its lower front gave way in two lost matches.
+  Only in Vanilla-5 for now, as a test.
+- Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (39, 47; left to
   the final pass they came only at the end), the first turbine (96; energy, second test), smoke and its shield
   (97-99), two mines, upgrade centre (107), rockets (108-109), the gallery's sandbags, flak (152), woodspam, machine
   gun (194), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.

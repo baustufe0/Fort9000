@@ -33,8 +33,11 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `turbine_floor_t`: LinkT of gallery turbines (spacing to other devices); `turbine_avoid` also applies to gallery turbines.
 - `tower_connect.skip_floors`: storeys left out of the storey-by-storey rule (the cage on the tower roof rests on the top storey only).
 - `split_doors`: final pass, the door post of a sniper, cannon, 20mm cannon, laser or (EMP) rocket is rebuilt in up to three pieces (armour, door, armour) with the shortest door that covers the shot (both barrel estimates +- margin, see [building-rules.md](building-rules.md)), each new node braced to the cell's back corners by a brace that does not pass through a device's box in that cell; without such a brace the door is not split. Machine-gun doors stay full (anti-air).
-- Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there
-  (e.g. Vanilla-5's armour shield in front of its smoke launcher).
+- Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there;
+  A and B may be grid nodes or nodes of the starting fort (e.g. Vanilla-5's armour shield in front of its smoke
+  launcher, its long brace across the starting fort).
+- `long_struts [(A, B)]`: struts allowed up to the game's limit (`GAME_MAX_LINK` 218, +1 like `MAX_LINK`) instead of the
+  generator's 205, e.g. Vanilla-5's 218.7 brace across the starting fort.
 - `door_posts [(x, y_top, y_floor)]`: front posts split like doors although they are not doors (e.g. background
   bracing in a hidden storey); `door_rest [((x, y_top, y_floor), material)]`: the material above and below such a
   door (default armour; Vanilla-5: background bracing, the gallery turbines need the wind).

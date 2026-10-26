@@ -33,6 +33,7 @@ from fortplan import parse_plan, parse_lines, node_positions, format_modules, mo
 import rules  # noqa: E402
 
 MAX_LINK = 205          # struts between existing nodes (the game allows StandardMaxLinkLength = 218)
+GAME_MAX_LINK = 218     # StandardMaxLinkLength: only for struts listed in long_struts
 MAX_NEW_NODE = 150     # StandardMaxLength: a new node can be at most this far from the node it is built from
 MIN_LINK = 45
 MIN_STRUT = 37.5        # StandardMinLength: the shortest strut the game allows
@@ -630,7 +631,9 @@ VANILLA_VARIANTS = {
             "split_cell": [(-3200, -55)], "sandbag_slots": [(0, "floor", 0.3), (0, "mid", 0.5)],
             "turbine_floor_y": 75,
             "weapon_slots": [((-3100, -55), (-2945, -55), 0.5, "smokebomb")],
-            "roof_weapon_cells": [(-3300, -55), (-3200, -55)]},
+            "roof_weapon_cells": [(-3300, -55), (-3200, -55)],
+            # the player's brace across the starting fort's two lower storeys (217-218 long in the game, which allows 218)
+            "long_struts": [((-2996, 504), (-2900, 700))]},
         "plan": [
             # the armoury, a mine while it builds, the EMP rockets (deck, nest), then energy at once: the rockets and the
             # smoke cost energy per shot, and with the first turbine at 293 s energy stayed below 900 from 90 to 330 s
@@ -638,6 +641,10 @@ VANILLA_VARIANTS = {
             # roof edge in front of it (it was destroyed every ~50 s on the open roof), braced to the prow roof
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
+            # a long background brace through the starting fort's front column, from its node at y 504 down to the
+            # front ground node: the player builds it early in every match (16-74 s); the starting fort has nothing
+            # across those two storeys, and its lower front gave way in two lost matches (Vanilla-6, Vanilla-5)
+            ("struts", [((-2996, 504), (-2900, 700), "backbracing")]),
             ("weapons", ["rocketemp", "rocketemp"]),
             # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
             ("build", [(-2945, 205), (-2945, 75)]),
@@ -2112,13 +2119,14 @@ class Plan:
     def add(self, step, dev):
         if step == "struts":
             # ("struts", [(point A, point B, material), ...]): one extra strut each (e.g. a shield in front of a roof
-            # weapon); A must stand, B is created from A if no node is there yet
+            # weapon, or a long brace across the starting fort); A must stand (a grid node or one of the starting
+            # fort's), B is created from A if no node is there yet
             pa, pb, mat = dev
-            ka = self.node_at(pa, tol=5)
+            ka = self.node_at(pa, tol=5) or self.orig_node_at(pa)
             if ka is None or self.nodes[ka][0] not in self.built_nodes:
                 self.problems.append("strut from (%d,%d): node not built" % tuple(pa))
                 return
-            kb = self.node_at(pb, tol=5)
+            kb = self.node_at(pb, tol=5) or self.orig_node_at(pb)
             if kb is None:
                 self.ws_node(("strut",) + tuple(pb), tuple(pb), ka, mat)
             elif self.nodes[kb][0] not in self.built_nodes:
@@ -2477,7 +2485,12 @@ class Plan:
                         errors.append("action %d: node %d not built yet" % (k, x))
             if len(pts) >= 2 and m in ("CREATE_NODE", "CREATE_LINK"):
                 L = math.dist(pts[0], pts[1])
-                if L > MAX_LINK + 1:
+                # long_struts [(A, B)]: struts the game allows up to its own limit (StandardMaxLinkLength 218), e.g. a
+                # brace players build across two storeys of the starting fort: 218.7 between the plan's recorded node
+                # positions, 217-218 in the game, where the player built it in three matches)
+                long_ok = any({(round(pts[0][0]), round(pts[0][1])), (round(pts[1][0]), round(pts[1][1]))}
+                              == {tuple(map(round, a)), tuple(map(round, b))} for a, b in self.cfg.get("long_struts", []))
+                if L > (GAME_MAX_LINK + 1 if long_ok else MAX_LINK + 1):
                     errors.append("action %d: link too long (%.0f)" % (k, L))
                 if not self.t.segment_clear(pts[0], pts[1]):
                     errors.append("action %d: link passes through rock" % k)

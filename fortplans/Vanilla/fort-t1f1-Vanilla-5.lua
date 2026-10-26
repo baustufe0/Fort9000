@@ -34,6 +34,7 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10007, PosA = {x = -3400.00, y = 503.00 }, OriginalNodeBId = 10002, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10000, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10002, PosB = { x = -3300.00, y = 602.00 }, LinkT = 0.49, DeviceSaveName = "armoury" },
 { Type = CREATE_DEVICE, GroundPosition = { x = -3029.41, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine" },
+{ Type = CREATE_LINK, OriginalNodeAId = 47, PosA = {x = -2996.23, y = 503.57 }, OriginalNodeBId = 40, PosB = { x = -2900.00, y = 700.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 10009, NewNodePos = { x = -3100.00, y = 75.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 55, PosA = { x = -2945.11, y = 206.49 }, OriginalNodeBId = 10010, NewNodePos = { x = -2945.00, y = 75.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 56, PosA = {x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, MaterialSaveName = "bracing" },

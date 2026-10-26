@@ -165,6 +165,9 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
   need a cell split at half height (`split_cell`) with at least 51 per half (a 100-high cell refused the upper ones).
 - **Woodspam is foreground wood:** within a turbine's wind rays it blocks them, so it stays out of the turbines' height
   band; in a line of fire it must be background bracing.
+- **Players brace the starting fort:** in every recorded match the player built a background brace from the
+  starting fort's node at (-2996, 504) down to its front ground node (-2900, 700), 217-218 long (the game's limit is
+  218), within the first 16-74 s. The starting fort has nothing across those two storeys (Vanilla-5 tests it).
 - **Beams cut unprotected walls in seconds:** one laser beam through a starting fort's bare face brought down the
   reactor within 2 s; layers of woodspam in front of it buy time.
 
