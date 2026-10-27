@@ -45,6 +45,16 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
   bracing in a hidden storey); `door_rest [((x, y_top, y_floor), material)]`: the material above and below such a
   door (default armour; Vanilla-5: background bracing, the gallery turbines need the wind).
 - `woodspam`: one region or a list; plan step `woodspam` builds all regions, `woodspam:<k>` region k; `outside` gives the material where no grid cell stands behind a band, one material or `{band top y: material}`; wall nodes of the starting fort outside the grid are found too (`orig_node_at`).
+- `clear_boxes [device, ...]`: final pass, every foreground strut crossing such a device's box (half-width `SIZE[0]`
+  to both sides, `BOX_TOP` above its strut, the posts at its own strut's ends excluded) becomes background bracing, so
+  a tall device stands inside a block of storeys (Abyss-2's munitions plant, box 170, under the starting fort).
+  `clear_boxes_tilted`: the box measured square to the device's strut and shifted by its body shift, as it stands on a
+  sloping strut, its edges tested too (Abyss-2's weapons; off, the box stands upright on the strut point).
+- A `struts` node exactly on the rock surface (within 1) is a foundation (Abyss-2's wall anchors).
+- `weapon_struts [(node A, node B, LinkT, device)]`: a weapon on an explicit strut between two built nodes (grid,
+  split-edge or `struts` nodes), e.g. one rising a few degrees from a post to the front post, where it ends at the
+  bottom of the weapon's door (Abyss-2; a device on a strut of 30 degrees or more is refused, `CS_INVALIDNODES`).
+- A mine's `chain` may start at a node of the starting fort that is not on the grid.
 - Variant key `retire {device: seconds}`: written after the `Fort` table as `FortRetire`; the AI sells such a weapon
   once it has declined to fire that long ([ai.md](ai.md#fire-control), Abyss-2's early sniper).
 - `orig_devices [(node A, node B, device[, LinkT])]`: devices of the starting fort (Vanilla: the machine gun on its lower front); their cells stay free. Plan step `sell:<device>` sells one (`DESTROY_DEVICE`) and makes its cell a fire lane (unused now: the planned sale came from a wrong position). An upgrade step with no planned device of its base type upgrades one of these, each once, at its LinkT (Abyss-2: the starting fort's machine gun becomes a minigun).

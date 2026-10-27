@@ -54,7 +54,7 @@ check "Fire diagnostics: rate limit"             "^2$" bash -c "\"$LUA\" t_firew
 check "Fire diagnostics: new reason at once"     "FIRETRY cannon20mm 22 fired=0 code=- ray=" "$LUA" t_firewait.lua
 check "Machine guns: no offensive fire"          "fired:.11,13,14,15,11,13$"      "$LUA" t_fire_mg.lua
 check "Retire: idle sniper sold, not rebuilt"   "sold: 31@50 devices31=nil devices33=9$" "$LUA" t_retire.lua
-check "Retire: read from the plan file"          "RETIRE-CONFIG sniper:90" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+check "Retire: read from the plan file"          "RETIRE-CONFIG sniper2:90,sniper:90" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
 check "Retire: log line"                         "RETIRE sniper 31 idle=20 shots=0 result=0" "$LUA" t_retire.lua
 check "Miniguns still fire at the fort"         "minigun offensive.true$"       "$LUA" t_fire_mg.lua
 check "Machine guns stay anti-air"               "MG offensive.0.MG during rebuild.0.MG anti-air.0.7" "$LUA" t_fire_mg.lua

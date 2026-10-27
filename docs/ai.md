@@ -25,13 +25,14 @@ The built-in AI only fires during build pauses and at most one weapon per cycle.
 
 **Retire idle weapons:** a plan may list weapon types to sell once they have nothing left to hit: `FortRetire = {
 sniper = 90 }` after the `Fort` table (written by `gen_fort.py` from a variant's `retire`; `CAI_LoadPlanFile` reads
-it, the plan swap logs `RETIRE-CONFIG sniper:90`). The fire control counts, per weapon of such a type, the seconds in
+it, the plan swap logs e.g. `RETIRE-CONFIG sniper2:90,sniper:90`). The fire control counts, per weapon of such a type, the seconds in
 which `TryFireGun` left it ready (the built-in AI declined: no target in reach) while the team had at least
 `CAI_RETIRE_MIN_ENERGY` (1000) energy (it also declines when it cannot pay a shot); a shot resets the count. At the
 limit the weapon is sold with `DestroyDeviceById` and its plan entry dropped (`RETIRE <type> <id> idle=<s> shots=<n>
 result=<r>`). The built-in AI does not rebuild it: it only rebuilds a deleted device it marked itself
 (`DeviceDeleteToRebuild`). Used by Abyss-2's early sniper (27.10.2026; the player's idea: snipe the enemy's first
-weapons, sell the sniper once none is reachable). Not yet seen in a match.
+weapons, sell the sniper once none is reachable). First seen in Abyss-2 test 7: `RETIRE sniper2 ... result=-8`, the AP
+sniper gone from the next snapshot on, so -8 is the game's result for a sale it carries out (not `DD_SUCCESS`).
 
 ## Build tempo by difficulty
 
@@ -41,7 +42,7 @@ Update period (`UpdatePeriod`) and repair period (`RepairPeriod`) are interpolat
 
 - **Give up rebuilds:** if a queued rebuild action is stuck for longer than `RebuildGiveUpSeconds`, it is discarded. If the AI is merely waiting for metal, the clock does not run. "Insufficient resources" only counts as waiting while metal is still rising; if metal stays flat above `BuildSkipMinMetal` for `StarvedFlatTicks` think ticks (e.g. at the storage cap, when an action costs more than can be stored), the clocks run again.
 - **Skip actions:** if normal construction is stuck on one action for longer than `BuildSkipSeconds` despite enough metal (`BuildSkipMinMetal`), the action is skipped.
-- **Rebuild cap:** the built-in AI queues every lost device for rebuilding (`CheckDeviceForRebuild` schedules `QueueDeviceRebuild`, which the mod wraps). Losses are counted per plan action; a loss within `RebuildCap.Window` (180 s, game time) of the one before continues the streak, a longer survival starts a new one. Once a streak passes `RebuildCap.Max[type]` (machine gun, minigun and smoke launcher: 3 rebuilds), the device stays lost for the rest of the match and its metal goes into the plan (`REBUILD_CAP action <k> <type> losses=<n> window=<s>s`). Types without an entry (turbines, mines, weapons other than these) are always rebuilt. Reason: on Vanilla-5 (25.10.2026) one machine gun on the prow was lost and rebuilt ten times in four minutes under mortar fire, while the AI was below 150 metal most of the match.
+- **Rebuild cap:** the built-in AI queues every lost device for rebuilding (`CheckDeviceForRebuild` schedules `QueueDeviceRebuild`, which the mod wraps). Losses are counted per plan action; a loss within `RebuildCap.Window` (180 s, game time) of the one before continues the streak, a longer survival starts a new one. Once a streak passes `RebuildCap.Max[type]` (machine gun, minigun and smoke launcher: 3 rebuilds), the device stays lost for the rest of the match and its metal goes into the plan (`REBUILD_CAP action <k> <type> losses=<n> window=<s>s`). Types without an entry (turbines, mines, weapons other than these) are always rebuilt. Reason: on Vanilla-5 (25.10.2026) one machine gun on the prow was lost and rebuilt ten times in four minutes under mortar fire, while the AI was below 150 metal most of the match. On Abyss (`Maps.Abyss.Strategy` in `ai/fortplans.lua`, 27.10.2026) snipers are capped at 2 rebuilds and mortars at 3 (Abyss-2 test 6: a sniper lost four times, the mortars five times, metal below 150 for 56 % of the match).
 
 ## Reactive build modules
 

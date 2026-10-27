@@ -27,6 +27,13 @@ FortPlanConfig =
 			Originals = { "fort-t1f1-Abyss-1.lua", "fort-t1f1-Abyss-ToGA1.lua" },
 			ReactorsPerSide = 1,
 			Plans = { "original", "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-4.lua", "fort-t1f1-Abyss-5.lua" },
+			-- rebuild cap for snipers and mortars (Abyss-2 test 6, 27.10.2026: a sniper lost four times and the mortars
+			-- five times within minutes, metal below 150 for 56 % of the match): a sniper lost more than 2 times in a
+			-- row, a mortar more than 3 times (each loss within RebuildCap.Window of the one before) stays lost
+			Strategy =
+			{
+				RebuildCap = { Max = { sniper = 2, sniper2 = 2, mortar = 3, mortar2 = 3 } },
+			},
 		},
 		-- Template map: the starting fort comes from ai/forts/vanilla/mid (shared with Penguin, Caverns, ...).
 		-- Detected by FortPos + action count, so plans/values apply on all maps with these mid plans.
