@@ -9,7 +9,7 @@ function GetTeamResources() return {metal=0,energy=0} end
 function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 function CreateLink(t,m,a,b) if m=="armour" then return CS_OBSTRUCTED end return CS_SUCCESS end
 function CreateNode(t,m,a,p) return CS_INSUFFICIENTRESOURCES end
 Load(true)

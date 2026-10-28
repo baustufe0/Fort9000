@@ -36,7 +36,7 @@ function TryFireGun(id, group)
   ready[id]=false
   if group then for _, g in ipairs(group) do ready[g]=false end end
 end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 Load(true)
 local function tick(label) fired={}; CAI_FireTick(); print(label, table.concat(fired,",")) end
 tick("partner reloading:")                      -- 31 ready, 32 not: 31 held, the sniper fires

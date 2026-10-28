@@ -10,7 +10,7 @@ function GetDeviceCountSide(s) local n=0 for _ in pairs(devs[s]) do n=n+1 end re
 function GetDeviceIdSide(s, i) local ids={} for id in pairs(devs[s]) do ids[#ids+1]=id end table.sort(ids) return ids[i+1] end
 function GetDeviceType(id) return devs[1][id] or devs[2][id] end
 function GetTeamResources(s) return { metal = 500 + 10*s, energy = 3000 } end
-dofile("mods/fort9000/script.lua")
+dofile("mods/fort9000dev/script.lua")
 local winner = (game % 3 == 0) and 2 or 1
 local loser = 3 - winner
 Load(true)

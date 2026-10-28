@@ -173,7 +173,7 @@ valves); it attacks only in build pauses unless `difficulty >= data.HardThreshol
 ## Architecture
 
 ```
-fort9000/
+fort9000dev/              (git repo; publish.py copies the non-dot entries to fort9000/)
 ├── mod.lua                 Mod manifest
 ├── displayname.lua         Display name (EN/DE)
 ├── script.lua              Recorder (mod script, always runs)
@@ -228,8 +228,8 @@ Game end
 
 ## Installation and usage
 
-1. Copy the `fort9000` folder to `<Steam>/steamapps/common/Forts/data/mods/`.
-2. Enable the mod *FORT 9000 AI* in the game.
+1. Clone the repo as `fort9000dev` into `<Steam>/steamapps/common/Forts/data/mods/` (the AI loads its files from `mods/fort9000dev/`).
+2. Enable the mod *FORT 9000 AI DEV* in the game (not together with the published *FORT 9000 AI*; [publishing.md](publishing.md)).
 3. Play matches or watch replays.
 4. Run `py .dev/tools/train.py` (requires Python 3) – updates `ai/strategy.lua`.
 5. Tests: `.dev/tools/tests/run_tests.sh` (Lua, via `LuaPlusC.exe`).

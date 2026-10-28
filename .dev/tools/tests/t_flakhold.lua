@@ -16,7 +16,7 @@ function GetDeviceCountSide(side) return side == 1 and #enemy or 0 end
 function GetDeviceIdSide(side, i) return 100 + i end
 function GetDeviceType(id) return enemy[id - 99] end
 Fort = {} for i = 1, 30 do Fort[i] = { Type = 5, DeviceSaveName = "bracing" } end FortPos = { x = 0, y = 0 }
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 Load(true)
 local function show(tag)
   print(string.format("%s: flak offensive=%s rebuild=%s anti-air=%s machinegun offensive=%s", tag,

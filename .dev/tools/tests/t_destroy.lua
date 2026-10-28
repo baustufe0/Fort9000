@@ -9,7 +9,7 @@ function GetTeamResources() return {metal=0,energy=0} end
 function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 -- a device on 58->55 is found that way round; device 9 only by its platform (76/73); the machine gun 11 only by
 -- its position (platform 90/91, standing at 2885,206 on the strut 80-81); nothing stands on 1-2
 local calls, byid = {}, {}

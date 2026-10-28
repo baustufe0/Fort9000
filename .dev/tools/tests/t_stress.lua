@@ -9,7 +9,7 @@ function GetTeamResources() return {metal=0,energy=0} end
 function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 Fort = {
 	{ Type = 1, OriginalNodeAId = 1, PosA = { x = 0, y = 0 }, OriginalNodeBId = 10000, NewNodePos = { x = 100, y = 0 }, MaterialSaveName = "bracing" },
 }

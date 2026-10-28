@@ -4,8 +4,11 @@ Mod for the game **Forts** (Steam) that extends the built-in AI, records matches
 Specification: [.dev/SPEC.md](../.dev/SPEC.md) is a short index of `.dev/docs/` (topic files, `.dev/docs/maps/<map>.md` for the current
 state of each map's plans, `.dev/docs/history/` for test matches). Read the index, then only the files the task needs.
 
-This folder is both the git repo and the installed mod:
-`<Steam>/steamapps/common/Forts/data/mods/fort9000` (Windows). The Forts install is three levels up.
+This folder is both the git repo and the development mod ("FORT 9000 AI DEV" in game):
+`<Steam>/steamapps/common/Forts/data/mods/fort9000dev` (Windows). The Forts install is three levels up.
+The Workshop is fed from `data/mods/fort9000` ("FORT 9000 AI"), a generated copy: never edit it, publish with
+`py .dev/tools/publish.py` (skill `forts-publish`, `.dev/docs/publishing.md`). The AI's own paths say `mods/fort9000dev/`;
+publish.py rewrites them. Enable only one of the two mods in the game.
 
 ## Language
 
@@ -86,6 +89,6 @@ tests in `.dev/tools/tests/run_tests.sh`; keep them in sync when renaming.
 
 - Old archived logs in `.dev/tools/logs/` contain German `[CAI]` tokens from before the translation; `train.py`
   does not parse them, so they remain usable.
-- Project skills in `.claude/skills/`: `forts-match-review` (analyse a played match, archive the log, train;
+- Project skills in `.claude/skills/`: `forts-publish` (copy the mod into `fort9000` for the Workshop upload), `forts-match-review` (analyse a played match, archive the log, train;
   `summary.py` summarises a log) and `forts-map-plans` (change, generate and install build plans, per-map settings).
   They hold only the workflow and point to `.dev/docs/`; keep facts in `.dev/docs/`, not in the skills.

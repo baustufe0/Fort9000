@@ -2,7 +2,7 @@
 
 FORT 9000 is a mod for the game **Forts** (Steam). It extends the built-in AI, records matches, and automatically retrains the AI parameters from those recordings.
 
-In-game name: *FORT 9000 AI* · Folder: `data/mods/fort9000`
+In-game name: *FORT 9000 AI* · Folder: `data/mods/fort9000` (published copy); development: *FORT 9000 AI DEV* in `data/mods/fort9000dev` (git repo)
 
 ---
 
@@ -28,6 +28,7 @@ The specification is split into files so a session only loads what it needs.
 | [.dev/docs/map-files.md](docs/map-files.md) | the map file formats `.spr` (starting forts: nodes, struts with rest lengths, devices) and `.fwe` (terrain blocks, views, props); readers `spr.py`, `fwe.py` | reading a map's starting fort or terrain |
 | [.dev/docs/building-rules.md](docs/building-rules.md) | game mechanics (materials, devices, economy, lines of fire, wind, `CS_UNSTABLE`), defence facts, design rules, `rules.py` validation, general failed approaches | before changing any plan or the generator |
 | [.dev/docs/testing.md](docs/testing.md) | how to test a plan and read the log of a match | analysing a match |
+| [.dev/docs/publishing.md](docs/publishing.md) | dev and published mod folder, `publish.py`, known Workshop upload errors | publishing, upload errors |
 | [.dev/docs/maps/vanilla.md](docs/maps/vanilla.md) | Vanilla: starting fort, shared shape, Vanilla-2 to -7 (current state), failed approaches, open problems | working on a Vanilla plan |
 | [.dev/docs/maps/abyss.md](docs/maps/abyss.md) | Abyss: variants, cliff-ledge rules, failed approaches | working on an Abyss plan |
 | [.dev/docs/maps/vanillalong.md](docs/maps/vanillalong.md) | VanillaLong: converted Vanilla plans | working on a VanillaLong plan |

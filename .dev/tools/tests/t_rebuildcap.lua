@@ -20,7 +20,7 @@ function QueueDeviceRebuild(id)   -- the built-in AI's version
 end
 Fort = {} for i = 1, 30 do Fort[i] = { Type = 5, DeviceSaveName = "bracing" } end FortPos = { x = 0, y = 0 }
 Fort[10].DeviceSaveName = "machinegun"; Fort[11].DeviceSaveName = "turbine"; Fort[12].DeviceSaveName = "machinegun"
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 Load(true)
 local id = 100
 local function Lose(k)

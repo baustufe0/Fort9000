@@ -1,5 +1,5 @@
 -- FORT 9000 - custom build plans per map
--- The plan files live in mods/fort9000/fortplans/<map>/ (not in data/maps,
+-- The plan files live in mods/fort9000dev/fortplans/<map>/ (not in data/maps,
 -- where Forts removes foreign files). This file is NOT modified by training.
 --
 -- Originals:       original plans of the map (in data/maps/<map>/) - the AI recognises the map by them;

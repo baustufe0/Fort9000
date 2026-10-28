@@ -32,7 +32,7 @@ function OffsetFort(offset)
 end
 local engineFile = "ai/forts/vanilla/long/" .. ENGINE
 if ORDER == "before" then dofile(engineFile) end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 if ORDER == "after" then dofile(engineFile) end
 teamId = TEAM
 -- Game: real fort of team 1 at x=-1995, team 2 mirrored at +1995

@@ -32,7 +32,7 @@ function MirrorFort(pivot, offset)
     local p = a[k]; if p then p.x = 2*pivot - p.x + offset.x; p.y = p.y + offset.y end end end
 end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 FortPlanConfig.Force = nil
 local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-2.lua"]
 local nPlan = #plan.Fort

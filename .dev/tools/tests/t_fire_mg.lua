@@ -20,7 +20,7 @@ function IsAIDeviceAvailable() return true end
 function IsWeaponReadyToFire() return true end
 local fired={}
 function TryFireGun(id) fired[#fired+1]=id end
-dofile("mods/fort9000/ai/ai.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
 Load(true)
 for i=1,2 do CAI_FireTick() end
 print("fired:", table.concat(fired,","))                     -- machine gun 12 skipped, its turn used by others
