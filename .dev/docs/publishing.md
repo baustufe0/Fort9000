@@ -35,6 +35,12 @@ It refuses to publish when the dev folder contains a `.bat`, `.cmd` or `.exe` fi
 when `Probe` is switched on or `Force` is not empty in `ai/fortplans.lua`, or when the target folder name is not
 alphanumeric ASCII. The skill `forts-publish` runs the tests and the script.
 
+## Versions and changelog
+
+After an upload, tag the published commit `workshop-v<N>` (`N` = `ItemVersion` in
+`workshop/content/410900/3829000413/itemversion.lua`) and add an entry to [.dev/CHANGELOG.md](../CHANGELOG.md) for
+`git log workshop-v<N-1>..workshop-v<N>`, written for players (what changed in play, not how). Version 1 has no tag.
+
 ## Known upload errors (game log, German client)
 
 | Log line | Cause | Fix |
