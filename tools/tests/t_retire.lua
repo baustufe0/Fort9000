@@ -12,10 +12,10 @@ function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
 -- 31: sniper the built-in AI always declines (no target); 32: a 20mm that declines (not in FortRetire);
--- 33: sniper that fires on every try
-local weapons={31,32,33}
-local kind={[31]="sniper",[32]="cannon20mm",[33]="sniper"}
-local ready={[31]=true,[32]=true,[33]=true}
+-- 33: sniper that fires on every try; 34: sniper that declines the mod's tries but the built-in AI fires every 5 s
+local weapons={31,32,33,34}
+local kind={[31]="sniper",[32]="cannon20mm",[33]="sniper",[34]="sniper"}
+local ready={[31]=true,[32]=true,[33]=true,[34]=true}
 function GetWeaponCount() return #weapons end
 function GetWeaponId(t,i) return weapons[i+1] end
 function GetDeviceType(id) return kind[id] or "reactor" end
@@ -23,7 +23,8 @@ function IsDummy() return false end
 function IsAIDeviceAvailable(id) return true end
 function IsWeaponReadyToFire(id) return ready[id] end
 function GetWeaponFireFailureCode() return 0 end
-function TryFireGun(id) if id == 33 then ready[33] = false end end
+local builtin = false
+function TryFireGun(id) if id == 33 or (id == 34 and builtin) then ready[id] = false end end
 local tick, sold = 0, {}
 function DestroyDeviceById(id)
 	sold[#sold + 1] = id .. "@" .. tick
@@ -39,6 +40,8 @@ for i = 1, 70 do
 	tick = i
 	if i == 31 then energy = 1500 end
 	ready[33] = true
+	if i % 5 == 2 then ready[34] = true end
+	if i % 5 == 0 then builtin = true; TryFireGun(34); builtin = false end
 	CAI_FireTick()
 end
 print("sold: " .. table.concat(sold, ",") .. " devices31=" .. tostring(data.Devices[31]) .. " devices33=" .. tostring(data.Devices[33]))

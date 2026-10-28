@@ -56,6 +56,7 @@ check "Machine guns: no offensive fire"          "fired:.11,13,14,15,11,13$"    
 check "Retire: idle sniper sold, not rebuilt"   "sold: 31@50 devices31=nil devices33=9$" "$LUA" t_retire.lua
 check "Retire: read from the plan file"          "RETIRE-CONFIG sniper2:90,sniper:90" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
 check "Retire: log line"                         "RETIRE sniper 31 idle=20 shots=0 result=0" "$LUA" t_retire.lua
+check "Retire: shots of the built-in AI count"  "sold: 31@50 " "$LUA" t_retire.lua
 check "Miniguns still fire at the fort"         "minigun offensive.true$"       "$LUA" t_fire_mg.lua
 check "Machine guns stay anti-air"               "MG offensive.0.MG during rebuild.0.MG anti-air.0.7" "$LUA" t_fire_mg.lua
 check "Smoke fires first, rockets held"          "t1:.22,24$"                    "$LUA" t_smoke.lua
@@ -76,7 +77,7 @@ check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$" 
 check "Volley: firebeam waits for its partner"   "^partner reloading:.33$"       "$LUA" t_volley.lua
 check "Volley: built-in AI's shot held too"      "^base firebeam held:.true$"    "$LUA" t_volley.lua
 check "Volley: both fire as one group"           "^both ready:.31:31\+32,33$"    "$LUA" t_volley.lua
-check "Volley is logged"                         "VOLLEY 2 leader=31 ids=31,32$" "$LUA" t_volley.lua
+check "Volley is logged"                         "VOLLEY 2 leader=31 ids=31,32 fired=2$" "$LUA" t_volley.lua
 check "Volley waits for energy for all"          "VOLLEY_HOLD ready=2/2 energy=0$" "$LUA" t_volley.lua
 check "Volley: alone after MaxHold"              "^alone after hold:.(2[01])$"   "$LUA" t_volley.lua
 check "Volley: one built firebeam fires alone"   "^partner under construction:.31$" "$LUA" t_volley.lua

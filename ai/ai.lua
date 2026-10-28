@@ -530,7 +530,9 @@ local CAI_BaseTryFireGun = TryFireGun
 -- A ready weapon waits until every fully built weapon of the volley types is ready and the team can pay for all
 -- their shots; after MaxHold seconds (fire clock) it fires alone. With only one such weapon nothing changes. A volley
 -- skips the built-in AI's random fire chance (as its own group members do).
---   VOLLEY <n> leader=<id> ids=<id,...>       a volley fired (doors are opened first by the built-in AI)
+--   VOLLEY <n> leader=<id> ids=<id,...> fired=<k>   a volley tried; fired = members no longer ready afterwards
+--                                             (0: the leader found no target, or doors are opening and the built-in
+--                                             AI retries the group; Abyss-3 test 2: 16 volleys, about 5 beam shots)
 --   VOLLEY_HOLD ready=<n>/<m> energy=<0|1>    once when the wait starts or its reason changes
 --   VOLLEY_TIMEOUT <type> <id> after=<s>s     fires alone after MaxHold
 local function CAI_VolleyMembers(v)
@@ -567,8 +569,14 @@ function CAI_Volley(id)
 	local now = st.fireClock or 0
 	if #group >= #all and afford then
 		st.volleyHoldSince, st.volleyHoldWhy = nil, nil
-		CAI_Log("VOLLEY " .. #group .. " leader=" .. id .. " ids=" .. table.concat(group, ","))
+		local ids = table.concat(group, ",")
+		local members = { unpack(group) }   -- the built-in AI empties the group table while it fires
 		CAI_BaseTryFireGun(id, group)
+		local fired = 0
+		for _, w in ipairs(members) do
+			if not IsWeaponReadyToFire(w) then fired = fired + 1 end
+		end
+		CAI_Log("VOLLEY " .. #members .. " leader=" .. id .. " ids=" .. ids .. " fired=" .. fired)
 		return true
 	end
 	if st.volleyHoldSince == nil then st.volleyHoldSince = now end
@@ -617,7 +625,10 @@ function TryFireGun(id, useGroup)
 		end
 	end
 	if hold then return end
-	return CAI_BaseTryFireGun(id, useGroup)
+	local res = CAI_BaseTryFireGun(id, useGroup)
+	local ok, err = pcall(CAI_RetireShot, id)
+	if not ok then CAI_Log("ERROR retire: " .. tostring(err)) end
+	return res
 end
 
 function CAI_RestoreFire()
@@ -682,6 +693,24 @@ end
 --   RETIRE <type> <id> idle=<s> shots=<n> result=<DestroyDeviceById result>
 CAI_RETIRE_MIN_ENERGY = 1000
 
+-- a shot of a retire-type weapon resets its idle time, whoever fired it: the built-in AI fires through TryFireGun
+-- outside the mod's round robin (Abyss-3 test 2, 28.10.2026: a sniper firing 17 times was sold as idle)
+function CAI_RetireShot(id)
+	local st = data.CAI
+	local cfg = CAI_Plan.retire
+	if not (st and cfg and id and type(GetDeviceType) == "function") then return end
+	if not cfg[GetDeviceType(id)] or IsWeaponReadyToFire(id) then return end
+	st.retire = st.retire or {}
+	local r = st.retire[id]
+	if r == nil then
+		r = { idle = 0, at = st.fireClock or 0, shots = 0 }
+		st.retire[id] = r
+	end
+	r.shots = r.shots + 1
+	r.idle = 0
+	r.at = st.fireClock or 0
+end
+
 function CAI_RetireCheck(st, id, kind, fired)
 	local cfg = CAI_Plan.retire
 	local limit = cfg and kind and tonumber(cfg[kind])
@@ -696,8 +725,7 @@ function CAI_RetireCheck(st, id, kind, fired)
 	local dt = now - r.at
 	r.at = now
 	if fired then
-		r.shots = r.shots + 1
-		r.idle = 0
+		r.idle = 0   -- counted by CAI_RetireShot
 		return
 	end
 	local res = GetTeamResources(teamId)

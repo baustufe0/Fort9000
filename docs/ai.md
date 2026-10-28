@@ -28,7 +28,7 @@ can pay for all their shots (`GetWeaponFireCost`, `CanAfford`); then the fire ti
 via the wrapped `TryFireGun`) fires them as one group. After `MaxHold` seconds of waiting (partner reloading, under
 repair or no energy) a weapon fires alone; with only one built, nothing changes. The fire timer starts or holds at
 most one volley per tick, and the round robin skips the volley types without using up a turn. A volley skips the
-built-in AI's random fire chance, as its group members do. Log: `VOLLEY <n> leader=<id> ids=<id,...>`, `VOLLEY_HOLD
+built-in AI's random fire chance, as its group members do. Log: `VOLLEY <n> leader=<id> ids=<id,...> fired=<k>` (k: members no longer ready after the call; 0 when the leader found no target or the built-in AI opens doors and retries the group), `VOLLEY_HOLD
 ready=<n>/<m> energy=<0|1>` (once when the wait starts or its reason changes), `VOLLEY_TIMEOUT <type> <id>
 after=<s>s`. Used by Abyss-3 (27.10.2026). In its first match every volley failed with `ERROR volley: attempt to
 index a number value` (the cost sum started at the number 0; the game's fire costs are resource vectors, so it now
@@ -40,7 +40,7 @@ starts from the first cost) and the firebeams fired one by one; no volley seen i
 sniper = 90 }` after the `Fort` table (written by `gen_fort.py` from a variant's `retire`; `CAI_LoadPlanFile` reads
 it, the plan swap logs e.g. `RETIRE-CONFIG sniper2:90,sniper:90`). The fire control counts, per weapon of such a type, the seconds in
 which `TryFireGun` left it ready (the built-in AI declined: no target in reach) while the team had at least
-`CAI_RETIRE_MIN_ENERGY` (1000) energy (it also declines when it cannot pay a shot); a shot resets the count. At the
+`CAI_RETIRE_MIN_ENERGY` (1000) energy (it also declines when it cannot pay a shot); a shot resets the count, also one the built-in AI fires through its own `TryFireGun` call (`CAI_RetireShot` in the wrapper; before 28.10.2026 only the mod's round robin counted, and Abyss-3 test 2 sold a sniper that had fired 17 times). At the
 limit the weapon is sold with `DestroyDeviceById` and its plan entry dropped (`RETIRE <type> <id> idle=<s> shots=<n>
 result=<r>`). The built-in AI does not rebuild it: it only rebuilds a deleted device it marked itself
 (`DeviceDeleteToRebuild`). Used by Abyss-2's early sniper (27.10.2026; the player's idea: snipe the enemy's first
