@@ -123,6 +123,16 @@ if [ -n "$PY" ]; then
   check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
   check "Tools read plan modules apart from the plan" "^231 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 5$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 5\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
+  ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"
+  if [ -n "$ID" ]; then
+    $PY "$MOD/.dev/tools/publish.py" --target "$ROOT/pub/fort9000" > pub.txt 2>&1; ln -s "$ROOT/pub/fort9000" "$ROOT/mods/$ID"
+    check "Published AI looks in the Workshop folder first" "^local CAI_ModDirs = \{ \"mods/$ID/\", \"mods/fort9000/\" \}$" grep "^local CAI_ModDirs" "$ROOT/pub/fort9000/ai/ai.lua"
+    check "Subscriber's copy loads plans and strategy" "PLAN-PRELOAD Abyss:4/2 VanillaLong:4/1 Vanilla:4/[24] " env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+    check "Subscriber's copy swaps the plan"       "first action = -2001.0, 304.8" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+  else
+    echo "SKIP  published copy (no .dev/publishedfileid.lua)"
+  fi
   "$LUA" t_probe.lua | sed '/PROBE END/q' > probe.txt
   check "Probe parser finds the CS_UNSTABLE split" "unstable if s > 0.260 \(100 %\)" $PY "$MOD/.dev/tools/fortgen/probe.py" probe.txt
   check "Probe parser splits by devices nearby"  "devices at its nodes +2 / 2$" $PY "$MOD/.dev/tools/fortgen/probe.py" probe.txt

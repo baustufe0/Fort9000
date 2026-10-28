@@ -12,14 +12,20 @@
 --------------------------------------------------------------------------------
 -- Load strategy (dofile is only allowed here, during initialisation)
 
-local CAI_StrategyFiles = { "mods/fort9000dev/ai/strategy.lua" }
+-- The mod's own folder: the first of these that holds ai/strategy.lua. A Workshop subscriber has the mod only
+-- as mods/<PublishedFileId>/, so publish.py puts that folder in front at the WORKSHOP marker. Every player must
+-- load the same files, otherwise the AI state differs and multiplayer desyncs (Vanilla 2v2, 28.10.2026: the host
+-- loaded the plans from mods/fort9000/, the subscriber found none and skipped the "CAI plan" random draw).
+local CAI_ModDirs = { --[[WORKSHOP]] "mods/fort9000dev/" }
 if type(path) == "string" then
-	table.insert(CAI_StrategyFiles, 1, path .. "/ai/strategy.lua")
+	table.insert(CAI_ModDirs, 1, string.gsub(path, "[/\\]*$", "") .. "/")
 end
+CAI_ModDir = CAI_ModDirs[#CAI_ModDirs]
 Strategy = nil
-for _, f in ipairs(CAI_StrategyFiles) do
+for _, d in ipairs(CAI_ModDirs) do
 	if Strategy == nil then
-		pcall(dofile, f)
+		pcall(dofile, d .. "ai/strategy.lua")
+		if Strategy ~= nil then CAI_ModDir = d end
 	end
 end
 
@@ -75,7 +81,7 @@ if Strategy.TargetValue.Heavy == nil then Strategy.TargetValue.Heavy = {} end
 if Strategy.TargetValue.Small == nil then Strategy.TargetValue.Small = {} end
 
 --------------------------------------------------------------------------------
--- Custom build plans from the mod folder (mods/fort9000dev/fortplans/<map>/)
+-- Custom build plans from the mod folder (<CAI_ModDir>fortplans/<map>/)
 -- Forts removes foreign files from data/maps, which is why the plans live in the mod.
 --
 -- Flow:
@@ -123,7 +129,7 @@ local function CAI_LoadPlanFile(path)
 end
 
 FortPlanConfig = nil
-pcall(dofile, "mods/fort9000dev/ai/fortplans.lua")
+pcall(dofile, CAI_ModDir .. "ai/fortplans.lua")
 if type(FortPlanConfig) ~= "table" then FortPlanConfig = {} end
 
 local function CAI_PreloadPlans()
@@ -141,7 +147,7 @@ local function CAI_PreloadPlans()
 		local count = 0
 		for _, f in ipairs(entry.list) do
 			if f ~= "original" then
-				local t, err = CAI_LoadPlanFile("mods/fort9000dev/fortplans/" .. mapName .. "/" .. f)
+				local t, err = CAI_LoadPlanFile(CAI_ModDir .. "fortplans/" .. mapName .. "/" .. f)
 				if t then
 					entry.plans[f] = t
 					count = count + 1

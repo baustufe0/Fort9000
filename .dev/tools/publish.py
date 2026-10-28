@@ -7,7 +7,9 @@ The published mod is data/mods/fort9000 ("FORT 9000 AI"). This script:
   2. empties the target folder, except publishedfileid.lua (written by the game after the first upload),
   3. copies every root entry that does not start with "." (dot folders are development only),
   4. rewrites mods/fort9000dev/ to mods/fort9000/ in the .lua files and drops " DEV" from displayname.lua,
-  5. keeps a copy of publishedfileid.lua in .dev/ (tracked in git) and restores it when the target has none.
+  5. puts the Workshop folder mods/<PublishedFileId>/ in front of the AI's mod folders (the WORKSHOP marker in
+     ai/ai.lua): subscribers have the mod only there, and all players must load the same files,
+  6. keeps a copy of publishedfileid.lua in .dev/ (tracked in git) and restores it when the target has none.
 
 Usage:
   python .dev/tools/publish.py              -> publish into ../fort9000
@@ -72,13 +74,29 @@ def check(src, files):
     return errors
 
 
-def transform(rel, data, mod_name):
+WORKSHOP_MARKER = b"--[[WORKSHOP]] "
+
+
+def published_id(target):
+    """Workshop item id from the target's publishedfileid.lua, else from the copy in .dev/, else None."""
+    for folder in (target, DEV):
+        path = os.path.join(folder, ID_FILE)
+        if os.path.isfile(path):
+            m = re.search(r'PublishedFileId\s*=\s*"(\d+)"', open(path, encoding="utf-8", errors="replace").read())
+            if m:
+                return m.group(1)
+    return None
+
+
+def transform(rel, data, mod_name, item_id):
     """Contents of a file in the published mod."""
     if os.path.basename(rel) == "displayname.lua":
         text = data.decode("utf-16")
         text = text.replace(' DEV"', '"')
         return text.encode("utf-16")           # UTF-16 LE with BOM, as the game writes it
     if rel.endswith(".lua"):
+        if WORKSHOP_MARKER in data:
+            data = data.replace(WORKSHOP_MARKER, ('"mods/%s/", ' % item_id).encode("ascii") if item_id else b"")
         return data.replace(b"mods/fort9000dev/", ("mods/%s/" % mod_name).encode("ascii"))
     return data
 
@@ -106,7 +124,11 @@ def main():
     if errors:
         sys.exit(1)
 
-    print("Publish %s -> %s (%d files)" % (MOD, target, len(files)))
+    item_id = published_id(target)
+    if not item_id:
+        print("WARNING no Workshop id yet: subscribers will not find the AI's plans and strategy, and multiplayer "
+              "with them desyncs. Upload once, then publish and upload again.")
+    print("Publish %s -> %s (%d files, Workshop folder mods/%s/)" % (MOD, target, len(files), item_id or "-"))
     if args.dry_run:
         for f in files:
             print("  " + f.replace(os.sep, "/"))
@@ -128,7 +150,7 @@ def main():
     left = []
     for rel in files:
         with open(os.path.join(MOD, rel), "rb") as fh:
-            data = transform(rel, fh.read(), mod_name)
+            data = transform(rel, fh.read(), mod_name, item_id)
         dst = os.path.join(target, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         with open(dst, "wb") as fh:

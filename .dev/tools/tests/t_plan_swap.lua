@@ -32,7 +32,7 @@ function OffsetFort(offset)
 end
 local engineFile = "maps/Abyss/" .. ENGINE
 if ORDER == "before" then dofile(engineFile) end
-dofile("mods/fort9000dev/ai/ai.lua")
+dofile(os.getenv("CAI_TEST_MOD") or "mods/fort9000dev/ai/ai.lua")   -- CAI_TEST_MOD: a published copy
 if ORDER == "after" then dofile(engineFile) end
 teamId = TEAM
 -- Game: real fort of team 1 at x=-1995, team 2 mirrored at +1995

@@ -8,7 +8,8 @@ This folder is both the git repo and the development mod ("FORT 9000 AI DEV" in 
 `<Steam>/steamapps/common/Forts/data/mods/fort9000dev` (Windows). The Forts install is three levels up.
 The Workshop is fed from `data/mods/fort9000` ("FORT 9000 AI"), a generated copy: never edit it, publish with
 `py .dev/tools/publish.py` (skill `forts-publish`, `.dev/docs/publishing.md`). The AI's own paths say `mods/fort9000dev/`;
-publish.py rewrites them. Enable only one of the two mods in the game.
+publish.py rewrites them and puts the Workshop folder `mods/<PublishedFileId>/` first (subscribers have only that one;
+all players must load the same files or multiplayer desyncs). Enable only one of the two mods in the game.
 
 ## Language
 
