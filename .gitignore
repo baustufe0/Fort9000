@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
-tools/logs/
-tools/_alt/
-tools/last_training.json
+.dev/tools/logs/
+.dev/tools/_alt/
+.dev/tools/last_training.json
 *.tmp
 *.bak*

@@ -1,7 +1,7 @@
 -- FORT 9000 - Recorder
 -- Runs as a mod script in every match and also when a replay is played.
 -- Writes game state and events of both sides to the log with [CREC] (users/<id>/log.txt).
--- tools/train.py learns from it. The recorder only reads and changes nothing in the game.
+-- .dev/tools/train.py learns from it. The recorder only reads and changes nothing in the game.
 --
 -- Line format (f = game frame):
 --   [CREC] f=0 START v=3            (restart=1 when the player restarts the match: the game rewinds to frame 2
@@ -10,7 +10,7 @@
 --   [CREC] f=260 BUILT s=2 d=sniper
 --   [CREC] f=300 LOST s=1 i=17 d=mortar
 --   [CREC] f=900 RESULT w=1
--- Build events of both sides (tools/fortgen/rec_fort.py turns them into an AI build plan; t = team, p = x,y):
+-- Build events of both sides (.dev/tools/fortgen/rec_fort.py turns them into an AI build plan; t = team, p = x,y):
 --   [CREC] f=40 NODE s=1 t=1 n=1203 p=-3100.00,105.00 g=0
 --   [CREC] f=41 LINK s=1 t=1 a=56 b=1203 m=bracing pa=-3093.19,205.21 pb=-3100.00,105.00
 --   [CREC] f=42 UNLINK s=1 t=1 a=56 b=1203 m=bracing
@@ -159,7 +159,7 @@ function OnDeviceDestroyed(teamId, deviceId, saveName, nodeA, nodeB, t)
 	RecLog("LOST s=" .. RecSide(teamId) .. " i=" .. tostring(deviceId) .. " d=" .. tostring(saveName))
 end
 
--- Build events, so a fort built by a player can be turned into an AI plan (tools/fortgen/rec_fort.py)
+-- Build events, so a fort built by a player can be turned into an AI plan (.dev/tools/fortgen/rec_fort.py)
 local recPrevOnNodeCreated = OnNodeCreated
 function OnNodeCreated(nodeId, nodeTeamId, pos, isFoundation, selectable, extrusion)
 	if recPrevOnNodeCreated then recPrevOnNodeCreated(nodeId, nodeTeamId, pos, isFoundation, selectable, extrusion) end

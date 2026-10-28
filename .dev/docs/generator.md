@@ -1,0 +1,129 @@
+# FORT 9000 – Fort generator
+
+`.dev/tools/fortgen/` generates build plan variants (`gen_fort.py`), checks plans against the fort building rules (`rules.py`, see [building-rules.md](building-rules.md)), converts plans between coordinate systems (`mid_to_long.py`: the VanillaLong plans are the Vanilla plans converted, `mid_to_long.py fortplans/Vanilla/fort-t1f1-Vanilla-N.lua <Forts>/data/ai/forts/vanilla/long/fort-t2f1-Template-1.lua fortplans/VanillaLong/fort-t2f3-VanillaLong-N.lua`; convert them again whenever the Vanilla plans change; device sales, `DESTROY_DEVICE`, are converted like devices) renders them as images for review (`render_all.py`, `view.py`) and shows from a match log how the fort deformed (`shape.py`, see [debugging.md](debugging.md)). `physics.py check` predicts whether a plan stands under its own weight in its build order ([physics.md](physics.md)).
+weapon_pack's armoury line is supported: flak and EMP rockets need the armoury (on Abyss on the munitions slot), shotgun and rocket are their upgrades (upgrade centre); the smoke bomb (DLC `dlc_smokebomb`, active in all matches so far) follows the armoury as in the game's own plans (Crevice-Howie, Mountain King 3v3), is treated as lobbed and assumed as tall as a turbine. **Tall devices** (`TALL`: rockets, flak, shotgun, smoke bomb; boxes 112-127 high, see [building-rules.md](building-rules.md)) only go into storeys at least `TALL_MIN_H` (125) high. Variant options: `roof_weapons` places these devices on an open roof like a turbine (nothing above them limits their height; the highest roof first, `roof_weapon_max_y`, never on a strut that already carries a device), never in the line of fire of a weapon behind it on the same level, and keeps direct weapons from firing across such roofs; `reserve_tall` reserves the tall storeys for the tall front weapons first, the lowest first, and builds them right away (on Abyss the storey above the reactor is the way up the starting fort; left for later, the top roof and the mines were not reachable). A node that cannot be built within 150 of a built neighbour is no longer built from farther away: the cell waits until a neighbouring cell is built.
+Optional per-map rules (used for Vanilla, following the Steam guide "How to be a PRO at Vanilla Forts"):
+- `require_support`: cells that would hang in the air (beyond a cliff edge) are dropped; a cell needs both bottom corners held (original node, foundation or top of a supported cell) or must be a short bridge (`max_bridge`, default 3 cells) between held nodes.
+- `crossbrace_y`: cells at or below this height get both diagonals (|X|). With `crossbrace_late_y`, only cells at or below that height get the second diagonal right away; the others get it in a final pass after all devices, so weapons are not delayed by extra wood. Cells from `crossbrace_now_x` forward (the front weapon column) are always crossbraced right away.
+- `bottom_up`: remaining cells are built from the bottom up.
+- `light_roof`: no armour roof; doors only over mortars.
+- `use_eco_slots`: batteries/stores go on the proven slots of the original plan (`eco_slots`) first; `eco_no_ground`: never on the ground row. Batteries and stores never go where they would overlap a device already placed at the same height, or the first slot of a tech building the plan builds later (`overlaps_placed`).
+- `cols_upper` / `upper_y`: from node row `upper_y` upwards the grid uses other column positions (cells take the columns of their bottom row). Vanilla follows the starting fort's roof posts (-3093, -2945) like the game's Template-1, so the weapon column is one 155-wide cell and no node stands mid-span on the roof beam; heavy weapons stand near the back post (`large_t` 0.2).
+- `support_struts`: extra solid struts built as soon as both end nodes exist (currently unused). `validate()` also rejects new nodes more than 150 from their source (StandardMaxLength).
+- `large_cells`: explicit cells for the large weapons in plan order, `(left x, floor y, LinkT)`; the cells between such a weapon and the front of its storey become its fire lane (`mark_large`), built right before the weapon.
+- `crossbrace_large`: the cells of a large weapon and the cells below it (down to the turbine row) are crossbraced right away; the sandbag strut in the split cell is solid bracing.
+- `roof_turbine_t`: LinkT positions of turbines on one roof cell (default one at 0.5). Two side by side on a 100-wide cell failed in a test match (CS_OCCUPIED), so Vanilla uses one per cell. `turbine_roof_max_y`: turbines only on roofs this high or higher (Vanilla: the tower roof, y=-295, see the wind rule in [building-rules.md](building-rules.md)). `reserve_mortar`: mortars take their top cells before the turbines take the roofs.
+- `clear_fire_lines` (a module function, also used by `rec_fort.py --clear-fire`): final pass, struts that would block a weapon's line of fire (`rules.fire_blockers` in cautious mode: the recession box and body from the weapon files, plus everything the earlier 0-200 model cleared) become background bracing (armour becomes a door); `mortar_open_arc`: mortars only where no other cell is in their arc (`rules.MORTAR_ARC`, 300 forward and 520 up, so a mortar on a low roof behind the tower is rejected).
+- `turbine_min_w`: no turbines on narrower cells or above large weapons.
+- `woodspam`: cheap, dense wooden layers, two layers 40 apart. Material per storey: background bracing in front of direct-fire weapons (they shoot through it, `MinFireClearance`; solid woodspam blocked our own cannon and snipers in a test match; the weapon itself is protected by a metal door, which the AI opens to fire) and in turbine rows (wind); foreground bracing (`material`) only where it protects something that does not fire through it (e.g. a mortar storey). `finalise_woodspam` sets each strut's final material and builds it once (the minimum strut length is 37.5) with posts and X-diagonals in front of the weapon column's door wall, over the rock; build step `defence` / `woodspam`, once after the main weapons and again late (idempotent, completes new storeys).
+- `turbine_floor_y`: turbines stand on the floor of the storey at this height (turbine gallery) before roofs are used. `turbine_row_open`: that storey contains only background bracing (posts, diagonals, outer edges), so the wind can blow through; no weapons or eco devices there. `split_cell`/`sandbag_slots`: a cell split at half height (side posts in halves, a solid strut across the middle) for two stacked sandbags, one on its floor and one on the middle strut, in front of a turbine row or a mortar nest (build step `defence` / `sandbags`). `split_cell` is one `(left x, top y)` or a list of them; `sandbag_slots` entries are `(slot, LinkT)` for the first split cell or `(split cell index, slot, LinkT)`, slot `"floor"` or `"mid"`. Each half must be at least 51 high (the sandbag's box): the cell 2 x 51+ (Vanilla: 130).
+- With `require_support`, each cell also records the cells it rests on (the shallowest support); they are always built first, so nothing hangs in the air while the fort is under construction (`validate()` checks the build order). `turbine_cheap_first`: turbines go on the roof that needs the fewest unbuilt cells.
+
+Options added for the Vanilla defence (25.10.2026; the facts behind them in [building-rules.md](building-rules.md), "Defence"); a variant's `cfg` overrides any map option:
+- `rows`: per-variant node rows (Vanilla-2: 205, 105, -25 for a 130-high hidden storey; Vanilla-3/-5: a 130-high cage row at -500). A 155-wide cell may be at most 130 high (its diagonal within `MAX_LINK`).
+- `hidden_box (x0, x1, y_top, y_floor)`: every strut of those cells above their floor becomes background bracing, except struts that carry a device (final pass `hide_box`).
+- `split_edges [{a, b, mid, braces, materials}]`: the strut a-b is built in two halves through a node at mid (also when a node is created along it), braced to the given points; `materials {"a", "b"}` per half. Used for two mortars on one 155-wide floor and for Vanilla-2's short sniper door.
+- `mortar_slots [(node A, node B, LinkT)]`: explicit struts for the first mortars (the cell above is built first); their upgrades go on the same strut; `reserve_mortar` skips them.
+- `weapon_slots [(node A, node B, LinkT, device)]`: explicit roof struts for these weapons, taken in order; a strut of
+  the starting fort with no grid cell under it, or with both ends on starting-fort nodes (Abyss-3's laser on the
+  starting fort's machine-gun strut, positions as in the base plan), is used as it stands (Vanilla-7's low firebeam); also a half of a
+  split edge, so two devices share one cell's roof; Vanilla-5's prow-roof EMP rocket and smoke launcher); the cell below is
+  built first, the upgrade goes on the same strut.
+- `weapon_cells [(left x, floor y, device[, LinkT])]`: a weapon's cell, also one that is not at the front (it fires through the cells ahead); several entries for one device type are taken in order, also when a `build` step kept the cell for it (Abyss-3's two firebeams); `lane_cells [(left x, floor y)]`: cells kept as a fire lane (door in front, background diagonals, no device).
+- `weapon_pick_best`: no random pick among the two best cells; `small_low_first`: small direct weapons in the lowest front cell first; `sniper_t`: LinkT of snipers.
+- `roof_weapon_cells [(left x, roof y)]`: the only roofs for `roof_weapons` (e.g. machine guns on the gallery roof, out of the mortars' arcs); `roof_weapon_low_first`: the lowest roof first; roof mortars check their arc (`mortar_open_arc`).
+- `turbine_floor_t`: LinkT of gallery turbines (spacing to other devices); `turbine_avoid` also applies to gallery turbines.
+  `turbine_floor_y` may be a list (stacked galleries, filled in order) and `turbine_floor_x (x0, x1)` limits them to
+  those columns (Vanilla-7's turbine column); `hidden_box` may be a list of boxes.
+- `tower_connect.skip_floors`: storeys left out of the storey-by-storey rule (the cage on the tower roof rests on the top storey only).
+- `split_doors`: final pass, the door post of a sniper, cannon, 20mm cannon, laser, firebeam or (EMP) rocket is rebuilt in up to three pieces (armour, door, armour) with the shortest door that covers the shot (both barrel estimates +- margin, see [building-rules.md](building-rules.md)), each new node braced to the cell's back corners by a brace that does not pass through a device's box in that cell; without such a brace the door is not split. Machine-gun doors stay full (anti-air).
+- Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there;
+  A and B may be grid nodes or nodes of the starting fort (e.g. Vanilla-5's armour shield in front of its smoke
+  launcher, its long brace across the starting fort).
+- `long_struts [(A, B)]`: struts allowed up to the game's limit (`GAME_MAX_LINK` 218, +1 like `MAX_LINK`) instead of the
+  generator's 205, e.g. Vanilla-5's 218.7 brace across the starting fort.
+- `door_posts [(x, y_top, y_floor)]`: front posts split like doors although they are not doors (e.g. background
+  bracing in a hidden storey); `door_rest [((x, y_top, y_floor), material)]`: the material above and below such a
+  door (default armour; Vanilla-5: background bracing, the gallery turbines need the wind).
+- `woodspam`: one region or a list; plan step `woodspam` builds all regions, `woodspam:<k>` region k; `outside` gives the material where no grid cell stands behind a band, one material or `{band top y: material}`; wall nodes of the starting fort outside the grid are found too (`orig_node_at`).
+- `clear_boxes [device, ...]`: final pass, every foreground strut crossing such a device's box (half-width `SIZE[0]`
+  to both sides, `BOX_TOP` above its strut, the posts at its own strut's ends excluded) becomes background bracing, so
+  a tall device stands inside a block of storeys (Abyss-2's munitions plant, box 170, under the starting fort).
+  `clear_boxes_tilted`: the box measured square to the device's strut and shifted by its body shift, as it stands on a
+  sloping strut, its edges tested too (Abyss-2's weapons; off, the box stands upright on the strut point).
+- A `struts` node exactly on the rock surface (within 1) is a foundation (Abyss-2's wall anchors).
+- `weapon_struts [(node A, node B, LinkT, device)]`: a weapon on an explicit strut between two built nodes (grid,
+  split-edge or `struts` nodes), e.g. one rising a few degrees from a post to the front post, where it ends at the
+  bottom of the weapon's door (Abyss-2; a device on a strut of 30 degrees or more is refused, `CS_INVALIDNODES`).
+- A mine's `chain` may start at a node of the starting fort that is not on the grid.
+- Variant key `retire {device: seconds}`: written after the `Fort` table as `FortRetire`; the AI sells such a weapon
+  once it has declined to fire that long ([ai.md](ai.md#fire-control), Abyss-2's early sniper).
+- `orig_devices [(node A, node B, device[, LinkT])]`: devices of the starting fort (Vanilla: the machine gun on its lower front); their cells stay free. Plan step `sell:<device>` sells one (`DESTROY_DEVICE`) and makes its cell a fire lane (unused now: the planned sale came from a wrong position). An upgrade step with no planned device of its base type upgrades one of these, each once, at its LinkT (Abyss-2: the starting fort's machine gun becomes a minigun).
+- A lobbed weapon that is not a roof weapon takes its `mortar_slots` before any `weapon_slots` (Abyss-2: both nest mortars before the tower-top slot). Woodspam `base` points may be nodes of the starting fort outside the grid.
+- `rebrace_after_mine`: starting-fort armour struts rebuilt as wood after the first mine (or plan step `rebrace`) for metal; Vanilla-2 turns it off (`[]`): the inner armour in front of the reactor fell first in both lost matches.
+
+Options of the Vanilla tower variants (Vanilla-3/-5; details in [maps/vanilla.md](maps/vanilla.md)):
+- `reserve_large`, `large_top_min` / `large_top_max`: large weapons take their cells first, only in storeys between these cell tops.
+- `weapon_avoid [(left x, floor y, devices)]`, `turbine_avoid [(left x, roof y)]`: cells or roofs these devices skip (where they were refused in every test).
+- `support_cheapest`: a node rests on the support with the fewest cells below it instead of the shallowest chain.
+- `tower_connect {base_y, storeys, skip_floors}`: storey-by-storey build order of a tower on two foundations.
+- `SWAP_WINDOW` (20, a constant): a strut whose material the plan changes within that many actions is placed with its final material at once.
+- `cfg`: a variant's overrides of any map option.
+
+## Reactive build modules
+
+A variant's `modules` are written after the plan's `Fort` table as `FortModules` (the AI side: [ai.md](ai.md#reactive-build-modules)):
+`{"name", "after": <n>, "trigger": {"types": (...), "count": n, "time": s, "after": "<module>"}, "plan": [steps],
+"cfg": {...}, "variant": {...}}` (each trigger key optional; the file lists the modules in the variant's order, the
+order the AI goes by when several fire at once).
+- The module's steps are generated on the plan as it stands after its first `after` steps (`gen_module`); then the plan
+  state is restored and the plan goes on unchanged, except that the module's device cells stay reserved
+  (`devices[c] = "module"`), its mortar cells count as mortar cells, its devices are kept clear by eco devices
+  (`module_placed`), and `hide_box` keeps the struts its devices stand on solid (the plan builds them, the module
+  only adds the device). `cfg` / `variant` override options while the module is generated (e.g. `roof_weapons`,
+  `roof_weapon_cells`). A module never rewrites the plan's actions (`action_floor`).
+- New nodes of module k get ids from 20000 + 1000 k, so the plan's ids and text stay the same with or without modules.
+- `Requires` (`module_requires`): the last plan action that creates a node or strut the module uses without building
+  it, the plan action placing the tech its devices need (a mortar needs the workshop), and any plan strut in a module
+  weapon's line of fire or mortar arc that the plan builds after it (the game would not recess it).
+- Plan step `("build", [(left x, floor y[, device]), ...])`: a cell and the cells on its way, without a device: the
+  empty slot a module fills. With a device the cell is built for it (door, background diagonals, as if the weapon
+  stood there) and that device's module takes it through `weapon_cells`; build such a slot before any other step
+  builds the cell. `clear_fire_lines` also clears the lines of fire of the modules' weapons.
+- Note `builds N struts the plan also builds later`: `after` is too early, the module would build plan cells without
+  the plan's later changes (hidden cage, woodspam, cleared fire lines). Move `after` past them.
+- `gen_fort.py` prints each module (actions, devices, trigger, `Requires`) and checks it inside the plan, right after
+  its `Requires`; `rules.py <plan>` does the same for installed plans; `mid_to_long.py` converts the modules too.
+  The tools read the plan without its modules (`fortplan.parse_plan`; the modules: `parse_modules`).
+
+## Adding a map
+
+- Plan files are named `fort-t<team>f<fort>-<Map>-<n|name>.lua`. Generator and plan swap support **t1f1** (one fort
+  per side, team 2 mirrored, `Symmetrical = true` in `<Map>.lua`); more forts per side or asymmetric maps need an
+  extension. Check whether other maps use the same plans (same FortPos line; Abyss-ToGA1 == Abyss 2v2-ToGA1).
+- Terrain (`fwe.py`, the full `.fwe` format in [map-files.md](map-files.md)): block id 1/2 = solid rock (per side),
+  -1 = neutral solid rock (solid on Vanilla: `solid_minus1`), -2 = background (walkable); edges marked `foundations`
+  take foundations. The map's starting fort is in its `.spr` (`spr.py`).
+  In images y grows downwards; node ids below 10000 are the starting fort, from 10000 built by the plan.
+- Base plan = the plan recorded for exactly this map: its ground mines lie on solid edges and its FortPos (the front
+  edge of the platform) matches the starting fort (Abyss: `-1` at x=-1995; `ToGA1` comes from Abyss 2v2 at x=-1495
+  and is shifted 500 by the game). From it: the grid of the starting fort (~100 spacing), tech slots (node positions +
+  LinkT; large devices stand at a link end, LinkT about 0.05/0.94), eco slots, mines (`GroundPosition` and the nodes
+  they need), the reactor (empty ~200x200 area).
+- `MAPS["<Map>"]`: `base_plan`, `plan_dir` (relative to `data/`, if the base plan is not in `maps/<Map>/`), `fwe`,
+  `solid_minus1`, `cols`, `rows` (grid points closer than `snap` 45 to an original node are moved onto it; points in
+  rock are pulled up to `ground_snap` 25 onto the surface as foundations, else dropped), `reactor`, `keepout`
+  (rectangles without cells; their neighbours do not count as front), `tech_slots`, `eco_slots`, `mines`
+  (`{"ground": (x,y), "needs": [...]}` or `{"ground": ..., "chain": [...]}`), `header` (the base plan's exact FortPos
+  line), `variants` (name of the variant table). Further options: `eco_orig: False`, `weapon_min_w`,
+  `mortar_avoid_roof`, `turbine_narrow_first`, `tech_spill`, `aa_y`, `large_y`. Grid points near similar original
+  nodes (e.g. sandbag anchors) can form unwanted "starting fort cells": choose the columns so they do not.
+- 2v2 maps: FortId 1 = mid plan, FortId 2 = long plan. If the long fort is the mid fort mirrored/shifted, convert with
+  `mid_to_long.py` (x' = 800 - x, y' = y - 2650, device nodes A/B swapped, LinkT -> 1 - LinkT) and register it as its
+  own map (`VanillaLong`, `OriginalsDir = "ai/forts/vanilla/long/"`); check the round trip and the second platform's
+  terrain.
+- A device on a link stands on top with A = left node, B = right node; the game mirrors team 2 itself (MirrorFort swaps
+  A/B, LinkT -> 1 - LinkT).
+- After changing the generator, regenerate the other maps and check by md5 that their plans did not change unintended.
+- Add a plan-swap test for the map (`.dev/tools/tests/t_vanilla.lua` etc.: expected first action team 1 = x, team 2 =
+  2*pivot - x, pivot 0 on symmetric maps) to `run_tests.sh`.

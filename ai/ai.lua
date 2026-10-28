@@ -944,7 +944,7 @@ end
 -- first CS_UNSTABLE of a device and place, and one per game minute (CAI_Think), at most CAI_SHAPE_MAX.
 -- Line: SHAPE t=<s> why=<minute|unstable:<device>> mirrored=<0|1> part=<k>/<n> <plan node id>:<dx>,<dy> ...
 -- dx/dy are in the plan's own frame (x mirrored back if the game mirrored the plan), so they can be laid
--- over the plan file (tools/fortgen/shape.py). New nodes are placed relative to the current position of
+-- over the plan file (.dev/tools/fortgen/shape.py). New nodes are placed relative to the current position of
 -- their source node, so a lean while building is copied into everything built from it.
 CAI_SHAPE_MAX = 40
 CAI_SHAPE_PER_LINE = 25
@@ -1179,7 +1179,7 @@ end
 -- and at most Probe.MaxAngle (default 20) degrees steep (steep = struts left out for that),
 -- one attempt every Probe.Interval seconds. A device that is placed is removed again at once (refunded), or
 -- after Probe.Hold seconds, when its load is measured. For a sandbox match without combat;
--- tools/fortgen/probe.py reads the lines:
+-- .dev/tools/fortgen/probe.py reads the lines:
 --   PROBE START t=<s> devices=<a,b> linkt=<t,t> struts=<n> steep=<n> attempts=<n> mirrored=<0|1>
 --   PROBE NODE part=<k>/<n> <id>:<x>,<y>:<plan node id|-> ...     every node of the fort (world coordinates)
 --   PROBE LINK part=<k>/<n> <a>-<b>:<material>:<stress>[:<device>@<LinkT>,...] ...
@@ -1572,7 +1572,7 @@ end
 -- Think loop
 
 --------------------------------------------------------------------------------
--- Reactive build modules (docs/ai.md): pre-generated snippets in the plan file (FortModules), put in front
+-- Reactive build modules (.dev/docs/ai.md): pre-generated snippets in the plan file (FortModules), put in front
 -- of the rest of the plan when the enemy builds the devices of their trigger.
 
 -- After the base Load: cut the module actions (appended on the swap, renumbered and moved by the game's

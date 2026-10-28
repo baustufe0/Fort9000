@@ -7,9 +7,9 @@ description: Analyse a Forts match the user played against the FORT 9000 AI, arc
 
 The user plays Forts against the FORT 9000 AI and asks for an analysis. Background lives in the repo docs; read
 only what the match needs:
-- [docs/testing.md](../../../docs/testing.md) – where the log is, what every log line means, plausibility checks.
-- `docs/maps/<map>.md` – the current state of the plan that was played (what to expect, what is untested).
-- `docs/history/<plan>.md` – earlier test matches of that plan, to compare with.
+- [.dev/docs/testing.md](../../../.dev/docs/testing.md) – where the log is, what every log line means, plausibility checks.
+- `.dev/docs/maps/<map>.md` – the current state of the plan that was played (what to expect, what is untested).
+- `.dev/docs/history/<plan>.md` – earlier test matches of that plan, to compare with.
 
 ## Steps
 
@@ -27,16 +27,16 @@ only what the match needs:
    sides), build errors, `GAVE_UP`/`SKIPPED`/`ERROR` and the `THINK` trace. For more, convert a copy into the scratchpad
    (`iconv -f UTF-16LE -t UTF-8 log.txt | tr -d '\r'`) and grep: `UNLINK s=2` for the order in which struts fell,
    `FIREWAIT`/`FIRETRY` for weapons that did not fire, `UNSTABLE`/`STRESS`/`SHAPE` for refused devices (see
-   [docs/debugging.md](../../../docs/debugging.md)).
-3. **Check plausibility** (docs/testing.md): aborted match (no `RESULT`, < 1 min), a player who barely fired, the same
+   [.dev/docs/debugging.md](../../../.dev/docs/debugging.md)).
+3. **Check plausibility** (.dev/docs/testing.md): aborted match (no `RESULT`, < 1 min), a player who barely fired, the same
    action given up across matches (plan bug). Ask before training on a doubtful match.
-4. **Compare with the map file**: did the plan build what `docs/maps/<map>.md` expects, in time? What decided the
+4. **Compare with the map file**: did the plan build what `.dev/docs/maps/<map>.md` expects, in time? What decided the
    match (how the AI's fort fell, what the player built and when, what the AI hit)?
-5. **Archive the log**: `py tools/train.py collect` (always; Forts overwrites `log.txt` on the next start).
-   Retrain only when the user asks: `py tools/train.py` (collect + train, rewrites `ai/strategy.lua`); `report` shows
+5. **Archive the log**: `py .dev/tools/train.py collect` (always; Forts overwrites `log.txt` on the next start).
+   Retrain only when the user asks: `py .dev/tools/train.py` (collect + train, rewrites `ai/strategy.lua`); `report` shows
    wins per plan without writing.
 6. **Record it** when the user wants the plan changed or the test recorded: the test goes into
-   `docs/history/<plan>.md`, what changes in the current state into `docs/maps/<map>.md` (CLAUDE.md workflow).
+   `.dev/docs/history/<plan>.md`, what changes in the current state into `.dev/docs/maps/<map>.md` (CLAUDE.md workflow).
 
 ## Report
 
