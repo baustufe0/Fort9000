@@ -26,7 +26,7 @@ FortPlanConfig =
 		{
 			Originals = { "fort-t1f1-Abyss-1.lua", "fort-t1f1-Abyss-ToGA1.lua" },
 			ReactorsPerSide = 1,
-			Plans = { "original", "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-4.lua", "fort-t1f1-Abyss-5.lua" },
+			Plans = { "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-4.lua", "fort-t1f1-Abyss-5.lua" },
 			-- rebuild cap for snipers and mortars (Abyss-2 test 6, 27.10.2026: a sniper lost four times and the mortars
 			-- five times within minutes, metal below 150 for 56 % of the match): a sniper lost more than 2 times in a
 			-- row, a mortar more than 3 times (each loss within RebuildCap.Window of the one before) stays lost
@@ -45,7 +45,7 @@ FortPlanConfig =
 			Originals = { "fort-t1f1-Template-1.lua", "fort-t1f1-Template-2.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGAF1.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGWM2.lua" },
-			Plans = { "original", "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua" },
+			Plans = { "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua" },
 			-- wide, flat map (forts ~6000 units apart, no cover): slower start,
 			-- economy and long-range weapons (mortar/sniper) matter more
 			Strategy =
@@ -65,7 +65,7 @@ FortPlanConfig =
 		{
 			OriginalsDir = "ai/forts/vanilla/long/",
 			Originals = { "fort-t2f1-Template-1.lua" },
-			Plans = { "original", "fort-t2f3-VanillaLong-2.lua", "fort-t2f3-VanillaLong-3.lua", "fort-t2f3-VanillaLong-5.lua", "fort-t2f3-VanillaLong-6.lua" },
+			Plans = { "fort-t2f3-VanillaLong-2.lua", "fort-t2f3-VanillaLong-3.lua", "fort-t2f3-VanillaLong-5.lua", "fort-t2f3-VanillaLong-6.lua" },
 			Strategy =
 			{
 				EarlySeconds = 150,
