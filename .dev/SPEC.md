@@ -2,7 +2,7 @@
 
 FORT 9000 is a mod for the game **Forts** (Steam). It extends the built-in AI, records matches, and automatically retrains the AI parameters from those recordings.
 
-In-game name: *FORT 9000 (AI)* · Folder: `data/mods/fort-9000`
+In-game name: *FORT 9000 AI* · Folder: `data/mods/fort-9000`
 
 ---
 
