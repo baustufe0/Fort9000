@@ -9,4 +9,4 @@ Only the root files are part of the mod; folders starting with "." (`.dev/`, `.c
 Place this folder as `fort9000` in `<Steam>/steamapps/common/Forts/data/mods/` and enable *FORT 9000 AI* in the game.
 
 ## Training
-After each play session, run `.dev/tools/train.bat` (requires Python 3).
+After each play session, run `py .dev/tools/train.py` from the mod folder (requires Python 3).

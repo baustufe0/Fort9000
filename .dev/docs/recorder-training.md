@@ -40,4 +40,4 @@ Play match ──► users/<id>/log.txt ([CREC] + [CAI])
 strategy.lua  ◄── train.py train (reads all logs, learns from defaults)
 ```
 
-Forts overwrites `log.txt` on every start, so run `train.bat` after each play session.
+Forts overwrites `log.txt` on every start, so run `py .dev/tools/train.py` after each play session.

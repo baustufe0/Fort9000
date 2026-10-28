@@ -189,7 +189,7 @@ fort9000/
 └── .dev/                   Development only (dot folders are not uploaded to the Workshop)
     ├── SPEC.md, docs/      Specification (index, topics, maps/, history/)
     └── tools/
-        ├── train.py / train.bat    Collect + train
+        ├── train.py                Collect + train
         ├── fortgen/                Plan generator, rule checks (rules.py) and utilities
         ├── tests/                  Lua tests (run_tests.sh)
         ├── logs/                   Archived match logs (not in repo)
@@ -231,5 +231,5 @@ Game end
 1. Copy the `fort9000` folder to `<Steam>/steamapps/common/Forts/data/mods/`.
 2. Enable the mod *FORT 9000 AI* in the game.
 3. Play matches or watch replays.
-4. Run `.dev/tools/train.bat` (requires Python 3) – updates `ai/strategy.lua`.
+4. Run `py .dev/tools/train.py` (requires Python 3) – updates `ai/strategy.lua`.
 5. Tests: `.dev/tools/tests/run_tests.sh` (Lua, via `LuaPlusC.exe`).
