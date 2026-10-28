@@ -37,7 +37,7 @@ function CastRayFromDevice(id, pos, hp, flags) rayFlags = flags return 3 end
 function GetRayHitSideId() return 102 end
 function GetRayHitMaterialSaveName() return "backbracing" end
 function GetRayHitPosition() return {x=3128.4, y=70.6} end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true)
 data.ActionQueue[23] = { ProcessFunction = "x" }
 CAI_FIREWAIT_EVERY = 10

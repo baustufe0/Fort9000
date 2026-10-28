@@ -12,7 +12,7 @@ print("ActivateAI team " .. other .. " team members 0 fort fort-t1f1-Template-1.
 local P = { [7] = { -3093.19, 205.21 }, [8] = { -2945.11, 206.49 }, [9] = { -2846.18, 203.99 } }
 local function V(x, y) return { x = sx * x, y = y } end
 function NodePosition(id) local p = P[id] return p and V(p[1], p[2]) end
-dofile("mods/fort-9000/script.lua")
+dofile("mods/fort9000/script.lua")
 Load(true)
 local function node(id, x, y) P[id] = { x, y }; OnNodeCreated(id, team, V(x, y), false, true) end
 local function link(a, b, m) OnLinkCreated(team, m, a, b, NodePosition(a), NodePosition(b)) end

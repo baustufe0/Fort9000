@@ -10,7 +10,7 @@ function Load() end
 function MirrorFort() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 -- plan (already in world coordinates): nodes 1, 2 and 10000; node 3 is not in the plan
 Fort = {
 	{ Type = 1, OriginalNodeAId = 1, PosA = { x = 0, y = 0 }, OriginalNodeBId = 10000, NewNodePos = { x = 100, y = 0 }, MaterialSaveName = "bracing" },

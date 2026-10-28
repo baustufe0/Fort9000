@@ -27,7 +27,7 @@ function TryFireGun(id)
   fired[#fired+1]=id
   if kinds[id] == "smokebomb" then ready[id]=false; OnWeaponFired(teamId, "smokebomb", id, 900, nil) end
 end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true)
 local function tick(label) fired={}; CAI_FireTick(); print(label, table.concat(fired,",")) end
 tick("400 energy:")        -- smoke 200 + rocket 300 > 400: no smoke, the rocket waits

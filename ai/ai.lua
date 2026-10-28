@@ -12,7 +12,7 @@
 --------------------------------------------------------------------------------
 -- Load strategy (dofile is only allowed here, during initialisation)
 
-local CAI_StrategyFiles = { "mods/fort-9000/ai/strategy.lua" }
+local CAI_StrategyFiles = { "mods/fort9000/ai/strategy.lua" }
 if type(path) == "string" then
 	table.insert(CAI_StrategyFiles, 1, path .. "/ai/strategy.lua")
 end
@@ -75,7 +75,7 @@ if Strategy.TargetValue.Heavy == nil then Strategy.TargetValue.Heavy = {} end
 if Strategy.TargetValue.Small == nil then Strategy.TargetValue.Small = {} end
 
 --------------------------------------------------------------------------------
--- Custom build plans from the mod folder (mods/fort-9000/fortplans/<map>/)
+-- Custom build plans from the mod folder (mods/fort9000/fortplans/<map>/)
 -- Forts removes foreign files from data/maps, which is why the plans live in the mod.
 --
 -- Flow:
@@ -123,7 +123,7 @@ local function CAI_LoadPlanFile(path)
 end
 
 FortPlanConfig = nil
-pcall(dofile, "mods/fort-9000/ai/fortplans.lua")
+pcall(dofile, "mods/fort9000/ai/fortplans.lua")
 if type(FortPlanConfig) ~= "table" then FortPlanConfig = {} end
 
 local function CAI_PreloadPlans()
@@ -141,7 +141,7 @@ local function CAI_PreloadPlans()
 		local count = 0
 		for _, f in ipairs(entry.list) do
 			if f ~= "original" then
-				local t, err = CAI_LoadPlanFile("mods/fort-9000/fortplans/" .. mapName .. "/" .. f)
+				local t, err = CAI_LoadPlanFile("mods/fort9000/fortplans/" .. mapName .. "/" .. f)
 				if t then
 					entry.plans[f] = t
 					count = count + 1

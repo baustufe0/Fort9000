@@ -10,7 +10,7 @@ function GetTeamResources() return {metal=0,energy=0} end
 function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 -- plan (world coordinates): node 1 and 10000; node 503 has sagged 5 below its plan position
 Fort = {
 	{ Type = 1, OriginalNodeAId = 1, PosA = { x = 0, y = 0 }, OriginalNodeBId = 10000, NewNodePos = { x = 100, y = -5 }, MaterialSaveName = "bracing" },

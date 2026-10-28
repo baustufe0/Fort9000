@@ -16,7 +16,7 @@ function Load(g) baseLoaded = baseLoaded + 1 end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
 function OnGameResult() end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true); Load(false)
 assert(baseLoaded == 2, "base Load not called")
 assert(ScheduledCallCountOfFunc(CAI_Think) == 1, "Think scheduled twice")

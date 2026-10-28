@@ -5,7 +5,7 @@ Specification: [.dev/SPEC.md](../.dev/SPEC.md) is a short index of `.dev/docs/` 
 state of each map's plans, `.dev/docs/history/` for test matches). Read the index, then only the files the task needs.
 
 This folder is both the git repo and the installed mod:
-`<Steam>/steamapps/common/Forts/data/mods/fort-9000` (Windows). The Forts install is three levels up.
+`<Steam>/steamapps/common/Forts/data/mods/fort9000` (Windows). The Forts install is three levels up.
 
 ## Language
 

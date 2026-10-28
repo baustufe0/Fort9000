@@ -9,7 +9,7 @@ function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
 Fort = {} for i=1,132 do Fort[i]={Type=5, DeviceSaveName="mine"} end FortPos={x=0,y=0}
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true)
 for i=1,40 do CAI_Think() end
 print("Rebuild[59] =", tostring(data.Rebuild[59]))

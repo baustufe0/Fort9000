@@ -9,7 +9,7 @@ function Load() end
 function OnWeaponFired() end
 function OnDeviceDestroyed() end
 function EnableHumanAssist() data.HumanAssist = true end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true)
 print("KI:", data.UpdatePeriod, data.ConstructionPeriodMean, data.NonConstructionPeriodMean, data.RepairPeriod)
 EnableHumanAssist()

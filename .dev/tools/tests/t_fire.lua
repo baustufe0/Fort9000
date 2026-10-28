@@ -19,7 +19,7 @@ function IsAIDeviceAvailable() return true end
 function IsWeaponReadyToFire(id) return id ~= 13 end   -- 13 is reloading
 local fired={}
 function TryFireGun(id) fired[#fired+1]=id end
-dofile("mods/fort-9000/ai/ai.lua")
+dofile("mods/fort9000/ai/ai.lua")
 Load(true)
 print("HardThreshold", data.HardThreshold, "mortar while building", data.FireDuringRebuildProbability.mortar, "MG", data.FireDuringRebuildProbability.machinegun)
 print("FireTick scheduled:", ScheduledCallCountOfFunc(CAI_FireTick))
