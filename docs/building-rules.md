@@ -200,10 +200,14 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 6. **Weapons:** direct-fire weapons at the front behind a door; struts in their line of fire background bracing (or
    built before the weapon within its recession box); heavy weapons in solid X-braced storeys on strong posts, never in
    the top storey, in storeys high enough for their box; mortars with a door roof or open arc, or in a low hidden nest
-   with sandbags. **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
+   with sandbags. **No weapon in the open:** its first shot shows the player where it is, so every weapon stands in a
+   closed cell with a door wherever it fires through (a lobbed one, e.g. the smoke launcher, a door roof and a door in
+   front; Abyss-5, 28.10.2026). **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
    in height count as one): each weapon that fires at the enemy fort stands alone in its row or at its front. Allowed
    behind another weapon: machine guns and miniguns (anti-air only in this mod) and a lobbed weapon behind a lobbed
-   one (the game's own plans put mortars side by side). A rocket (EMP rocket) also needs a short door in front of it
+   one (the game's own plans put mortars side by side). **Sandbags block the line of fire too:** no sandbags ahead of
+   a weapon in its row, except for mortars (their steep shells clear them: Abyss-2's and Vanilla-6's mortars fired
+   57-190 shots a match from behind sandbags); the smoke launcher counts as a weapon here (its arc is not known). A rocket (EMP rocket) also needs a short door in front of it
    like a sniper (`split_doors`; barrel 65 above its strut, 60 long, from weapon_pack's rocket files). A large weapon's fire lane (the cells ahead of it, door in the front wall) is built before the
    weapon, so it never stands in an open cell. Cells where a device type failed in every test are left to others
    (`weapon_avoid`, `turbine_avoid`).
@@ -221,7 +225,7 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 12. **Final material at once:** a strut is placed with its final material when the plan would change it within
     `SWAP_WINDOW` (20) actions (a swap on a strut under construction has no effect).
 13. **Hide and shield what cannot shoot back:** mortars and turbines in a storey of background bracing (`hidden_box`),
-    130 high, each row with two stacked sandbags in its front cell (`split_cell`, `sandbag_slots`) built before or right
+    130 high, each mortar row with two stacked sandbags in its front cell (not in front of other weapons, rule 6) (`split_cell`, `sandbag_slots`) built before or right
     after its first device; every device on its own strut, ~90 from its neighbours at the same height. Weapon doors only
     as long as the shot needs (`split_doors`). Upgrades after the upgrade centre with devices that need no tech in
     between.
@@ -234,6 +238,7 @@ writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build o
 - line of fire of direct-fire weapons and the arc of mortars: no foreground strut built after the weapon or beyond its
   recession box (doors are fine);
 - a weapon in front of another weapon in the same row (error; machine guns behind, and lobbed behind lobbed, allowed);
+- sandbags in front of a weapon in the same row (error; mortars and machine guns behind them allowed);
 - turbine wind with the game's ray test (`wind_rays`: a side is open when at least half its rays are clear; error if
   both sides are blocked, warning if one is) and turbine spacing (≥ 90);
 - two devices on one strut (a `DESTROY_DEVICE` frees it), or overlapping devices side by side on neighbouring struts

@@ -38,6 +38,7 @@ DIRECT = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", 
           "rocket", "rocketemp", "firebeam"}
 LOBBED = {"mortar", "mortar2", "smokebomb"}
 ROCKETS = {"rocket", "rocketemp"}
+MORTARS = {"mortar", "mortar2"}
 WEAPONS = DIRECT | LOBBED
 ANTI_AIR_ONLY = {"machinegun", "minigun"}   # in this mod they never fire at the enemy fort (Fire.NoOffence)
 ROW_TOL = 50               # devices this close in height stand in one row
@@ -327,6 +328,15 @@ def check_plan(actions, enemy_dir=1, terrain=None):
                 if rear[0] not in ANTI_AIR_ONLY and not (rear[0] in LOBBED and front[0] in LOBBED):
                     errors.append("%s at %s stands in front of %s at %s in one row (weapons block each other's line of fire)"
                                   % (front[0], _fmt(front[1]), rear[0], _fmt(rear[1])))
+            # sandbags block the line of fire too (the player's rule, 28.10.2026: Abyss-5's smoke launcher behind the
+            # nest's sandbags). Not for mortars: their steep shells clear them (Abyss-2's and Vanilla-6's mortars fired
+            # 57-190 shots a match from behind sandbags in their row). The smoke launcher's arc is not readable (packed)
+            for (w, pw), (s, ps) in (((n1, p1), (n2, p2)), ((n2, p2), (n1, p1))):
+                if (w in WEAPONS and w not in ANTI_AIR_ONLY and w not in MORTARS and s == "sandbags"
+                        and abs(pw[1] - ps[1]) < ROW_TOL
+                        and enemy_dir * (ps[0] - pw[0]) > 0):
+                    errors.append("sandbags at %s stand in front of %s at %s in one row (they block its line of fire)"
+                                  % (_fmt(ps), w, _fmt(pw)))
             if n1 in LOBBED and n2 in LOBBED and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < MORTAR_SPACING:
                 errors.append("%s at %s and %s at %s only %.0f apart (need %d)" % (n1, _fmt(p1), n2, _fmt(p2), math.dist(p1, p2), MORTAR_SPACING))
 

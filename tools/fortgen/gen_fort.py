@@ -667,32 +667,186 @@ VARIANTS = {
         ],
         "armour_roof": True,
     },
+    # Abyss-5, rocket rush with smoke (rebuilt 28.10.2026; the old Abyss-5 on Abyss-4's shape, rockets in the two tall
+    # front storeys and smoke launchers on open roofs in front of the shotguns, lost its only match 0/1: it stalled on the
+    # ledge foundations before the armoury). Built on Abyss-2/-3 as they stand (docs/maps/abyss.md) and on Vanilla-5's
+    # rocket tests (docs/maps/vanilla.md):
+    # - one early weapon, then the economy (Abyss-2 test 6, Abyss-3 test 1): the armoury (400 m / 2000 e, 60 s, opens EMP
+    #   rockets, smoke and flak; no workshop), the bottom mine, EMP rocket 1 at once, then the tower with its cliff
+    #   anchors storey by storey and the three ledge mines with a turbine after each;
+    # - the rockets on Abyss-2's sloping struts below the reactor (rising 5 degrees to the bottom of a door on their
+    #   upper side; test 4: doors cut for a level shot left the ray on the armour above them): EMP rocket 1 in the lower
+    #   block's top storey (Abyss-2's sniper spot), EMP rocket 2 in its bottom storey (Abyss-2's 20mm, 54 shots in test
+    #   7); each in its own row with its lanes (a weapon blocks every weapon behind it in its row);
+    # - the smoke launcher in a closed cell over the starting fort's front roof (the front cell of Abyss-2's nest) with a
+    #   door roof and a door in front (Vanilla-5: on an open roof it was destroyed five times); no sandbags or woodspam in
+    #   its row ahead of it: they block the line of fire (the player, 28.10.2026);
+    # - the flak in the tower's lowest front cell (142 high, the flak's box is 118) behind a full door it opens (Vanilla-5:
+    #   above a low shield it was sniped), out of every other weapon's row; one machine gun above it;
+    # - the corner under the reactor closed and the wood curtain in front of the reactor's face (Abyss-2 test 6), snap
+    #   50 and no cell under the starting fort's lower front face (test 5's stall);
+    # - late game (Abyss-2 test 2: done at ~480 s, then idle at the caps): EMP rocket 3 on Abyss-2's lower cliff perch,
+    #   hidden like Abyss-3's perches, upgraded to a rocket.
     "raketen": {
-        "title": "Rocket front (shape of the heavy front): armoury early, EMP rockets upgraded to rockets, smoke bombs on top, flak/shotguns",
+        "title": "Rocket rush: armoury, EMP rockets below the reactor on sloping struts behind short doors, smoke in the hidden nest, flak in the tower, a third rocket on the cliff",
         "shape": lambda x0, y0, x1, y1: (
-            (y0 >= -502 and y1 <= -250 and x0 >= -2100 and x1 <= -1700) or
-            (y0 >= -846 and y1 <= -502 and x0 >= -2400 and x1 <= -1900) or
-            (y0 >= 405 and y1 <= 600 and x0 >= -2100 and x1 <= -1900)),
+            (y0 >= -125 and y1 <= 5 and x0 >= -1800 and x1 <= -1700) or       # smoke cell (front of Abyss-2's nest)
+            (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -2000) or     # spine tower on the cliff wall
+            (y0 >= -846 and y1 <= -746 and x0 >= -2500 and x1 <= -2100) or     # ledge roof (mines, turbines)
+            (y0 >= 405 and y1 <= 750 and x0 >= -2100 and x1 <= -1700)),        # lower block under the starting fort
+        "cfg": {
+            "cols": [-2500, -2400, -2300, -2200, -2100, -2000, -1900, -1800, -1700, -1600],
+            # Abyss-2's rows: the nest 130 high (y 5..-125), the lower block's storeys 405..550 (rocket 1's), 550..600
+            # and 600..750 (rocket 2's)
+            "rows": [-846, -746, -628, -502, -392, -250, -125, 5, 106, 206, 305, 405, 550, 600, 750],
+            # the grid point (-2100, 550) snaps onto the starting fort's wall node (-2100, 500) (Abyss-2, test 5)
+            "snap": 50,
+            "weapon_pick_best": True,
+            "bottom_up": True,
+            "crossbrace_y": -1000,
+            # the rockets' doors as on Abyss-2: each front post split where the weapon's strut ends, door above (from the
+            # storey top down to that node, covering the barrel 65 above the strut), armour below; both ends of the
+            # strut braced down-back below it
+            "split_edges": [
+                {"a": (-1900, 405), "b": (-1900, 550), "mid": (-1900, 505), "braces": [((-2000, 550), "bracing")]},
+                {"a": (-1700, 405), "b": (-1700, 550), "mid": (-1700, 487.5), "materials": {"a": "door", "b": "armour"},
+                 "braces": [((-1800, 550), "bracing")]},
+                {"a": (-1900, 600), "b": (-1900, 750), "mid": (-1900, 705), "braces": [((-2000, 750), "bracing")]},
+                {"a": (-1700, 600), "b": (-1700, 750), "mid": (-1700, 687.5), "materials": {"a": "door", "b": "armour"},
+                 "braces": [((-1800, 750), "bracing")]}],
+            # a rocket's body is centred (half-width 40), its barrel 60 long: LinkT = (strut length - 76) / length puts
+            # the muzzle ~16 behind the door, as for Abyss-2's weapons (0.62 on the lower block's struts, 0.63 on the
+            # perch). The flak on the tower's lowest floor (the starting fort's wall node to the tower's foot)
+            "weapon_struts": [((-1900, 505), (-1700, 487.5), 0.62, "rocketemp"),
+                              ((-1900, 705), (-1700, 687.5), 0.62, "rocketemp"),
+                              ((-2140, -1040), (-1940, -1004.7), 0.63, "rocketemp"),
+                              ((-2120.45, -250), (-2000, -250), 0.5, "flak")],
+            "lane_cells": [(-1900, 550), (-1800, 550), (-1900, 750), (-1800, 750)],
+            # the rockets' boxes (112 high) reach over the posts at x -1800 and a little into the storey tops: those
+            # struts become background bracing (devices stand in front of it); on the perch tilted with the strut. The
+            # smoke launcher's cell diagonals likewise
+            "clear_boxes": ["rocketemp", "rocket", "flak", "shotgun", "smokebomb"], "clear_boxes_tilted": True,
+            # the smoke launcher in a closed cell over the starting fort's front roof (the front cell of Abyss-2's nest,
+            # x -1800..-1700, y -125..5, 130 high; the launcher's box is ~127): a door roof (it lobs upward) and a door
+            # front post, the AI opens both to fire; nothing solid ahead of it in its row (the player, 28.10.2026:
+            # sandbags block the line of fire, a weapon in the open is found by its first shot). The only spot with open
+            # sky above it: the tower's cells have more tower above, its top lies under the cliff perch
+            "mortar_slots": [((-1800, 5), (-1700, 5), 0.5)],
+            "mortar_open_arc": True,
+            # the machine gun (anti-air, later a minigun) in the tower's front cell above the flak; the starting fort's
+            # machine gun is upgraded too
+            "aa_y": -502,
+            "orig_devices": [((-1895, 110), (-1795, 114), "machinegun", 0.35)],
+            # batteries and stores inside the starting fort (not the slot at y 200, under the armoury's box, nor those
+            # at y 500, rocket 1's strut), the lower block's bottom wall cell and the ledge cell beside the tower's top
+            "use_eco_slots": True,
+            "eco_slots": [((-2100, 400), (-2002, 405), 0.46), ((-1998, 206), (-1898, 210), 0.52),
+                          ((-2104.43, 750.32), (-2000, 750), 0.5), ((-2200, -746), (-2100, -746), 0.5)],
+            "clear_fire_lines": True,
+            # nothing on the nest's roof (a connecting cell there would stand in the smoke's arc), no cell under the
+            # starting fort's lower front face (its floor would run through the starting fort's node (-1751, 310))
+            "keepout": [(-2000, -1900, -250, -125), (-1800, -1700, 305, 405)],
+        },
         "plan": [
-            ("aa", ["machinegun", "machinegun"]),
-            ("eco", ["mine", "mine", "turbine", "battery", "turbine"]),
-            # armoury (400 metal, 2000 energy), then devices that do not need it while it is being built
+            # the armoury (on weapon_pack's ToGA1 slot inside the starting fort, no structure) sets the pace; meanwhile
+            # the bottom mine, rocket 1's storey and lanes, then EMP rocket 1 (the AI waits on it until the armoury is
+            # finished): one early weapon before the tower (Abyss-3 test 1: no weapon before ~300 s)
             ("tech", ["armoury"]),
-            ("eco", ["mine", "store", "mine"]),
-            ("weapons", ["rocketemp", "smokebomb", "rocketemp"]),
+            ("eco", ["mine"]),
+            ("build", [(-2100, 550), (-2000, 550), (-1900, 550), (-1800, 550)]),
+            ("struts", [((-1900, 505), (-1700, 487.5), "bracing")]),
+            ("weapons", ["rocketemp"]),
+            # the tower's first cell, its foot braced to the starting fort, then the tower tied to the cliff storey by
+            # storey with its growth (Abyss-2's anchors; alone it leaned 40-170 in test 3)
+            ("build", [(-2100, -250)]),
+            ("struts", [((-2000, -250), (-2049.41, -196.45), "bracing"), ((-2000, -250), (-1997.10, -95.84), "bracing")]),
+            ("struts", [((-2100, -392), (-2162.70, -386.08), "bracing"), ((-2120.45, -250), (-2162.70, -386.08), "bracing")]),
+            ("build", [(-2100, -392)]),
+            ("struts", [((-2100, -502), (-2178.13, -527.18), "bracing"), ((-2162.70, -386.08), (-2100, -502), "bracing")]),
+            ("build", [(-2100, -502)]),
+            ("struts", [((-2100, -628), (-2180.78, -672.55), "bracing"), ((-2178.13, -527.18), (-2100, -628), "bracing")]),
+            ("build", [(-2100, -628)]),
+            ("struts", [((-2180.78, -672.55), (-2100, -746), "bracing")]),
+            # metal and energy (the AI averaged 100-260 metal on Abyss; Vanilla-5's rockets starved of energy with the
+            # first turbine late): the three ledge mines, a turbine after each, a battery
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["battery"]),
+            # the smoke cell, its floor node braced down to the starting fort's front node (Abyss-2: built without it,
+            # the nest's front cell swung down, physics.py sag ~320), the door roof and door front post, then the smoke
+            # launcher inside
+            ("build", [(-1800, 5)]),
+            ("struts", [((-1700, 5), (-1747.27, 110.37), "bracing"),
+                        ((-1800, -125), (-1700, -125), "door"), ((-1700, -125), (-1700, 5), "door")]),
+            ("weapons", ["smokebomb"]),
+            # the corner under the starting fort's lower front face closed (Abyss-2 test 6: the player's rockets broke in
+            # there): from its node (-1751, 315) up to the lower block's top front nodes, the armour front post from its
+            # node (-1695, 223) down to (-1700, 405)
+            ("struts", [((-1751.69, 314.55), (-1700, 405), "bracing"), ((-1751.69, 314.55), (-1800, 405), "bracing"),
+                        ((-1694.52, 223.44), (-1700, 405), "armour")]),
+            # rocket 2's storeys at the bottom of the lower block (the wall cell last: its foundation (-2104, 750) is
+            # 150.4 below the node above it, so it is built sideways), its strut, EMP rocket 2
+            ("build", [(-2100, 600), (-2000, 600), (-1900, 600), (-1800, 600)]),
+            ("build", [(-1800, 750), (-1900, 750), (-2000, 750), (-2100, 750)]),
+            ("struts", [((-1900, 705), (-1700, 687.5), "bracing")]),
+            ("weapons", ["rocketemp"]),
+            # the flak behind a full door in the tower's front post (Vanilla-5: the door it opens; above a 65-high
+            # shield it was sniped)
+            ("struts", [((-2000, -392), (-2000, -250), "door")]),
+            ("aa", ["flak"]),
+            # two layers of wood in front of the starting fort's lower front face (Abyss-2's reactor wall), braced to its
+            # nodes (-1746, 112), (-1695, 223), (-1752, 315) (as on Abyss-3: no nest woodspam to hang it from), and on
+            # down in front of the closed corner to y 405
+            ("struts", [((-1746.18, 112.27), (-1655, 112), "bracing"), ((-1694.52, 223.44), (-1650, 223), "bracing"),
+                        ((-1751.69, 314.55), (-1655, 315), "bracing"),
+                        ((-1655, 112), (-1650, 223), "bracing"), ((-1650, 223), (-1655, 315), "bracing"),
+                        ((-1746.18, 112.27), (-1650, 223), "bracing"), ((-1694.52, 223.44), (-1655, 112), "bracing"),
+                        ((-1694.52, 223.44), (-1655, 315), "bracing"), ((-1751.69, 314.55), (-1650, 223), "bracing"),
+                        ((-1655, 112), (-1615, 112), "bracing"), ((-1650, 223), (-1610, 223), "bracing"),
+                        ((-1655, 315), (-1615, 315), "bracing"),
+                        ((-1615, 112), (-1610, 223), "bracing"), ((-1610, 223), (-1615, 315), "bracing"),
+                        ((-1655, 112), (-1610, 223), "bracing"), ((-1650, 223), (-1615, 112), "bracing"),
+                        ((-1650, 223), (-1615, 315), "bracing"), ((-1610, 223), (-1655, 315), "bracing")]),
+            ("struts", [((-1655, 315), (-1655, 405), "bracing"), ((-1615, 315), (-1615, 405), "bracing"),
+                        ((-1700, 405), (-1655, 405), "bracing"), ((-1655, 405), (-1615, 405), "bracing"),
+                        ((-1700, 405), (-1655, 315), "bracing"), ((-1655, 315), (-1615, 405), "bracing"),
+                        ((-1615, 315), (-1655, 405), "bracing")]),
+            ("aa", ["machinegun"]),
+            # the upgrade centre (its own slot in the starting fort's top storey, under the nest), then what needs no
+            # tech while it builds (60 s), then the rockets
             ("tech", ["upgrade"]),
-            ("weapons", ["flak"]),
-            ("eco", ["turbine", "battery"]),
+            ("eco", ["store", "battery"]),
             ("upgrades", ["rocket", "rocket"]),
-            ("weapons", ["smokebomb", "flak"]),
-            ("upgrades", ["shotgun", "shotgun", "minigun"]),
+            ("eco", ["turbine"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2", "turbine2"]),
+            ("upgrades", ["shotgun", "minigun", "minigun"]),
+            # late game: EMP rocket 3 on Abyss-2's lower cliff perch above the ledge mines (its cannon was placed there in
+            # test 7): from the tower's top one cell of background bracing (the turbines' only wind passes there), the
+            # strut falling 10 degrees from a node off the rock, tied to two anchors on the upper cliff face, to a front
+            # node; the door square to the strut, the roof strut over it; the perch closed into four triangles of
+            # background bracing around a node in its back part, so the player does not see the rocket placed (Abyss-3
+            # test 1)
+            ("struts", [((-2100, -846), (-2100, -950), "backbracing"), ((-2000, -846), (-2000, -950), "backbracing"),
+                        ((-2100, -950), (-2000, -950), "backbracing"), ((-2100, -846), (-2000, -950), "backbracing"),
+                        ((-2000, -846), (-2100, -950), "backbracing"),
+                        ((-2100, -950), (-2182.73, -1050.25), "backbracing"), ((-2100, -950), (-2140, -1040), "bracing"),
+                        ((-2182.73, -1050.25), (-2140, -1040), "bracing"), ((-2140, -1040), (-2162.18, -1110.06), "bracing"),
+                        ((-2000, -950), (-1940, -1004.7), "backbracing"), ((-2100, -950), (-1940, -1004.7), "backbracing"),
+                        ((-2140, -1040), (-1940, -1004.7), "bracing")]),
+            ("struts", [((-1940, -1004.7), (-1917.4, -1132.72), "door"), ((-2140, -1040), (-2112, -1167), "bracing"),
+                        ((-2162.18, -1110.06), (-2112, -1167), "bracing"), ((-2112, -1167), (-2148.94, -1210.1), "bracing"),
+                        ((-2112, -1167), (-1917.4, -1132.72), "bracing")]),
+            ("struts", [((-2140, -1040), (-2090, -1100), "backbracing"), ((-2090, -1100), (-2112, -1167), "backbracing"),
+                        ((-2090, -1100), (-1940, -1004.7), "backbracing"), ((-2090, -1100), (-1917.4, -1132.72), "backbracing")]),
+            ("weapons", ["rocketemp"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["rocket"]),
+            ("upgrades", ["mine2", "mine2"]),
         ],
-        # smoke bombs (lobbed, tall) and flak (anti-air, tall) on open roofs: no storey above limits their
-        # height; the rockets take the storeys of at least TALL_MIN_H at the front
-        "roof_weapons": {"smokebomb", "flak"},
-        "reserve_tall": True,
-        "roof_weapon_max_y": -502,
-        "armour_roof": True,
     },
 }
 
