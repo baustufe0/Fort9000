@@ -37,6 +37,14 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
   those columns (Vanilla-7's turbine column); `hidden_box` may be a list of boxes.
 - `tower_connect.skip_floors`: storeys left out of the storey-by-storey rule (the cage on the tower roof rests on the top storey only).
 - `split_doors`: final pass, the door post of a sniper, cannon, 20mm cannon, laser, firebeam or (EMP) rocket is rebuilt in up to three pieces (armour, door, armour) with the shortest door that covers the shot (both barrel estimates +- margin, see [building-rules.md](building-rules.md)), each new node braced to the cell's back corners by a brace that does not pass through a device's box in that cell; without such a brace the door is not split. Machine-gun doors stay full (anti-air).
+- `door_layers` (n, default 1; Vanilla-2/-3/-5/-6: 2): n short doors in a row in front of each split door (also a door already as short as the shot needs, e.g. Vanilla-2's `split_edges` sniper door; module weapons count), against the AP
+  sniper. Each further layer `DOOR_LAYER_GAP` (50) in front: armour from the last door's ends, a door, a background
+  diagonal. A vertical strut already 37.5..60 in front over the whole door (a woodspam post) is split into the door
+  instead; a node already at the door's top or bottom level up to 105 in front is used (Vanilla-3's low 20mm: the end
+  of the floor strut in front). A layer with a node in rock, closer than 37.5 to a node or on a strut is left out
+  (`Note: door layer n left out`). Outer doors one above the other are tied with armour into a column. The layer is
+  built right after its door (or after the post/node it uses). `door_layer_skip [(x, y_floor)]`: door posts that keep
+  one door (Vanilla-5's nest rocket: its hanging layer toppled the fort in `physics.py`).
 - Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there;
   A and B may be grid nodes or nodes of the starting fort (e.g. Vanilla-5's armour shield in front of its smoke
   launcher, its long brace across the starting fort).

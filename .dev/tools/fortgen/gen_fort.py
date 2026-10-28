@@ -47,6 +47,10 @@ BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser"
             "firebeam": 60}
 BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58, "rocketemp": 60, "rocket": 60,
               "firebeam": 58}
+# door_layers: the AP sniper (PenetrationDamage 600) shoots through one door (400 HP) and destroyed 8 EMP rockets
+# behind single short doors (2v2 match 28.10.2026); a player's cannons stood behind three short doors in a row.
+# Each further door layer stands this far in front of the last one (at least MIN_STRUT, the armour joining them)
+DOOR_LAYER_GAP = 50
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
                   "flak", "shotgun", "rocketemp", "rocket", "firebeam"}
 # the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
@@ -64,6 +68,18 @@ UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar",
 # bomb is assumed like a turbine, 127); on a floor they need a storey at least this high, like a turbine
 TALL = {"rocketemp", "rocket", "flak", "shotgun", "smokebomb"}
 TALL_MIN_H = 125
+
+def _point_on_segment(p, a, b, tol=4.0):
+    """p lies on the strut a-b (closer than tol, not at its ends)."""
+    if a is None or b is None:
+        return False
+    length = math.dist(a, b)
+    if length < 1:
+        return False
+    ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+    t = (p[0] - a[0]) * ux + (p[1] - a[1]) * uy
+    return tol < t < length - tol and abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux) < tol
+
 
 def _segment_hits_box(p, q, box):
     """True if the segment p-q passes through the box (x0, x1, y_top, y_bottom), sampled every ~2 units."""
@@ -920,8 +936,9 @@ _V_CAGE_HIGH = {"turbine_floor_y": -370, "hidden_box": (-3400, -2945, -500, -370
 # CS_UNSTABLE in every test match, also with a 125-high storey (24.10.2026: the AI gave up after 120 s; the links
 # at its front node were strained to 1.79 of their planned length); snipers stay out of it (a machine gun takes it).
 # split_doors: the doors of the sniper and the heavy weapons only as long as the shot needs (Vanilla-2's sniper door,
-# 61.5 instead of 99, fired 124 shots in a test match)
+# 61.5 instead of 99, fired 124 shots in a test match), two in a row (door_layers) against the AP sniper
 _V_HIGH_CFG = dict(_V_CAGE_HIGH, **{"rows": _V_HIGH_ROWS, "large_cells": _V_LARGE_TOGWM2, "turbine_roof_max_y": -370, "split_doors": True,
+               "door_layers": 2,
                "weapon_avoid": [(-3100, 105, {"sniper"})],
                # the roof turbine on the seam column (x -3300..-3200, where the back and front parts of the tower
                # meet) was refused with CS_UNSTABLE in every test match (24.10.2026: three tries, the AI gave up
@@ -965,6 +982,9 @@ VANILLA_VARIANTS = {
                 # its body still overlaps the post at x -2945, which the game then turns into background bracing
                 "weapon_cells": [(-3100, 205, "sniper", 0.7)],
                 "lane_cells": [(-2945, 205)],
+                # a second door 50 in front of the sniper's (split_doors finds the split_edges door and keeps it whole):
+                # the AP sniper shoots through one door (2v2 of 28.10.2026)
+                "split_doors": True, "door_layers": 2,
                 "rebrace_after_mine": [],
                 "hidden_box": (-3500, -2845, -25, 105),
                 "split_edges": [{"a": (-3100, 105), "b": (-2945, 105), "mid": (-3022, 105),
@@ -1122,8 +1142,11 @@ VANILLA_VARIANTS = {
             "mortar_slots": [], "split_edges": [],
             # no top cell reserved for the smoke launcher (lobbed): the reservation took a rocket's cell
             "reserve_mortar": False,
-            # doors only as long as the rockets' shots need, like the snipers' (split_doors)
-            "split_doors": True,
+            # doors only as long as the rockets' shots need, like the snipers' (split_doors); two in a row: the AP
+            # sniper shot through the single doors and destroyed 8 EMP rockets (2v2 match 28.10.2026). Not for rocket 2
+            # in the nest: its outer door hangs 50 in front of the prow's top and physics.py lets the fort fall (the
+            # starting fort's lower front strut 40-41, already 0.94 without layers); with rocket 1's layer alone 0.97
+            "split_doors": True, "door_layers": 2, "door_layer_skip": [(-2845, 75)],
             "rows": [-445, -345, -245, -155, -55, 75, 205, 308, 405, 503, 602, 700],
             # LinkT 0.7 like Vanilla-2's sniper: the barrel (60) ends ~85 behind the door
             "weapon_cells": [(-3100, 205, "rocketemp", 0.7), (-3100, 75, "rocketemp", 0.7)],
@@ -2589,7 +2612,8 @@ class Plan:
                 pair = frozenset((int(m.group(1)), int(m.group(2))))
                 first.setdefault(pair, k)
                 final[pair] = re.search(r'MaterialSaveName = "(\w+)"', line).group(1)
-        weapons = [(d, a, b, t) for d, a, b, t, c in self.placed if d in DOOR_WEAPONS]
+        # the modules' weapons too (Vanilla-6's sniper: its door is in the core plan)
+        weapons = [(d, a, b, t) for d, a, b, t, c in self.placed + getattr(self, "module_placed", []) if d in DOOR_WEAPONS]
         # door_posts [(x, y_top, y_floor)]: front posts split like doors although they are not doors (e.g. background
         # bracing in a hidden storey); door_rest [((x, y_top, y_floor), material)]: the material of a split post's
         # pieces above and below its door (default armour; background bracing where turbines need the wind)
@@ -2600,6 +2624,7 @@ class Plan:
             return False
         edits = {}                                   # action index -> replacement lines; None drops it
         appended = []                                # (insert after index, line)
+        outer = []                                   # door_layers: (top node, bottom node, action) of each outermost door
         for pair, mat in final.items():
             ia, ib = tuple(pair)
             pa, pb = pos[ia], pos[ib]
@@ -2626,7 +2651,13 @@ class Plan:
                 if dv in rules.BOX_TOP and (abs(y0 - y_floor) < 8 or abs(y0 - y_top) < 8) and x - 220 < dx < x:
                     half = rules.SIZE.get(dv, (40, 40))[0] / 2
                     boxes.append((dx - half, dx + half, y0 - rules.BOX_TOP[dv], y0))
+            # door_layer_skip [(x, y_floor)]: door posts that keep a single door (a layer hanging there overloads the fort)
+            layers = not any(abs(x - sx) < 3 and abs(y_floor - sy) < 3 for sx, sy in self.cfg.get("door_layer_skip", []))
             if span is None:
+                # a door already as short as the shot needs (e.g. Vanilla-2's sniper door, cut by split_edges) still
+                # gets its layers
+                if mat == "door" and layers:
+                    outer.append(self.door_layers(d, x, top_id, bot_id, pos, first[pair], made, first, final, edits, appended))
                 continue
             dt, db = span
             # the pieces from the top down, with their materials
@@ -2681,11 +2712,30 @@ class Plan:
                 continue
             appended.extend(braces)
             edits[k0] = lines
+            if layers:
+                outer.append(self.door_layers(d, x, ids[ys.index(dt)], ids[ys.index(db)], pos, k0, made, first, final,
+                                              edits, appended))
             for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
                 m = node_re.search(line)
                 if k != k0 and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
                     edits[k] = None
             self.problems.append("door of %s at x %.0f: y %.1f..%.1f (%.1f of %.1f)" % (d, x, dt, db, db - dt, y_floor - y_top))
+        # door_layers: the outer doors of weapons one above the other tied into one column (armour from the bottom of
+        # the upper door to the top of the lower one), so it rests on what is below instead of hanging on the front
+        # posts (physics.py: Vanilla-3's armour between its two 20mm doors broke under the hanging layers, -1.03; tied,
+        # its peak fell to 0.83, below the 0.92 without layers)
+        if self.cfg.get("door_layers", 1) > 1:
+            outer = [o for o in outer if o]
+            for (ta, ba, ka), (tb, bb, kb) in ((u, v) for u in outer for v in outer if u is not v):
+                if ta == ba or tb == bb or pos[ba][1] >= pos[tb][1] or abs(pos[ba][0] - pos[tb][0]) > 60:
+                    continue
+                if not MIN_STRUT <= math.dist(pos[ba], pos[tb]) <= MAX_NEW_NODE or frozenset((ba, tb)) in final:
+                    continue
+                if any(_point_on_segment(q, pos[ba], pos[tb]) for q in pos.values()):
+                    continue
+                appended.append((max(ka, kb), '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "armour" },'
+                                 % (ba, self._fmt(pos[ba]), tb, self._fmt(pos[tb]))))
+                self.problems.append("door layers: outer doors tied (%.0f,%.0f)-(%.0f,%.0f)" % (*pos[ba], *pos[tb]))
         out = []
         for k, line in enumerate(self.actions):
             if k in edits:
@@ -2694,6 +2744,117 @@ class Plan:
                 out.append(line)
             out.extend(l for after, l in appended if after == k)
         self.actions = out
+
+    def door_layers(self, d, x, top_id, bot_id, pos, k0, made, first, final, edits, appended):
+        """door_layers: n doors in a row in front of a split door (DOOR_LAYER_GAP apart), so the AP sniper, which
+        shoots through one door, does not reach the weapon. Each layer: armour from the last layer's door ends
+        straight forward, a door between the new nodes, and a background diagonal (shots pass it) so the box does
+        not fold. A vertical strut already standing MIN_STRUT..60 in front over the whole door (a woodspam post)
+        is split into the door instead (its own material above and below), and a node already standing there at
+        the door's top or bottom is used. A layer whose nodes would stand in rock or closer than MIN_STRUT to
+        another node is left out, and the ones in front of it with it. The layer's actions go to appended, after
+        the post (k0) and whatever they build on. Returns (top node, bottom node, action index) of the outermost
+        door, None if no layer was built."""
+        node_re = re.compile(r"OriginalNodeAId = (\d+),.*OriginalNodeBId = (\d+),")
+        for nid, q in self.orig.items():
+            pos.setdefault(nid, q)
+        mk = lambda kind, a, b, mat: (
+            '{ Type = CREATE_NODE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, NewNodePos = { %s }, MaterialSaveName = "%s" },'
+            if kind == "node" else
+            '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
+        ) % (a, self._fmt(pos[a]), b, self._fmt(pos[b]), mat)
+        built, last = 1, k0
+        for layer in range(1, self.cfg.get("door_layers", 1)):
+            x0 = pos[top_id][0]
+            yt, yb = pos[top_id][1], pos[bot_id][1]
+            after = k0
+            lines = []
+            post = None
+            for pair, mat in final.items():
+                ia, ib = tuple(pair)
+                pa, pb = pos.get(ia), pos.get(ib)
+                if pa is None or pb is None or first[pair] in edits:
+                    continue
+                if abs(pa[0] - pb[0]) < 3 and MIN_STRUT <= (pa[0] + pb[0]) / 2 - x0 <= 60                         and min(pa[1], pb[1]) <= yt + 1 and max(pa[1], pb[1]) >= yb - 1:
+                    post = (pair, mat)
+                    break
+            if post:
+                # split the post in front: its own material, door from the door's top to its bottom
+                (pair, mat) = post
+                up, lo = sorted(tuple(pair), key=lambda n: pos[n][1])
+                xl = (pos[up][0] + pos[lo][0]) / 2
+                t_ = pos[up][1] if yt - pos[up][1] < MIN_STRUT else yt
+                b_ = pos[lo][1] if pos[lo][1] - yb < MIN_STRUT else yb
+                ys = [pos[up][1]] + ([t_] if t_ > pos[up][1] else []) + ([b_] if b_ < pos[lo][1] else []) + [pos[lo][1]]
+                ids = [up]
+                for y in ys[1:-1]:
+                    ids.append(self.next_id)
+                    pos[self.next_id] = (xl, y)
+                    self.next_id += 1
+                ids.append(lo)
+                mats = ["door" if y0 >= t_ - 0.01 and y1 <= b_ + 0.01 else mat for y0, y1 in zip(ys, ys[1:])]
+                kp = first[pair]
+                created = "CREATE_NODE" in self.actions[kp]
+                src = int(node_re.search(self.actions[kp]).group(1)) if created else up
+                chain = list(zip(ids, ids[1:], mats))
+                if src == lo:
+                    chain = [(q, p_, m_) for p_, q, m_ in reversed(chain)]
+                edits[kp] = [mk("link" if n == len(chain) - 1 and not created else "node", p_, q, m_)
+                             for n, (p_, q, m_) in enumerate(chain)]
+                for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
+                    m = node_re.search(line)
+                    if k != kp and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
+                        edits[k] = None
+                nt, nb = ids[ys.index(t_)], ids[ys.index(b_)]
+                after = max(after, kp)
+            else:
+                # a free-standing layer; a node already at the door's top or bottom level in front is used
+                # (up to 105 ahead: Vanilla-3's low 20mm, whose door ends on the floor strut of the cell in front; a
+                # node at 50 would stand in the middle of that strut, so the layer takes its front end)
+                def at(y):
+                    return min((n for n, q in pos.items() if abs(q[1] - y) < 5 and MIN_STRUT <= q[0] - x0 <= 105),
+                               key=lambda n: pos[n][0], default=None)
+                nt, nb = at(yt), at(yb)
+                if nt is not None and nb is not None and abs(pos[nt][0] - pos[nb][0]) > 3:
+                    nt, nb = (nt, None) if pos[nt][0] < pos[nb][0] else (None, nb)
+                xl = pos[nt][0] if nt is not None else pos[nb][0] if nb is not None else x0 + DOOR_LAYER_GAP
+                pt, pb = (xl, yt), (xl, yb)
+                new = [p_ for p_, n in ((pt, nt), (pb, nb)) if n is None]
+                near = [q for n, q in pos.items() if n not in (nt, nb) and any(math.dist(p_, q) < MIN_STRUT for p_ in new)]
+                # nor a new node on a strut of the plan
+                near += [p_ for p_ in new for pair in final if len(pair) == 2 and _point_on_segment(p_, *(pos.get(n) for n in pair))]
+                if any(self.t.inside(p_) for p_ in new) or near:
+                    self.problems.append("door of %s at x %.0f: door layer %d left out (%s)"
+                                         % (d, x, layer + 1, "(%.0f,%.0f) taken" % near[0] if near else "rock"))
+                    break
+                for n in (nt, nb):
+                    if n is not None:
+                        after = max(after, made.get(n, -1))
+                if nt is None:
+                    nt = self.next_id
+                    self.next_id += 1
+                    pos[nt] = pt
+                    lines.append(mk("node", top_id, nt, "armour"))
+                if nb is None:
+                    nb = self.next_id
+                    self.next_id += 1
+                    pos[nb] = pb
+                    lines.append(mk("node", bot_id, nb, "armour"))
+                lines.append(mk("link", nt, nb, "door"))
+            # the armour joining the layers (unless a strut stands there already) and the diagonal
+            for a, b, mat in ((top_id, nt, "armour"), (bot_id, nb, "armour"), (top_id, nb, "backbracing")):
+                pair = frozenset((a, b))
+                if pair not in final and not any(("OriginalNodeAId = %d," % a in l and "OriginalNodeBId = %d," % b in l)
+                                                 or ("OriginalNodeAId = %d," % b in l and "OriginalNodeBId = %d," % a in l)
+                                                 for l in lines):
+                    lines.append(mk("link", a, b, mat))
+            appended.extend((after, l) for l in lines)
+            last = after
+            top_id, bot_id = nt, nb
+            built += 1
+        if built > 1:
+            self.problems.append("door of %s at x %.0f: %d door layers" % (d, x, built))
+        return (top_id, bot_id, last) if built > 1 else None
 
     def clear_fire_lines(self):
         """Every strut the plan builds that would block a weapon becomes background bracing (clear_fire_lines);

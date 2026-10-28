@@ -220,3 +220,14 @@ and a buzzsaw (325 s): **the player won at 587 s** (9.8 min, the rocket plan's l
   7 (x -2900..-3000, y 0..200), the starting fort's lower front in minute 9; the reactor at 587 s.
 - Metal stayed short (39 % of the snapshots below 150).
 - Change: the flak's shield is a full-height door (130 high).
+
+## Vanilla-3 and -5 in a 2v2 (28.10.2026): the AP sniper, lost at 540 s
+
+- Vanilla 2v2 against two players, difficulty 1: Vanilla-3 (team 102) and Vanilla-5 (team 202). The players won
+  at 9.0 min.
+- The players fired 15 AP-sniper shots; the AI lost 8 EMP rockets, 2 flak, 3 machine guns and a 20mm. The AP sniper
+  goes through one door (`PenetrationDamage` 600 against 400 HP).
+- AI metal below 150 in 56 % of the snapshots (average 213; players 607).
+- Change: `door_layers` 2 for Vanilla-3 (both 20mm and the sniper; outer doors tied into a column, `physics.py` peak
+  0.80, before 0.92) and Vanilla-5's lower rocket (peak 0.97, before 0.94); the nest rocket keeps one door (its layer
+  toppled the fort in `physics.py`).

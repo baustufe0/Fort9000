@@ -9,8 +9,8 @@ rules are in [building-rules.md](../building-rules.md).
 | Plan | Main weapon | Opening | Tested |
 |---|---|---|---|
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
-| Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
-| Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
+| Vanilla-3 | two 20mm cannons and a sniper, each behind two short doors in a row (28.10.2026) | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
+| Vanilla-5 | two EMP rockets (later rockets) behind short doors (the lower one two in a row since 28.10.2026), smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
 ## Starting fort
@@ -75,6 +75,8 @@ be at most 130 high for `MAX_LINK`).
 - **Sniper** in the front column on the starting fort's roof beam (-3093,205)-(-2945,206) at LinkT 0.7 (`weapon_cells`),
   firing through the prow storey (`lane_cells`), whose front post is split (`split_edges` with `materials`): a door
   61.5 long (y 204..142.5, ~1.2 s to open) under 37.5 of armour, muzzle ~44 behind it (124 shots, no clearance failures).
+  Since 28.10.2026 a second door 40 in front (x -2805, y 142.5..205, `door_layers`, on the woodspam's top node), against
+  the AP sniper; also on Vanilla-6 (physics peak 0.86 -> 0.88 on Vanilla-2, 0.91 -> 0.93 on Vanilla-6).
   On the prow itself the sniper was refused.
 - **Mortar nest** over the front column: its floor built in two halves through a node at x -3022 (`split_edges`,
   braced down to the roof posts), one mortar per half (`mortar_slots`, LinkT 0.25 and 0.75: 116 apart; 77 apart the

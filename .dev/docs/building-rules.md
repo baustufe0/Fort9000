@@ -110,6 +110,12 @@ need the factory, cannons the munitions plant. A player reached cannons, firebea
   aim beyond a muzzle 44 behind the door. A door cut this way worked (Vanilla-2 sniper: 124 shots; Vanilla-3 20mm: 126).
   The new nodes need a brace that does not pass through a device's box (a brace through the sniper's spot got it
   refused); without one the door is not split. Machine guns keep full doors (anti-air at steep angles).
+- **One door does not stop the AP sniper:** `sniper2` has `PenetrationDamage` 600 (and `WeaponDamageBonus` 100), a
+  door or armour strut 400 HP, so it shoots through one door into the weapon (2v2 match 28.10.2026: 15 AP-sniper shots,
+  8 EMP rockets lost behind single short doors). A player's cannons stood behind three short doors in a row.
+  `door_layers` puts a second short door 50 in front (generator.md). The extra metal in front of a front post is
+  weight the post carries: hanging free, the layers broke Vanilla-3's post between its two 20mm doors and toppled
+  Vanilla-5 in `physics.py`; outer doors one above the other are tied into a column resting on what is below.
 - Mortars fire steeply up and forward: the roof above them must be a door or open and no other part of the fort may
   stand in that arc (`rules.MORTAR_ARC`).
 
