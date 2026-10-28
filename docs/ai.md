@@ -225,7 +225,7 @@ Game end
 ## Installation and usage
 
 1. Copy the `fort-9000` folder to `<Steam>/steamapps/common/Forts/data/mods/`.
-2. Enable the mod *FORT 9000 (AI + Recorder)* in the game.
+2. Enable the mod *FORT 9000 (AI)* in the game.
 3. Play matches or watch replays.
 4. Run `tools/train.bat` (requires Python 3) – updates `ai/strategy.lua`.
 5. Tests: `tools/tests/run_tests.sh` (Lua, via `LuaPlusC.exe`).

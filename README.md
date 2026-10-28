@@ -5,7 +5,7 @@ AI mod for **Forts**: extends the built-in AI (adaptive target selection, aggres
 Features and architecture: [SPEC.md](SPEC.md) (index of the files in `docs/`)
 
 ## Installation
-Place this folder as `fort-9000` in `<Steam>/steamapps/common/Forts/data/mods/` and enable *FORT 9000 (AI + Recorder)* in the game.
+Place this folder as `fort-9000` in `<Steam>/steamapps/common/Forts/data/mods/` and enable *FORT 9000 (AI)* in the game.
 
 ## Training
 After each play session, run `tools/train.bat` (requires Python 3).
