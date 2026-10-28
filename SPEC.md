@@ -20,6 +20,7 @@ The specification is split into files so a session only loads what it needs.
 | File | Content | Read when |
 |---|---|---|
 | [docs/ai.md](docs/ai.md) | AI features (targets, aggression, anti-air, fire control, tempo, safety valves, plan selection, assist mode), architecture, AI flow, configuration reference, installation | changing `ai/ai.lua`, `strategy.lua` or `fortplans.lua` |
+| [docs/forts-api.md](docs/forts-api.md) | the game's Lua scripting API: link, local copy `docs/references/FortsAPI.html`, how to look up a function | calling a game function from mod Lua |
 | [docs/recorder-training.md](docs/recorder-training.md) | recorder (`[CREC]` lines), `rec_fort.py`, training and the training loop | changing `script.lua` or `train.py` |
 | [docs/debugging.md](docs/debugging.md) | build hooks, `BUILD_ERROR`, `UNSTABLE`, `SHAPE`, `STRESS`, the `CS_UNSTABLE` probe | diagnosing refused devices or a deforming fort |
 | [docs/generator.md](docs/generator.md) | `tools/fortgen/` tools and all generator / variant options | changing `gen_fort.py` |
