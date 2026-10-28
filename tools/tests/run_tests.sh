@@ -73,6 +73,13 @@ check "Machine guns stay off the fort"           "machinegun offensive=0$"      
 check "Rockets held again after the window"      "t12:.24$"                      "$LUA" t_smoke.lua
 check "Rockets fire after MaxHold without smoke" "released after hold:.true$"    "$LUA" t_smoke.lua
 check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$"  "$LUA" t_smoke.lua
+check "Volley: firebeam waits for its partner"   "^partner reloading:.33$"       "$LUA" t_volley.lua
+check "Volley: built-in AI's shot held too"      "^base firebeam held:.true$"    "$LUA" t_volley.lua
+check "Volley: both fire as one group"           "^both ready:.31:31\+32,33$"    "$LUA" t_volley.lua
+check "Volley is logged"                         "VOLLEY 2 leader=31 ids=31,32$" "$LUA" t_volley.lua
+check "Volley waits for energy for all"          "VOLLEY_HOLD ready=2/2 energy=0$" "$LUA" t_volley.lua
+check "Volley: alone after MaxHold"              "^alone after hold:.(2[01])$"   "$LUA" t_volley.lua
+check "Volley: one built firebeam fires alone"   "^partner under construction:.31$" "$LUA" t_volley.lua
 check "Aggression keeps machine guns at 0"       "after think: MG offensive.0$"  "$LUA" t_fire_mg.lua
 check "Safety valve waits when metal is short"   "Rebuild\[59\] =.true"          "$LUA" t_failsafe_poor.lua
 check "Safety valve gives up when metal is there" "GAVE_UP action 59"            "$LUA" t_failsafe_rich.lua

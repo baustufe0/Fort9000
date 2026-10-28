@@ -35,6 +35,7 @@ The specification is split into files so a session only loads what it needs.
 | [docs/history/vanilla-6.md](docs/history/vanilla-6.md) | Vanilla-6 (modular fort) test matches | debugging a regression, "did we try X?" |
 | [docs/history/vanilla-7.md](docs/history/vanilla-7.md) | Vanilla-7 (a player's fort: the source match, the recorded version's tests, the generated version) | debugging a regression, "did we try X?" |
 | [docs/history/abyss-2.md](docs/history/abyss-2.md) | Abyss-2 (mortar battery, rebuilt 27.10.2026) test matches | debugging a regression, "did we try X?" |
+| [docs/history/abyss-3.md](docs/history/abyss-3.md) | Abyss-3 (firebeam rush, rebuilt 27.10.2026) test matches | debugging a regression, "did we try X?" |
 | [docs/history/probe-runs.md](docs/history/probe-runs.md) | the `CS_UNSTABLE` probe runs and their numbers | working on `CS_UNSTABLE` |
 
 A test result goes into the history file of its plan; what it changes in the current state goes into the map file (and the topic file, if it is a general rule).

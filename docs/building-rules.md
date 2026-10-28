@@ -104,8 +104,8 @@ need the factory, cannons the munitions plant. A player reached cannons, firebea
 - **Doors cut to the shot:** a door opens at `DoorSpeed` 50 per second (`MinLength` 49), so a 100-long door stands
   open ~2 s per shot, long enough to be sniped through. Only the part the shot passes must be a door: the game wants a
   corridor ~20 to each side at the muzzle widening to 40 at 1000 (`FireClearanceOffsetInner/Outer`). Barrel height
-  above the strut (`RecessionBox` offset): machine gun 40, sniper 50, 20mm cannon and laser 60, cannon 70; barrel
-  length 60 (machine gun), 100 (sniper, cannons), 58 (laser). Where the barrel exactly is, is not certain, so
+  above the strut (`RecessionBox` offset): machine gun 40, sniper 50, 20mm cannon, laser and firebeam 60, cannon 70;
+  barrel length 60 (machine gun), 100 (sniper, cannons), 58 (laser, firebeam). Where the barrel exactly is, is not certain, so
   `split_doors` covers both that height and `rules.py`'s muzzle (0.6 of the device's height), ±12.5 plus ~5 degrees of
   aim beyond a muzzle 44 behind the door. A door cut this way worked (Vanilla-2 sniper: 124 shots; Vanilla-3 20mm: 126).
   The new nodes need a brace that does not pass through a device's box (a brace through the sniper's spot got it

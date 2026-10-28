@@ -40,12 +40,15 @@ MIN_STRUT = 37.5        # StandardMinLength: the shortest strut the game allows
 DOOR_MIN = 49           # the shortest door (MinLength of door in building_materials.lua)
 # direct-fire weapons whose door is cut to the shot (split_doors): barrel height above the strut (the RecessionBox
 # offset of the weapon file) and barrel length
-DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser", "rocketemp", "rocket"}
-# rockets: weapon_pack's rocket.lua / rocketemp.lua (RecessionBox Offset y -65, BarrelLength 60)
-BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60, "rocketemp": 65, "rocket": 65}
-BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58, "rocketemp": 60, "rocket": 60}
+DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser", "rocketemp", "rocket", "firebeam"}
+# rockets: weapon_pack's rocket.lua / rocketemp.lua (RecessionBox Offset y -65, BarrelLength 60); firebeam:
+# weapon_pack's firebeam.lua (Offset y -60, BarrelLength 58, like the laser)
+BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60, "rocketemp": 65, "rocket": 65,
+            "firebeam": 60}
+BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58, "rocketemp": 60, "rocket": 60,
+              "firebeam": 58}
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
-                  "flak", "shotgun", "rocketemp", "rocket"}
+                  "flak", "shotgun", "rocketemp", "rocket", "firebeam"}
 # the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
 # put it on the highest storey
 LOBBED_WEAPONS = {"mortar", "mortar2", "smokebomb"}
@@ -465,25 +468,181 @@ VARIANTS = {
             ("weapons", ["cannon", "cannon"]),
         ],
     },
-    "scharfschuetzen": {
-        "title": "Sniper fortress: narrow tall tower with advanced front, many snipers and anti-air",
+    # Abyss-3, firebeam rush (27.10.2026; replaces the sniper fortress, won 1/1 against a player who barely fired).
+    # The factory line instead of Abyss-2's mortars: two firebeams as soon as the factory is finished, fired together at
+    # one spot (ai.lua, Fire.Volley: two beams cut what one only burns), the laser late as the end game. Built on
+    # Abyss-2 as it stands after its seventh test (docs/maps/abyss.md, docs/history/abyss-2.md):
+    # - economy first (test 6: the sniper's storey before the ledge mines made them late): the workshop, the tower with
+    #   its cliff anchors storey by storey (alone it leaned 40-170 in test 3), the three ledge mines with a turbine
+    #   after each, then the factory and, while it builds, the sniper's storey and the sniper;
+    # - the corner under the reactor's face closed (test 6: the player's rockets broke in there), the wood curtain in
+    #   front of the face down to y 405;
+    # - weapons on their own struts sloping toward the enemy right behind a door on their upper side (test 4: doors cut
+    #   for a level shot left the targeting ray on the armour above them): below the reactor the sniper and firebeam 1
+    #   in the lower block under the starting fort (Abyss-2's sniper and 20mm, which fired 54 times in test 7); above
+    #   the reactor firebeam 2 and the laser on Abyss-2's two cliff perches over the ledge mines (struts falling 10
+    #   degrees behind slanted doors; Abyss-2's cannons were placed there in test 7; the tower-top column went);
+    # - snap 50 and no cell under the starting fort's lower front face (test 5: a strut through the wall node
+    #   (-2100, 500) stalled the AI for three minutes).
+    # No mortar nest. Factory on Abyss-1's slot (y 405, enclosed, like Abyss-2's upgrade centre); the upgrade centre on
+    # its own slot inside the starting fort's top storey. Energy is what a beam costs (firebeam 1500, laser 5000; the
+    # factory 5000, the laser 6000 to place): a battery before the factory, three before the laser.
+    "firebeam": {
+        "title": "Firebeam rush: two firebeams firing together below and above the reactor, early sniper, laser as the end game",
         "shape": lambda x0, y0, x1, y1: (
-            (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -1900) or
-            (y0 >= -628 and y1 <= -250 and x0 >= -1900 and x1 <= -1700) or
-            (y0 >= -846 and y1 <= -746 and x0 >= -2400 and x1 <= -2100)),
+            (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -2000) or     # spine tower on the cliff wall
+            (y0 >= -846 and y1 <= -746 and x0 >= -2500 and x1 <= -2100) or     # ledge roof (mines, turbines)
+            (y0 >= 305 and y1 <= 405 and x0 >= -2000 and x1 <= -1900) or       # factory's cell
+            (y0 >= 405 and y1 <= 750 and x0 >= -2100 and x1 <= -1700)),        # lower block under the starting fort
+        # the early sniper is sold after 90 s in which it declined to fire with energy to spare (ai.lua, RETIRE)
+        "retire": {"sniper": 90},
+        "cfg": {
+            "cols": [-2500, -2400, -2300, -2200, -2100, -2000, -1900, -1800, -1700, -1600],
+            # Abyss-2's rows: the lower block's storeys 405..550 (the sniper's), 550..600 and 600..750 (firebeam 1's)
+            "rows": [-846, -746, -628, -502, -392, -250, -125, 5, 106, 206, 305, 405, 550, 600, 750],
+            # the grid point (-2100, 550) snaps onto the starting fort's wall node (-2100, 500) (Abyss-2, test 5)
+            "snap": 50,
+            "weapon_pick_best": True,
+            "bottom_up": True,
+            "crossbrace_y": -1000,
+            # the lower weapons' doors as on Abyss-2: each front post split where the weapon's strut ends, door above
+            # (from the storey top down to that node), armour below; both ends of the strut braced down-back below it
+            "split_edges": [
+                {"a": (-1900, 405), "b": (-1900, 550), "mid": (-1900, 505), "braces": [((-2000, 550), "bracing")]},
+                {"a": (-1700, 405), "b": (-1700, 550), "mid": (-1700, 487.5), "materials": {"a": "door", "b": "armour"},
+                 "braces": [((-1800, 550), "bracing")]},
+                {"a": (-1900, 600), "b": (-1900, 750), "mid": (-1900, 705), "braces": [((-2000, 750), "bracing")]},
+                {"a": (-1700, 600), "b": (-1700, 750), "mid": (-1700, 687.5), "materials": {"a": "door", "b": "armour"},
+                 "braces": [((-1800, 750), "bracing")]}],
+            # the sniper at Abyss-2's LinkT (0.425, muzzle ~16 behind its door). Firebeam and laser have a 58-long barrel
+            # (the 20mm's and the sniper's 100) and a centred body (half-width 50): the muzzle ~16 behind the door at
+            # LinkT = (strut length - 74) / length, 0.63 on the lower block's strut and the upper perch, 0.64 on the lower
+            # perch; their bodies end 24 behind the door (Abyss-2's cannons there: 7)
+            "weapon_struts": [((-1900, 505), (-1700, 487.5), 0.425, "sniper"),
+                              ((-1900, 705), (-1700, 687.5), 0.63, "firebeam"),
+                              ((-2140, -1040), (-1940, -1004.7), 0.64, "firebeam"),
+                              ((-2112, -1167), (-1917.4, -1132.72), 0.63, "laser")],
+            "lane_cells": [(-1900, 550), (-1800, 550), (-1900, 750), (-1800, 750)],
+            # the weapons' boxes kept free of solid struts (the posts at x -1800 they stand over, the storey tops),
+            # on the perches tilted with their struts
+            "clear_boxes": ["sniper", "firebeam", "laser"], "clear_boxes_tilted": True,
+            # machine guns (anti-air, later miniguns) in the tower's front cells; the starting fort's machine gun is
+            # upgraded too
+            "aa_y": -502,
+            "orig_devices": [((-1895, 110), (-1795, 114), "machinegun", 0.35)],
+            # batteries and stores inside the starting fort (Abyss-2's slots: not the two at y 500, the sniper's strut),
+            # then the lower block's bottom wall cell and the ledge cell beside the tower's top (behind the tower). Chosen
+            # freely, a battery stood beside firebeam 1 with the brace under its strut through its box; the wall cell
+            # of the sniper's storey has a sloping floor (the grid point (-2100, 550) snaps onto (-2100, 500))
+            "use_eco_slots": True,
+            "eco_slots": [((-2100, 200), (-1998, 206), 0.51), ((-2100, 400), (-2002, 405), 0.46),
+                          ((-1998, 206), (-1898, 210), 0.52),
+                          ((-2104.43, 750.32), (-2000, 750), 0.5), ((-2200, -746), (-2100, -746), 0.5)],
+            "clear_fire_lines": True,
+            # no connecting cell under the starting fort's lower front face (its floor would run through the starting
+            # fort's node (-1751, 310)); the corner is closed by explicit struts instead
+            "keepout": [(-1800, -1700, 305, 405)],
+        },
         "plan": [
-            ("aa", ["machinegun", "machinegun"]),
-            ("eco", ["mine", "turbine", "mine", "battery"]),
-            ("weapons", ["sniper", "sniper"]),
+            # the workshop (on the starting fort, no structure, 60 s) opens the factory; meanwhile the bottom mine, then
+            # the lower block's top storey and the early sniper (no tech) before the tower, as Abyss-2 puts its mortars
+            # first (test 1, 27.10.2026: the sniper after the factory, the AI's first shot came at ~300 s)
+            ("tech", ["workshop"]),
+            ("eco", ["mine"]),
+            ("build", [(-2100, 550), (-2000, 550), (-1900, 550), (-1800, 550)]),
+            ("struts", [((-1900, 505), (-1700, 487.5), "bracing")]),
+            ("weapons", ["sniper"]),
+            # the tower's first cell, its foot braced to the starting fort, then the tower tied to the cliff storey by
+            # storey with its growth (Abyss-2's anchors; built after the tower stood, they took its sag as rest length)
+            ("build", [(-2100, -250)]),
+            ("struts", [((-2000, -250), (-2049.41, -196.45), "bracing"), ((-2000, -250), (-1997.10, -95.84), "bracing")]),
+            ("struts", [((-2100, -392), (-2162.70, -386.08), "bracing"), ((-2120.45, -250), (-2162.70, -386.08), "bracing")]),
+            ("build", [(-2100, -392)]),
+            ("struts", [((-2100, -502), (-2178.13, -527.18), "bracing"), ((-2162.70, -386.08), (-2100, -502), "bracing")]),
+            ("build", [(-2100, -502)]),
+            ("struts", [((-2100, -628), (-2180.78, -672.55), "bracing"), ((-2178.13, -527.18), (-2100, -628), "bracing")]),
+            ("build", [(-2100, -628)]),
+            ("struts", [((-2180.78, -672.55), (-2100, -746), "bracing")]),
+            # metal and energy first (test 6): the three ledge mines, a turbine after each
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            # the factory costs 800 metal and 5000 energy: a store (900 metal) and a battery (5000 energy) first
+            ("eco", ["battery", "store"]),
+            ("tech", ["factory"]),
+            # the factory enclosed under the starting fort (its cell and the cell in front, where its 180-wide body
+            # reaches; Abyss-2's upgrade centre on this slot hung on a bare strut and was sniped)
+            ("build", [(-1900, 405)]),
+            # while the factory builds (90 s): the corner under the starting fort's lower front face closed (Abyss-2's
+            # struts: from its node (-1751, 315) up to the lower block's top front nodes, the armour front post from its
+            # node (-1695, 223) down to (-1700, 405))
+            ("struts", [((-1751.69, 314.55), (-1700, 405), "bracing"), ((-1751.69, 314.55), (-1800, 405), "bracing"),
+                        ((-1694.52, 223.44), (-1700, 405), "armour")]),
+            # firebeam 1's storeys at the bottom of the lower block (the wall cell last: its foundation (-2104, 750) is
+            # 150.4 below the node above it, so it is built sideways), its strut
+            ("build", [(-2100, 600), (-2000, 600), (-1900, 600), (-1800, 600)]),
+            ("build", [(-1800, 750), (-1900, 750), (-2000, 750), (-2100, 750)]),
+            ("struts", [((-1900, 705), (-1700, 687.5), "bracing")]),
+            # firebeam 2's perch on the cliff above the ledge mines (Abyss-2's lower cannon perch): from the tower's top
+            # one cell of background bracing (y -846..-950, the turbines' only wind passes there), the strut falling 10
+            # degrees from a node off the rock, tied to two anchors on the upper cliff face, to a front node; its door
+            # square to the strut, the laser's perch strut on top of it
+            ("struts", [((-2100, -846), (-2100, -950), "backbracing"), ((-2000, -846), (-2000, -950), "backbracing"),
+                        ((-2100, -950), (-2000, -950), "backbracing"), ((-2100, -846), (-2000, -950), "backbracing"),
+                        ((-2000, -846), (-2100, -950), "backbracing"),
+                        ((-2100, -950), (-2182.73, -1050.25), "backbracing"), ((-2100, -950), (-2140, -1040), "bracing"),
+                        ((-2182.73, -1050.25), (-2140, -1040), "bracing"), ((-2140, -1040), (-2162.18, -1110.06), "bracing"),
+                        ((-2000, -950), (-1940, -1004.7), "backbracing"), ((-2100, -950), (-1940, -1004.7), "backbracing"),
+                        ((-2140, -1040), (-1940, -1004.7), "bracing")]),
+            ("struts", [((-1940, -1004.7), (-1917.4, -1132.72), "door"), ((-2140, -1040), (-2112, -1167), "bracing"),
+                        ((-2162.18, -1110.06), (-2112, -1167), "bracing"), ((-2112, -1167), (-2148.94, -1210.1), "bracing"),
+                        ((-2112, -1167), (-1917.4, -1132.72), "bracing")]),
+            # the perch hidden (test 1: the player saw both cliff weapons placed): its quadrilateral (weapon strut, door,
+            # the strut above, the back edge) closed into four triangles of background bracing around a node in its back
+            # part, clear of the firebeam's box (a diagonal across it would be 236-241 long, the game allows 218)
+            ("struts", [((-2140, -1040), (-2090, -1100), "backbracing"), ((-2090, -1100), (-2112, -1167), "backbracing"),
+                        ((-2090, -1100), (-1940, -1004.7), "backbracing"), ((-2090, -1100), (-1917.4, -1132.72), "backbracing")]),
+            ("weapons", ["firebeam", "firebeam"]),
+            # two layers of wood in front of the starting fort's lower front face (Abyss-2's reactor wall), braced to its
+            # nodes (-1746, 112), (-1695, 223), (-1752, 315), and on down in front of the closed corner to y 405 (not
+            # further: in front of the sniper's door it would have to be background bracing)
+            ("struts", [((-1746.18, 112.27), (-1655, 112), "bracing"), ((-1694.52, 223.44), (-1650, 223), "bracing"),
+                        ((-1751.69, 314.55), (-1655, 315), "bracing"),
+                        ((-1655, 112), (-1650, 223), "bracing"), ((-1650, 223), (-1655, 315), "bracing"),
+                        ((-1746.18, 112.27), (-1650, 223), "bracing"), ((-1694.52, 223.44), (-1655, 112), "bracing"),
+                        ((-1694.52, 223.44), (-1655, 315), "bracing"), ((-1751.69, 314.55), (-1650, 223), "bracing"),
+                        ((-1655, 112), (-1615, 112), "bracing"), ((-1650, 223), (-1610, 223), "bracing"),
+                        ((-1655, 315), (-1615, 315), "bracing"),
+                        ((-1615, 112), (-1610, 223), "bracing"), ((-1610, 223), (-1615, 315), "bracing"),
+                        ((-1655, 112), (-1610, 223), "bracing"), ((-1650, 223), (-1615, 112), "bracing"),
+                        ((-1650, 223), (-1615, 315), "bracing"), ((-1610, 223), (-1655, 315), "bracing")]),
+            ("struts", [((-1655, 315), (-1655, 405), "bracing"), ((-1615, 315), (-1615, 405), "bracing"),
+                        ((-1700, 405), (-1655, 405), "bracing"), ((-1655, 405), (-1615, 405), "bracing"),
+                        ((-1700, 405), (-1655, 315), "bracing"), ((-1655, 315), (-1615, 405), "bracing"),
+                        ((-1615, 315), (-1655, 405), "bracing")]),
+            ("aa", ["machinegun"]),
+            # the upgrade centre, then what needs no tech while it builds (60 s)
             ("tech", ["upgrade"]),
-            ("weapons", ["sniper", "machinegun"]),
-            ("eco", ["mine", "turbine", "store", "mine"]),
-            ("upgrades", ["sniper2", "sniper2", "minigun"]),
-            ("weapons", ["sniper", "machinegun"]),
-            ("upgrades", ["sniper2", "minigun"]),
-            ("eco", ["turbine", "battery"]),
+            ("eco", ["battery"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["turbine"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2", "turbine2"]),
+            ("upgrades", ["minigun", "minigun", "minigun"]),
+            # end game: the laser (1000 metal, 6000 energy to place: a third battery) on Abyss-2's upper cannon perch,
+            # its door square to the strut and the roof strut over it
+            ("eco", ["battery"]),
+            ("struts", [((-1917.4, -1132.72), (-1894.81, -1260.74), "door"), ((-2112, -1167), (-2095, -1297), "bracing"),
+                        ((-2095, -1297), (-2146.48, -1249.93), "bracing"), ((-2095, -1297), (-2158.66, -1329.9), "bracing"),
+                        ((-2095, -1297), (-1894.81, -1260.74), "bracing")]),
+            # hidden like the firebeam's perch: four triangles of background bracing around a node in the back part
+            ("struts", [((-2112, -1167), (-2070, -1225), "backbracing"), ((-2070, -1225), (-2095, -1297), "backbracing"),
+                        ((-2070, -1225), (-1917.4, -1132.72), "backbracing"), ((-2070, -1225), (-1894.81, -1260.74), "backbracing")]),
+            ("weapons", ["laser"]),
+            ("upgrades", ["mine2", "mine2"]),
         ],
-        "armour_roof": True,
     },
     "schwer": {
         "title": "Heavy front: wide, heavily armoured block, munitions plant early, two cannons",
@@ -1740,8 +1899,11 @@ class Plan:
             if d != dev or n in used:
                 continue
             x0, x1, y = min(pa[0], pb[0]), max(pa[0], pb[0]), (pa[1] + pb[1]) / 2
-            if not any(abs(rows[c[1]] - y) < 2 and self.cell_x(c)[0] <= x0 + 1 and self.cell_x(c)[1] >= x1 - 1
-                       for c in self.all_cells):
+            # a strut of the starting fort (both ends its nodes, e.g. Abyss-3's laser on its machine-gun strut, whose
+            # cell below is the reactor's), or one outside the grid: it stands already
+            on_orig = all(any(math.dist(q, p) <= 5 for q in self.orig.values()) for p in (pa, pb))
+            if on_orig or not any(abs(rows[c[1]] - y) < 2 and self.cell_x(c)[0] <= x0 + 1 and self.cell_x(c)[1] >= x1 - 1
+                                  for c in self.all_cells):
                 ka, kb = self.orig_node_at(pa), self.orig_node_at(pb)
                 if ka and kb:
                     # a strut of the starting fort outside the grid (its lower front face): it stands already
@@ -1860,8 +2022,9 @@ class Plan:
         for wc in self.cfg.get("weapon_cells", []):          # (left x, floor y, device[, LinkT])
             x0, floor_y, d = wc[:3]
             for c in sorted(self.cells):
+                # a cell a build step kept for this device (slot_cells), unless its device stands there already
                 if d == dev and abs(self.cell_x(c)[0] - x0) < 10 and rows[c[1] + 1] == floor_y and (
-                        c not in self.devices or self.slot_cells.get(c) == d):
+                        c not in self.devices or (self.slot_cells.get(c) == d and not any(p[4] == c for p in self.placed))):
                     if len(wc) > 3:
                         self.weapon_t_at[c] = wc[3]
                     return c

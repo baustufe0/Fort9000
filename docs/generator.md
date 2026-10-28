@@ -25,17 +25,18 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `split_edges [{a, b, mid, braces, materials}]`: the strut a-b is built in two halves through a node at mid (also when a node is created along it), braced to the given points; `materials {"a", "b"}` per half. Used for two mortars on one 155-wide floor and for Vanilla-2's short sniper door.
 - `mortar_slots [(node A, node B, LinkT)]`: explicit struts for the first mortars (the cell above is built first); their upgrades go on the same strut; `reserve_mortar` skips them.
 - `weapon_slots [(node A, node B, LinkT, device)]`: explicit roof struts for these weapons, taken in order; a strut of
-  the starting fort with no grid cell under it is used as it stands (Vanilla-7's low firebeam); also a half of a
+  the starting fort with no grid cell under it, or with both ends on starting-fort nodes (Abyss-3's laser on the
+  starting fort's machine-gun strut, positions as in the base plan), is used as it stands (Vanilla-7's low firebeam); also a half of a
   split edge, so two devices share one cell's roof; Vanilla-5's prow-roof EMP rocket and smoke launcher); the cell below is
   built first, the upgrade goes on the same strut.
-- `weapon_cells [(left x, floor y, device[, LinkT])]`: a weapon's cell, also one that is not at the front (it fires through the cells ahead); `lane_cells [(left x, floor y)]`: cells kept as a fire lane (door in front, background diagonals, no device).
+- `weapon_cells [(left x, floor y, device[, LinkT])]`: a weapon's cell, also one that is not at the front (it fires through the cells ahead); several entries for one device type are taken in order, also when a `build` step kept the cell for it (Abyss-3's two firebeams); `lane_cells [(left x, floor y)]`: cells kept as a fire lane (door in front, background diagonals, no device).
 - `weapon_pick_best`: no random pick among the two best cells; `small_low_first`: small direct weapons in the lowest front cell first; `sniper_t`: LinkT of snipers.
 - `roof_weapon_cells [(left x, roof y)]`: the only roofs for `roof_weapons` (e.g. machine guns on the gallery roof, out of the mortars' arcs); `roof_weapon_low_first`: the lowest roof first; roof mortars check their arc (`mortar_open_arc`).
 - `turbine_floor_t`: LinkT of gallery turbines (spacing to other devices); `turbine_avoid` also applies to gallery turbines.
   `turbine_floor_y` may be a list (stacked galleries, filled in order) and `turbine_floor_x (x0, x1)` limits them to
   those columns (Vanilla-7's turbine column); `hidden_box` may be a list of boxes.
 - `tower_connect.skip_floors`: storeys left out of the storey-by-storey rule (the cage on the tower roof rests on the top storey only).
-- `split_doors`: final pass, the door post of a sniper, cannon, 20mm cannon, laser or (EMP) rocket is rebuilt in up to three pieces (armour, door, armour) with the shortest door that covers the shot (both barrel estimates +- margin, see [building-rules.md](building-rules.md)), each new node braced to the cell's back corners by a brace that does not pass through a device's box in that cell; without such a brace the door is not split. Machine-gun doors stay full (anti-air).
+- `split_doors`: final pass, the door post of a sniper, cannon, 20mm cannon, laser, firebeam or (EMP) rocket is rebuilt in up to three pieces (armour, door, armour) with the shortest door that covers the shot (both barrel estimates +- margin, see [building-rules.md](building-rules.md)), each new node braced to the cell's back corners by a brace that does not pass through a device's box in that cell; without such a brace the door is not split. Machine-gun doors stay full (anti-air).
 - Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there;
   A and B may be grid nodes or nodes of the starting fort (e.g. Vanilla-5's armour shield in front of its smoke
   launcher, its long brace across the starting fort).

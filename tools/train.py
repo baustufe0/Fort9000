@@ -87,7 +87,9 @@ DEFAULTS = {
                                                             "missile2inv", "rocket", "rocketemp"]}},
              # smoke before rockets (ai.lua, Fire.SmokeCover)
              "SmokeCover": {"Enabled": True, "Smoke": {"smokebomb": True, "smokebomb2": True},
-                            "Rockets": {"rocket": True, "rocketemp": True}, "MinDelay": 2, "Window": 10, "MaxHold": 30}},
+                            "Rockets": {"rocket": True, "rocketemp": True}, "MinDelay": 2, "Window": 10, "MaxHold": 30},
+             # firebeams fire together at the same spot (ai.lua, Fire.Volley)
+             "Volley": {"Enabled": True, "Types": {"firebeam": True}, "MaxHold": 20}},
     "Tempo": {"UpdatePeriod": 2.0, "UpdatePeriodEasy": 4.0, "UpdatePeriodNormal": 2.0, "UpdatePeriodHard": 1.0, "UpdateAfterRebuildDelay": 0.625, "ConstructionMean": 20, "ConstructionMin": 12,
               "NonConstructionMean": 6, "NonConstructionMin": 3, "RepairPeriod": 6,
               "RepairPeriodEasy": 12, "RepairPeriodNormal": 6, "RepairPeriodHard": 3},

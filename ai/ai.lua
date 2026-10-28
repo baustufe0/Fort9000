@@ -52,7 +52,10 @@ local CAI_Defaults =
 			Threats = { mortar = true, mortar2 = true, missile = true, missile2 = true, missileinv = true, missile2inv = true,
 				rocket = true, rocketemp = true } },
 		SmokeCover = { Enabled = true, Smoke = { smokebomb = true, smokebomb2 = true }, Rockets = { rocket = true, rocketemp = true },
-			MinDelay = 2, Window = 10, MaxHold = 30 } },
+			MinDelay = 2, Window = 10, MaxHold = 30 },
+		-- Volley: weapons of these types fire together as one group at the same spot (two beams cut what one only
+		-- burns); a ready one waits for the others, after MaxHold seconds it fires alone
+		Volley = { Enabled = true, Types = { firebeam = true }, MaxHold = 20 } },
 	Tempo = { UpdatePeriod = 2.0, UpdatePeriodEasy = 4.0, UpdatePeriodNormal = 2.0, UpdatePeriodHard = 1.0, UpdateAfterRebuildDelay = 0.625, ConstructionMean = 20, ConstructionMin = 12,
 		NonConstructionMean = 6, NonConstructionMin = 3, RepairPeriod = 6,
 		RepairPeriodEasy = 12, RepairPeriodNormal = 6, RepairPeriodHard = 3 },
@@ -423,12 +426,15 @@ function CAI_ApplyFire()
 	data.CAI.lastSmoke = nil
 	data.CAI.rocketHoldSince = nil
 	data.CAI.smokeCover = f.SmokeCover or CAI_Defaults.Fire.SmokeCover
+	data.CAI.volley = f.Volley or CAI_Defaults.Fire.Volley
+	data.CAI.volleyHoldSince = nil
 	if ScheduledCallCountOfFunc(CAI_FireTick) == 0 then
 		ScheduleCall(f.Interval or 1, CAI_FireTick)
 	end
 	return "period=" .. tostring(f.Interval) .. "s weapons=" .. tostring(f.WeaponsPerTick) .. " always=" .. tostring(f.AlwaysOffensive)
 		.. " duringRebuild=x" .. tostring(f.RebuildFireFactor) .. " noOffence=" .. table.concat(noList, ",")
 		.. " smokeCover=" .. tostring(data.CAI.smokeCover and data.CAI.smokeCover.Enabled or false)
+		.. " volley=" .. tostring(data.CAI.volley and data.CAI.volley.Enabled or false)
 end
 
 -- Smoke before rockets (Fire.SmokeCover)
@@ -516,8 +522,80 @@ end
 
 -- the built-in AI fires weapons itself too: rockets are held here until the smoke covers them
 local CAI_BaseTryFireGun = TryFireGun
+
+-- Volleys (Fire.Volley): weapons of these types fire together, as one group, at the same spot. The built-in AI
+-- fires a group (TryFireGun with useGroup) at the leader's target, so two firebeams cut the same struts (a player's
+-- laser and firebeam fired together cut two woodspam layers and the starting fort's front in seconds, Vanilla
+-- 25.10.2026); weapon_pack gives firebeams no grouping affinity to each other, so the built-in AI fires them alone.
+-- A ready weapon waits until every fully built weapon of the volley types is ready and the team can pay for all
+-- their shots; after MaxHold seconds (fire clock) it fires alone. With only one such weapon nothing changes. A volley
+-- skips the built-in AI's random fire chance (as its own group members do).
+--   VOLLEY <n> leader=<id> ids=<id,...>       a volley fired (doors are opened first by the built-in AI)
+--   VOLLEY_HOLD ready=<n>/<m> energy=<0|1>    once when the wait starts or its reason changes
+--   VOLLEY_TIMEOUT <type> <id> after=<s>s     fires alone after MaxHold
+local function CAI_VolleyMembers(v)
+	local out = {}
+	for _, id in ipairs(CAI_WeaponsOf(v.Types)) do
+		if type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id) then out[#out + 1] = id end
+	end
+	return out
+end
+
+-- the team can pay for every shot of the group; true where the game functions are missing (tests). The costs are
+-- resource vectors in the game: the sum starts from the first one (0 + vector raised "attempt to index a number
+-- value" in every volley of the first Abyss-3 match, 27.10.2026)
+local function CAI_CanAffordGroup(ids)
+	if type(GetWeaponFireCost) ~= "function" or type(CanAfford) ~= "function" then return true end
+	local total = GetWeaponFireCost(ids[1])
+	for k = 2, #ids do total = total + GetWeaponFireCost(ids[k]) end
+	return CanAfford(GetTeamResources(teamId) - total)
+end
+
+-- true if the shot of weapon id was handled here (fired as a volley or held); false: fire it as usual
+function CAI_Volley(id)
+	local st = data.CAI
+	local v = st and st.volley
+	if not (v and v.Enabled and type(GetDeviceType) == "function" and v.Types[GetDeviceType(id)]) then return false end
+	if not CAI_Ready(id) then return false end          -- reloading or a door action pending: the built-in AI handles it
+	local all = CAI_VolleyMembers(v)
+	if #all < 2 then return false end
+	local group = { id }
+	for _, w in ipairs(all) do
+		if w ~= id and CAI_Ready(w) then group[#group + 1] = w end
+	end
+	local afford = CAI_CanAffordGroup(group)
+	local now = st.fireClock or 0
+	if #group >= #all and afford then
+		st.volleyHoldSince, st.volleyHoldWhy = nil, nil
+		CAI_Log("VOLLEY " .. #group .. " leader=" .. id .. " ids=" .. table.concat(group, ","))
+		CAI_BaseTryFireGun(id, group)
+		return true
+	end
+	if st.volleyHoldSince == nil then st.volleyHoldSince = now end
+	if now - st.volleyHoldSince >= (v.MaxHold or 20) then
+		CAI_Log("VOLLEY_TIMEOUT " .. GetDeviceType(id) .. " " .. id .. " after=" .. (now - st.volleyHoldSince) .. "s")
+		st.volleyHoldSince, st.volleyHoldWhy = nil, nil
+		return false
+	end
+	local why = "ready=" .. #group .. "/" .. #all .. " energy=" .. (afford and 1 or 0)
+	if st.volleyHoldWhy ~= why then
+		st.volleyHoldWhy = why
+		CAI_Log("VOLLEY_HOLD " .. why)
+	end
+	return true
+end
+
 function TryFireGun(id, useGroup)
 	local hold = false
+	-- volley weapons wait for each other (also when the built-in AI picks one); a group already firing goes on
+	if useGroup == nil and data.CAI and data.CAI.volley then
+		local ok, res = pcall(CAI_Volley, id)
+		if not ok then
+			CAI_Log("ERROR volley: " .. tostring(res))
+		elseif res then
+			return
+		end
+	end
 	if useGroup == nil and data.CAI and data.CAI.smokeCover then   -- a group already firing is not interrupted
 		local ok, res = pcall(function()
 			local sc = data.CAI.smokeCover
@@ -648,11 +726,24 @@ function CAI_FireTick()
 		local checked = 0
 		-- smoke cover: under smoke the ready rockets fire first; a ready rocket without smoke fires the smoke
 		local sc = st.smokeCover
-		local skip = no
+		local skip = {}
+		for k in pairs(no) do skip[k] = true end
+		-- volleys: one ready volley weapon per tick starts the volley or holds (CAI_Volley); the round robin skips
+		-- the volley types without using up a turn (with fewer than two of them they fire there as usual)
+		local v = st.volley
+		if v and v.Enabled and type(GetDeviceType) == "function" and #CAI_VolleyMembers(v) >= 2 then
+			for _, id in ipairs(CAI_VolleyMembers(v)) do
+				if CAI_Ready(id) then
+					st.fireAttempts = st.fireAttempts + 1
+					TryFireGun(id)
+					checked = checked + 1
+					break
+				end
+			end
+			for k in pairs(v.Types) do skip[k] = true end
+		end
 		if sc and sc.Enabled then
 			-- smoke launchers only fire as cover for the rockets (CAI_FireSmokeFirst), never in the round robin
-			skip = {}
-			for k in pairs(no) do skip[k] = true end
 			for k in pairs(sc.Smoke) do skip[k] = true end
 			local rockets = {}
 			for _, id in ipairs(CAI_WeaponsOf(sc.Rockets)) do
