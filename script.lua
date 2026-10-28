@@ -4,9 +4,11 @@
 -- .dev/tools/train.py learns from it. The recorder only reads and changes nothing in the game.
 --
 -- Line format (f = game frame):
---   [CREC] f=0 START v=3            (restart=1 when the player restarts the match: the game rewinds to frame 2
+--   [CREC] f=0 START v=4            (restart=1 when the player restarts the match: the game rewinds to frame 2
 --                                    and keeps the mod script's state, so the recorder starts over itself)
---   [CREC] f=250 SNAP s=1 m=1200 e=3400 dev=cannon:2,mortar:1 shots=cannon:3
+--   [CREC] f=250 SNAP s=1 t=1 m=1200 e=3400 dev=cannon:2,mortar:1 shots=cannon:3
+--   [CREC] f=250 SNAP s=2 t=102,202 m=1500 e=6000 dev=... shots=... tm=102:700:3500,202:800:2500
+--                                    (2v2: m/e summed over the side's teams, tm = per team)
 --   [CREC] f=260 BUILT s=2 d=sniper
 --   [CREC] f=300 LOST s=1 i=17 d=mortar
 --   [CREC] f=900 RESULT w=1
@@ -19,7 +21,7 @@
 --   [CREC] f=51 GDEV s=1 t=1 i=18 d=mine p=-3029.41,700.00
 --   [CREC] f=60 DEL s=1 i=17 d=mortar a=55 b=58 pa=-2945.11,206.49 pb=-2846.18,203.99
 
-local REC_VERSION = 3
+local REC_VERSION = 4
 local REC_SNAP_FRAMES = 125
 local REC_SIDES = (type(MAX_SIDES) == "number") and MAX_SIDES or 100
 
@@ -73,25 +75,38 @@ local function RecSnapshot()
 	for side = 1, 2 do
 		local devices = {}
 		local count = GetDeviceCountSide(side) or 0
-		local team = nil
+		local teamSeen, teams = {}, {}
 		for i = 0, count - 1 do
 			local id = GetDeviceIdSide(side, i)
 			local saveName = GetDeviceType(id)
 			if saveName then
 				devices[saveName] = (devices[saveName] or 0) + 1
 			end
-			-- real team number (e.g. 102) instead of side number, otherwise GetTeamResources returns starting values
-			if team == nil and saveName == "reactor" and type(GetDeviceTeamIdActual) == "function" then
-				team = GetDeviceTeamIdActual(id)
+			-- real team numbers (e.g. 102 and 202 in 2v2) instead of the side number, otherwise GetTeamResources
+			-- returns starting values
+			if saveName == "reactor" and type(GetDeviceTeamIdActual) == "function" then
+				local team = GetDeviceTeamIdActual(id)
+				if type(team) == "number" and not teamSeen[team] then
+					teamSeen[team] = true
+					teams[#teams + 1] = team
+				end
 			end
 		end
-		local metal, energy = -1, -1
-		local ok, res = pcall(GetTeamResources, team or side)
-		if ok and res then
-			metal, energy = res.metal, res.energy
+		if #teams == 0 then teams[1] = side end
+		table.sort(teams)
+		-- m/e = sum over all teams of the side, tm = per team (only with several teams)
+		local metal, energy, perTeam = -1, -1, {}
+		for _, team in ipairs(teams) do
+			local ok, res = pcall(GetTeamResources, team)
+			local m, e = -1, -1
+			if ok and res then m, e = res.metal, res.energy end
+			if type(m) == "number" and m >= 0 then metal = math.max(metal, 0) + m end
+			if type(e) == "number" and e >= 0 then energy = math.max(energy, 0) + e end
+			perTeam[#perTeam + 1] = tostring(team) .. ":" .. RecNum(m) .. ":" .. RecNum(e)
 		end
-		RecLog("SNAP s=" .. side .. " t=" .. tostring(team or side) .. " m=" .. RecNum(metal) .. " e=" .. RecNum(energy)
-			.. " dev=" .. RecDump(devices) .. " shots=" .. RecDump(recShots[side]))
+		RecLog("SNAP s=" .. side .. " t=" .. table.concat(teams, ",") .. " m=" .. RecNum(metal) .. " e=" .. RecNum(energy)
+			.. " dev=" .. RecDump(devices) .. " shots=" .. RecDump(recShots[side])
+			.. (#teams > 1 and (" tm=" .. table.concat(perTeam, ",")) or ""))
 		recShots[side] = {}
 	end
 end

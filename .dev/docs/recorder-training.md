@@ -6,8 +6,8 @@
 
 | Line | Content |
 |---|---|
-| `START v=3` | Start; `restart=1` when the player restarts the match (the game rewinds to frame 2 without reloading the script, the frame jumps back) |
-| `SNAP s=… m=… e=… dev=… shots=…` | every 125 frames: metal, energy, devices and shots per side |
+| `START v=4` | Start; `restart=1` when the player restarts the match (the game rewinds to frame 2 without reloading the script, the frame jumps back) |
+| `SNAP s=… t=… m=… e=… dev=… shots=… [tm=…]` | every 125 frames: metal, energy, devices and shots per side; `t=` the teams of the side (from their reactors), in 2v2 (e.g. `t=102,202`, since v=4) `m`/`e` are the sum of the teams and `tm=<team>:<metal>:<energy>,…` lists each team |
 | `BUILT` / `LOST s=… i=<device id> d=…` | device completed / destroyed |
 | `NODE` / `LINK` / `DEV` / `GDEV` | node, strut, device on a strut (nodes, LinkT, `u=` upgraded device), ground device built (both sides; positions, team `t=`) |
 | `UNNODE` / `UNLINK` / `DEL` | node, strut destroyed; device scrapped |
@@ -28,6 +28,11 @@ It learns `TargetValue` (Heavy/Small) and `Aggression` (Early/Mid/Late). `--stre
   recorder wrote `restart=1`; it keeps the AI plan of the restarted match). Lines after `Starting instant replay` are
   ignored until the next map is loaded. Matches that must not be learned from (e.g. the player's own fort collapsed)
   go into `EXCLUDED` in `train.py` by their `game_key`; `report` prints how many were excluded.
+- 2v2: the AI plans are read per team (`ActivateAI`/`PLAN` of 102 and 202), so both AI forts of a side count in the
+  wins per plan (`Game.ai_plans`; `report` counts AI forts, not matches). `Game.ai_sides` keeps one plan per side
+  (the last team) only for `game_key`, so the keys of archived matches and `EXCLUDED` stay valid. AI teams activated
+  for a map without a match (menu background) are dropped at the next `Loading map`. Logs from before recorder v=4
+  have the metal of only one team per side in 2v2.
 - Learning is global, not per map (the map is in the log as `Loading map maps/<Map>/...`). The build tempo is not
   learned; it comes from the defaults (`DEFAULTS["Tempo"]` in `train.py`) and per-map `Strategy` overrides.
 

@@ -163,7 +163,8 @@ class Game:
         self.winner = None
         self.ai_teams = set()         # sides on which the FORT 9000 AI ran
         self.ai_end = []
-        self.ai_sides = {}            # side -> build plan of the AI (according to the game log)
+        self.ai_sides = {}            # side -> build plan of the AI (one per side, part of game_key)
+        self.ai_plans = []            # (side, plan) for every AI team, e.g. two on side 2 in 2v2
         self.probe = False            # CS_UNSTABLE probe run (testing only, not learned from)
 
     @property
@@ -185,11 +186,15 @@ def parse_games(lines, source):
             continue
         if NEW_MAP_MARK in line:
             in_replay = False
+            # AI teams of a map loaded without a match (menu background) must not reach the next match
+            pending_ai = {}
+            pending_plan = {}
         if RESTART_MARK in line:
             in_replay = False
             # the same AI teams and plans as the match that is restarted
             g = Game(source)
             g.ai_sides = dict(games[-1].ai_sides) if games else {}
+            g.ai_plans = list(games[-1].ai_plans) if games else []
             games.append(g)
             restarted = g
             continue
@@ -199,11 +204,11 @@ def parse_games(lines, source):
         if a:
             team, members, fort = int(a.group(1)), int(a.group(2)), a.group(3).strip()
             if members == 0:
-                pending_ai[team % 100] = os.path.basename(fort) or "?"
+                pending_ai[team] = os.path.basename(fort) or "?"   # by team: 102 and 202 share side 2
             continue
         pl = PLAN_RE.search(line)
         if pl:
-            pending_plan[int(pl.group(1)) % 100] = pl.group(2)
+            pending_plan[int(pl.group(1))] = pl.group(2)
             continue
         m = LINE_RE.search(line)
         if m:
@@ -216,10 +221,14 @@ def parse_games(lines, source):
             if kind == "START" or g is None:
                 g = Game(source)
                 # the FORT 9000 AI's own plan takes precedence over the one chosen by the game
-                for side, plan in pending_plan.items():
-                    if side in pending_ai and plan != "original":
-                        pending_ai[side] = plan
-                g.ai_sides = pending_ai
+                for team, plan in pending_plan.items():
+                    if team in pending_ai and plan != "original":
+                        pending_ai[team] = plan
+                g.ai_plans = [(team % 100, plan) for team, plan in sorted(pending_ai.items())]
+                # one plan per side as before (the last team wins), so game_key and EXCLUDED stay valid
+                g.ai_sides = {}
+                for team, plan in pending_ai.items():
+                    g.ai_sides[team % 100] = plan
                 pending_ai = {}
                 pending_plan = {}
                 games.append(g)
@@ -449,11 +458,12 @@ def load_archive():
 
 def report(games, learned_types, aggression, strategy):
     print("\nMatches in archive: %d (with result: %d)" % (len(games), sum(1 for g in games if g.winner)))
-    ai_games = [(side, plan, g.winner) for g in games if g.winner for side, plan in g.ai_sides.items()]
+    # every AI team counts (2v2 with two AIs on side 2: both plans get the match)
+    ai_games = [(side, plan, g.winner) for g in games if g.winner for side, plan in g.ai_plans]
     if not ai_games:  # old logs without ActivateAI lines: side 2 was the AI
         ai_games = [(2, "?", g.winner) for g in games if g.winner]
     wins = sum(1 for side, plan, w in ai_games if side == w)
-    print("AI result: %d wins in %d matches" % (wins, len(ai_games)))
+    print("AI result: %d wins in %d AI forts" % (wins, len(ai_games)))
     per_plan = defaultdict(lambda: [0, 0])
     for side, plan, w in ai_games:
         per_plan[plan][1] += 1

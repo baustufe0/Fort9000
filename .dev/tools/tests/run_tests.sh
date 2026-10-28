@@ -108,8 +108,10 @@ check "Probe bypasses the build diagnostics"     "^0$"                          
 check "Probe measures the load with Hold"        "PROBE LOAD 1 cannon 503-501 s=0.300 sn=0.310 top=0.400:504-505 d=0,4,0,0$" "$LUA" t_probe.lua
 check "Probe removes devices, AI runs again"     "removed=901,902,903,904,905,906,907 disabled after=false$" "$LUA" t_probe.lua
 check "Recorder"                                 "RESULT w="                     "$LUA" t_recorder.lua 1
+check "Recorder 2v2 sums the teams of a side"     "SNAP s=2 t=102,202 m=1300 e=6000 dev=mine:1,reactor:2 shots= tm=102:600:3000,202:700:3000$" "$LUA" t_recorder2v2.lua
+check "Recorder 1v1 snapshot unchanged"           "SNAP s=1 t=1 m=600 e=3000 dev=reactor:1 shots=$" "$LUA" t_recorder2v2.lua
 check "Recorder starts over on a restart"        "^-- restart$" "$LUA" t_restart.lua
-check "Recorder writes START restart=1"          "^\[CREC\] f=2 START v=3 restart=1$" "$LUA" t_restart.lua
+check "Recorder writes START restart=1"          "^\[CREC\] f=2 START v=4 restart=1$" "$LUA" t_restart.lua
 check "Recorder snapshots after a restart"       "^\[CREC\] f=127 SNAP s=1" "$LUA" t_restart.lua
 check "Recorder logs build events"               "LINK s=1 t=1 a=7 b=500 m=bracing pa=-3093.19,205.21 pb=-3100.00,105.00$" "$LUA" t_buildrec.lua 1
 check "Recorder logs upgrades"                   "DEV s=2 t=102 i=903 d=minigun a=9 b=8 lt=0.60 .* u=900$" "$LUA" t_buildrec.lua 2
