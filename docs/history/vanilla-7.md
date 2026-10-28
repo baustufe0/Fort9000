@@ -1,7 +1,8 @@
 # Vanilla-7 history
 
 Vanilla-7 is a player's fort: first recorded (tests 1-2), then generated from its ideas
-([maps/vanilla.md](../maps/vanilla.md#vanilla-7--frame-fort-a-players-fort-generated)).
+(variant `frame` of `gen_fort.py`). **Removed on 28.10.2026** (plan, its VanillaLong conversion and the generator
+variant; recover them from git history before commit "Remove Vanilla-7").
 
 ## Source match (26.10.2026): the player against Vanilla-5
 
