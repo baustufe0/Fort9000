@@ -10,7 +10,6 @@ rules are in [building-rules.md](../building-rules.md).
 |---|---|---|---|
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
-| Vanilla-4 | two cannons | mine, workshop, roof turbine, machine gun, mine | build tests only (cannons built and fired) |
 | Vanilla-5 | two EMP rockets (later rockets) behind short doors, smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
 
@@ -34,7 +33,10 @@ use the same fort, shifted by -3950/-3300.
   Vanilla-2 matches the breach came through exactly that layer. Vanilla-3 does it at once (plan step `rebrace`).
 - The breach in every lost Vanilla-2 match came through the reactor's front (laser, rockets, laser + firebeam).
 
-## Shared tower (Vanilla-3/-4)
+## Tower (Vanilla-3)
+
+Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
+[history/vanilla-3-5.md](../history/vanilla-3-5.md)).
 
 - **Shape:** a back block on the ground (x -3600..-3100, back to the rock edge) up to the starting fort's roof (y=205),
   and a solid, fully X-braced weapon tower (x -3400..-2945) on the back block and the starting fort's roof posts. No
@@ -56,10 +58,10 @@ use the same fort, shifted by -3950/-3300.
   100-high storeys, or one column back (the seam), the upper one was refused.
 - **Snipers:** never in the front cell on the starting fort's front post (x -3100..-2945, floor 105; refused in every
   match, `weapon_avoid`). Vanilla-3 (and the former laser plan) put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
-  machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. Vanilla-4's goes to the
-  top front cell (floor -270), where it is refused once the tower stands below it.
+  machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. In the top front cell (floor -270;
+  the removed Vanilla-4) it was refused once the tower stood below it.
 - **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's 20mm doors 78 instead of 125 (126 shots
-  through them), its sniper's 62.5. Cannons (Vanilla-4) and the former laser keep full doors (no split covers
+  through them), its sniper's 62.5. Cannons (the removed Vanilla-4) and the former laser kept full doors (no split covers
   both barrel estimates); in the 100-high storeys no brace clears the sniper, so its door stays full.
 - **Woodspam** (region 2): two layers (x -2905/-2865) in front of the tower front, rows -370..-145, late.
 - **Late block:** every plan ends with more anti-air, weapons, upgrades and storage, so the AI does not sit idle at the
@@ -127,17 +129,6 @@ launcher).
 - Measured: munitions plant placed 65 s, 20mm placed 155-158 s, built ~225 s, fires at once once the post in front of
   it is a door (`SWAP_WINDOW`); cage turbines 268 and 359 s, upgrade centre 414 s, second 20mm 478 s; energy plenty
   (~10,500 at the end), metal short until late.
-
-## Vanilla-4 – cannons
-
-- Opening: the mine under the starting fort (x -3029), the workshop, the first cage turbine and its sandbags, the
-  anti-air machine gun, the second mine (x -3412), the sniper; both mines first had plenty of metal but too little
-  energy (the first turbine was no earlier).
-- Then the second turbine, a mine and a battery, the munitions plant (800 m / 5000 e: both turbines first), storage,
-  anti-air, a sniper and woodspam while it builds (the AI waits on a device until its tech is finished: with the cannon
-  right after the munitions plant it waited ~1.5 min), the two cannons (floors -20 and -145, like weapon_pack's ToGWM2),
-  then the upgrade centre, anti-air, woodspam and upgraded turbines.
-- Inner armour rebuilt as wood after the first mine (map default).
 
 ## Vanilla-5 – rocket rush
 
@@ -268,8 +259,7 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
 
 ## Open problems
 
-- Vanilla-4's sniper on the top front cell (floor -270) is refused once the tower stands below it.
-- Vanilla-3's sniper behind its split door and Vanilla-4's cannons against a player are not yet tested; the cannons' doors stay full until a test shows where their barrel is.
+- Vanilla-3's sniper behind its split door is not yet tested against a player.
 - Vanilla-5's rocket rush is untested (see its section for the open points).
 - Two beams fired together (laser + firebeam) cut two woodspam layers and the starting fort's lower front in under
   4 s; woodspam does not stop that.

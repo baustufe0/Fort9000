@@ -1,6 +1,7 @@
 # Vanilla-3/-4/-5 – test history
 
-Current state: [maps/vanilla.md](../maps/vanilla.md).
+Current state: [maps/vanilla.md](../maps/vanilla.md). Vanilla-4 (cannons) was removed on 28.10.2026 (plan, its
+VanillaLong conversion and the generator variant `kanone`; recover them from git history before commit "Remove Vanilla-4").
 Test matches 24.10.2026: the first cannon was built and fired both times; the second, one column back (x -3300..-3200) a storey higher (floor -95, as in ToGWM2) or lower (floor 105), was refused with `CS_UNSTABLE` both times (strut stress <= 0.27). That column is the seam where the back part of the tower (built up from the back block, which tips into the reactor gap) meets the front part (on the starting fort): the back part leaned 25-30 further forward, so the cells between x -3300 and -3200 were squeezed by about a quarter; the roof turbine on that column was refused in every test too. With the second heavy weapon directly above the first (x -3200..-3100, floor -95), it was refused too, and the `STRESS` line showed why there: the engine had turned its floor and the posts beside the first cannon into background bracing, although the plan built them solid. The game turns foreground struts a device overlaps into background bracing, on which nothing can be placed: at LinkT 0.75 the cannon's body (18 in front of its mount) crosses the post at x -3100, and its box (~90 high) reaches the floor 100 above once the nodes sag unevenly.
 
 Test match 24.10.2026: the AI's own fort collapsed at 7.8 min without enemy fire: the starting fort's prow (it hangs over the cliff) carried the front, its armour chain reached 0.97 of its breaking limit (`STRESS` top) after the first cannon (120 mass, LinkT 0.75) was placed.

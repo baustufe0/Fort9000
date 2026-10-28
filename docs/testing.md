@@ -1,6 +1,6 @@
 # FORT 9000 – Testing a plan
 
-- Force a plan in `ai/fortplans.lua` (`Force = { Vanilla = "fort-t1f1-Vanilla-4.lua" }`), never commit that line.
+- Force a plan in `ai/fortplans.lua` (`Force = { Vanilla = "fort-t1f1-Vanilla-3.lua" }`), never commit that line.
 - Letting the AI build for 7–8 minutes without attacking is enough for build/stability questions (attacks mix
   damage into the diagnosis); a quit match does not count for training.
 - The Forts log (`log.txt`) is UTF-16; for grep and other line tools convert a copy first

@@ -1092,38 +1092,8 @@ VANILLA_VARIANTS = {
             ("defence", ["woodspam"]),
         ],
     },
-    "kanone": {
-        "title": "Cannon deck (weapon_pack): munitions plant early, two cannons behind open front cells (like weapon_pack's ToGWM2)",
-        "shape": _union(_V_TALL_HIGH, _V_BACK),
-        "cfg": _V_HIGH_CFG,
-        "plan": [
-            # opening: the mine under the starting fort, the workshop (on the starting fort, no tower needed), the
-            # first roof turbine, the anti-air machine gun, then the second mine
-            ("eco", ["mine"]),
-            ("tech", ["workshop"]),
-            ("eco", ["turbine"]),
-            # the two stacked sandbags in front of the hidden turbine cage
-            ("defence", ["sandbags", "sandbags"]),
-            ("aa", ["machinegun"]),
-            ("eco", ["mine"]),
-            ("weapons", ["sniper"]),
-            # the munitions plant costs 800 metal and 5000 energy: both turbines first (two fit in the cage)
-            ("eco", ["turbine"]),
-            ("eco", ["mine", "battery"]),
-            ("tech", ["munitions"]),
-            ("eco", ["store", "battery"]),
-            ("aa", ["machinegun"]),
-            ("weapons", ["sniper"]),
-            ("defence", ["woodspam"]),
-            ("weapons", ["cannon", "cannon"]),
-            # late game: upgraded turbines (the upgrade centre first, anti-air and woodspam while it builds), more
-            # anti-air, the woodspam completed
-            ("tech", ["upgrade"]),
-            ("aa", ["machinegun"]),
-            ("defence", ["woodspam"]),
-            ("upgrades", ["turbine2", "turbine2"]),
-        ],
-    },
+    # Vanilla-4 (cannon deck) removed on 28.10.2026; the placeholder keeps Vanilla-5 and -6 at their numbers
+    "kanone": None,
     # Vanilla-5, rockets (replaces the laser rush: a laser took ~5 minutes on Vanilla and lost four test matches, 25.10.2026):
     # EMP rockets as early as possible, a smoke launcher and anti-air, later upgraded to rockets. The smoke goes up
     # first, so the enemy's anti-air cannot see the rockets (ai.lua, Fire.SmokeCover); the EMP rockets fire already
@@ -3227,6 +3197,8 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     variants = globals()[cfg["variants"]] if cfg.get("variants") else VARIANTS
     for n, (key, var) in enumerate(variants.items()):
+        if var is None:     # a removed variant: keeps the numbers (and seeds) of the ones after it
+            continue
         p = Plan(cfg, terrain, base_pos, args.seed * 100 + n).generate(var)
         errors = p.validate()
         name = "fort-t1f1-%s-%d.lua" % (args.map, args.start_number + n)

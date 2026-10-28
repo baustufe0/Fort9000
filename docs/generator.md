@@ -20,7 +20,7 @@ Optional per-map rules (used for Vanilla, following the Steam guide "How to be a
 - With `require_support`, each cell also records the cells it rests on (the shallowest support); they are always built first, so nothing hangs in the air while the fort is under construction (`validate()` checks the build order). `turbine_cheap_first`: turbines go on the roof that needs the fewest unbuilt cells.
 
 Options added for the Vanilla defence (25.10.2026; the facts behind them in [building-rules.md](building-rules.md), "Defence"); a variant's `cfg` overrides any map option:
-- `rows`: per-variant node rows (Vanilla-2: 205, 105, -25 for a 130-high hidden storey; Vanilla-3/-4/-5: a 130-high cage row at -500). A 155-wide cell may be at most 130 high (its diagonal within `MAX_LINK`).
+- `rows`: per-variant node rows (Vanilla-2: 205, 105, -25 for a 130-high hidden storey; Vanilla-3/-5: a 130-high cage row at -500). A 155-wide cell may be at most 130 high (its diagonal within `MAX_LINK`).
 - `hidden_box (x0, x1, y_top, y_floor)`: every strut of those cells above their floor becomes background bracing, except struts that carry a device (final pass `hide_box`).
 - `split_edges [{a, b, mid, braces, materials}]`: the strut a-b is built in two halves through a node at mid (also when a node is created along it), braced to the given points; `materials {"a", "b"}` per half. Used for two mortars on one 155-wide floor and for Vanilla-2's short sniper door.
 - `mortar_slots [(node A, node B, LinkT)]`: explicit struts for the first mortars (the cell above is built first); their upgrades go on the same strut; `reserve_mortar` skips them.
@@ -62,7 +62,7 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - A lobbed weapon that is not a roof weapon takes its `mortar_slots` before any `weapon_slots` (Abyss-2: both nest mortars before the tower-top slot). Woodspam `base` points may be nodes of the starting fort outside the grid.
 - `rebrace_after_mine`: starting-fort armour struts rebuilt as wood after the first mine (or plan step `rebrace`) for metal; Vanilla-2 turns it off (`[]`): the inner armour in front of the reactor fell first in both lost matches.
 
-Options of the Vanilla tower variants (Vanilla-3/-4/-5; details in [maps/vanilla.md](maps/vanilla.md)):
+Options of the Vanilla tower variants (Vanilla-3/-5; details in [maps/vanilla.md](maps/vanilla.md)):
 - `reserve_large`, `large_top_min` / `large_top_max`: large weapons take their cells first, only in storeys between these cell tops.
 - `weapon_avoid [(left x, floor y, devices)]`, `turbine_avoid [(left x, roof y)]`: cells or roofs these devices skip (where they were refused in every test).
 - `support_cheapest`: a node rests on the support with the fewest cells below it instead of the shallowest chain.

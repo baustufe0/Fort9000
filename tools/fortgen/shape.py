@@ -8,7 +8,7 @@ how far each storey row has moved (forward = towards the enemy, down = sag), and
 It also prints the STRESS lines (the engine's own strut stress on CS_UNSTABLE) with plan positions.
 
 Usage:
-  shape.py [log.txt] [--team 102] [--match -1] [--plan fortplans/Vanilla/fort-t1f1-Vanilla-4.lua]
+  shape.py [log.txt] [--team 102] [--match -1] [--plan fortplans/Vanilla/fort-t1f1-Vanilla-3.lua]
            [--min 5] [--png out.png] [--snap -1] [--scale 1]
 Default log: the Forts log of the user next to this mod (<Forts>/users/<id>/log.txt); default match: the last
 one in the log; default plan: the file named in the match's PLAN line (fortplans/<map>/<file>).
