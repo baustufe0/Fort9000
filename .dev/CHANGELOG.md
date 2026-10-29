@@ -3,6 +3,24 @@
 One entry per Workshop upload (`ItemVersion` in `workshop/content/410900/3829000413/itemversion.lua`). Each version
 has a git tag `workshop-v<N>` on the commit that was published; the next entry covers `workshop-v<N-1>..workshop-v<N>`.
 
+## Version 4 (29.10.2026, workshop-v4 = dde982d)
+
+Vanilla (also VanillaLong)
+- The mine row (the ground storey the whole fort stands on) is protected: five layers of triangle woodspam in front
+  of it, on every Vanilla plan. Before, one laser sweep along that storey could bring a fort down; Vanilla-3 had no
+  woodspam there at all.
+- A new foundation in front of the starting fort, braced up to its lower front, is built first. It takes the weight
+  of the front and the woodspam off the starting fort's front post.
+- Cells are braced with one diagonal (two triangles) instead of an X, except under Vanilla-3's cannons: about 18 %
+  less wood, 440-490 metal saved per fort, forts finished ~30 s sooner, and stronger because they are lighter.
+- In test matches the forts lasted 744 and 1054 s and took 25 beam shots, where the old plans fell to two.
+
+Abyss
+- A second anchor ties the top of the starting fort to the rock ledge beside it, so the cliff tower no longer hangs
+  on a single strut.
+- One diagonal per cell as on Vanilla: about 20 actions and 300 metal less per fort.
+- Abyss-4 (two cannons) is removed: it never won a match and its tech buildings overlapped.
+
 ## Version 3 (28.10.2026, workshop-v3 = 30ac174)
 
 Fort plans
