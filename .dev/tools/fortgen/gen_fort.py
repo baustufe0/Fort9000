@@ -966,9 +966,9 @@ _V_MINE_ROW_WS = {"wall_x": -2812, "layers": [-2772, -2732, -2692], "rows": [602
 # the hanging woodspam alone (physics.py: 0.94 on Vanilla-6, 0.66 with the footing). A large player fort on Vanilla
 # rests on a node between every pair of mines. Tying the woodspam back up into the prow or the starting fort instead
 # changed nothing (0.95-0.96: they hang off the same front), and a counterweight on the back block can't help either
-# (foundations are fixed, the fort can't tip).
-_V_FOOTING = [((-2900, 700), (-2958, 700), "bracing"),
-              ((-2897.92, 602.28), (-2958, 700), "armour"),
+# (foundations are fixed, the fort can't tip). The foundation is created by node 41's brace: a strut along the rock from
+# the front ground node to it was refused with CS_OBSTRUCTION in both test matches (29.10.2026).
+_V_FOOTING = [((-2897.92, 602.28), (-2958, 700), "armour"),
               ((-2895.38, 505.41), (-2958, 700), "bracing")]
 
 VANILLA_VARIANTS = {
@@ -1042,7 +1042,11 @@ VANILLA_VARIANTS = {
                 "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
                               "outside": "bracing"},
                              _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
-                "footing": _V_FOOTING},
+                "footing": _V_FOOTING,
+                # one diagonal per cell (two triangles) instead of an X: physics.py on 29.10.2026, Vanilla-2/-5/-6
+                # 17-19 % less wood (440-490 metal, ~2200 energy) and 30-32 fewer actions, max stress 0.03-0.06
+                # lower (lighter) under both spring laws; struts are 80-88 % of the fort's weight
+                "single_diagonal": True},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The workshop at once (the
             # inner armour in front of the reactor is kept: rebrace_after_mine off; sold for the rush, it fell first
@@ -1103,7 +1107,12 @@ VANILLA_VARIANTS = {
         "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True, sniper_t=0.28,
                     weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})],
                     woodspam=[_V_HIGH_CFG["woodspam"], _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
-                    footing=_V_FOOTING),
+                    footing=_V_FOOTING,
+                    # one diagonal per cell, except the tower up to the sniper's storey and the column under it
+                    # down to the ground, which carry the 20mm cannons (physics.py max stress, two spring laws:
+                    # all X 0.79 / 0.75, one diagonal everywhere 0.85 / 0.74, X in the tower only 0.80 / 0.81,
+                    # this 0.76 / 0.72 with 15 actions less)
+                    single_diagonal=True, crossbrace_keep=[(-3400, -2945, -270, 700)]),
         "plan": [
             # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
             # economy (601 m / 3004 e, +13 m/s, +100 e/s, caps 900 / 5000) pays for it on time if nothing else
@@ -1880,8 +1889,20 @@ class Plan:
             if ia and ib and self.nodes[ia][0] in self.built_nodes and self.nodes[ib][0] in self.built_nodes:
                 self.link(ia, ib, "bracing")
 
+    def single_diagonal(self, c):
+        """single_diagonal: cell c keeps one diagonal (two triangles) unless it lies in a crossbrace_keep box
+        (x0, x1, y_top, y_floor)."""
+        if not self.cfg.get("single_diagonal"):
+            return False
+        x0, x1 = self.cell_x(c)
+        top, floor = self.cfg["rows"][c[1]], self.cfg["rows"][c[1] + 1]
+        return not any(x0 >= bx0 - 1 and x1 <= bx1 + 1 and top >= by0 - 1 and floor <= by1 + 1
+                       for bx0, bx1, by0, by1 in self.cfg.get("crossbrace_keep", []))
+
     def crossbrace(self, c, diag=None):
         """Second diagonal of cell c."""
+        if self.single_diagonal(c):
+            return
         i, j = c
         if diag is None:
             diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"

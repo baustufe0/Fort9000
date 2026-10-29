@@ -105,7 +105,8 @@ be at most 130 high for `MAX_LINK`).
   First test (1v2 on Vanilla 2v2, 29.10.2026, Vanilla-2 and -3): the foundation and both braces built within 9 s
   (the brace from node 46 came out as background bracing), the mine at x -3029 placed beside it without error, 30
   woodspam struts in front of the mine row in each fort; the strut along the rock from the front ground node to the
-  foundation was refused (`CS_OBSTRUCTION`, the foundation came from node 41's brace instead). The forts survived ~170
+  foundation was refused (`CS_OBSTRUCTION`, the foundation came from node 41's brace instead; refused again in the
+  next match, so since then the plans create the foundation with node 41's brace and have no such strut). The forts survived ~170
   missiles and fell at 536 / 580 s (before: 463 / 508 s to a laser sweep) to two or three upgraded missiles each, which
   the machine guns damaged but did not stop; they hit the mine-row woodspam, then the front posts.
 - **Tried and dropped** (physics.py on Vanilla-6, 29.10.2026): tying the hanging woodspam back up into the prow
@@ -113,6 +114,24 @@ be at most 130 high for `MAX_LINK`).
   struts carry nothing at all: rest length = current length); a heavy armour block on the back corner of the roof as
   a counterweight, 0.94 -> 0.94 (foundations are fixed, the fort cannot tip). Triangles instead of X-bracing: +0.03..0.04
   stress, but enough struts saved for two more mine-row layers.
+- **One diagonal per cell** (`single_diagonal`, 29.10.2026, after a large player fort built of big triangles):
+  `physics.py` max stress under the two spring laws ("abs" / "strain"), X -> one diagonal:
+
+  | Plan | Wood length | Actions | Max stress |
+  |---|---|---|---|
+  | Vanilla-2 | 24465 -> 20054 (-18 %) | 253 -> 223 | 0.68 / 0.68 -> 0.65 / 0.65 |
+  | Vanilla-3 (X kept in x -3400..-2945, y -270..700) | 34436 -> 32209 (-6 %) | 317 -> 302 | 0.79 / 0.75 -> 0.76 / 0.72 |
+  | Vanilla-5 | 25602 -> 20748 (-19 %) | 250 -> 218 | 0.75 / 0.77 -> 0.69 / 0.71 |
+  | Vanilla-6 | 25256 -> 20845 (-17 %) | 266 -> 236 (plan 243 -> 213) | 0.71 / 0.74 -> 0.68 / 0.71 |
+
+  Wood costs 0.1 metal / 0.5 energy per length: 440-490 metal and ~2200 energy saved per low fort, ~30 s of build
+  actions. Vanilla-3 with one diagonal everywhere: 0.85 / 0.74; X in the tower only: 0.80 / 0.81. Centre of mass of
+  all four forts over the rock (x -3154..-3116), 19-23 % of their mass beyond the cliff.
+  First test (1v2 on Vanilla 2v2, 29.10.2026, Vanilla-6 and -3, "a close match"): no build gave up or was skipped
+  (only the footing's ground strut refused again); plans finished at ~545 s (Vanilla-6) and ~665 s (Vanilla-3).
+  Vanilla-6 fell at 744 s after 17 beam shots (11 laser, 6 firebeam, from 440 s), Vanilla-3 at 1054 s after 8 more;
+  in the earlier matches 2 beam shots were enough (463-580 s). The AIs destroyed 3 lasers, a firebeam, a flak, 23
+  machine guns and 5 turbines; the player built 6 lasers and 2 firebeams.
 - **The mine row holds the fort up:** the game turns the ground storey's struts over the mines into background bracing,
   and the slope in front of the face (neutral rock) takes no foundations, so every layer there hangs. In a 1v2 match
   (29.10.2026) one firebeam and one laser sweep along y ~650 cut every post of that storey from the front to the back:

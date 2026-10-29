@@ -195,6 +195,13 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
 3. **Bottom up, X-braced:** cells built from the bottom up and crossbraced, the lower storeys and the weapon column at
    once, the rest in a final pass so weapons are not delayed. A tower on two foundations rises **storey by storey**
    (`tower_connect`): both parts are joined over two storeys before anything higher is built.
+   **Vanilla (since 29.10.2026): one diagonal per cell** (two triangles, `single_diagonal`) except where heavy weapons
+   stand (Vanilla-3's tower and the column under it, `crossbrace_keep`). Struts are 80-88 % of a fort's weight; per
+   area of wall a 100x100 cell with an X takes 483 of wood and 4 struts per 100x100, one diagonal 341 and 3, large
+   triangles (side 150) 231 and 1.5. The game's strut is a spring whose constant does not depend on its length, so a
+   long strut carries proportionally more force before it breaks: large triangles are lighter *and* strong. Protection
+   per metal (struts a horizontal shot crosses per metal) is about the same for every pattern. Untested: a cell with
+   one diagonal folds once that diagonal is shot through (an X cell keeps the other one).
 4. **Opening by the economy numbers:** the tech chain (workshop, then munitions plant or factory) sets a rush's pace;
    nothing that costs energy before the workshop. **Tech early, then something else:** put devices that need no tech
    (store, battery, machine gun, sniper, woodspam, mines) between a tech building and the devices that need it, since

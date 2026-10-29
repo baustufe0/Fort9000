@@ -9,8 +9,7 @@ FortTeam = 1; FortId = 1; FortPos = { x = -2900.000000, y = 700.000000 };
 
 Fort =
 {
-{ Type = CREATE_NODE, OriginalNodeAId = 40, PosA = { x = -2900.00, y = 700.00 }, OriginalNodeBId = 10000, NewNodePos = { x = -2958.00, y = 700.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 41, PosA = {x = -2897.92, y = 602.28 }, OriginalNodeBId = 10000, PosB = { x = -2958.00, y = 700.00 }, MaterialSaveName = "armour" },
+{ Type = CREATE_NODE, OriginalNodeAId = 41, PosA = { x = -2897.92, y = 602.28 }, OriginalNodeBId = 10000, NewNodePos = { x = -2958.00, y = 700.00 }, MaterialSaveName = "armour" },
 { Type = CREATE_LINK, OriginalNodeAId = 46, PosA = {x = -2895.38, y = 505.41 }, OriginalNodeBId = 10000, PosB = { x = -2958.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 48, PosA = {x = -3096.14, y = 502.53 }, OriginalNodeBId = 47, PosB = { x = -2996.23, y = 503.57 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 48, PosA = { x = -3096.14, y = 502.53 }, OriginalNodeBId = 47, PosB = { x = -2996.23, y = 503.57 }, LinkT = 0.05, DeviceSaveName = "workshop" },
@@ -22,12 +21,10 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10003, PosA = {x = -3022.00, y = 105.00 }, OriginalNodeBId = 56, PosB = { x = -3093.19, y = 205.21 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10003, PosA = {x = -3022.00, y = 105.00 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10001, PosA = {x = -3100.00, y = 105.00 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10002, PosA = {x = -2945.00, y = 105.00 }, OriginalNodeBId = 56, PosB = { x = -3093.19, y = 205.21 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10004, NewNodePos = { x = -3100.00, y = -25.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10002, PosA = { x = -2945.00, y = 105.00 }, OriginalNodeBId = 10005, NewNodePos = { x = -2945.00, y = -25.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10004, PosA = {x = -3100.00, y = -25.00 }, OriginalNodeBId = 10005, PosB = { x = -2945.00, y = -25.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10005, PosA = {x = -2945.00, y = -25.00 }, OriginalNodeBId = 10001, PosB = { x = -3100.00, y = 105.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10004, PosA = {x = -3100.00, y = -25.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 58, PosA = { x = -2846.18, y = 203.99 }, OriginalNodeBId = 10007, NewNodePos = { x = -2845.00, y = 142.50 }, MaterialSaveName = "door" },
 { Type = CREATE_NODE, OriginalNodeAId = 10007, PosA = { x = -2845.00, y = 142.50 }, OriginalNodeBId = 10006, NewNodePos = { x = -2845.00, y = 105.00 }, MaterialSaveName = "armour" },
 { Type = CREATE_LINK, OriginalNodeAId = 55, PosA = {x = -2945.11, y = 206.49 }, OriginalNodeBId = 58, PosB = { x = -2846.18, y = 203.99 }, MaterialSaveName = "bracing" },
@@ -35,7 +32,6 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10007, PosA = {x = -2845.00, y = 142.50 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10002, PosA = {x = -2945.00, y = 105.00 }, OriginalNodeBId = 10006, PosB = { x = -2845.00, y = 105.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -2845.00, y = 105.00 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10002, PosA = {x = -2945.00, y = 105.00 }, OriginalNodeBId = 58, PosB = { x = -2846.18, y = 203.99 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10006, PosA = { x = -2845.00, y = 105.00 }, OriginalNodeBId = 10008, NewNodePos = { x = -2845.00, y = -25.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10005, PosA = { x = -2945.00, y = -25.00 }, OriginalNodeBId = 10009, NewNodePos = { x = -2945.00, y = 40.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10009, PosA = {x = -2945.00, y = 40.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, MaterialSaveName = "backbracing" },
@@ -55,7 +51,6 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 45, PosA = {x = -3097.91, y = 601.68 }, OriginalNodeBId = 44, PosB = { x = -3100.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10012, PosA = {x = -3200.00, y = 602.00 }, OriginalNodeBId = 45, PosB = { x = -3097.91, y = 601.68 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10012, PosA = {x = -3200.00, y = 602.00 }, OriginalNodeBId = 44, PosB = { x = -3100.00, y = 700.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 45, PosA = {x = -3097.91, y = 601.68 }, OriginalNodeBId = 49, PosB = { x = -3200.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 49, PosA = { x = -3200.00, y = 700.00 }, OriginalNodeBId = 10013, NewNodePos = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10013, PosA = { x = -3300.00, y = 602.00 }, OriginalNodeBId = 10014, NewNodePos = { x = -3300.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10014, PosA = {x = -3300.00, y = 700.00 }, OriginalNodeBId = 49, PosB = { x = -3200.00, y = 700.00 }, MaterialSaveName = "bracing" },
@@ -75,12 +70,10 @@ Fort =
 { Type = CREATE_NODE, OriginalNodeAId = 10017, PosA = { x = -3500.00, y = 602.00 }, OriginalNodeBId = 10021, NewNodePos = { x = -3500.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10020, PosA = {x = -3600.00, y = 503.00 }, OriginalNodeBId = 10021, PosB = { x = -3500.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10021, PosA = {x = -3500.00, y = 503.00 }, OriginalNodeBId = 10011, PosB = { x = -3600.00, y = 602.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10020, PosA = {x = -3600.00, y = 503.00 }, OriginalNodeBId = 10017, PosB = { x = -3500.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10020, PosA = { x = -3600.00, y = 503.00 }, OriginalNodeBId = 10022, NewNodePos = { x = -3600.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10021, PosA = { x = -3500.00, y = 503.00 }, OriginalNodeBId = 10023, NewNodePos = { x = -3500.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10022, PosA = {x = -3600.00, y = 405.00 }, OriginalNodeBId = 10023, PosB = { x = -3500.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10022, PosA = {x = -3600.00, y = 405.00 }, OriginalNodeBId = 10021, PosB = { x = -3500.00, y = 503.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -3500.00, y = 405.00 }, OriginalNodeBId = 10020, PosB = { x = -3600.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10022, PosA = { x = -3600.00, y = 405.00 }, OriginalNodeBId = 10024, NewNodePos = { x = -3600.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10023, PosA = { x = -3500.00, y = 405.00 }, OriginalNodeBId = 10025, NewNodePos = { x = -3500.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10024, PosA = {x = -3600.00, y = 308.00 }, OriginalNodeBId = 10025, PosB = { x = -3500.00, y = 308.00 }, MaterialSaveName = "bracing" },
@@ -88,11 +81,9 @@ Fort =
 { Type = CREATE_NODE, OriginalNodeAId = 10015, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10026, NewNodePos = { x = -3400.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10021, PosA = {x = -3500.00, y = 503.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10021, PosA = {x = -3500.00, y = 503.00 }, OriginalNodeBId = 10015, PosB = { x = -3400.00, y = 602.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10026, PosA = {x = -3400.00, y = 503.00 }, OriginalNodeBId = 10017, PosB = { x = -3500.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10026, PosA = { x = -3400.00, y = 503.00 }, OriginalNodeBId = 10027, NewNodePos = { x = -3400.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -3500.00, y = 405.00 }, OriginalNodeBId = 10027, PosB = { x = -3400.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10027, PosA = {x = -3400.00, y = 405.00 }, OriginalNodeBId = 10021, PosB = { x = -3500.00, y = 503.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -3500.00, y = 405.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10027, PosA = { x = -3400.00, y = 405.00 }, OriginalNodeBId = 10028, NewNodePos = { x = -3400.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10025, PosA = {x = -3500.00, y = 308.00 }, OriginalNodeBId = 10028, PosB = { x = -3400.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10025, PosA = {x = -3500.00, y = 308.00 }, OriginalNodeBId = 10027, PosB = { x = -3400.00, y = 405.00 }, MaterialSaveName = "bracing" },
@@ -115,11 +106,9 @@ Fort =
 { Type = CREATE_NODE, OriginalNodeAId = 10013, PosA = { x = -3300.00, y = 602.00 }, OriginalNodeBId = 10036, NewNodePos = { x = -3300.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10026, PosA = {x = -3400.00, y = 503.00 }, OriginalNodeBId = 10036, PosB = { x = -3300.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10036, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10015, PosB = { x = -3400.00, y = 602.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10026, PosA = {x = -3400.00, y = 503.00 }, OriginalNodeBId = 10013, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10036, PosA = { x = -3300.00, y = 503.00 }, OriginalNodeBId = 10037, NewNodePos = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10027, PosA = {x = -3400.00, y = 405.00 }, OriginalNodeBId = 10037, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10027, PosA = {x = -3400.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3300.00, y = 503.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10037, PosA = {x = -3300.00, y = 405.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10037, PosA = { x = -3300.00, y = 405.00 }, OriginalNodeBId = 10038, NewNodePos = { x = -3300.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10028, PosA = {x = -3400.00, y = 308.00 }, OriginalNodeBId = 10038, PosB = { x = -3300.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10038, PosA = {x = -3300.00, y = 308.00 }, OriginalNodeBId = 10027, PosB = { x = -3400.00, y = 405.00 }, MaterialSaveName = "bracing" },
@@ -130,12 +119,10 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10040, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10012, PosB = { x = -3200.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10036, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10040, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10036, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10012, PosB = { x = -3200.00, y = 602.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10040, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10013, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 52, PosA = { x = -3094.27, y = 403.43 }, OriginalNodeBId = 10041, NewNodePos = { x = -3200.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10041, PosA = {x = -3200.00, y = 405.00 }, OriginalNodeBId = 10040, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10037, PosA = {x = -3300.00, y = 405.00 }, OriginalNodeBId = 10041, PosB = { x = -3200.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10041, PosA = {x = -3200.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3300.00, y = 503.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10037, PosA = {x = -3300.00, y = 405.00 }, OriginalNodeBId = 10040, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 54, PosA = { x = -3093.80, y = 304.56 }, OriginalNodeBId = 10042, NewNodePos = { x = -3200.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10042, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10041, PosB = { x = -3200.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10038, PosA = {x = -3300.00, y = 308.00 }, OriginalNodeBId = 10042, PosB = { x = -3200.00, y = 308.00 }, MaterialSaveName = "bracing" },
@@ -218,7 +205,6 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10040, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10012, PosB = { x = -3200.00, y = 602.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 48, PosA = {x = -3096.14, y = 502.53 }, OriginalNodeBId = 45, PosB = { x = -3097.91, y = 601.68 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 48, PosA = {x = -3096.14, y = 502.53 }, OriginalNodeBId = 10012, PosB = { x = -3200.00, y = 602.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10040, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 45, PosB = { x = -3097.91, y = 601.68 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10012, PosA = { x = -3200.00, y = 602.00 }, OriginalNodeBId = 45, PosB = { x = -3097.91, y = 601.68 }, LinkT = 0.02, DeviceSaveName = "upgrade" },
 { Type = CREATE_LINK, OriginalNodeAId = 54, PosA = {x = -3093.80, y = 304.56 }, OriginalNodeBId = 52, PosB = { x = -3094.27, y = 403.43 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 54, PosA = {x = -3093.80, y = 304.56 }, OriginalNodeBId = 10041, PosB = { x = -3200.00, y = 405.00 }, MaterialSaveName = "bracing" },
@@ -232,63 +218,46 @@ Fort =
 { Type = CREATE_DEVICE, GroundPosition = { x = -3412.21, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_LINK, OriginalNodeAId = 52, PosA = {x = -3094.27, y = 403.43 }, OriginalNodeBId = 48, PosB = { x = -3096.14, y = 502.53 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10041, PosA = {x = -3200.00, y = 405.00 }, OriginalNodeBId = 48, PosB = { x = -3096.14, y = 502.53 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 52, PosA = {x = -3094.27, y = 403.43 }, OriginalNodeBId = 10040, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 56, PosA = {x = -3093.19, y = 205.21 }, OriginalNodeBId = 54, PosB = { x = -3093.80, y = 304.56 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10043, PosA = {x = -3200.00, y = 205.00 }, OriginalNodeBId = 54, PosB = { x = -3093.80, y = 304.56 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10001, PosA = {x = -3100.00, y = 105.00 }, OriginalNodeBId = 10043, PosB = { x = -3200.00, y = 205.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10024, PosA = {x = -3600.00, y = 308.00 }, OriginalNodeBId = 10023, PosB = { x = -3500.00, y = 405.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10028, PosA = {x = -3400.00, y = 308.00 }, OriginalNodeBId = 10023, PosB = { x = -3500.00, y = 405.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10028, PosA = {x = -3400.00, y = 308.00 }, OriginalNodeBId = 10037, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10042, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10037, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10042, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 52, PosB = { x = -3094.27, y = 403.43 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10029, PosA = {x = -3500.00, y = 205.00 }, OriginalNodeBId = 10024, PosB = { x = -3600.00, y = 308.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10029, PosA = {x = -3500.00, y = 205.00 }, OriginalNodeBId = 10028, PosB = { x = -3400.00, y = 308.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10039, PosA = {x = -3300.00, y = 205.00 }, OriginalNodeBId = 10028, PosB = { x = -3400.00, y = 308.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10039, PosA = {x = -3300.00, y = 205.00 }, OriginalNodeBId = 10042, PosB = { x = -3200.00, y = 308.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 56, PosA = {x = -3093.19, y = 205.21 }, OriginalNodeBId = 10042, PosB = { x = -3200.00, y = 308.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10033, PosA = {x = -3400.00, y = 105.00 }, OriginalNodeBId = 10029, PosB = { x = -3500.00, y = 205.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10033, PosA = {x = -3400.00, y = 105.00 }, OriginalNodeBId = 10039, PosB = { x = -3300.00, y = 205.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10045, PosA = {x = -3200.00, y = 105.00 }, OriginalNodeBId = 10039, PosB = { x = -3300.00, y = 205.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10034, PosA = {x = -3500.00, y = -25.00 }, OriginalNodeBId = 10033, PosB = { x = -3400.00, y = 105.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10067, PosA = {x = -3300.00, y = -25.00 }, OriginalNodeBId = 10033, PosB = { x = -3400.00, y = 105.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10067, PosA = {x = -3300.00, y = -25.00 }, OriginalNodeBId = 10045, PosB = { x = -3200.00, y = 105.00 }, MaterialSaveName = "backbracing" },
 }
 -- Generated by Claude AI (.dev/tools/fortgen/gen_fort.py): Modular fort: Vanilla-2's low fort as a core, its weapons as reactive modules
 FortModules =
 {
-{ Name = "sniper", Trigger = { Types = { "sniper", "sniper2", "laser", "firebeam", "cannon", "cannon20mm" }, Count = 1, Time = 45 }, Requires = 8, Actions = {
+{ Name = "sniper", Trigger = { Types = { "sniper", "sniper2", "laser", "firebeam", "cannon", "cannon20mm" }, Count = 1, Time = 45 }, Requires = 7, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, LinkT = 0.70, DeviceSaveName = "sniper" },
 } },
-{ Name = "artillery", Trigger = { Types = { "mortar", "mortar2" }, Count = 1, Time = 150 }, Requires = 33, Actions = {
+{ Name = "artillery", Trigger = { Types = { "mortar", "mortar2" }, Count = 1, Time = 150 }, Requires = 29, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10003, PosB = { x = -3022.00, y = 105.00 }, LinkT = 0.25, DeviceSaveName = "mortar" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10003, PosA = { x = -3022.00, y = 105.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, LinkT = 0.75, DeviceSaveName = "mortar" },
 } },
-{ Name = "antiair", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Time = 240 }, Requires = 148, Actions = {
+{ Name = "antiair", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Time = 240 }, Requires = 135, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10046, PosA = { x = -3200.00, y = -25.00 }, OriginalNodeBId = 10004, PosB = { x = -3100.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "machinegun" },
 } },
-{ Name = "heavyartillery", Trigger = { Time = 330, After = "artillery" }, Requires = 211, Actions = {
+{ Name = "heavyartillery", Trigger = { Time = 330, After = "artillery" }, Requires = 197, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10003, PosB = { x = -3022.00, y = 105.00 }, LinkT = 0.25, DeviceSaveName = "mortar2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10003, PosA = { x = -3022.00, y = 105.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, LinkT = 0.75, DeviceSaveName = "mortar2" },
 } },
-{ Name = "antiair2", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 3, Time = 420, After = "antiair" }, Requires = 204, Actions = {
+{ Name = "antiair2", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 3, Time = 420, After = "antiair" }, Requires = 191, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10035, PosA = { x = -3400.00, y = -25.00 }, OriginalNodeBId = 10067, PosB = { x = -3300.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "machinegun" },
 } },
-{ Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 2, Time = 450, After = "sniper" }, Requires = 211, Actions = {
+{ Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 2, Time = 450, After = "sniper" }, Requires = 197, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, LinkT = 0.70, DeviceSaveName = "sniper2" },
 } },
-{ Name = "miniguns", Trigger = { Time = 540, After = "antiair2" }, Requires = 211, Actions = {
+{ Name = "miniguns", Trigger = { Time = 540, After = "antiair2" }, Requires = 197, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10046, PosA = { x = -3200.00, y = -25.00 }, OriginalNodeBId = 10004, PosB = { x = -3100.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "minigun" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10035, PosA = { x = -3400.00, y = -25.00 }, OriginalNodeBId = 10067, PosB = { x = -3300.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "minigun" },
 } },
-{ Name = "artillery2", Trigger = { Time = 480, After = "heavyartillery" }, Requires = 201, Actions = {
+{ Name = "artillery2", Trigger = { Time = 480, After = "heavyartillery" }, Requires = 188, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10067, PosA = { x = -3300.00, y = -25.00 }, OriginalNodeBId = 10046, PosB = { x = -3200.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "mortar" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10034, PosA = { x = -3500.00, y = -25.00 }, OriginalNodeBId = 10035, PosB = { x = -3400.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "mortar" },
 } },
-{ Name = "heavyartillery2", Trigger = { Time = 560, After = "artillery2" }, Requires = 211, Actions = {
+{ Name = "heavyartillery2", Trigger = { Time = 560, After = "artillery2" }, Requires = 197, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10003, PosB = { x = -3022.00, y = 105.00 }, LinkT = 0.25, DeviceSaveName = "mortar2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10003, PosA = { x = -3022.00, y = 105.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 105.00 }, LinkT = 0.75, DeviceSaveName = "mortar2" },
 } },
-{ Name = "frontlayer", Trigger = { Types = { "machinegun", "minigun" }, Count = 6, Time = 600 }, Requires = 186, Actions = {
+{ Name = "frontlayer", Trigger = { Types = { "machinegun", "minigun" }, Count = 6, Time = 600 }, Requires = 173, Actions = {
 { Type = CREATE_NODE, OriginalNodeAId = 10054, PosA = { x = -2812.00, y = 411.00 }, OriginalNodeBId = 29000, NewNodePos = { x = -2772.00, y = 411.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10056, PosA = { x = -2812.00, y = 505.00 }, OriginalNodeBId = 29001, NewNodePos = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 29000, PosA = {x = -2772.00, y = 411.00 }, OriginalNodeBId = 29001, PosB = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
