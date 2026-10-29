@@ -53,7 +53,8 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `door_posts [(x, y_top, y_floor)]`: front posts split like doors although they are not doors (e.g. background
   bracing in a hidden storey); `door_rest [((x, y_top, y_floor), material)]`: the material above and below such a
   door (default armour; Vanilla-5: background bracing, the gallery turbines need the wind).
-- `woodspam`: one region or a list; plan step `woodspam` builds all regions, `woodspam:<k>` region k; `outside` gives the material where no grid cell stands behind a band, one material or `{band top y: material}`; wall nodes of the starting fort outside the grid are found too (`orig_node_at`).
+- `woodspam`: one region or a list; plan step `woodspam` builds all regions, `woodspam:<k>` region k; `outside` gives the material where no grid cell stands behind a band, one material or `{band top y: material}`; wall nodes of the starting fort outside the grid are found too (`orig_node_at`). `pattern: "tri"`: one diagonal per cell, alternating (triangles) instead of an X: fewer struts and less weight, slightly less stiff.
+- `footing [(A, B, material), ...]`: struts in the `struts` step format built before the first plan step (B created from A, a foundation on the rock), e.g. Vanilla's foundation in front of the starting fort's front posts ([maps/vanilla.md](maps/vanilla.md)).
 - `clear_boxes [device, ...]`: final pass, every foreground strut crossing such a device's box (half-width `SIZE[0]`
   to both sides, `BOX_TOP` above its strut, the posts at its own strut's ends excluded) becomes background bracing, so
   a tall device stands inside a block of storeys (Abyss-2's munitions plant, box 170, under the starting fort).

@@ -947,6 +947,29 @@ _V_HIGH_CFG = dict(_V_CAGE_HIGH, **{"rows": _V_HIGH_ROWS, "large_cells": _V_LARG
                "large_top_min": -270, "large_top_max": -145,
                "woodspam": {"wall_x": -2945, "layers": [-2905, -2865], "rows": [-370, -270, -145],
                             "base": []}})
+# The starting fort's lower front (y 411..700, face x -2892..-2900) and the ground storey with the mines behind it: two
+# woodspam layers hanging in front of the face (the rock ends there), the band 411..505 background bracing (the
+# starting fort's machine gun on its strut at y 505 fires through it). The game turns the ground storey's struts over
+# the mines into background bracing, so that storey holds the whole fort up on see-through wood: in a 1v2 match
+# (29.10.2026, ~460 and ~508 s) one firebeam and one laser sweep along it, y ~650, cut every post from the front to the
+# back and both forts fell within 1.3-1.8 s (Vanilla-3 had no woodspam there, Vanilla-6 three layers). Three more
+# layers across the ground storey only (_V_MINE_ROW_WS, hanging from the outer layer like Vanilla-6's frontlayer),
+# affordable with the footing below.
+# Both in triangles (pattern "tri", one diagonal per cell): physics.py +0.03..0.04 against X-bracing, but the struts
+# saved pay for two more mine-row layers (2 + 3 triangle layers cost about as many actions as 2 + 1 crossed ones).
+_V_LOWER_FACE_WS = {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
+                    "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}, "pattern": "tri"}
+_V_MINE_ROW_WS = {"wall_x": -2812, "layers": [-2772, -2732, -2692], "rows": [602, 700], "base": [],
+                  "outside": "bracing", "pattern": "tri"}
+# A foundation on the rock in front of the first free mine site (x -3029), braced up to the starting fort's lower front
+# nodes 41 (y 602) and 46 (y 505), before anything else: the front ground post 40-41 carried the fort's front and all
+# the hanging woodspam alone (physics.py: 0.94 on Vanilla-6, 0.66 with the footing). A large player fort on Vanilla
+# rests on a node between every pair of mines. Tying the woodspam back up into the prow or the starting fort instead
+# changed nothing (0.95-0.96: they hang off the same front), and a counterweight on the back block can't help either
+# (foundations are fixed, the fort can't tip).
+_V_FOOTING = [((-2900, 700), (-2958, 700), "bracing"),
+              ((-2897.92, 602.28), (-2958, 700), "armour"),
+              ((-2895.38, 505.41), (-2958, 700), "bracing")]
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -1018,8 +1041,8 @@ VANILLA_VARIANTS = {
                 # y 505) fires through it
                 "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
                               "outside": "bracing"},
-                             {"wall_x": -2896, "layers": [-2852, -2812], "rows": [411, 505, 602, 700], "base": [],
-                              "outside": {411: "backbracing", 505: "bracing", 602: "bracing"}}]},
+                             _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
+                "footing": _V_FOOTING},
         "plan": [
             # sniper and mortar rush: the workshop (60 s) sets the pace for the mortars. The workshop at once (the
             # inner armour in front of the reactor is kept: rebrace_after_mine off; sold for the rush, it fell first
@@ -1076,8 +1099,11 @@ VANILLA_VARIANTS = {
         # while one on the top front cell (floor -270) was refused once the tower stood below it
         # the sniper at LinkT 0.28 (was 0.5): the brace of its split door (from the door's top node back to the cell's
         # top corner) then clears its box; its muzzle is still ~12 behind the door
+        # woodspam: 0 = the tower front, 1 and 2 = the starting fort's lower front and the mine row (built early)
         "cfg": dict(_V_HIGH_CFG, large_cells=[(-3200, 105, 0.5), (-3200, -20, 0.5)], support_cheapest=True, sniper_t=0.28,
-                    weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})]),
+                    weapon_avoid=_V_HIGH_CFG["weapon_avoid"] + [(-3100, -145, {"machinegun"})],
+                    woodspam=[_V_HIGH_CFG["woodspam"], _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
+                    footing=_V_FOOTING),
         "plan": [
             # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
             # economy (601 m / 3004 e, +13 m/s, +100 e/s, caps 900 / 5000) pays for it on time if nothing else
@@ -1095,6 +1121,8 @@ VANILLA_VARIANTS = {
             ("defence", ["sandbags", "sandbags"]),
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
+            # the lower front and the mine row: the whole fort stands on that storey (lost to one laser sweep at ~460 s)
+            ("defence", ["woodspam:1", "woodspam:2"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
             ("eco", ["mine"]),
@@ -1287,7 +1315,7 @@ VANILLA_VARIANTS["modular"] = {
         {"name": "frontlayer", "after": 14, "trigger": {"types": ("machinegun", "minigun"), "count": 6, "time": 600},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602, 700], "base": [], "outside": "bracing"}]},
-         "plan": [("defence", ["woodspam:2"])]},
+         "plan": [("defence", ["woodspam:3"])]},
     ],
 }
 
@@ -2371,6 +2399,10 @@ class Plan:
             # up to the top of the starting fort; left for later, the turbines and mines were not reachable
             for c in sorted(c for cs in self.reserved.values() for c in cs):
                 self.build_cell_path(c)
+        # footing: struts ("struts" step format) built before the first plan step, e.g. a foundation in front of the
+        # starting fort's front posts that carries their load past the front ground post (Vanilla)
+        for s in self.cfg.get("footing", []):
+            self.add("struts", s)
         self.modules = []
         self.module_placed = []        # devices of the modules (kept clear by the plan's eco devices)
         for si, (step, items) in enumerate(variant["plan"]):
@@ -3172,12 +3204,17 @@ class Plan:
             for a, b in zip(cols, cols[1:]):
                 if self.ws_node(key(b, y), (b, y), key(a, y), row_mat(y)):
                     self.link(key(a, y), key(b, y), row_mat(y))
-        for y0, y1 in zip(rows, rows[1:]):   # posts and X-diagonals per storey
+        # posts and X-diagonals per storey; pattern "tri": one diagonal per cell, alternating (triangles, like a
+        # player's large-cell woodspam: as rigid, fewer struts and less weight)
+        tri = ws.get("pattern") == "tri"
+        for s, (y0, y1) in enumerate(zip(rows, rows[1:])):
             m = band[y0]
-            for a, b in zip(cols, cols[1:]):
+            for k, (a, b) in enumerate(zip(cols, cols[1:])):
                 self.link(key(b, y0), key(b, y1), m)
-                self.link(key(a, y0), key(b, y1), m)
-                self.link(key(b, y0), key(a, y1), m)
+                if not tri or (s + k) % 2 == 0:
+                    self.link(key(a, y0), key(b, y1), m)
+                if not tri or (s + k) % 2 == 1:
+                    self.link(key(b, y0), key(a, y1), m)
         # down to the storey below (the prow's top nodes), crossed like the storeys above
         m = band[rows[-1]]
         for k, (x, base) in enumerate(zip(ws["layers"], ws.get("base", []))):

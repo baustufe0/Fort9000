@@ -63,7 +63,9 @@ Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
 - **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's 20mm doors 78 instead of 125 (126 shots
   through them), its sniper's 62.5. Cannons (the removed Vanilla-4) and the former laser kept full doors (no split covers
   both barrel estimates); in the 100-high storeys no brace clears the sniper, so its door stays full.
-- **Woodspam** (region 2): two layers (x -2905/-2865) in front of the tower front, rows -370..-145, late.
+- **Woodspam** (region 0): two layers (x -2905/-2865) in front of the tower front, rows -370..-145, late. Regions 1 and
+  2 (Vanilla-3, since 29.10.2026): Vanilla-2's lower-face layers and the extra mine-row layers, right after the second
+  mine (it had nothing there and fell to one laser sweep along the mine row).
 - **Late block:** every plan ends with more anti-air, weapons, upgrades and storage, so the AI does not sit idle at the
   storage cap.
 
@@ -91,8 +93,30 @@ be at most 130 high for `MAX_LINK`).
   nest roof (in the shells' path); both become miniguns. The starting machine gun stays (not in the sniper's way).
 - **Woodspam:** region 0 two layers (x -2805/-2765) in front of the prow below the deck (y 205..310, in front of the
   reactor, foreground bracing, `outside`); region 1 two layers (x -2852/-2812) hanging in front of the starting fort's
-  lower face (y 411..700, background bracing in the band 411..505 where the starting machine gun fires). Never at the
-  gallery's height (it blocked the turbines' wind completely).
+  lower face (y 411..700, background bracing in the band 411..505 where the starting machine gun fires); region 2 three
+  more layers (x -2772/-2732/-2692) across the ground storey only (y 602..700, the mine row; all four plans). Regions 1
+  and 2 in triangles (`pattern: "tri"`). Never at the gallery's height (it blocked the turbines' wind completely).
+- **Footing** (`footing`, all four plans, before the first plan step; branch `experimetal-niclas-vanilla-layout`): a
+  foundation at (-2958, 700), between the front ground post and the mine site at x -3029 (the mine is 85 wide), braced
+  up to the starting fort's lower front nodes 41 (y 602, armour) and 46 (y 505, 205 long). The front ground post 40-41
+  carried the front and all the hanging woodspam alone. `physics.py` max stress before -> after: Vanilla-2 0.90 -> 0.68,
+  Vanilla-3 0.92 -> 0.79, Vanilla-5 0.97 -> 0.75, Vanilla-6 0.94 -> 0.71 (with the five-layer mine row). The woodspam's
+  outer tip sags 93-95. Idea from a large player fort on Vanilla (a node between every pair of mines).
+  First test (1v2 on Vanilla 2v2, 29.10.2026, Vanilla-2 and -3): the foundation and both braces built within 9 s
+  (the brace from node 46 came out as background bracing), the mine at x -3029 placed beside it without error, 30
+  woodspam struts in front of the mine row in each fort; the strut along the rock from the front ground node to the
+  foundation was refused (`CS_OBSTRUCTION`, the foundation came from node 41's brace instead). The forts survived ~170
+  missiles and fell at 536 / 580 s (before: 463 / 508 s to a laser sweep) to two or three upgraded missiles each, which
+  the machine guns damaged but did not stop; they hit the mine-row woodspam, then the front posts.
+- **Tried and dropped** (physics.py on Vanilla-6, 29.10.2026): tying the hanging woodspam back up into the prow
+  (y 310) or to node 47 (y 504), 0.94 -> 0.95-0.96, since they hang off the same front (added at the plan's end such
+  struts carry nothing at all: rest length = current length); a heavy armour block on the back corner of the roof as
+  a counterweight, 0.94 -> 0.94 (foundations are fixed, the fort cannot tip). Triangles instead of X-bracing: +0.03..0.04
+  stress, but enough struts saved for two more mine-row layers.
+- **The mine row holds the fort up:** the game turns the ground storey's struts over the mines into background bracing,
+  and the slope in front of the face (neutral rock) takes no foundations, so every layer there hangs. In a 1v2 match
+  (29.10.2026) one firebeam and one laser sweep along y ~650 cut every post of that storey from the front to the back:
+  Vanilla-3 (no woodspam there) fell 1.3 s after the first cut, Vanilla-6 (three layers) 1.8 s.
 - No third mortar (no free top cell with an open arc); inner armour in front of the reactor kept (`rebrace_after_mine`
   off).
 
