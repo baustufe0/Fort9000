@@ -1,8 +1,23 @@
 # Abyss
 
 - Abyss variants: the game's own plan, Abyss-2 mortar battery (rebuilt 27.10.2026, see below), Abyss-3 firebeam rush
-  with a laser as the end game (rebuilt 27.10.2026, see below), Abyss-4 two cannons, Abyss-5 rocket rush with smoke
-  (rebuilt 28.10.2026 on Abyss-2/-3, see below).
+  with a laser as the end game (rebuilt 27.10.2026, see below), Abyss-5 rocket rush with smoke (rebuilt 28.10.2026 on
+  Abyss-2/-3, see below). Abyss-4 (two cannons) was dropped on 29.10.2026 (see Results); its variant is `None`, so
+  Abyss-5 keeps its number.
+
+**Lessons from Vanilla (29.10.2026, Abyss-2/-3/-5, `physics.py`, not validated for Abyss, so before/after only):**
+- **Ledge anchor** (`footing`, `_A_FOOTING`, before the first plan step): a foundation on the rock ledge at
+  (-2230, -154) (that edge takes foundations), braced to the starting fort's node 307 (-2096, -94), 147 long. The
+  starting fort's top anchor 307-311 to the wall foundation (-2150, -185) carried the spine tower alone and was the
+  most loaded strut of all three plans.
+- **One diagonal per cell** (`single_diagonal`): 13-14 % less wood (~300-340 metal, ~1700 energy), ~20 actions fewer.
+- Max stress, installed -> new, length-independent / strain law: Abyss-2 0.76 / 0.89 -> 0.67 / 0.85, Abyss-3
+  0.53 / 0.55 -> 0.45 / 0.55, Abyss-5 0.63 / 0.64 -> 0.50 / 0.57; 245 / 211 / 217 actions (was 266 / 229 / 238).
+  Abyss-2's limit under the strain law is the lower wall anchor 289-316 (-2002, 405)-(-2100, 500), background bracing
+  because it crosses the 20mm's box (`clear_boxes`).
+- Not taken over: triangle woodspam (2 actions on Abyss-2; the reactor walls are explicit struts), mine-row
+  protection (the mines lie on the ledge and in the cave behind the fort; no Abyss match was lost there).
+- Not tested in a match yet.
 
 Abyss map rules for the cliff ledge left of the tower (y=-750), following the game's Abyss-1: `found_from_below` builds a foundation from the storey below first, else diagonally from above, never straight down (the front ledge node (-2199,-746) is 154 from the node below, beyond the 150 limit, so it comes diagonally from the roof node (-2100,-846), as Abyss-1 builds its other ledge foundations); `no_build_from_found` builds nodes above the ground from other nodes rather than from foundations, so the roof nodes go along the roof; `rock_clear` (30) keeps every other new node at least that far from the rock (closer grid points become foundations or are dropped; `validate()` reports violations). Abyss-2..5 were regenerated with these rules (devices unchanged).
 
@@ -247,9 +262,9 @@ armoury; `rules.py` later flagged both its smoke launchers on open roofs in fron
 
 Wins of the AI per plan (`train.py report`, 25.10.2026): Abyss-ToGA1 (the game's weapon_pack plan) 2/5, Abyss-3
 (snipers) 1/1 (the player barely fired), Abyss-2 (mortars) 0/3, Abyss-4 (cannons) 0/2, Abyss-5 (rockets) 0/1. Abyss-4
-never placed its cannon, laser or upgrade in those matches (before the munitions-plant fix). These Abyss-2, Abyss-3 and Abyss-5 numbers are the old plans' (replaced 27./28.10.2026 under the same file names). Open suggestion: take
-Abyss-4 out of the plan list. `rules.py` (half-widths, 25.10.2026) flags Abyss-4's workshop (x -1996) and
-munitions plant (x -2070) at y 305 as overlapping (74 apart, need 135); the installed Abyss plans also differ from what
-the generator now produces (older generator changes), so they are left as they are until Abyss is worked on. In the first 11 Abyss matches the AI averaged 100-260 metal (player ~510) and
+never placed its cannon, laser or upgrade in those matches (before the munitions-plant fix). These Abyss-2, Abyss-3 and Abyss-5 numbers are the old plans' (replaced 27./28.10.2026 under the same file names).
+Abyss-4 was taken out of the plan list on 29.10.2026: `rules.py` (half-widths, 25.10.2026) flagged its workshop (x
+-1996) and munitions plant (x -2070) at y 305 as overlapping (74 apart, need 135), and `physics.py` let it sag 164
+(falls under the strain law). All Abyss plans were regenerated with the current generator the same day. In the first 11 Abyss matches the AI averaged 100-260 metal (player ~510) and
 ~3.8 mines (player ~6), and rebuilt lost machine guns 9-18 times per match; the player used miniguns, machine guns,
 buzzsaws and snipers at difficulty 0.5.

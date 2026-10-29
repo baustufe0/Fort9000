@@ -14,8 +14,8 @@ check() { local name="$1" pat="$2"; shift 2; if "$@" 2>&1 | grep -qE "$pat"; the
 check "Basic (targeting, aggression, end)"       "MOCK OK"                       "$LUA" t_basic.lua
 check "Assist AI is switched off"                "ASSIST"                        "$LUA" t_assist.lua
 for o in before after; do for e in fort-t1f1-Abyss-1.lua fort-t1f1-Abyss-ToGA1.lua; do
-  check "Plan swap $o $e team 1"                 "first action = -2001.0, 304.8"  "$LUA" t_plan_swap.lua $o $e 1
-  check "Plan swap $o $e team 102"               "first action = 2001.0, 304.8"   "$LUA" t_plan_swap.lua $o $e 102
+  check "Plan swap $o $e team 1"                 "first action = -2095.5, -94.4"  "$LUA" t_plan_swap.lua $o $e 1
+  check "Plan swap $o $e team 102"               "first action = 2095.5, -94.4"   "$LUA" t_plan_swap.lua $o $e 102
 done; done
 for o in before after; do for e in fort-t1f1-Template-1.lua fort-t1f1-Template-2.lua; do
   check "Plan swap Vanilla $o $e team 1"         "first action = -2897.9, 602.3"  "$LUA" t_vanilla.lua $o $e 1
@@ -130,8 +130,8 @@ if [ -n "$PY" ]; then
   if [ -n "$ID" ]; then
     $PY "$MOD/.dev/tools/publish.py" --target "$ROOT/pub/fort9000" > pub.txt 2>&1; ln -s "$ROOT/pub/fort9000" "$ROOT/mods/$ID"
     check "Published AI looks in the Workshop folder first" "^local CAI_ModDirs = \{ \"mods/$ID/\", \"mods/fort9000/\" \}$" grep "^local CAI_ModDirs" "$ROOT/pub/fort9000/ai/ai.lua"
-    check "Subscriber's copy loads plans and strategy" "PLAN-PRELOAD Abyss:4/2 VanillaLong:4/1 Vanilla:4/[24] " env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
-    check "Subscriber's copy swaps the plan"       "first action = -2001.0, 304.8" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+    check "Subscriber's copy loads plans and strategy" "PLAN-PRELOAD Abyss:3/2 VanillaLong:4/1 Vanilla:4/[24] " env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+    check "Subscriber's copy swaps the plan"       "first action = -2095.5, -94.4" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
   else
     echo "SKIP  published copy (no .dev/publishedfileid.lua)"
   fi

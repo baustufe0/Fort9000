@@ -26,7 +26,8 @@ FortPlanConfig =
 		{
 			Originals = { "fort-t1f1-Abyss-1.lua", "fort-t1f1-Abyss-ToGA1.lua" },
 			ReactorsPerSide = 1,
-			Plans = { "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-4.lua", "fort-t1f1-Abyss-5.lua" },
+			-- Abyss-4 (heavy front, two cannons) dropped on 29.10.2026: 0 of 2 matches won, overlapping tech slots
+			Plans = { "fort-t1f1-Abyss-2.lua", "fort-t1f1-Abyss-3.lua", "fort-t1f1-Abyss-5.lua" },
 			-- rebuild cap for snipers and mortars (Abyss-2 test 6, 27.10.2026: a sniper lost four times and the mortars
 			-- five times within minutes, metal below 150 for 56 % of the match): a sniper lost more than 2 times in a
 			-- row, a mortar more than 3 times (each loss within RebuildCap.Window of the one before) stays lost

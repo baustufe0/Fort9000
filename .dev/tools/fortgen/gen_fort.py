@@ -243,6 +243,13 @@ MAPS = {
 # ----------------------------------------------------------------------------- Variants (archetypes)
 # shape(x0, y0, x1, y1) -> True if the cell with these corners should be built
 
+# A second anchor for the starting fort's top on the cliff: a foundation on the rock ledge at (-2230, -154) (its edge
+# takes foundations), braced to the starting fort's node 307 (-2096, -94), before the first plan step. Its anchor
+# 307-311 to the wall foundation (-2150, -185) carried the spine tower alone and was the most loaded strut of
+# Abyss-2/-3/-5 (physics.py 0.76 / 0.53 / 0.63; with this strut 307-311 0.58 on Abyss-2 and max stress 0.69 / 0.45 /
+# 0.51). The same idea as Vanilla's footing (_V_FOOTING).
+_A_FOOTING = [((-2095.53, -94.38), (-2230, -154), "bracing")]
+
 VARIANTS = {
     # Abyss-2, mortar battery (rebuilt 27.10.2026; the old Abyss-2, mortars on the open roofs of a wide tower, lost all
     # three test matches). The game's own Abyss-1 puts its three mortars on a storey over the starting fort's front
@@ -304,6 +311,9 @@ VARIANTS = {
             "weapon_pick_best": True,
             "bottom_up": True,
             "crossbrace_y": -1000,
+            # one diagonal per cell (two triangles; physics.py 29.10.2026: Abyss-2/-3/-5 13-14 % less wood, ~20
+            # actions fewer, max stress equal or lower under both spring laws), the ledge anchor first
+            "single_diagonal": True, "footing": _A_FOOTING,
             # weapons aiming upward right behind short doors on the upper side (test 4: the doors were cut for a level
             # shot from weapons 230-330 behind them; the targeting ray rose 4-7 degrees and hit the armour above the
             # door, the 20mm never fired). Like the player's 20mm (a strut rising 3.9 degrees, the weapon at its front
@@ -521,6 +531,9 @@ VARIANTS = {
             "weapon_pick_best": True,
             "bottom_up": True,
             "crossbrace_y": -1000,
+            # one diagonal per cell (two triangles; physics.py 29.10.2026: Abyss-2/-3/-5 13-14 % less wood, ~20
+            # actions fewer, max stress equal or lower under both spring laws), the ledge anchor first
+            "single_diagonal": True, "footing": _A_FOOTING,
             # the lower weapons' doors as on Abyss-2: each front post split where the weapon's strut ends, door above
             # (from the storey top down to that node), armour below; both ends of the strut braced down-back below it
             "split_edges": [
@@ -660,29 +673,10 @@ VARIANTS = {
             ("upgrades", ["mine2", "mine2"]),
         ],
     },
-    "schwer": {
-        "title": "Heavy front: wide, heavily armoured block, munitions plant early, two cannons",
-        "shape": lambda x0, y0, x1, y1: (
-            (y0 >= -502 and y1 <= -250 and x0 >= -2100 and x1 <= -1700) or
-            (y0 >= -846 and y1 <= -502 and x0 >= -2400 and x1 <= -1900) or
-            (y0 >= 405 and y1 <= 600 and x0 >= -2100 and x1 <= -1900)),
-        "plan": [
-            ("aa", ["machinegun", "machinegun"]),
-            ("eco", ["mine", "mine", "turbine", "battery", "turbine"]),
-            ("tech", ["workshop"]),
-            ("eco", ["mine", "store", "battery", "mine"]),
-            # the munitions plant costs 800 metal and 5000 energy: all turbines first; no laser (only three
-            # turbine slots, and their wind is blocked on the cliff side: a laser plan with 2-3 turbines never fired)
-            ("eco", ["turbine", "battery"]),
-            ("tech", ["munitions"]),
-            ("weapons", ["cannon", "machinegun"]),
-            ("weapons", ["sniper", "cannon"]),
-            ("tech", ["upgrade"]),
-            ("upgrades", ["minigun"]),
-            ("weapons", ["sniper"]),
-        ],
-        "armour_roof": True,
-    },
+    # Abyss-4 (heavy front, two cannons) dropped on 29.10.2026: never rebuilt like the others, 0 of 2 matches won, its
+    # workshop and munitions plant overlap (rules.py) and physics.py let it sag 164 (falls with the strain law); the
+    # placeholder keeps Abyss-5 at its number
+    "schwer": None,
     # Abyss-5, rocket rush with smoke (rebuilt 28.10.2026; the old Abyss-5 on Abyss-4's shape, rockets in the two tall
     # front storeys and smoke launchers on open roofs in front of the shotguns, lost its only match 0/1: it stalled on the
     # ledge foundations before the armoury). Built on Abyss-2/-3 as they stand (.dev/docs/maps/abyss.md) and on Vanilla-5's
@@ -720,6 +714,9 @@ VARIANTS = {
             "weapon_pick_best": True,
             "bottom_up": True,
             "crossbrace_y": -1000,
+            # one diagonal per cell (two triangles; physics.py 29.10.2026: Abyss-2/-3/-5 13-14 % less wood, ~20
+            # actions fewer, max stress equal or lower under both spring laws), the ledge anchor first
+            "single_diagonal": True, "footing": _A_FOOTING,
             # the rockets' doors as on Abyss-2: each front post split where the weapon's strut ends, door above (from the
             # storey top down to that node, covering the barrel 65 above the strut), armour below; both ends of the
             # strut braced down-back below it
