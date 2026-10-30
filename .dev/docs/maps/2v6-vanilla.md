@@ -47,7 +47,7 @@ tested in a match.
 - **Wind**: the cliff wall behind every fort blocks each turbine's left side completely (`rules.wind_rays` with the
   map's terrain: 0 %). Vanilla-5's gallery behind its front weapons keeps 9-36 % on the right: no wind at all here.
 
-## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches, not yet played in this form)
+## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches; plans 1 and 3 narrowed at the top after the sixth, not yet played in that form)
 
 `gen_fort.py --map Vanilla2v6` (`VANILLA2V6_VARIANTS`): the Vanilla base plan and starting fort, the map's terrain of all
 eight spots laid over each other in the plan frame (`fwe_dir`, `fwe_frame.anchors`, `rock_clear` 15), and a `ceiling`:
@@ -56,16 +56,16 @@ lowest storey (its starting fort's, -300..-398 here) never holds a weapon, its s
 player, 30.10.2026; the first ceiling, -250 / -300, kept everything below that rock). Every plan starts with the hub
 ([vanilla.md](vanilla.md)). Three weapon storeys over the starting fort's roof (205..80, 80..-45, -45..-175), each
 front cell with one weapon alone in its row (a minigun needs a line of fire to the enemy fort), and the **wind
-storey** on top (-175..-305): the turbines on its floor (x -3465/-3365/-3265/-3165, three of them), background bracing
+storey** on top (-175..-305): the turbines on its floor (x -3365/-3265/-3165), background bracing
 all round (hidden: the wind passes, the player cannot see them), two stacked sandbags in its front cell. Wind (with
 the terrain): right 54-72 %, left 0 % (the cliff). Turbines in a weapon storey behind the front weapon's door got 18-36 %
 on the right (no wind), on the open roof 81-100 % but unprotected (third match).
 
 | Plan | Row 205 | Row 80 | Row -45 | Wind storey / roof | Tech | physics.py max stress |
 |---|---|---|---|---|---|---|
-| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; two mortars -> heavy mortars in a storey -305..-370 on its roof (door roof, door in front) | workshop, upgrade | 0.47 |
+| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; two mortars -> heavy mortars in a storey x -3300..-3100, -305..-370 on its roof (door roof, door in front) | workshop, upgrade | 0.49 |
 | Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | workshop, munitions, upgrade | 0.52 |
-| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket (full door) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | armoury, upgrade (right after the first two rockets) | 0.52 |
+| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket (full door) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | armoury, upgrade (right after the first two rockets) | 0.49 |
 | Vanilla2v6-4 | laser (x -3200..-3100, lane in front); last a firebeam in front, row 602 (see below) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags | workshop first, factory, store and battery before the laser, upgrade | 0.66 (0.50 without the firebeam) |
 
 - **Firebeam (plan 4, the player's request, 30.10.2026):** a closed cell on the mine-row woodspam in front of the fort
@@ -76,8 +76,15 @@ on the right (no wind), on the open roof 81-100 % but unprotected (third match).
   112 instead of 92. Built last (plan action 232 of 252), so a refusal on that strut (the AI gives up after 120 s)
   holds nothing up. Options not taken: behind a lane at x -3200..-3100, row 80 (the tested heavy-weapon column; the
   machine gun to the wind storey's roof), the prow floor (row 310; the prow overhangs the cliff).
-- Plans 1 and 3: the low fort (x -3500..-2845 for the deck and nest with the prow lanes, the top storey to x -2945);
-  plans 2 and 4: the block fort (x -3400..-2945, Vanilla-3's heavy-weapon column).
+- Plans 1 and 3: the low fort (x -3500..-2845 for the deck and nest with the prow lanes, the two top storeys
+  x -3400..-2945); plans 2 and 4: the block fort (x -3400..-2945, Vanilla-3's heavy-weapon column).
+- **Neighbour clearance** (`MAPS["Vanilla2v6"]["neighbour"]`, since 30.10.2026): the next fort up stands 900 back and
+  1000 higher, any plan on any spot. The game refuses a node too close to another team's nodes with `CS_NOTOWNED`,
+  allies included: the upper fort's mine row (x -2732/-2692, y 602/700) was refused 92-138 from the lower fort's top
+  nodes at x -3500 (y -305/-370) in three matches, always with plan 1 or 3 below; 172 and more were built. The low
+  fort's top storeys start at x -3400 since then (plan 1's mortar storey moved from x -3500..-3300 to -3300..-3100), and
+  `gen_fort.py` checks every pair of plans for nodes closer than 160 (`neighbour_errors`). Plan 4's firebeam door
+  (-2642, 602) stays 170 from the block fort's (-3400, -305): close to the limit, not yet seen in a match.
 - No smoke launcher in plan 3: it needs a storey of its own row with a door roof (box assumed 127, the DLC file is
   packed); every such storey shares a rocket's row or reaches above the ceiling. The rockets fire without waiting.
 - The roof machine guns of plans 2 and 3 stand in the open: a door shield in front of them would take the roof
@@ -147,6 +154,18 @@ T1-A), 21 rockets, 10 cannon. The player lost 8 machine guns, 8 flak, 3 turbines
   munitions plant at action 36 instead of 124, sniper 128, cannon 131; plan #4: factory 23 instead of 122, sniper 122,
   laser 131, firebeam 231).
 - `shots=` in a `SNAP` line counts the shots since the previous snapshot, not a total.
+
+## Sixth match (30.10.2026, log_20261030-171822, ~931 s, the player won)
+
+Plans by spot (bottom to top): 1, 4, 2, 1, 4, 3. The AI lost nothing for 9 minutes; its forts were poor all along
+(100-250 metal each, about 3 mines each against the player's 29 mines and 40 turbines) and finished their plans only at
+580-720 s. The player's heavy weapons came from ~450 s (3 howitzers, 6 lasers, 2 cannons, 4 flak, ~20 machine guns)
+and none was hit: the AI's 641 minigun, 179 sniper, 117 heavy-mortar and 104 rocket shots killed 21 machine guns and 5
+turbines. The forts fell from 649 s (the middle one, T2-3) to 933 s (the top one).
+- Both laser forts (spots 2 and 5) gave up the mine row's node at x -2692 (`CS_NOTOWNED` at 473 s, before any damage),
+  and with it the firebeam cell: plan 1 stood below each. The same at spot 2 (plan 3 below plan 1) and spot 3 (plan 2
+  above plan 3) in the fourth match. Fixed by the neighbour clearance (Plans above).
+- `summary.py` shows the player's metal as 0 here: a side with two teams writes `SNAP s=1 t=101,201`.
 
 ## Open
 

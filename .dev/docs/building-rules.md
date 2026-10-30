@@ -149,7 +149,8 @@ posts, or behind woodspam at its hub height gets (almost) no wind from that side
 `CS_OCCUPIED` (spot taken: starting-fort devices, debris, devices too close; common and harmless on a device's first
 attempt), `CS_OBSTRUCTION` (something in the way; a roof turbine once, placed shortly after), `CS_NODESTOOFAR` /
 `CS_NODESTOOCLOSE` (length limits; for a device: the strut already carries one), `CS_INVALIDNODES` (a device on a strut
-of 30 degrees or more), `CS_PREQUISITENOTMET` (tech missing or not finished).
+of 30 degrees or more), `CS_PREQUISITENOTMET` (tech missing or not finished), `CS_NOTOWNED` (a node too close to
+another team's nodes, an allied AI fort's too: refused at 92-138, built at 172 and more, 2v6 Vanilla 30.10.2026).
 
 ### Changing a strut's material
 

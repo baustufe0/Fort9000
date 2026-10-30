@@ -261,6 +261,11 @@ MAPS["Vanilla2v6"] = dict(MAPS["Vanilla"], **{
     "ceiling": {"nodes": -400, "devices": -450},
     # nodes (not foundations) at least this far from the rock of every spot (the game refused one 2 from it)
     "rock_clear": 15,
+    # the next fort up, in this fort's plan frame: shifted 900 back and 1000 up (shift), any plan on any spot. The game
+    # refuses a node within reach of another team's nodes (CS_NOTOWNED): mine-row nodes 92-138 from the lower fort's top
+    # nodes were refused in three matches (30.10.2026), 172 and more were built. main() checks every pair of plans, nodes
+    # at least clear apart
+    "neighbour": {"shift": (-900, -1000), "clear": 160},
     "variants": "VANILLA2V6_VARIANTS",
 })
 
@@ -1386,19 +1391,21 @@ _V26_WIND_CFG = dict(turbine_floor_y=-175, turbine_floor_t=0.35, turbine_roof_ma
                      tower_connect={"base_y": 205, "storeys": 2, "skip_floors": (-175,)})
 # Low fort (plans 1 and 3): the deck 205..80 and the nest 80..-45 over x -3500..-2845, each front cell firing through
 # the prow cell ahead of it (a lane with a short door, Vanilla-5); the third weapon storey -45..-175 and the wind storey
-# over x -3500..-2945. Rockets need storeys of 125 (box 112), so 125 instead of 130. The front column is X-braced:
+# over x -3400..-2945 like the block fort's (MAPS["Vanilla2v6"]["neighbour"]: at x -3500 its top nodes stood 92-138 from
+# the next fort up's mine row, which the game refused there with CS_NOTOWNED in three matches, 30.10.2026). Rockets need
+# storeys of 125 (box 112), so 125 instead of 130. The front column is X-braced:
 # weapons in the third front cell (above the nest's weapon cell, whose diagonals are background bracing) were refused
 # with CS_UNSTABLE in 3 of 4 forts with one diagonal (match 30.10.2026). The back block starts at x -3500: behind T2-4 the
 # rock begins at y 600 right behind the rock edge (x -3600).
 _V26_BACK = _box(-3500, -3100, 205, 700)
-_V26_LOW = _union(_box(-3500, -2845, -45, 205), _V26_BACK, _box(-3500, -2945, -305, -45))
+_V26_LOW = _union(_box(-3500, -2845, -45, 205), _V26_BACK, _box(-3400, -2945, -305, -45))
 _V26_LOW_CFG = dict(_V26["rockets"]["cfg"], **_V26_WIND_CFG)
 _V26_LOW_CFG.update(rows=_V26_ROWS,
                     # Vanilla-5's nest front post: a short door, background bracing around it (light on the prow; with
                     # armour around the door the starting fort's lower front post reached 0.84); its outer layer left out
                     door_posts=[(-2845, -45, 80)], door_rest=[((-2845, -45, 80), "backbracing")],
                     door_layer_skip=[(-2845, 80)],
-                    hidden_box=[(-3500, -2945, -305, -175)], crossbrace_keep=[(-3100, -2945, -175, 205)],
+                    hidden_box=[(-3400, -2945, -305, -175)], crossbrace_keep=[(-3100, -2945, -175, 205)],
                     # the wind storey's roof front is the machine gun's (alone in its row, box top -386)
                     weapon_slots=[], roof_weapon_cells=[(-3100, -305)])
 _V26_LONG_BRACE = ("struts", [((-2996, 504), (-2900, 700), "backbracing")])
@@ -1422,17 +1429,18 @@ _V26_BLOCK_CFG.update(rows=_V26_ROWS, large_top_min=-45, large_top_max=80,
 VANILLA2V6_VARIANTS = {
     # 2v6-1: sniper (-> AP sniper) on the deck, anti-air (machine gun -> minigun) in the nest's front cell, before the
     # woodspam, a second sniper in the third front cell; two mortars (-> heavy mortars) in a short storey on the wind
-    # storey's roof at the back (-305..-370, door roof, door in front), the highest place (they reach T1-A's reactor)
+    # storey's roof (x -3300..-3100, -305..-370, door roof, door in front), the highest place (they reach T1-A's
+    # reactor); at x -3500..-3300 and -3400..-3200 its back nodes came within 160 of the next fort up (neighbour)
     "snipers": {
         "title": "Two snipers -> AP snipers, anti-air in the nest, two mortars on top, turbines in a fortified storey (2v6)",
-        "shape": _union(_V26_LOW, _box(-3500, -3300, -370, -305)),
+        "shape": _union(_V26_LOW, _box(-3300, -3100, -370, -305)),
         "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
         "cfg": dict(_V26_LOW_CFG, rows=[-370] + _V26_ROWS,
                     weapon_cells=[(-3100, 205, "sniper", 0.7), (-3100, 80, "machinegun", 0.7),
                                   (-3100, -45, "sniper", 0.28)],
                     roof_weapon_cells=[],
                     # 100 apart, each with a door roof (light_roof)
-                    mortar_slots=[((-3500, -305), (-3400, -305), 0.5), ((-3400, -305), (-3300, -305), 0.5)]),
+                    mortar_slots=[((-3300, -305), (-3200, -305), 0.5), ((-3200, -305), (-3100, -305), 0.5)]),
         "plan": [
             ("weapons", ["sniper"]),
             ("tech", ["workshop"]),
@@ -1443,7 +1451,7 @@ VANILLA2V6_VARIANTS = {
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
             ("weapons", ["mortar", "mortar"]),
-            ("struts", [((-3300, -305), (-3300, -370), "door")]),
+            ("struts", [((-3100, -305), (-3100, -370), "door")]),
             ("eco", ["mine", "mine"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
@@ -3719,6 +3727,7 @@ def main():
     base_pos = node_positions(base)
     os.makedirs(args.out, exist_ok=True)
     variants = globals()[cfg["variants"]] if cfg.get("variants") else VARIANTS
+    plan_nodes = {}     # name -> {node id: position}, for neighbour_errors
     for n, (key, var) in enumerate(variants.items()):
         if var is None:     # a removed variant: keeps the numbers (and seeds) of the ones after it
             continue
@@ -3765,6 +3774,33 @@ def main():
                 print("      RULE ERROR:", e)
             for w in m_rule_warnings:
                 print("      RULE WARN:", w)
+        plan_nodes[name] = node_positions(parse_lines(p.actions))
+    for e in neighbour_errors(cfg.get("neighbour"), plan_nodes):
+        print("ERROR:", e)
+
+
+def neighbour_errors(nb, plan_nodes):
+    """neighbour {shift, clear}: every plan's nodes against every plan's nodes on the next spot up (the same plan too),
+    moved by shift into the lower fort's frame; a pair of starting-fort nodes (ids below 10000) is the map's own."""
+    if not nb:
+        return []
+    (sx, sy), clear = nb["shift"], nb["clear"]
+    errors = []
+    for low, lpos in plan_nodes.items():
+        for up, upos in plan_nodes.items():
+            worst = None
+            for a, pa in lpos.items():
+                for b, pb in upos.items():
+                    if a < 10000 and b < 10000:
+                        continue
+                    d = math.dist(pa, (pb[0] + sx, pb[1] + sy))
+                    if d < clear and (worst is None or d < worst[0]):
+                        worst = (d, a, pa, b, pb)
+            if worst:
+                d, a, pa, b, pb = worst
+                errors.append("%s below %s: node %d (%d,%d) only %.0f from the upper fort's node %d (%d,%d) (clear %d)"
+                              % (low, up, a, pa[0], pa[1], d, b, pb[0], pb[1], clear))
+    return errors
 
 
 if __name__ == "__main__":

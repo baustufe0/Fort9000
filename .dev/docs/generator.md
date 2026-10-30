@@ -72,7 +72,10 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - `fwe_dir` (relative to `data/`) and `fwe_frame {mirror, anchor, plan_anchor}`: the terrain from another map, moved
   (and mirrored) so that its fort's anchor lands on the base plan's (2v6 Vanilla: a Workshop map whose forts are the
   Vanilla fort elsewhere). `ceiling {nodes, devices}`: `validate()` rejects nodes and device boxes above these heights
-  (2v6 Vanilla: the next fort stands above). `turbine_floor_front`: the gallery's front cell may take a turbine.
+  (2v6 Vanilla: the next fort stands above). `neighbour {shift, clear}`: after generating all variants, `main()` lays
+  every plan on the next spot (moved by `shift`) over every plan and reports nodes closer than `clear`
+  (`neighbour_errors`; 2v6 Vanilla: 160, the game refuses nodes near another team's with `CS_NOTOWNED`).
+  `turbine_floor_front`: the gallery's front cell may take a turbine.
 - `rebrace_after_mine`: starting-fort armour struts rebuilt as wood after the first mine (or plan step `rebrace`) for metal; Vanilla-2 turns it off (`[]`): the inner armour in front of the reactor fell first in both lost matches.
 
 Options of the Vanilla tower variants (Vanilla-3/-5; details in [maps/vanilla.md](maps/vanilla.md)):
