@@ -1253,14 +1253,17 @@ VANILLA_VARIANTS = {
             ("weapons", ["rocketemp", "rocketemp"]),
             # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
             ("build", [(-2945, 205), (-2945, 75)]),
+            # the upgrade centre right after the EMP rockets, the flak and the first turbine while it builds (60 s), then
+            # the rockets, then the mines: on 2v6 Vanilla the upgrade centre came at 270-392 s behind a turbine and two
+            # mines and the rockets late or never; moved up there, the rockets came at 238/247 s (match 30.10.2026)
+            ("tech", ["upgrade"]),
             # the flak's shield: a full-height door (130, the flak stands ~118 tall) the AI opens to fire, like the
             # machine guns' full doors; the 65-high shield before let the player snipe the flak above it (fourth test)
             ("struts", [((-2945, -55), (-2945, -185), "door"), ((-2945, -185), (-2845, -55), "backbracing")]),
             ("aa", ["flak"]),
             ("eco", ["turbine"]),
-            ("eco", ["mine", "mine"]),
-            ("tech", ["upgrade"]),
             ("upgrades", ["rocket", "rocket"]),
+            ("eco", ["mine", "mine"]),
             # the gallery with its sandbags, anti-air on its roof behind the rockets (flak first, then the machine gun;
             # the gallery roof needs ~90 actions of support from the back block, so until then the starting fort's
             # machine gun covers the sky), woodspam in front of the reactor and the lower front

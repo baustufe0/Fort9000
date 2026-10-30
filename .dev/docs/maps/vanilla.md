@@ -225,10 +225,12 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   three logs); the starting fort has nothing across those storeys, and its lower front gave way in two lost matches.
   Only in Vanilla-5 for now, as a test. Third test: refused once (`CS_NODESTOOFAR`), built on the retry at 91 s
   (216.6 long).
-- Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
-  the final pass they came only at the end), the flak's shield and the flak (55-57), the first turbine (100; energy,
-  second test), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, smoke on its storey (157),
-  woodspam, machine gun (194), two turbines, battery and store, upgraded turbines, battery, minigun (the starting fort's machine gun: the gallery-roof one stands behind the flak), upgraded mines, woodspam.
+- Order (223 actions since the hub): armoury (30), mine, the long brace, EMP rockets (38, 43), their lanes with the
+  doors at once, the upgrade centre (61; since 30.10.2026 right after the rockets: on 2v6 Vanilla, behind a turbine and
+  two mines, it came at 270-392 s and the rockets late or never, moved up the rockets came at 238/247 s), the flak's
+  shield and the flak (64) and the first turbine while it builds, rockets (104-105), two mines, the gallery's
+  sandbags, smoke on its storey, woodspam, machine gun, two turbines, battery and store, upgraded turbines, battery,
+  minigun (the starting fort's machine gun), upgraded mines, woodspam.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).
