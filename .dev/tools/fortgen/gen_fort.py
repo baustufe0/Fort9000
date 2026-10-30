@@ -242,17 +242,24 @@ MAPS = {
 
 # Workshop map "2v6 Vanilla (clean)" (2927068191): eight copies of the Vanilla starting fort (2 left, 6 right on a
 # staircase, each step 900 back and 1000 higher, .dev/docs/maps/2v6-vanilla.md). Same starting fort and base plan as
-# Vanilla; the terrain is the map's own around the third fort on the right (world anchor (5000, -900) = the plan
-# frame's (-3200, 700), mirrored): a cliff wall 0-200 behind the rock edge up to y -300, the next fort standing on it.
-# fwe_dir is relative to data/; the map lives in the Workshop folder.
+# Vanilla; the terrain is the map's own around all eight forts laid over each other in the plan frame (each fort's
+# anchor = the plan frame's (-3200, 700), team 2 mirrored): a plan must fit every spot. Behind the rock edge a cliff wall
+# 0-200 back up to y -300 (the next fort stands on it); behind T2-4 (5900, -1900) the rock starts at y 600 already, where
+# a back node (-3600, 602) was refused with CS_OBSTRUCTION and stalled that fort for 8 minutes (match 30.10.2026, when
+# only T2-3's terrain was checked). fwe_dir is relative to data/; the map lives in the Workshop folder.
 MAPS["Vanilla2v6"] = dict(MAPS["Vanilla"], **{
     "fwe_dir": "../../../workshop/content/410900/2927068191",
     "fwe": "2v6 Vanilla clean.fwe",
-    # world -> plan frame: x' = -3200 - (x - 5000), y' = 700 + (y + 900)
-    "fwe_frame": {"mirror": True, "anchor": (5000, -900), "plan_anchor": (-3200, 700)},
+    # world -> plan frame per fort: x' = -3200 -+ (x - anchor x), y' = 700 + (y - anchor y)
+    "fwe_frame": {"plan_anchor": (-3200, 700),
+                  "anchors": [((3200, 1100), True), ((4100, 100), True), ((5000, -900), True), ((5900, -1900), True),
+                              ((6800, -3000), True), ((7700, -4000), True), ((-4100, -300), False),
+                              ((-5100, -1600), False)]},
     # the next fort up stands on rock at y -300 (all of it behind x -3592): no node above -250, no device box above
     # -300, so the lower fort never reaches into the upper one's space or its lowest lines of fire
     "ceiling": {"nodes": -250, "devices": -300},
+    # nodes (not foundations) at least this far from the rock of every spot (the game refused one 2 from it)
+    "rock_clear": 15,
     "variants": "VANILLA2V6_VARIANTS",
 })
 
@@ -1367,15 +1374,20 @@ _V26 = VANILLA_VARIANTS
 _V26_ROWS = [-170, -45, 80, 205, 308, 405, 503, 602, 700]
 # Low fort (plans 1 and 3): the deck 205..80 and the nest 80..-45 over x -3500..-2845, each front cell firing through
 # the prow cell ahead of it (a lane with a short door, Vanilla-5); the top storey -45..-170 over x -3500..-2945, its front
-# cell a third weapon cell, its back cells hidden (light). Rockets need storeys of 125 (box 112), so 125 instead of 130.
-_V26_LOW = _union(_box(-3500, -2845, -45, 205), _V_BACK, _box(-3500, -2945, -170, -45))
+# cell a third weapon cell. Rockets need storeys of 125 (box 112), so 125 instead of 130. The top storey is solid: hidden
+# (background bracing) under the roof turbines, one of them was refused with CS_UNSTABLE (match 30.10.2026, a storey of
+# background posts carrying devices). The front column is X-braced: weapons in the top front cell (above the nest's
+# weapon cell, whose diagonals are background bracing) were refused with CS_UNSTABLE in 3 of 4 forts with one diagonal.
+# The back block starts at x -3500: behind T2-4 the rock begins at y 600 right behind the rock edge (x -3600).
+_V26_BACK = _box(-3500, -3100, 205, 700)
+_V26_LOW = _union(_box(-3500, -2845, -45, 205), _V26_BACK, _box(-3500, -2945, -170, -45))
 _V26_LOW_CFG = dict(_V26["rockets"]["cfg"],
                     rows=_V26_ROWS,
                     # Vanilla-5's nest front post: a short door, background bracing around it (light on the prow; with
                     # armour around the door the starting fort's lower front post reached 0.84); its outer layer left out
                     door_posts=[(-2845, -45, 80)], door_rest=[((-2845, -45, 80), "backbracing")],
                     door_layer_skip=[(-2845, 80)],
-                    hidden_box=(-3500, -3100, -170, -45),
+                    hidden_box=[], crossbrace_keep=[(-3100, -2945, -170, 205)],
                     split_cell=[], sandbag_slots=[], turbine_floor_y=None, turbine_roof_max_y=-170,
                     # the front roof is the machine gun's (alone in its row), the turbines take the roof behind it
                     weapon_slots=[], roof_weapon_cells=[(-3100, -170)], turbine_avoid=[(-3100, -170)],
@@ -1384,18 +1396,20 @@ _V26_LONG_BRACE = ("struts", [((-2996, 504), (-2900, 700), "backbracing")])
 # Block fort (plans 2 and 4): Vanilla-3 without its tower, x -3400..-2945, the same three storeys (a heavy weapon's box
 # is 101-121). Heavy weapons stand at x -3200..-3100 (Vanilla-3's proven column) and fire through the 155-wide front
 # cell (their lane); the front cell of a storey without a heavy weapon takes a sniper or a machine gun, its door the
-# front post at x -2945.
-_V26_BLOCK = _union(_box(-3400, -2945, -170, 205), _V_BACK)
+# front post at x -2945. A sniper stands in the top front cell at LinkT 0.28 like Vanilla-3's (built there; at 0.7 it was
+# refused with CS_UNSTABLE in both cannon forts, 30.10.2026); never in the front cell on the starting fort's front post
+# (floor 80 here, 105 on Vanilla: snipers refused there in every match), which takes a machine gun instead.
+_V26_BLOCK = _union(_box(-3400, -2945, -170, 205), _V26_BACK)
 _V26_BLOCK_CFG = dict(_V_HIGH_CFG,
                       rows=_V26_ROWS, large_top_min=-45, large_top_max=80,
-                      turbine_floor_y=None, turbine_roof_max_y=-170, hidden_box=(-3400, -3100, -170, -45),
+                      turbine_floor_y=None, turbine_roof_max_y=-170, hidden_box=[],
                       split_cell=[], sandbag_slots=[], roof_weapon_cells=[(-3100, -170)], turbine_avoid=[(-3100, -170)],
                       tower_connect={"base_y": 205, "storeys": 2, "skip_floors": (-45,)},
                       support_cheapest=True, weapon_avoid=[],
                       woodspam=[{"wall_x": -2945, "layers": [-2905, -2865], "rows": [-45, 80, 205], "base": []},
                                 _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
                       footing=_V_FOOTING,
-                      single_diagonal=True, crossbrace_keep=[(-3400, -2945, -45, 700)])
+                      single_diagonal=True, crossbrace_keep=[(-3400, -2945, -170, 700)])
 
 VANILLA2V6_VARIANTS = {
     # 2v6-1: sniper (-> AP sniper) on the deck, anti-air (machine gun -> minigun) in the nest's front cell, before the
@@ -1442,7 +1456,7 @@ VANILLA2V6_VARIANTS = {
         "shape": _V26_BLOCK,
         "roof_weapons": {"machinegun"},
         "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5), (-3200, 80, 0.5)],
-                    weapon_cells=[(-3100, -45, "sniper", 0.7)]),
+                    weapon_cells=[(-3100, -45, "sniper", 0.28)]),
         "plan": [
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
@@ -1484,11 +1498,14 @@ VANILLA2V6_VARIANTS = {
             _V26_LONG_BRACE,
             ("weapons", ["rocketemp", "rocketemp"]),
             ("build", [(-2945, 205), (-2945, 80)]),
-            ("eco", ["turbine"]),
-            ("weapons", ["rocketemp"]),
-            ("eco", ["mine", "mine"]),
+            # the upgrade centre right after the EMP rockets (match 30.10.2026: placed at 270-392 s behind the third
+            # rocket, a turbine and two mines, so the rockets came late or never), the turbine while it builds
             ("tech", ["upgrade"]),
-            ("upgrades", ["rocket", "rocket", "rocket"]),
+            ("eco", ["turbine"]),
+            ("upgrades", ["rocket", "rocket"]),
+            ("eco", ["mine", "mine"]),
+            ("weapons", ["rocketemp"]),
+            ("upgrades", ["rocket"]),
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
             ("eco", ["turbine", "turbine"]),
@@ -1501,23 +1518,24 @@ VANILLA2V6_VARIANTS = {
         ],
     },
     # 2v6-4, sniper and laser rush: the laser behind the deck's lane (factory on its proven slot, the upgrade centre one
-    # strut behind the munitions slot: beside the factory their boxes overlapped), the sniper in the front cell above
-    # it, anti-air (machine gun -> minigun) in the top storey's front cell
+    # strut behind the munitions slot: beside the factory their boxes overlapped), anti-air (machine gun -> minigun) in
+    # the front cell above it, the sniper (-> AP sniper) in the top storey's front cell
     "laser": {
-        "title": "Sniper and laser rush: laser behind the deck lane, sniper (-> AP sniper) and anti-air above it (2v6)",
+        "title": "Sniper and laser rush: laser behind the deck lane, anti-air above it, sniper (-> AP sniper) on top (2v6)",
         "shape": _V26_BLOCK,
         "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
         "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5)],
-                    weapon_cells=[(-3100, 80, "sniper", 0.7), (-3100, -45, "machinegun", 0.7)],
+                    weapon_cells=[(-3100, -45, "sniper", 0.28), (-3100, 80, "machinegun", 0.7)],
                     roof_weapon_cells=[]),
         "plan": [
             ("weapons", ["sniper"]),
             ("tech", ["workshop"]),
             ("tech", ["factory"]),
-            ("eco", ["mine", "store"]),
+            # the laser costs 1000 metal / 6000 energy, more than both caps (900 / 5000): a store and a battery first
+            # (match 30.10.2026: with the battery after the laser the fort sat at 1200 / 5000 from 185 s to the end)
+            ("eco", ["mine", "store", "battery"]),
             ("weapons", ["laser"]),
             ("eco", ["turbine"]),
-            ("eco", ["battery"]),
             ("eco", ["mine"]),
             ("eco", ["turbine"]),
             ("aa", ["machinegun"]),
@@ -3656,8 +3674,11 @@ def main():
     polys = [pts for flag, pts in blocks if flag >= 0 or (cfg.get("solid_minus1") and flag == -1)]
     fr = cfg.get("fwe_frame")
     if fr:      # the map's terrain moved into the plan frame (a fort that is not where the base plan was recorded)
-        (ax, ay), (px, py), sx = fr["anchor"], fr["plan_anchor"], -1 if fr.get("mirror") else 1
-        polys = [[(px + sx * (x - ax), py + y - ay) for x, y in pts] for pts in polys]
+        px, py = fr["plan_anchor"]
+        # anchors [((x, y), mirror)]: several forts of the map laid over each other (the plan must fit each of them)
+        anchors = fr.get("anchors") or [(fr["anchor"], fr.get("mirror", False))]
+        polys = [[(px + (-1 if mirror else 1) * (x - ax), py + y - ay) for x, y in pts]
+                 for (ax, ay), mirror in anchors for pts in polys]
     terrain = Terrain(polys)
     plan_dir = os.path.join(os.path.dirname(os.path.abspath(args.maps)), cfg["plan_dir"]) if cfg.get("plan_dir") else mdir
     _, base = parse_plan(os.path.join(plan_dir, cfg["base_plan"]))

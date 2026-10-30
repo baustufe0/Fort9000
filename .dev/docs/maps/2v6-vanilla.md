@@ -60,10 +60,10 @@ roof 81-100 % (the left side 0-18 %: the cliff).
 
 | Plan | Row 205 | Row 80 | Row -45 | Roof -170 | Tech | physics.py max stress |
 |---|---|---|---|---|---|---|
-| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | - | two mortars -> heavy mortars in a storey -170..-235 at the back (door roof, door in front), 3 turbines | workshop, upgrade | 0.44 |
-| Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper | machine gun -> minigun (open), 3 turbines | workshop, munitions, upgrade | 0.54 |
-| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket | machine gun -> minigun (open), 3 turbines | armoury, upgrade | 0.65 |
-| Vanilla2v6-4 | laser (x -3200..-3100, lane in front) | sniper -> AP sniper | machine gun -> minigun | 3 turbines | workshop, factory, upgrade | 0.64 |
+| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | - | two mortars -> heavy mortars in a storey -170..-235 at the back (door roof, door in front), 3 turbines | workshop, upgrade | 0.51 |
+| Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper (LinkT 0.28) | machine gun -> minigun (open), 3 turbines | workshop, munitions, upgrade | 0.59 |
+| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket | machine gun -> minigun (open), 3 turbines | armoury, upgrade (right after the first two rockets) | 0.67 |
+| Vanilla2v6-4 | laser (x -3200..-3100, lane in front) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines | workshop, factory, store and battery before the laser, upgrade | 0.74 |
 
 - Plans 1 and 3: the low fort (x -3500..-2845 for the deck and nest with the prow lanes, the top storey to x -2945);
   plans 2 and 4: the block fort (x -3400..-2945, Vanilla-3's heavy-weapon column).
@@ -94,6 +94,26 @@ roof 81-100 % (the left side 0-18 %: the cliff).
   Since 30.10.2026 the first 6 actions of every Vanilla-fort plan (Vanilla, VanillaLong, Vanilla2v6, Vanilla2v6Long;
   `_V_HUB` in `gen_fort.py`, part of `_V_FOOTING`).
 - No AI device or strut was destroyed; the AIs had 4 snipers and 2 EMP rockets, 4 sniper shots and 1 rocket shot.
+
+## Second match (30.10.2026, log_20261030-151042, ~640 s, the AI side won)
+
+Plans: three rocket forts (T2-3, T2-4, T2-5), the laser fort (T2-2), two cannon forts (T2-1, T2-6). The player saw EMP
+rockets but no rockets, and the heavy weapons late. Causes (fixed in the plans since):
+- A sniper or rocket in the top storey's front cell (above the nest's weapon cell, one diagonal per cell, sniper at
+  LinkT 0.7) was refused with `CS_UNSTABLE` in 3 of 4 forts and given up after 120 s; the laser fort's sniper in the
+  front cell on the starting fort's front post too (the Vanilla notes: snipers refused there in every match). In the
+  cannon forts the stuck sniper delayed the munitions plant to 145 s and the first cannon to ~300 s. Now: the front
+  column X-braced, snipers at LinkT 0.28 in the top front cell (Vanilla-3's), a machine gun in the cell on the front
+  post.
+- The laser was never placed: it costs 6000 energy, the cap is 5000 until a battery stands, and the battery came after
+  it (the fort sat at 1200 / 5000 from 185 s). Now the store and the battery come first.
+- T2-4 stalled at plan action 173 for 8 minutes: a back node (-3600, 602) touched the rock step behind that spot only
+  (`CS_OBSTRUCTION`, given up, the cells on it skipped one by one). Now the generator checks the terrain of all eight
+  spots laid over each other (`fwe_frame.anchors`, `rock_clear` 15) and the back block starts at x -3500.
+- The upgrade centre came at 270 / 392 s (after the third rocket, a turbine and two mines): rockets at 330 s in one
+  fort, one at 535 s in another (its second upgrade refused with `CS_OCCUPIED`, then `CS_OBSTRUCTION`, cause unknown).
+  Now right after the first two EMP rockets (plan action 62 instead of 111, the rockets at 91/92).
+- A roof turbine on the hidden top storey (background bracing) was refused with `CS_UNSTABLE`: the top storey is solid.
 
 ## Open
 
