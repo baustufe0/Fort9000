@@ -240,6 +240,22 @@ MAPS = {
     },
 }
 
+# Workshop map "2v6 Vanilla (clean)" (2927068191): eight copies of the Vanilla starting fort (2 left, 6 right on a
+# staircase, each step 900 back and 1000 higher, .dev/docs/maps/2v6-vanilla.md). Same starting fort and base plan as
+# Vanilla; the terrain is the map's own around the third fort on the right (world anchor (5000, -900) = the plan
+# frame's (-3200, 700), mirrored): a cliff wall 0-200 behind the rock edge up to y -300, the next fort standing on it.
+# fwe_dir is relative to data/; the map lives in the Workshop folder.
+MAPS["Vanilla2v6"] = dict(MAPS["Vanilla"], **{
+    "fwe_dir": "../../../workshop/content/410900/2927068191",
+    "fwe": "2v6 Vanilla clean.fwe",
+    # world -> plan frame: x' = -3200 - (x - 5000), y' = 700 + (y + 900)
+    "fwe_frame": {"mirror": True, "anchor": (5000, -900), "plan_anchor": (-3200, 700)},
+    # the next fort up stands on rock at y -300 (all of it behind x -3592): no node above -250, no device box above
+    # -300, so the lower fort never reaches into the upper one's space or its lowest lines of fire
+    "ceiling": {"nodes": -250, "devices": -300},
+    "variants": "VANILLA2V6_VARIANTS",
+})
+
 # ----------------------------------------------------------------------------- Variants (archetypes)
 # shape(x0, y0, x1, y1) -> True if the cell with these corners should be built
 
@@ -965,8 +981,17 @@ _V_MINE_ROW_WS = {"wall_x": -2812, "layers": [-2772, -2732, -2692], "rows": [602
 # changed nothing (0.95-0.96: they hang off the same front), and a counterweight on the back block can't help either
 # (foundations are fixed, the fort can't tip). The foundation is created by node 41's brace: a strut along the rock from
 # the front ground node to it was refused with CS_OBSTRUCTION in both test matches (29.10.2026).
-_V_FOOTING = [((-2897.92, 602.28), (-2958, 700), "armour"),
-              ((-2895.38, 505.41), (-2958, 700), "bracing")]
+# Before it, Michael's hub (2v6 match 30.10.2026, built at 17-26 s right after his workshop): a node inside the starting
+# fort's two lower front storeys, six background-bracing spokes to the front nodes around it (46, 47, 42, 40, 51, 50).
+# It ties those storeys into one stiff block; physics.py max stress Vanilla-2/-5/-6 0.65/0.69/0.68 -> 0.47/0.48/0.53,
+# the 2v6 plans 0.64-0.83 -> 0.47-0.61 (Vanilla-3's peak is in its tower). Background bracing: the starting fort's
+# machine gun (strut 47-46 at y 504) fires through the spokes to 50 and 51
+_V_HUB_NODE = (-2949, 532)
+_V_HUB = [((-2895.38, 505.41), _V_HUB_NODE, "backbracing")] + [
+    (_V_HUB_NODE, p, "backbracing") for p in ((-2996.23, 503.57), (-3001.26, 700.0), (-2900.0, 700.0),
+                                              (-2993.3, 407.38), (-2892.17, 411.07))]
+_V_FOOTING = _V_HUB + [((-2897.92, 602.28), (-2958, 700), "armour"),
+                       ((-2895.38, 505.41), (-2958, 700), "bracing")]
 
 VANILLA_VARIANTS = {
     # Every variant ends with a late-game block (more anti-air, more weapons, upgrades), so the AI
@@ -1323,6 +1348,191 @@ VANILLA_VARIANTS["modular"] = {
              {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602, 700], "base": [], "outside": "bracing"}]},
          "plan": [("defence", ["woodspam:3"])]},
     ],
+}
+
+
+# ----------------------------------------------------------------------------- 2v6 Vanilla (clean)
+# The Vanilla plans adapted to the 2v6 map (.dev/docs/maps/2v6-vanilla.md): the same starting fort, but
+#  - the next fort up stands on rock at y -300 (plan frame): nothing above y -250 (MAPS["Vanilla2v6"]["ceiling"]),
+#    so no tower: three 125-high storeys over the starting fort's roof (205..80, 80..-45, -45..-170), each with a
+#    weapon in its front cell, alone in its row (machine guns too: the player, 30.10.2026, two miniguns side by side on
+#    one storey do not work, they need a line of fire to the fort);
+#  - the cliff wall behind the fort takes the turbines' wind from the left (rules.wind_rays with the map's terrain: 0 %
+#    on the left for every turbine), and a weapon's doors in front of them at their height take the right side (0 %
+#    with a weapon in the front cell of a turbine storey): the turbines stand on the open top roof (y -170, their top
+#    -297), where nothing is to their right;
+#  - mortars reach downhill far and uphill little: high in the four lower AI forts they reach the front third of the
+#    player's front fort T1-A, its reactor included; the player's mortar hit the lower AI forts (30.10.2026).
+_V26 = VANILLA_VARIANTS
+_V26_ROWS = [-170, -45, 80, 205, 308, 405, 503, 602, 700]
+# Low fort (plans 1 and 3): the deck 205..80 and the nest 80..-45 over x -3500..-2845, each front cell firing through
+# the prow cell ahead of it (a lane with a short door, Vanilla-5); the top storey -45..-170 over x -3500..-2945, its front
+# cell a third weapon cell, its back cells hidden (light). Rockets need storeys of 125 (box 112), so 125 instead of 130.
+_V26_LOW = _union(_box(-3500, -2845, -45, 205), _V_BACK, _box(-3500, -2945, -170, -45))
+_V26_LOW_CFG = dict(_V26["rockets"]["cfg"],
+                    rows=_V26_ROWS,
+                    # Vanilla-5's nest front post: a short door, background bracing around it (light on the prow; with
+                    # armour around the door the starting fort's lower front post reached 0.84); its outer layer left out
+                    door_posts=[(-2845, -45, 80)], door_rest=[((-2845, -45, 80), "backbracing")],
+                    door_layer_skip=[(-2845, 80)],
+                    hidden_box=(-3500, -3100, -170, -45),
+                    split_cell=[], sandbag_slots=[], turbine_floor_y=None, turbine_roof_max_y=-170,
+                    # the front roof is the machine gun's (alone in its row), the turbines take the roof behind it
+                    weapon_slots=[], roof_weapon_cells=[(-3100, -170)], turbine_avoid=[(-3100, -170)],
+                    tower_connect={"base_y": 205, "storeys": 2, "skip_floors": (-45,)})
+_V26_LONG_BRACE = ("struts", [((-2996, 504), (-2900, 700), "backbracing")])
+# Block fort (plans 2 and 4): Vanilla-3 without its tower, x -3400..-2945, the same three storeys (a heavy weapon's box
+# is 101-121). Heavy weapons stand at x -3200..-3100 (Vanilla-3's proven column) and fire through the 155-wide front
+# cell (their lane); the front cell of a storey without a heavy weapon takes a sniper or a machine gun, its door the
+# front post at x -2945.
+_V26_BLOCK = _union(_box(-3400, -2945, -170, 205), _V_BACK)
+_V26_BLOCK_CFG = dict(_V_HIGH_CFG,
+                      rows=_V26_ROWS, large_top_min=-45, large_top_max=80,
+                      turbine_floor_y=None, turbine_roof_max_y=-170, hidden_box=(-3400, -3100, -170, -45),
+                      split_cell=[], sandbag_slots=[], roof_weapon_cells=[(-3100, -170)], turbine_avoid=[(-3100, -170)],
+                      tower_connect={"base_y": 205, "storeys": 2, "skip_floors": (-45,)},
+                      support_cheapest=True, weapon_avoid=[],
+                      woodspam=[{"wall_x": -2945, "layers": [-2905, -2865], "rows": [-45, 80, 205], "base": []},
+                                _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
+                      footing=_V_FOOTING,
+                      single_diagonal=True, crossbrace_keep=[(-3400, -2945, -45, 700)])
+
+VANILLA2V6_VARIANTS = {
+    # 2v6-1: sniper (-> AP sniper) on the deck, anti-air (machine gun -> minigun) in the nest's front cell, before the
+    # woodspam; two mortars (-> heavy mortars) in a short storey on the roof's back (-170..-235, door roof, door in
+    # front), the highest place under the ceiling (from there they reach T1-A's reactor); the turbines on the roof in
+    # front of it (the cliff takes their left side anyway)
+    "snipers": {
+        "title": "Sniper -> AP sniper on the deck, anti-air in the nest, two mortars on the roof (2v6)",
+        "shape": _union(_V26_LOW, _box(-3500, -3300, -235, -170)),
+        "tech_slots": {"upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+        "cfg": dict(_V26_LOW_CFG, rows=[-235] + _V26_ROWS,
+                    weapon_cells=[(-3100, 205, "sniper", 0.7), (-3100, 80, "machinegun", 0.7)],
+                    roof_weapon_cells=[], turbine_avoid=[(-3500, -235), (-3400, -235)],
+                    # 100 apart, each with a door roof (light_roof)
+                    mortar_slots=[((-3500, -170), (-3400, -170), 0.5), ((-3400, -170), (-3300, -170), 0.5)]),
+        "plan": [
+            ("weapons", ["sniper"]),
+            ("tech", ["workshop"]),
+            ("eco", ["mine"]),
+            _V26_LONG_BRACE,
+            ("build", [(-2945, 205), (-2945, 80)]),
+            ("aa", ["machinegun"]),
+            ("eco", ["turbine"]),
+            ("weapons", ["mortar", "mortar"]),
+            ("struts", [((-3300, -170), (-3300, -235), "door")]),
+            ("eco", ["mine", "mine"]),
+            ("eco", ["turbine"]),
+            ("tech", ["upgrade"]),
+            ("eco", ["battery", "store"]),
+            ("upgrades", ["sniper2"]),
+            ("upgrades", ["mortar2", "mortar2"]),
+            ("defence", ["woodspam"]),
+            ("eco", ["turbine"]),
+            ("upgrades", ["minigun"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["mine2", "mine2"]),
+            ("defence", ["woodspam"]),
+        ],
+    },
+    # 2v6-2: two cannons one above the other behind their lanes, the sniper (-> AP sniper) in the top storey's front cell
+    "cannons": {
+        "title": "Sniper -> AP sniper over two cannons one above the other in a low block (2v6)",
+        "shape": _V26_BLOCK,
+        "roof_weapons": {"machinegun"},
+        "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5), (-3200, 80, 0.5)],
+                    weapon_cells=[(-3100, -45, "sniper", 0.7)]),
+        "plan": [
+            ("eco", ["rebrace"]),
+            ("tech", ["workshop"]),
+            ("weapons", ["sniper"]),
+            ("tech", ["munitions"]),
+            ("eco", ["mine", "battery"]),
+            ("weapons", ["cannon"]),
+            ("eco", ["turbine"]),
+            ("aa", ["machinegun"]),
+            ("eco", ["mine"]),
+            ("defence", ["woodspam:1", "woodspam:2"]),
+            ("eco", ["turbine"]),
+            ("eco", ["mine"]),
+            ("tech", ["upgrade"]),
+            ("eco", ["store", "battery"]),
+            ("upgrades", ["sniper2"]),
+            ("weapons", ["cannon"]),
+            ("upgrades", ["turbine2", "turbine2"]),
+            ("defence", ["woodspam"]),
+            ("upgrades", ["minigun"]),
+            ("eco", ["turbine"]),
+            ("defence", ["woodspam"]),
+        ],
+    },
+    # 2v6-3, rocket rush: three EMP rockets (-> rockets) one above the other in the front cells. No smoke launcher: it
+    # needs a storey of its own row with a door roof (box ~127): every such storey either shares a rocket's row or
+    # reaches above the ceiling; the rockets then fire without waiting for smoke (Fire.SmokeCover)
+    "rockets": {
+        "title": "Rocket rush: armoury, three EMP rockets one above the other behind short doors (2v6)",
+        "shape": _V26_LOW,
+        "tech_slots": _V26["rockets"]["tech_slots"],
+        "roof_weapons": {"machinegun"},
+        "cfg": dict(_V26_LOW_CFG,
+                    weapon_cells=[(-3100, 205, "rocketemp", 0.7), (-3100, 80, "rocketemp", 0.7),
+                                  (-3100, -45, "rocketemp", 0.7)]),
+        "plan": [
+            ("tech", ["armoury"]),
+            ("eco", ["mine"]),
+            _V26_LONG_BRACE,
+            ("weapons", ["rocketemp", "rocketemp"]),
+            ("build", [(-2945, 205), (-2945, 80)]),
+            ("eco", ["turbine"]),
+            ("weapons", ["rocketemp"]),
+            ("eco", ["mine", "mine"]),
+            ("tech", ["upgrade"]),
+            ("upgrades", ["rocket", "rocket", "rocket"]),
+            ("aa", ["machinegun"]),
+            ("defence", ["woodspam"]),
+            ("eco", ["turbine", "turbine"]),
+            ("eco", ["battery", "store"]),
+            ("upgrades", ["turbine2", "turbine2", "turbine2"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["minigun"]),
+            ("upgrades", ["mine2", "mine2"]),
+            ("defence", ["woodspam"]),
+        ],
+    },
+    # 2v6-4, sniper and laser rush: the laser behind the deck's lane (factory on its proven slot, the upgrade centre one
+    # strut behind the munitions slot: beside the factory their boxes overlapped), the sniper in the front cell above
+    # it, anti-air (machine gun -> minigun) in the top storey's front cell
+    "laser": {
+        "title": "Sniper and laser rush: laser behind the deck lane, sniper (-> AP sniper) and anti-air above it (2v6)",
+        "shape": _V26_BLOCK,
+        "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
+        "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5)],
+                    weapon_cells=[(-3100, 80, "sniper", 0.7), (-3100, -45, "machinegun", 0.7)],
+                    roof_weapon_cells=[]),
+        "plan": [
+            ("weapons", ["sniper"]),
+            ("tech", ["workshop"]),
+            ("tech", ["factory"]),
+            ("eco", ["mine", "store"]),
+            ("weapons", ["laser"]),
+            ("eco", ["turbine"]),
+            ("eco", ["battery"]),
+            ("eco", ["mine"]),
+            ("eco", ["turbine"]),
+            ("aa", ["machinegun"]),
+            ("defence", ["woodspam:1", "woodspam:2"]),
+            ("eco", ["mine"]),
+            ("tech", ["upgrade"]),
+            ("eco", ["battery"]),
+            ("upgrades", ["sniper2"]),
+            ("upgrades", ["turbine2", "turbine2"]),
+            ("defence", ["woodspam"]),
+            ("upgrades", ["minigun"]),
+            ("eco", ["turbine", "battery"]),
+            ("defence", ["woodspam"]),
+        ],
+    },
 }
 
 
@@ -1749,6 +1959,19 @@ class Plan:
     def in_turbine_row(self, c):
         """Cell in the turbine gallery storey: only background bracing inside (open for the wind)."""
         return self.cfg.get("turbine_row_open") and self.cfg["rows"][c[1] + 1] in self.turbine_floors()
+
+    def weapon_in_front(self, where):
+        """Another placed weapon stands ahead of the device at where = (A, B, LinkT) in its row (rules.ROW_TOL), towards
+        the enemy (+x: plans are written for team 1)."""
+        a, b, t = where
+        x, y = a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])
+        for (d, pa, pb, pt, c) in self.placed:
+            if c is None or d not in DIRECT_WEAPONS | LOBBED_WEAPONS:
+                continue
+            px, py = pa[0] + pt * (pb[0] - pa[0]), pa[1] + pt * (pb[1] - pa[1])
+            if abs(py - y) < rules.ROW_TOL and px > x + 1:
+                return True
+        return False
 
     def turbine_floors(self):
         """turbine_floor_y: one floor height or a list of them (stacked galleries, filled in that order)."""
@@ -2260,9 +2483,11 @@ class Plan:
         min_w = self.cfg.get("turbine_min_w", 0)
         # turbine_floor_x (x0, x1): only cells within these columns (a turbine column at the back)
         fx0, fx1 = self.cfg.get("turbine_floor_x", (-1e9, 1e9))
+        # turbine_floor_front: the gallery's front cell may take a turbine too (2v6: a cage on top whose front is open air)
+        front_ok = self.cfg.get("turbine_floor_front", False)
         for y in self.turbine_floors():
             cands = [c for c in sorted(self.cells)
-                     if self.cfg["rows"][c[1] + 1] == y and not self.is_front(c) and c not in self.devices
+                     if self.cfg["rows"][c[1] + 1] == y and (front_ok or not self.is_front(c)) and c not in self.devices
                      and self.cell_x(c)[0] >= fx0 - 1 and self.cell_x(c)[1] <= fx1 + 1
                      and self.cell_w(c) >= min_w
                      # turbine_avoid: (left x, y) where turbines were refused in test matches (the roof = the floor here)
@@ -2991,6 +3216,11 @@ class Plan:
             if "upgrade" not in self.tech_done:
                 self.add("tech", "upgrade")
             for (d, a, b, t, c) in self.placed:
+                # a minigun needs a line of fire to the enemy fort (the player, 30.10.2026): a machine gun with another
+                # weapon in front of it in its row stays a machine gun (anti-air), the next one or the starting fort's
+                # machine gun is upgraded instead
+                if d == base and dev == "minigun" and c is not None and self.weapon_in_front((a, b, t)):
+                    continue
                 if d == base:
                     self.placed.remove((d, a, b, t, c))
                     if c is None:       # upgrade ground mine
@@ -3356,6 +3586,22 @@ class Plan:
         for nid, p in pos.items():
             if nid >= 10000 and self.t.inside((p[0], p[1] - 3)) and self.t.inside((p[0] + 3, p[1])):
                 errors.append("node %d lies in rock" % nid)
+        # ceiling {"nodes": y, "devices": y}: nothing above these heights (2v6 Vanilla: the next fort stands above)
+        ceil = self.cfg.get("ceiling")
+        if ceil:
+            for nid, p in pos.items():
+                if nid >= 10000 and p[1] < ceil["nodes"] - 0.5:
+                    errors.append("node %d at (%d,%d) above the ceiling %d" % (nid, p[0], p[1], ceil["nodes"]))
+            for k, line in enumerate(self.actions):
+                if "CREATE_DEVICE" not in line:
+                    continue
+                pts = [(float(a), float(b)) for a, b in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
+                dev = line.split('DeviceSaveName = "')[1].split('"')[0]
+                t = float(re.search(r"LinkT = (-?[\d.]+)", line).group(1)) if "LinkT" in line else 0.5
+                y = pts[0][1] + t * (pts[1][1] - pts[0][1]) if len(pts) >= 2 else pts[0][1]
+                top = y - rules.BOX_TOP.get(dev, 127)
+                if top < ceil["devices"] - 0.5:
+                    errors.append("action %d: %s reaches y %d, above the ceiling %d" % (k, dev, top, ceil["devices"]))
         clear = self.cfg.get("rock_clear")
         if clear:
             found = {v[0] for v in self.nodes.values() if v[2] == "found"}
@@ -3404,8 +3650,14 @@ def main():
     args = ap.parse_args()
     cfg = MAPS[args.map]
     mdir = os.path.join(args.maps, args.map)
-    _, blocks = read_blocks(os.path.join(mdir, cfg["fwe"]))
+    data_dir = os.path.dirname(os.path.abspath(args.maps))
+    fwe_dir = os.path.join(data_dir, cfg["fwe_dir"]) if cfg.get("fwe_dir") else mdir
+    _, blocks = read_blocks(os.path.join(fwe_dir, cfg["fwe"]))
     polys = [pts for flag, pts in blocks if flag >= 0 or (cfg.get("solid_minus1") and flag == -1)]
+    fr = cfg.get("fwe_frame")
+    if fr:      # the map's terrain moved into the plan frame (a fort that is not where the base plan was recorded)
+        (ax, ay), (px, py), sx = fr["anchor"], fr["plan_anchor"], -1 if fr.get("mirror") else 1
+        polys = [[(px + sx * (x - ax), py + y - ay) for x, y in pts] for pts in polys]
     terrain = Terrain(polys)
     plan_dir = os.path.join(os.path.dirname(os.path.abspath(args.maps)), cfg["plan_dir"]) if cfg.get("plan_dir") else mdir
     _, base = parse_plan(os.path.join(plan_dir, cfg["base_plan"]))

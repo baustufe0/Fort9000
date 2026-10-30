@@ -320,12 +320,14 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             if n1 in TURBINES and n2 in TURBINES and abs(p1[1] - p2[1]) < 20 and math.dist(p1, p2) < TURBINE_SPACING:
                 errors.append("turbines at %s and %s only %.0f apart (need %d)" % (_fmt(p1), _fmt(p2), math.dist(p1, p2), TURBINE_SPACING))
             # a weapon blocks the line of fire of every weapon behind it in the same row (the player's rule, 26.10.2026:
-            # rockets beside rockets and smoke, then a flak in front of the smoke launcher); machine guns behind another
-            # weapon are allowed, they only fire anti-air; so are lobbed weapons behind lobbed ones (the game's own plans
-            # put mortars side by side, 91-122 apart; their steep shells clear the short launcher ahead)
+            # rockets beside rockets and smoke, then a flak in front of the smoke launcher); also miniguns (the player,
+            # 30.10.2026: a minigun must have a line of fire to the enemy fort; two side by side on one storey do not work).
+            # Allowed behind another weapon: a plain machine gun (anti-air on a roof, e.g. against mortar shells; one the
+            # plan upgrades is checked as its minigun) and a lobbed weapon behind a lobbed one (the game's own plans put
+            # mortars side by side, 91-122 apart; their steep shells clear the short launcher ahead)
             if n1 in WEAPONS and n2 in WEAPONS and abs(p1[1] - p2[1]) < ROW_TOL:
                 front, rear = ((n2, p2), (n1, p1)) if enemy_dir * (p2[0] - p1[0]) > 0 else ((n1, p1), (n2, p2))
-                if rear[0] not in ANTI_AIR_ONLY and not (rear[0] in LOBBED and front[0] in LOBBED):
+                if not (rear[0] == "machinegun" or (rear[0] in LOBBED and front[0] in LOBBED)):
                     errors.append("%s at %s stands in front of %s at %s in one row (weapons block each other's line of fire)"
                                   % (front[0], _fmt(front[1]), rear[0], _fmt(rear[1])))
             # sandbags block the line of fire too (the player's rule, 28.10.2026: Abyss-5's smoke launcher behind the

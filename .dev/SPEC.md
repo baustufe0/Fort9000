@@ -32,6 +32,7 @@ The specification is split into files so a session only loads what it needs.
 | [.dev/docs/maps/vanilla.md](docs/maps/vanilla.md) | Vanilla: starting fort, shared shape, Vanilla-2 to -7 (current state), failed approaches, open problems | working on a Vanilla plan |
 | [.dev/docs/maps/abyss.md](docs/maps/abyss.md) | Abyss: variants, cliff-ledge rules, failed approaches | working on an Abyss plan |
 | [.dev/docs/maps/vanillalong.md](docs/maps/vanillalong.md) | VanillaLong: converted Vanilla plans | working on a VanillaLong plan |
+| [.dev/docs/maps/2v6-vanilla.md](docs/maps/2v6-vanilla.md) | 2v6 Vanilla (Workshop): terrain, ceiling, the four low plans, position detection | working on a 2v6 plan |
 | [.dev/docs/history/vanilla-2.md](docs/history/vanilla-2.md) | Vanilla-2 test matches in order | debugging a regression, "did we try X?" |
 | [.dev/docs/history/vanilla-3-5.md](docs/history/vanilla-3-5.md) | Vanilla-3/-4/-5 test matches (tower, cannons (Vanilla-4, removed 28.10.2026), 20mm rush, the former laser Vanilla-5, the rocket Vanilla-5) | debugging a regression, "did we try X?" |
 | [.dev/docs/history/vanilla-6.md](docs/history/vanilla-6.md) | Vanilla-6 (modular fort) test matches | debugging a regression, "did we try X?" |

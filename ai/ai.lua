@@ -135,7 +135,7 @@ if type(FortPlanConfig) ~= "table" then FortPlanConfig = {} end
 local function CAI_PreloadPlans()
 	local summary = {}
 	for mapName, m in pairs(FortPlanConfig.Maps or {}) do
-		local entry = { sigs = {}, plans = {}, list = m.Plans or {}, reactors = m.ReactorsPerSide }
+		local entry = { sigs = {}, plans = {}, list = m.Plans or {}, reactors = m.ReactorsPerSide, positions = m.FortPositions }
 		for _, f in ipairs(m.Originals or {}) do
 			-- entries with a folder are full paths (e.g. plans of other mods), others are relative to OriginalsDir
 			local path = string.find(f, "/", 1, true) and f or ((m.OriginalsDir or ("maps/" .. mapName .. "/")) .. f)
@@ -178,7 +178,15 @@ local function CAI_OwnReactors()
 	return n
 end
 
-local function CAI_IdentifyMap(engineFort, E)
+local function CAI_AtPosition(positions, real)
+	for _, p in ipairs(positions) do
+		if math.abs(p.x - real.x) < 50 and math.abs(p.y - real.y) < 50 then return true end
+	end
+	return false
+end
+
+-- real: where the fort really stands (the game plan's FortPos after OffsetFort/MirrorFort), nil when unknown
+local function CAI_IdentifyMap(engineFort, E, real)
 	if type(GetMapFilename) == "function" then
 		local ok, f = pcall(GetMapFilename)
 		if ok and type(f) == "string" then
@@ -196,6 +204,17 @@ local function CAI_IdentifyMap(engineFort, E)
 			end
 		end
 	end
+	-- maps sharing the game's plans (2v6 Vanilla uses the Vanilla plans) are told apart by where the fort stands: an
+	-- entry with FortPositions counts only at one of them and then wins over entries without
+	local placed, others = {}, {}
+	for _, c in ipairs(cands) do
+		if c.entry.positions then
+			if real and CAI_AtPosition(c.entry.positions, real) then table.insert(placed, c) end
+		else
+			table.insert(others, c)
+		end
+	end
+	cands = #placed > 0 and placed or others
 	if #cands > 1 then
 		local ok, r = pcall(CAI_OwnReactors)
 		if ok then
@@ -256,7 +275,8 @@ function CAI_ApplyMapStrategy(mapName)
 	end
 end
 
-function CAI_TrySwapPlan(where)
+-- realOf(E): where the game will put the plan's FortPos E (from the OffsetFort/MirrorFort arguments), nil at Load
+function CAI_TrySwapPlan(where, realOf)
 	if CAI_Plan.done then return end
 	CAI_Plan.done = true
 	local engineFort, E = Fort, FortPos
@@ -264,7 +284,8 @@ function CAI_TrySwapPlan(where)
 		CAI_PlanNote("PLAN file=original reason=no-game-plan at=" .. where)
 		return
 	end
-	local mapName, how, engineFile = CAI_IdentifyMap(engineFort, E)
+	local real = realOf and realOf(E)
+	local mapName, how, engineFile = CAI_IdentifyMap(engineFort, E, real)
 	if not mapName then
 		CAI_PlanNote("PLAN file=original reason=" .. tostring(how) .. " at=" .. where)
 		return
@@ -307,7 +328,8 @@ function CAI_TrySwapPlan(where)
 		FortPos = { x = E.x, y = E.y },
 	})
 	CAI_PlanNote("PLAN map=" .. mapName .. " file=" .. choice .. " actions=" .. (#ours.Fort - nMod) .. " instead=" .. tostring(engineFile)
-		.. " choice=" .. why .. " detected=" .. how .. " at=" .. where .. " shift=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5))
+		.. " choice=" .. why .. " detected=" .. how .. " at=" .. where .. " shift=" .. math.floor(dx + 0.5) .. "," .. math.floor(dy + 0.5)
+		.. (real and (" fort=" .. math.floor(real.x + 0.5) .. "," .. math.floor(real.y + 0.5)) or ""))
 	if CAI_Plan.retire then
 		local items = {}
 		for k, v in pairs(CAI_Plan.retire) do items[#items + 1] = tostring(k) .. ":" .. tostring(v) end
@@ -318,7 +340,9 @@ end
 
 local CAI_BaseOffsetFort = OffsetFort
 function OffsetFort(offset, structureId)
-	local ok, err = pcall(CAI_TrySwapPlan, "OffsetFort")
+	local ok, err = pcall(CAI_TrySwapPlan, "OffsetFort", function(E)
+		if type(offset) == "table" and offset.x and offset.y then return { x = E.x + offset.x, y = E.y + offset.y } end
+	end)
 	if not ok then Log("[CAI] PLAN-ERROR " .. tostring(err)) end
 	CAI_PlanNote("TRANSFORM OffsetFort " .. tostring(offset and offset.x) .. "," .. tostring(offset and offset.y))
 	return CAI_BaseOffsetFort(offset, structureId)
@@ -326,7 +350,13 @@ end
 
 local CAI_BaseMirrorFort = MirrorFort
 function MirrorFort(pivot, offset, structureId)
-	local ok, err = pcall(CAI_TrySwapPlan, "MirrorFort")
+	-- the game mirrors x about the pivot, then adds the offset (Vanilla team 2: pivot 0, offset -3950,3300 moves
+	-- weapon_pack's ToGAF1 FortPos (-6850,-2600) to (2900,700))
+	local ok, err = pcall(CAI_TrySwapPlan, "MirrorFort", function(E)
+		if type(offset) == "table" and offset.x and offset.y then
+			return { x = 2 * (tonumber(pivot) or 0) - E.x + offset.x, y = E.y + offset.y }
+		end
+	end)
 	if not ok then Log("[CAI] PLAN-ERROR " .. tostring(err)) end
 	CAI_PlanNote("TRANSFORM MirrorFort pivot=" .. tostring(pivot) .. " " .. tostring(offset and offset.x) .. "," .. tostring(offset and offset.y))
 	CAI_FortMirrored = true       -- SHAPE diagnostics report offsets in the plan's own frame

@@ -135,7 +135,7 @@ Test: `.dev/tools/tests/t_modules.lua` (hand-written module on Vanilla-2, team 1
 ## Custom build plan variants per map
 
 - Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).
-- The map is identified by file name or by the signature of the game's plan (position + action count, optionally reactor count).
+- The map is identified by file name or by the signature of the game's plan (position + action count, optionally reactor count); maps sharing the game's plans are told apart by `FortPositions`: where `OffsetFort`/`MirrorFort` put the game plan's FortPos (2v6 Vanilla, [maps/2v6-vanilla.md](maps/2v6-vanilla.md)).
   Plans of other mods can be listed as originals by full path; Vanilla knows the `weapon_pack` mid plans (ToGAF1, ToGWM2).
 - One plan is chosen deterministically per match (game random or `teamId`) and shifted into the coordinates of the game's plan; the game then mirrors/offsets it as usual.
 - `"original"` in the plan list keeps the game's own plan.
@@ -224,7 +224,7 @@ Game end
 
 **`strategy.lua`** (excerpt): `ThinkInterval`, `ThreatWeight/Half/Decay/PerShot/PerHit/PerReactorHit`, `EarlySeconds`, `LateSeconds`, `Aggression{Early,Mid,Late}`, `AggressionExclude`, `RichMetal/RichBoost`, `PoorMetal/PoorEnergy/PoorFactor`, `IndirectThreatTypes`, `AntiAirThreatShots`, `AntiAirBoostMax`, `RebuildGiveUpSeconds`, `BuildSkipSeconds`, `BuildSkipMinMetal`, `Fire{…}`, `Tempo{…}`, `TargetValue{Heavy,Small}`.
 
-**`fortplans.lua`:** per map `Originals` (file names relative to `OriginalsDir`, or full paths), `OriginalsDir`, `ReactorsPerSide`, `Plans`, `Strategy`; global `Force` (force a plan, for testing) and `Probe` (CS_UNSTABLE probe, [debugging.md](debugging.md): `At`, `Devices`, `LinkT`, `Materials`, `MaxAngle`, `Interval`, `Hold`, `Max`, `Box`; for testing, never commit it switched on).
+**`fortplans.lua`:** per map `Originals` (file names relative to `OriginalsDir`, or full paths), `OriginalsDir`, `ReactorsPerSide`, `FortPositions`, `Plans`, `Strategy`; global `Force` (force a plan, for testing) and `Probe` (CS_UNSTABLE probe, [debugging.md](debugging.md): `At`, `Devices`, `LinkT`, `Materials`, `MaxAngle`, `Interval`, `Hold`, `Max`, `Box`; for testing, never commit it switched on).
 
 ## Installation and usage
 

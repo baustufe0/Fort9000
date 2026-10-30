@@ -177,6 +177,10 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
   need a cell split at half height (`split_cell`) with at least 51 per half (a 100-high cell refused the upper ones).
 - **Woodspam is foreground wood:** within a turbine's wind rays it blocks them, so it stays out of the turbines' height
   band; in a line of fire it must be background bracing.
+- **The hub brace (Michael, 30.10.2026):** a node inside the starting fort's two lower front storeys with six
+  background-bracing spokes to the front nodes around it ties those storeys into one block; in `physics.py` it lowers
+  the peak stress of the low Vanilla forts by 0.15-0.24 (the lower front post carries everything hung off the front).
+  Every Vanilla-fort plan builds it first ([maps/vanilla.md](maps/vanilla.md)); look for the same pattern on other maps.
 - **Players brace the starting fort:** in every recorded match the player built a background brace from the
   starting fort's node at (-2996, 504) down to its front ground node (-2900, 700), 217-218 long (the game's limit is
   218), within the first 16-74 s. The starting fort has nothing across those two storeys (Vanilla-5 tests it).
@@ -216,8 +220,11 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
    with sandbags. **No weapon in the open:** its first shot shows the player where it is, so every weapon stands in a
    closed cell with a door wherever it fires through (a lobbed one, e.g. the smoke launcher, a door roof and a door in
    front; Abyss-5, 28.10.2026). **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
-   in height count as one): each weapon that fires at the enemy fort stands alone in its row or at its front. Allowed
-   behind another weapon: machine guns and miniguns (anti-air only in this mod) and a lobbed weapon behind a lobbed
+   in height count as one): each weapon stands alone in its row or at its front, miniguns too (the player, 30.10.2026:
+   a minigun must have a line of fire to the enemy fort; two side by side on one storey do not work). Plain machine guns
+   may stand anywhere on a roof as anti-air (two or three against mortar shells, which is all they help against); place
+   guns with a line of fire where possible, so they can be upgraded to miniguns. Allowed behind another weapon: a plain
+   machine gun and a lobbed weapon behind a lobbed
    one (the game's own plans put mortars side by side). **Sandbags block the line of fire too:** no sandbags ahead of
    a weapon in its row, except for mortars (their steep shells clear them: Abyss-2's and Vanilla-6's mortars fired
    57-190 shots a match from behind sandbags); the smoke launcher counts as a weapon here (its arc is not known). A rocket (EMP rocket) also needs a short door in front of it
@@ -250,7 +257,8 @@ writes (`RULE ERROR` / `RULE WARN`) besides `validate()` (rock, lengths, build o
 - strut length (37.5, doors 49);
 - line of fire of direct-fire weapons and the arc of mortars: no foreground strut built after the weapon or beyond its
   recession box (doors are fine);
-- a weapon in front of another weapon in the same row (error; machine guns behind, and lobbed behind lobbed, allowed);
+- a weapon in front of another weapon in the same row (error; a plain machine gun behind, and lobbed behind lobbed,
+  allowed; a minigun, also an upgraded machine gun, is not);
 - sandbags in front of a weapon in the same row (error; mortars and machine guns behind them allowed);
 - turbine wind with the game's ray test (`wind_rays`: a side is open when at least half its rays are clear; error if
   both sides are blocked, warning if one is) and turbine spacing (≥ 90);

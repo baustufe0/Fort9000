@@ -9,6 +9,9 @@
 -- Strategy:        optional map-specific AI settings, override ai/strategy.lua for this
 --                  map (tables are merged), e.g. Strategy = { Tempo = { UpdatePeriod = 0.8 } },
 -- OriginalsDir:    folder of the original plans, if not maps/<map>/ (e.g. ai/forts/vanilla/mid/)
+-- FortPositions:   where the fort really stands ({ x, y }: the game plan's FortPos after the game's offset/mirroring);
+--                  tells apart maps that share the game's plans (2v6 Vanilla uses the Vanilla plans): such an entry
+--                  is only chosen for a fort within 50 of one of its positions, and then before entries without
 -- Force:           force a plan (for testing), e.g. Force = { Abyss = "fort-t1f1-Abyss-2.lua" },
 -- Probe:           CS_UNSTABLE probe (testing only, sandbox without combat; never commit it switched on):
 --                  once the plan is finished (or after At seconds) the AI stops and tries each device at each
@@ -75,6 +78,49 @@ FortPlanConfig =
 				{
 					Heavy = { mine = 85, turbine = 90 },
 					Small = { mortar = 90, sniper = 105 },
+				},
+			},
+		},
+		-- Workshop map "2v6 Vanilla (clean)" (2927068191): eight Vanilla starting forts, six on the right on a staircase
+		-- (each 900 back and 1000 higher). Same game plans as Vanilla, told apart by the fort's position (no node above the
+		-- next fort's rock, every weapon alone in its row at the front; .dev/docs/maps/2v6-vanilla.md)
+		Vanilla2v6 =
+		{
+			OriginalsDir = "ai/forts/vanilla/mid/",
+			Originals = { "fort-t1f1-Template-1.lua", "fort-t1f1-Template-2.lua",
+				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGAF1.lua",
+				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGWM2.lua" },
+			FortPositions = { { x = 2900, y = 1100 }, { x = 3800, y = 100 }, { x = 4700, y = -900 }, { x = 5600, y = -1900 },
+				{ x = 6500, y = -3000 }, { x = 7400, y = -4000 }, { x = -3800, y = -300 }, { x = -4800, y = -1600 } },
+			Plans = { "fort-t1f1-Vanilla2v6-1.lua", "fort-t1f1-Vanilla2v6-2.lua", "fort-t1f1-Vanilla2v6-3.lua", "fort-t1f1-Vanilla2v6-4.lua" },
+			-- 7000-12500 to the enemy forts: snipers matter most; mortars reach only downhill (the lower AI forts are in reach)
+			Strategy =
+			{
+				EarlySeconds = 150,
+				Aggression = { Early = 0.8 },
+				TargetValue =
+				{
+					Heavy = { mine = 85, turbine = 90 },
+					Small = { sniper = 105 },
+				},
+			},
+		},
+		-- the same plans in the long plan's frame (mid_to_long.py), in case the game gives a 2v6 fort the long plan
+		Vanilla2v6Long =
+		{
+			OriginalsDir = "ai/forts/vanilla/long/",
+			Originals = { "fort-t2f1-Template-1.lua" },
+			FortPositions = { { x = 2900, y = 1100 }, { x = 3800, y = 100 }, { x = 4700, y = -900 }, { x = 5600, y = -1900 },
+				{ x = 6500, y = -3000 }, { x = 7400, y = -4000 }, { x = -3800, y = -300 }, { x = -4800, y = -1600 } },
+			Plans = { "fort-t2f3-Vanilla2v6Long-1.lua", "fort-t2f3-Vanilla2v6Long-2.lua", "fort-t2f3-Vanilla2v6Long-3.lua", "fort-t2f3-Vanilla2v6Long-4.lua" },
+			Strategy =
+			{
+				EarlySeconds = 150,
+				Aggression = { Early = 0.8 },
+				TargetValue =
+				{
+					Heavy = { mine = 85, turbine = 90 },
+					Small = { sniper = 105 },
 				},
 			},
 		},

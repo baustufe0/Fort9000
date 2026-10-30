@@ -90,12 +90,19 @@ be at most 130 high for `MAX_LINK`).
   90 from the first mortar). Wind: back side open, front side 36-73 % clear (one-sided warning for the middle
   turbine). The first turbine comes after ~92 struts instead of ~163 on a tower roof.
 - **Machine guns** on the gallery roof (`roof_weapons`, `roof_weapon_cells` x -3200 and -3400 at y -25), not on the
-  nest roof (in the shells' path); both become miniguns. The starting machine gun stays (not in the sniper's way).
+  nest roof (in the shells' path). Miniguns need a line of fire to the enemy fort (the player, 30.10.2026): the front
+  one becomes a minigun, the rear one stays a machine gun (anti-air), and the starting fort's machine gun (lower front,
+  its row to itself) becomes the second minigun.
 - **Woodspam:** region 0 two layers (x -2805/-2765) in front of the prow below the deck (y 205..310, in front of the
   reactor, foreground bracing, `outside`); region 1 two layers (x -2852/-2812) hanging in front of the starting fort's
   lower face (y 411..700, background bracing in the band 411..505 where the starting machine gun fires); region 2 three
   more layers (x -2772/-2732/-2692) across the ground storey only (y 602..700, the mine row; all four plans). Regions 1
   and 2 in triangles (`pattern: "tri"`). Never at the gallery's height (it blocked the turbines' wind completely).
+- **Hub** (`_V_HUB`, all four plans, the first 6 actions, since 30.10.2026): a node at (-2949, 532) inside the starting
+  fort's two lower front storeys, background-bracing spokes to nodes 46, 47, 42, 40, 51, 50; Michael's stability brace
+  from a 2v6 match ([2v6-vanilla.md](2v6-vanilla.md), picture [2v6-front-fortification.png](2v6-front-fortification.png)).
+  `physics.py` max stress Vanilla-2/-3/-5/-6 0.65/0.76/0.69/0.68 -> 0.47/0.75/0.48/0.53 (Vanilla-3's peak is in its
+  tower). Not yet played.
 - **Footing** (`footing`, all four plans, before the first plan step; branch `experimetal-niclas-vanilla-layout`): a
   foundation at (-2958, 700), between the front ground post and the mine site at x -3029 (the mine is 85 wide), braced
   up to the starting fort's lower front nodes 41 (y 602, armour) and 46 (y 505, 205 long). The front ground post 40-41
@@ -221,7 +228,7 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
 - Order (233 actions): armoury (24), mine, the long brace (26), EMP rockets (33, 39), their lanes with the doors at once (40, 48; left to
   the final pass they came only at the end), the flak's shield and the flak (55-57), the first turbine (100; energy,
   second test), two mines, upgrade centre (108), rockets (109-110), the gallery's sandbags, smoke on its storey (157),
-  woodspam, machine gun (194), two turbines, battery and store, upgraded turbines, battery, minigun, upgraded mines, woodspam.
+  woodspam, machine gun (194), two turbines, battery and store, upgraded turbines, battery, minigun (the starting fort's machine gun: the gallery-roof one stands behind the flak), upgraded mines, woodspam.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).
@@ -252,7 +259,7 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   | heavyartillery | heavy mortars (after artillery) | - | 330 s | 199 |
   | antiair2 | second gallery-roof machine gun (after antiair) | 3 of the missile types | 420 s | 192 |
   | sniper2 | AP sniper (after sniper) | 2 AP snipers, lasers or firebeams | 450 s | 199 |
-  | miniguns | both machine guns upgraded (after antiair2) | - | 540 s | 199 |
+  | miniguns | the front gallery-roof machine gun and the starting fort's upgraded (after antiair2) | - | 540 s | 199 |
   | artillery2 | two more mortars on the gallery roof, between the machine guns (after heavyartillery) | - | 480 s | 189 |
   | heavyartillery2 | their upgrade (after artillery2) | - | 560 s | 199 |
   | frontlayer | a third woodspam layer (x -2772) in front of the starting fort's lower front (y 411..700) | 6 machine guns or miniguns | 600 s | 167 |

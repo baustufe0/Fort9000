@@ -18,31 +18,42 @@ for o in before after; do for e in fort-t1f1-Abyss-1.lua fort-t1f1-Abyss-ToGA1.l
   check "Plan swap $o $e team 102"               "first action = 2095.5, -94.4"   "$LUA" t_plan_swap.lua $o $e 102
 done; done
 for o in before after; do for e in fort-t1f1-Template-1.lua fort-t1f1-Template-2.lua; do
-  check "Plan swap Vanilla $o $e team 1"         "first action = -2897.9, 602.3"  "$LUA" t_vanilla.lua $o $e 1
-  check "Plan swap Vanilla $o $e team 102"       "first action = 2897.9, 602.3"   "$LUA" t_vanilla.lua $o $e 102
+  check "Plan swap Vanilla $o $e team 1"         "first action = -2895.4, 505.4"  "$LUA" t_vanilla.lua $o $e 1
+  check "Plan swap Vanilla $o $e team 102"       "first action = 2895.4, 505.4"   "$LUA" t_vanilla.lua $o $e 102
 done; done
 # plans of the weapon_pack mod (other FortPos, same starting fort); only if the mod is installed
 if [ -d "$WP" ]; then for o in before after; do for e in ToGAF1 ToGWM2; do
   f="mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-$e.lua"
-  check "Plan swap Vanilla $o weapon_pack $e team 1"   "first action = -2897.9, 602.3" "$LUA" t_vanilla.lua $o $f 1
-  check "Plan swap Vanilla $o weapon_pack $e team 102" "first action = 2897.9, 602.3"  "$LUA" t_vanilla.lua $o $f 102
+  check "Plan swap Vanilla $o weapon_pack $e team 1"   "first action = -2895.4, 505.4" "$LUA" t_vanilla.lua $o $f 1
+  check "Plan swap Vanilla $o weapon_pack $e team 102" "first action = 2895.4, 505.4"  "$LUA" t_vanilla.lua $o $f 102
 done; done; fi
 for o in before after; do
-  check "Plan swap VanillaLong $o team 1"        "first action = -3797.9, -347.7" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
-  check "Plan swap VanillaLong $o team 102"      "first action = 3797.9, -347.7"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
+  check "Plan swap VanillaLong $o team 1"        "first action = -3795.[45], -444.6" "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 1
+  check "Plan swap VanillaLong $o team 102"      "first action = 3795.[45], -444.6"  "$LUA" t_vanillalong.lua $o fort-t2f1-Template-1.lua 102
 done
-check "Modules load and are cut out after Load" "^after load: actions=227 expected=227 tagged=0$" "$LUA" t_modules.lua
+# 2v6 Vanilla: the same game plans, told apart by where the fort stands (FortPositions); the hub comes first
+MID=ai/forts/vanilla/mid/fort-t1f1-Template-1.lua; LONG=ai/forts/vanilla/long/fort-t2f1-Template-1.lua
+for o in before after; do
+  check "2v6 $o: mid plan at (4700,-900) team 102" "PLAN map=Vanilla2v6 file=fort-t1f1-Vanilla2v6-1.lua .* fort=4700,-900" "$LUA" t_vanilla2v6.lua $o $MID 102 4700 -900
+  check "2v6 $o: mid plan, first action in place"  "first action rel = 4.[56], -194.6"  "$LUA" t_vanilla2v6.lua $o $MID 102 7400 -4000
+  check "2v6 $o: mid plan at (-3800,-300) team 1"  "PLAN map=Vanilla2v6 file=.* fort=-3800,-300" "$LUA" t_vanilla2v6.lua $o $MID 1 -3800 -300
+  check "2v6 $o: long plan at (3800,100) team 102" "PLAN map=Vanilla2v6Long file=fort-t2f3-Vanilla2v6Long-1.lua" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 100
+  check "2v6 $o: long plan, first action in place" "first action rel = 4.[56], -194.6"  "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 100
+  check "2v6 $o: Vanilla's own fort stays Vanilla" "PLAN map=Vanilla file=.* fort=2900,700" "$LUA" t_vanilla2v6.lua $o $MID 102 2900 700
+  check "2v6 $o: Vanilla 2v2 upper fort stays VanillaLong" "PLAN map=VanillaLong file=" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 -250
+done
+check "Modules load and are cut out after Load" "^after load: actions=233 expected=233 tagged=0$" "$LUA" t_modules.lua
 check "Modules are moved by the transform"     "^module mirrored: 3000.0, 400.0$" "$LUA" t_modules.lua
 check "Module waits for its Requires"          "MODULE_WAIT counterbattery trigger=mortar:1,mortar2:1 requires=50 now=9$" "$LUA" t_modules.lua
 check "Module wait is logged once"             "^1$" bash -c "\"$LUA\" t_modules.lua | grep -c MODULE_WAIT"
 check "Module is inserted at the build index"  "MODULE counterbattery trigger=mortar:1,mortar2:1 at=65 actions=3$" "$LUA" t_modules.lua
 check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
 check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
-check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=232$" "$LUA" t_modules.lua
+check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=238$" "$LUA" t_modules.lua
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
-check "Plan file with modules loads in Lua"     "^212 sniper 1 7 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
-check "Modular plan loads with time triggers"  "^212 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
+check "Plan file with modules loads in Lua"     "^218 sniper 1 13 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
+check "Modular plan loads with time triggers"  "^218 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua
@@ -123,14 +134,17 @@ if [ -n "$PY" ]; then
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
   check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
-  check "Tools read plan modules apart from the plan" "^212 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 7$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
-  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 7\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Tools read plan modules apart from the plan" "^218 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 13$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 13\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
   ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"
   if [ -n "$ID" ]; then
     $PY "$MOD/.dev/tools/publish.py" --target "$ROOT/pub/fort9000" > pub.txt 2>&1; ln -s "$ROOT/pub/fort9000" "$ROOT/mods/$ID"
     check "Published AI looks in the Workshop folder first" "^local CAI_ModDirs = \{ \"mods/$ID/\", \"mods/fort9000/\" \}$" grep "^local CAI_ModDirs" "$ROOT/pub/fort9000/ai/ai.lua"
-    check "Subscriber's copy loads plans and strategy" "PLAN-PRELOAD Abyss:3/2 VanillaLong:4/1 Vanilla:4/[24] " env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+    # the maps come in pairs() order: one check per map
+    for m in "Abyss:3/2" "Vanilla:4/[24]" "VanillaLong:4/1" "Vanilla2v6:4/[24]" "Vanilla2v6Long:4/1"; do
+      check "Subscriber's copy loads plans and strategy ($m)" "PLAN-PRELOAD (.* )?$m( |$)" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+    done
     check "Subscriber's copy swaps the plan"       "first action = -2095.5, -94.4" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
   else
     echo "SKIP  published copy (no .dev/publishedfileid.lua)"
@@ -149,7 +163,7 @@ if [ -n "$PY" ]; then
   check "Map .spr: Abyss starting fort"          "team 1: 31 nodes \(9 foundations\), 69 struts, devices \['reactor 291-294@0.52', 'machinegun 292-293@0.35'\]" $PY "$MOD/.dev/tools/fortgen/spr.py" Abyss
   check "Map .spr: Vanilla starting fort"        "team 1: 19 nodes \(4 foundations\), 36 struts" $PY "$MOD/.dev/tools/fortgen/spr.py" Vanilla
   check "Map .fwe: Abyss terrain"                "version 20, gravity 981, .* 15 blocks, 3 views" $PY "$MOD/.dev/tools/fortgen/fwe.py" Abyss
-  check "Physics: Vanilla-5's long brace refused" "REFUSED action [0-9]* link: 47-40 length 219" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
+  check "Physics: Vanilla-5's long brace refused" "REFUSED action [0-9]* link: 47-40 length 21[89]" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
 else
   echo "SKIP  recorded build -> plan, probe parser (no Python 3)"
 fi

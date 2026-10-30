@@ -67,8 +67,12 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - A mine's `chain` may start at a node of the starting fort that is not on the grid.
 - Variant key `retire {device: seconds}`: written after the `Fort` table as `FortRetire`; the AI sells such a weapon
   once it has declined to fire that long ([ai.md](ai.md#fire-control), Abyss-2's early sniper).
-- `orig_devices [(node A, node B, device[, LinkT])]`: devices of the starting fort (Vanilla: the machine gun on its lower front); their cells stay free. Plan step `sell:<device>` sells one (`DESTROY_DEVICE`) and makes its cell a fire lane (unused now: the planned sale came from a wrong position). An upgrade step with no planned device of its base type upgrades one of these, each once, at its LinkT (Abyss-2: the starting fort's machine gun becomes a minigun).
+- `orig_devices [(node A, node B, device[, LinkT])]`: devices of the starting fort (Vanilla: the machine gun on its lower front); their cells stay free. Plan step `sell:<device>` sells one (`DESTROY_DEVICE`) and makes its cell a fire lane (unused now: the planned sale came from a wrong position). An upgrade step with no planned device of its base type upgrades one of these, each once, at its LinkT (Abyss-2: the starting fort's machine gun becomes a minigun). A minigun upgrade skips a machine gun with another weapon in front of it in its row (`weapon_in_front`; a minigun needs a line of fire to the enemy fort) and then falls back to these.
 - A lobbed weapon that is not a roof weapon takes its `mortar_slots` before any `weapon_slots` (Abyss-2: both nest mortars before the tower-top slot). Woodspam `base` points may be nodes of the starting fort outside the grid.
+- `fwe_dir` (relative to `data/`) and `fwe_frame {mirror, anchor, plan_anchor}`: the terrain from another map, moved
+  (and mirrored) so that its fort's anchor lands on the base plan's (2v6 Vanilla: a Workshop map whose forts are the
+  Vanilla fort elsewhere). `ceiling {nodes, devices}`: `validate()` rejects nodes and device boxes above these heights
+  (2v6 Vanilla: the next fort stands above). `turbine_floor_front`: the gallery's front cell may take a turbine.
 - `rebrace_after_mine`: starting-fort armour struts rebuilt as wood after the first mine (or plan step `rebrace`) for metal; Vanilla-2 turns it off (`[]`): the inner armour in front of the reactor fell first in both lost matches.
 
 Options of the Vanilla tower variants (Vanilla-3/-5; details in [maps/vanilla.md](maps/vanilla.md)):
