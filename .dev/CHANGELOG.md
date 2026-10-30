@@ -3,6 +3,28 @@
 One entry per Workshop upload (`ItemVersion` in `workshop/content/410900/3829000413/itemversion.lua`). Each version
 has a git tag `workshop-v<N>` on the commit that was published; the next entry covers `workshop-v<N-1>..workshop-v<N>`.
 
+## Version 5 (30.10.2026, workshop-v5 = 5313c13)
+
+New map: 2v6 Vanilla (clean) (Workshop map 2927068191)
+- The AI now plays its own forts on this map (up to six AI forts on the right). It recognises the map by where each
+  fort stands, so Vanilla and Vanilla 2v2 keep their plans.
+- Four low forts that stay below the next fort up on the staircase: three weapon storeys, one weapon per row at the
+  front, and the wind turbines in their own storey on top, hidden in background bracing behind sandbags.
+  - Sniper fort: two snipers (later AP snipers), anti-air, two mortars on top (they reach the player's front fort
+    from the lower spots).
+  - Cannon fort: two cannons and a sniper.
+  - Rocket fort: three EMP rockets, upgraded to rockets early.
+  - Laser fort: laser, sniper, anti-air, and a firebeam in front of the fort, built last.
+- Tested in four matches against a player; the AI won the last ones, the latest without losing a device.
+
+Vanilla (also VanillaLong)
+- Every plan starts with a new brace: a node inside the starting fort's two lower front storeys, tied to the front
+  nodes around it. The forts carry their weight much better (peak strut load about a quarter lower).
+- Miniguns only where they can fire at the enemy fort: a machine gun standing behind another weapon stays an anti-air
+  machine gun, and the starting fort's own machine gun is upgraded instead.
+- Vanilla-5 builds its upgrade centre right after the EMP rockets, so they become rockets sooner (on 2v6 the same
+  change brought the rockets about two minutes earlier).
+
 ## Version 4 (29.10.2026, workshop-v4 = dde982d)
 
 Vanilla (also VanillaLong)
