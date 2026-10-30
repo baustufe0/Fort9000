@@ -47,23 +47,26 @@ tested in a match.
 - **Wind**: the cliff wall behind every fort blocks each turbine's left side completely (`rules.wind_rays` with the
   map's terrain: 0 %). Vanilla-5's gallery behind its front weapons keeps 9-36 % on the right: no wind at all here.
 
-## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after the first match, not yet played)
+## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches, not yet played in this form)
 
-`gen_fort.py --map Vanilla2v6` (`VANILLA2V6_VARIANTS`): the Vanilla base plan and starting fort, the map's own terrain
-moved into the plan frame (`fwe_dir`, `fwe_frame`: the third fort on the right), and a `ceiling`: no node above y -250,
-no device box above -300 (the next fort's rock; in the plan frame all of it lies behind x -3592). Every plan starts
-with the hub ([vanilla.md](vanilla.md)). Three 125-high storeys over the starting fort's roof (205..80, 80..-45,
--45..-170); each storey's front cell holds one weapon, alone in its row (machine guns too), firing through the prow
-cell ahead of it or its own front door. The turbines stand on the open top roof (y -170, top -297): with a weapon's
-doors in front of them in their storey (the cage of the first version) their right side had 0 % of the rays; on the
-roof 81-100 % (the left side 0-18 %: the cliff).
+`gen_fort.py --map Vanilla2v6` (`VANILLA2V6_VARIANTS`): the Vanilla base plan and starting fort, the map's terrain of all
+eight spots laid over each other in the plan frame (`fwe_dir`, `fwe_frame.anchors`, `rock_clear` 15), and a `ceiling`:
+no node above y -400, no device box above -450. The next fort up stands on rock at y -300, all of it behind x -3592; its
+lowest storey (its starting fort's, -300..-398 here) never holds a weapon, its starting machine gun fires at ~-535 (the
+player, 30.10.2026; the first ceiling, -250 / -300, kept everything below that rock). Every plan starts with the hub
+([vanilla.md](vanilla.md)). Three weapon storeys over the starting fort's roof (205..80, 80..-45, -45..-175), each
+front cell with one weapon alone in its row (a minigun needs a line of fire to the enemy fort), and the **wind
+storey** on top (-175..-305): the turbines on its floor (x -3465/-3365/-3265/-3165, three of them), background bracing
+all round (hidden: the wind passes, the player cannot see them), two stacked sandbags in its front cell. Wind (with
+the terrain): right 54-72 %, left 0 % (the cliff). Turbines in a weapon storey behind the front weapon's door got 18-36 %
+on the right (no wind), on the open roof 81-100 % but unprotected (third match).
 
-| Plan | Row 205 | Row 80 | Row -45 | Roof -170 | Tech | physics.py max stress |
+| Plan | Row 205 | Row 80 | Row -45 | Wind storey / roof | Tech | physics.py max stress |
 |---|---|---|---|---|---|---|
-| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | - | two mortars -> heavy mortars in a storey -170..-235 at the back (door roof, door in front), 3 turbines | workshop, upgrade | 0.51 |
-| Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper (LinkT 0.28) | machine gun -> minigun (open), 3 turbines | workshop, munitions, upgrade | 0.59 |
-| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket | machine gun -> minigun (open), 3 turbines | armoury, upgrade (right after the first two rockets) | 0.67 |
-| Vanilla2v6-4 | laser (x -3200..-3100, lane in front) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines | workshop, factory, store and battery before the laser, upgrade | 0.74 |
+| Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; two mortars -> heavy mortars in a storey -305..-370 on its roof (door roof, door in front) | workshop, upgrade | 0.47 |
+| Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | workshop, munitions, upgrade | 0.52 |
+| Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket (full door) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | armoury, upgrade (right after the first two rockets) | 0.52 |
+| Vanilla2v6-4 | laser (x -3200..-3100, lane in front) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags | workshop first, factory, store and battery before the laser, upgrade | 0.50 |
 
 - Plans 1 and 3: the low fort (x -3500..-2845 for the deck and nest with the prow lanes, the top storey to x -2945);
   plans 2 and 4: the block fort (x -3400..-2945, Vanilla-3's heavy-weapon column).
@@ -114,6 +117,14 @@ rockets but no rockets, and the heavy weapons late. Causes (fixed in the plans s
   fort, one at 535 s in another (its second upgrade refused with `CS_OCCUPIED`, then `CS_OBSTRUCTION`, cause unknown).
   Now right after the first two EMP rockets (plan action 62 instead of 111, the rockets at 91/92).
 - A roof turbine on the hidden top storey (background bracing) was refused with `CS_UNSTABLE`: the top storey is solid.
+
+## Third match (30.10.2026, log_20261030-152731, ~450 s, the AI side won)
+
+Plans: four laser forts, two cannon forts (the version with turbines on the open roof). No plan action given up, only
+first-try `CS_OCCUPIED`: the fixes of the second match held (snipers, cannons and lasers placed). Lasers at ~320 s: the
+plan put the sniper first, which needs two storeys under it, so the workshop came at 75 s (now the workshop first);
+cannons at ~300 s, the munitions plant at ~153 s (energy cap). The AI lost one machine gun. The player: the turbines on
+the open roof are unprotected; fortify them in a storey (done: the wind storey).
 
 ## Open
 
