@@ -1531,12 +1531,18 @@ VANILLA2V6_VARIANTS = {
     # strut behind the munitions slot: beside the factory their boxes overlapped), anti-air (machine gun -> minigun) in
     # the front cell above it, the sniper (-> AP sniper) in the third front cell
     "laser": {
-        "title": "Sniper and laser rush: laser behind the deck lane, anti-air and sniper above, fortified turbine storey (2v6)",
+        "title": "Sniper and laser rush: laser behind the deck lane, anti-air and sniper above, fortified turbine storey, firebeam in front (2v6)",
         "shape": _V26_BLOCK,
         "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
         "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5)],
                     weapon_cells=[(-3100, -45, "sniper", 0.28), (-3100, 80, "machinegun", 0.7)],
-                    roof_weapon_cells=[]),
+                    roof_weapon_cells=[],
+                    # the firebeam in front of the fort: a cell on the mine-row woodspam (x -2812..-2692, y ~497..602),
+                    # its own row (602: the starting fort's machine gun stands at 505, the laser at 205); the mine row
+                    # in one 120-wide layer so its top strut carries the firebeam (50 to each side of its LinkT point)
+                    woodspam=[_V26_BLOCK_CFG["woodspam"][0], _V_LOWER_FACE_WS,
+                              dict(_V_MINE_ROW_WS, layers=[-2692])],
+                    weapon_struts=[((-2812, 602), (-2692, 602), 0.45, "firebeam")]),
         "plan": [
             # the workshop first (it sets the pace for factory and laser; match 30.10.2026: behind the sniper, which
             # needs two storeys under it, the workshop came at 75 s and the laser at ~320 s), the sniper while it builds
@@ -1562,6 +1568,13 @@ VANILLA2V6_VARIANTS = {
             ("upgrades", ["minigun"]),
             ("eco", ["turbine", "battery"]),
             ("defence", ["woodspam"]),
+            # last (the player's choice, 30.10.2026): the firebeam's cell on the mine-row woodspam, a door in front (the
+            # AI opens it to fire), a wooden roof, a background diagonal; then the firebeam (the laser's factory). It
+            # hangs over the slope in front, which takes no foundations (physics.py 0.50 -> 0.67, the front sags 112
+            # instead of 92): if the game refuses it on that strut, the AI gives up after 120 s with nothing behind it
+            ("struts", [((-2692, 602), (-2692, 497), "door"), ((-2812, 505), (-2692, 497), "bracing"),
+                        ((-2812, 602), (-2692, 497), "backbracing")]),
+            ("weapons", ["firebeam"]),
         ],
     },
 }

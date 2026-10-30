@@ -66,8 +66,16 @@ on the right (no wind), on the open roof 81-100 % but unprotected (third match).
 | Vanilla2v6-1 | sniper -> AP sniper | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; two mortars -> heavy mortars in a storey -305..-370 on its roof (door roof, door in front) | workshop, upgrade | 0.47 |
 | Vanilla2v6-2 | cannon (x -3200..-3100, lane in front) | cannon (same) | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | workshop, munitions, upgrade | 0.52 |
 | Vanilla2v6-3 | EMP rocket -> rocket | EMP rocket -> rocket | EMP rocket -> rocket (full door) | 3 turbines, sandbags; machine gun -> minigun on the roof (open) | armoury, upgrade (right after the first two rockets) | 0.52 |
-| Vanilla2v6-4 | laser (x -3200..-3100, lane in front) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags | workshop first, factory, store and battery before the laser, upgrade | 0.50 |
+| Vanilla2v6-4 | laser (x -3200..-3100, lane in front); last a firebeam in front, row 602 (see below) | machine gun -> minigun | sniper -> AP sniper (LinkT 0.28) | 3 turbines, sandbags | workshop first, factory, store and battery before the laser, upgrade | 0.66 (0.50 without the firebeam) |
 
+- **Firebeam (plan 4, the player's request, 30.10.2026):** a closed cell on the mine-row woodspam in front of the fort
+  (x -2812..-2692, y ~497..602; the mine row in one 120-wide layer at x -2692 so its top strut carries the firebeam,
+  50 to each side of its LinkT point 0.45), a door as its front post (with the second door layer), a wooden roof, a
+  background diagonal. Its own row (602: the starting machine gun at 505, the laser at 205), nothing in front of it.
+  It hangs over the slope, which takes no foundations: physics.py 0.50 -> 0.66 (the cell's diagonal), the front sags
+  112 instead of 92. Built last (plan action 232 of 252), so a refusal on that strut (the AI gives up after 120 s)
+  holds nothing up. Options not taken: behind a lane at x -3200..-3100, row 80 (the tested heavy-weapon column; the
+  machine gun to the wind storey's roof), the prow floor (row 310; the prow overhangs the cliff).
 - Plans 1 and 3: the low fort (x -3500..-2845 for the deck and nest with the prow lanes, the top storey to x -2945);
   plans 2 and 4: the block fort (x -3400..-2945, Vanilla-3's heavy-weapon column).
 - No smoke launcher in plan 3: it needs a storey of its own row with a door roof (box assumed 127, the DLC file is
