@@ -134,6 +134,20 @@ plan put the sniper first, which needs two storeys under it, so the workshop cam
 cannons at ~300 s, the munitions plant at ~153 s (energy cap). The AI lost one machine gun. The player: the turbines on
 the open roof are unprotected; fortify them in a storey (done: the wind storey).
 
+## Fourth match (30.10.2026, log_20261030-155504, ~546 s, the AI side won without a device lost)
+
+Plans: three cannon forts, one each of rockets, snipers/mortars and laser (the wind-storey version). No plan action
+given up or skipped; the turbines in their storey lost nothing. AI shots: 251 sniper, 41 mortar (from T2-1, uphill to
+T1-A), 21 rockets, 10 cannon. The player lost 8 machine guns, 8 flak, 3 turbines and 2 reactors.
+- Rockets work: upgrade centre at 161 s, rockets at 238/247 s, the third EMP rocket at 322 s and its rocket at 352 s
+  (two upgrades refused once with `CS_OBSTRUCTION`, built on the retry).
+- The cannon and laser forts placed the sniper (third storey, two storeys below it) before their tech: sniper ~177-189
+  s, munitions plant ~257 s / factory ~268 s, cannons ~350 s, laser ~371 s; the firebeam (plan action 232) was not
+  reached by 546 s. Since then (the player): tech, then the sniper while it builds, then the main weapon (plan #2:
+  munitions plant at action 36 instead of 124, sniper 128, cannon 131; plan #4: factory 23 instead of 122, sniper 122,
+  laser 131, firebeam 231).
+- `shots=` in a `SNAP` line counts the shots since the previous snapshot, not a total.
+
 ## Open
 
 - Played once (short). To check in the log: `PLAN map=Vanilla2v6 file=... fort=x,y` for every AI fort (or `map=Vanilla` if a

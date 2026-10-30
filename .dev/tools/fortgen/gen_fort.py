@@ -1468,8 +1468,11 @@ VANILLA2V6_VARIANTS = {
         "plan": [
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
-            ("weapons", ["sniper"]),
+            # the tech first, then the sniper while the munitions plant builds (90 s; it stands in the third storey, so
+            # the two storeys below come with it), then the cannon (the player, 30.10.2026; with the sniper before the
+            # munitions plant the sniper came at ~177 s, the munitions plant at ~257 s, the first cannon at ~350 s)
             ("tech", ["munitions"]),
+            ("weapons", ["sniper"]),
             ("eco", ["mine", "battery"]),
             ("weapons", ["cannon"]),
             ("eco", ["turbine"]),
@@ -1545,10 +1548,12 @@ VANILLA2V6_VARIANTS = {
                     weapon_struts=[((-2812, 602), (-2692, 602), 0.45, "firebeam")]),
         "plan": [
             # the workshop first (it sets the pace for factory and laser; match 30.10.2026: behind the sniper, which
-            # needs two storeys under it, the workshop came at 75 s and the laser at ~320 s), the sniper while it builds
+            # needs two storeys under it, the workshop came at 75 s and the laser at ~320 s)
             ("tech", ["workshop"]),
-            ("weapons", ["sniper"]),
             ("tech", ["factory"]),
+            # the sniper while the factory builds (it stands in the third storey; the player, 30.10.2026: tech, then
+            # sniper, then the main weapon; first in the plan it held the factory back to ~268 s, the laser to ~371 s)
+            ("weapons", ["sniper"]),
             # the laser costs 1000 metal / 6000 energy, more than both caps (900 / 5000): a store and a battery first
             # (match 30.10.2026: with the battery after the laser the fort sat at 1200 / 5000 from 185 s to the end)
             ("eco", ["mine", "store", "battery"]),
