@@ -1,6 +1,6 @@
 ---
 name: forts-publish
-description: Copy the FORT 9000 mod from the dev folder (data/mods/fort9000dev) into the folder that is uploaded to the Steam Workshop (data/mods/fort9000). Use when the user wants to publish, upload or release the mod, or update the Workshop item.
+description: Copy the FORT 9000 mod from the dev folder (data/mods/fort9000dev) into the folder that is uploaded to the Steam Workshop (data/mods/fort9000), and keep the Workshop description (.dev/steam-description.txt) up to date. Use when the user wants to publish, upload or release the mod, update the Workshop item or its description.
 ---
 
 # Publish FORT 9000
@@ -30,7 +30,15 @@ The repo and the development mod live in `data/mods/fort9000dev` ("FORT 9000 AI 
    - enable **FORT 9000 AI** and disable **FORT 9000 AI DEV** (both at once would run the AI twice);
    - upload `fort9000` from the game's Workshop screen; the item name must be ASCII letters and digits only
      (e.g. `FORT9000AI`); title and description are edited on the Workshop page afterwards.
-5. **After the first upload** the game writes `fort9000/publishedfileid.lua`. Run `py .dev/tools/publish.py` once more:
+5. **Workshop description:** `.dev/steam-description.txt` is the item's description in Steam's BBCode (`[h1]`, `[h2]`,
+   `[b]`, `[list][*]...[/list]`, `[noparse]` around text in square brackets such as `[CAI]`). Check it against what is
+   published: the maps and the number of layouts per map (`Maps` and `Plans` in `ai/fortplans.lua`, the files in
+   `fortplans/<map>/`), the features, the requirements (devices the plans use: Weapon Pack, DLC weapons). If anything
+   changed, update the file, commit it with the publish, and give the user the whole text to paste into the Workshop
+   page's description (the game's upload dialog does not set it). If nothing changed, say so.
+6. **After the first upload** the game writes `fort9000/publishedfileid.lua`. Run `py .dev/tools/publish.py` once more:
    it copies the id to `.dev/publishedfileid.lua`. Commit that file, so later uploads update the same item.
-6. If the upload fails, read the end of `<Forts>/users/<id>/log.txt` (UTF-16) for the `Fehler:`/`Error:` line and see
+7. **After the user has uploaded:** tag the published commit `workshop-v<N>` and write the changelog entry and the
+   change note ([.dev/docs/publishing.md](../../../.dev/docs/publishing.md), "Versions and changelog").
+8. If the upload fails, read the end of `<Forts>/users/<id>/log.txt` (UTF-16) for the `Fehler:`/`Error:` line and see
    the known upload errors in [.dev/docs/publishing.md](../../../.dev/docs/publishing.md).

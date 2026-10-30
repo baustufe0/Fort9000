@@ -51,7 +51,10 @@ After an upload, tag the published commit `workshop-v<N>` (`N` = `ItemVersion` i
 ## Workshop page
 
 The game's upload dialog takes only the item name and a change note; the thumbnail is `preview.jpg` (16:9, under
-1 MB). Title and description are edited on the item's Steam Workshop page.
+1 MB). Title and description are edited on the item's Steam Workshop page. The description is kept in
+[.dev/steam-description.txt](../steam-description.txt) in Steam's BBCode (`[h1]`, `[h2]`, `[b]`, `[list][*]`,
+`[noparse]` around bracketed text such as `[CAI]`); the skill `forts-publish` checks it on every publish (maps, layouts
+per map, features, requirements) and hands the user the text to paste when it changed.
 
 ## Subscriber's copy
 

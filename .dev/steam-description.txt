@@ -1,0 +1,45 @@
+[h1]FORT 9000 AI – a smarter computer opponent (PREVIEW)[/h1]
+
+[b]⚠ PREVIEW VERSION – work in progress.[/b] Expect rough edges, unfinished forts and balance changes between updates. Custom fort layouts currently exist for Vanilla, Vanilla 2v2, the Workshop map 2v6 Vanilla (clean) and Abyss. Feedback is very welcome in the comments!
+
+FORT 9000 AI extends the built-in Forts AI instead of replacing it. The AI plays more adaptively, builds its own fort layouts on the supported maps and fights back harder.
+
+[h2]Features[/h2]
+[list]
+[*][b]Custom fort layouts:[/b] on supported maps the AI picks one of several layouts each match (sniper and mortar nest, 20mm rush, rocket rush, cannon fort, sniper and laser rush, a modular fort, ...), so it doesn't build the same fort every time.
+[*][b]Sturdy forts:[/b] the layouts brace the starting fort first and build from the ground up, checked with a physics model, so the forts carry their own weight; on the Vanilla maps the wind turbines sit in protected storeys.
+[*][b]Reactive building:[/b] some layouts add weapons in response to what you build, for example anti-air when you build missiles or rockets.
+[*][b]Adaptive targeting:[/b] the AI rates your devices and goes for what hurts you most: weapons that threaten it, your economy, your reactor.
+[*][b]Aggression by game phase:[/b] it builds up its economy early and gets more aggressive as the match goes on and its economy grows.
+[*][b]Fire control:[/b] coordinated volleys, smoke cover for rockets and anti-air that reacts to incoming fire.
+[*][b]Safer building:[/b] it gives up rebuilds that are stuck, skips blocked actions and stops rebuilding weapons that get destroyed over and over.
+[*][b]Deterministic:[/b] replays and multiplayer stay in sync.
+[/list]
+
+[h2]Supported maps[/h2]
+[list]
+[*][b]Vanilla (1v1):[/b] 4 custom layouts
+[*][b]Vanilla 2v2:[/b] 4 custom layouts per AI fort; both AI forts pick independently
+[*][b]2v6 Vanilla (clean)[/b] (Workshop map): 4 custom layouts for up to six AI forts on the staircase; each fort stays low enough not to block the fort above it
+[*][b]Abyss (1v1):[/b] 3 custom layouts (Abyss 2v2 not yet supported)
+[/list]
+Other maps that use the same starting fort as Vanilla may also get the custom layouts. On all other maps the AI builds the game's own forts, but the smarter targeting and fire control still apply.
+
+[h2]Requirements[/h2]
+[list]
+[*]Forts (base game).
+[*]Enable [b]FORT 9000 AI[/b] in the mod selection when you set up a match (category "AI").
+[*]For the full layouts also enable the built-in [b]Weapon Pack[/b]: many layouts use its 20mm cannon, EMP rockets, flak and firebeam. One layout adds a smoke launcher if you have it. The AI skips a device it cannot build after a few tries.
+[*]Multiplayer: every player needs the mod installed.
+[*]Compatible with Weapon Pack: its AI forts are recognised and replaced on the supported maps.
+[/list]
+
+[h2]Good to know[/h2]
+[list]
+[*]If you take over an AI as your anti-air assistant, the mod switches itself off for that AI.
+[*]The mod writes short match notes (lines starting with [noparse][CREC][/noparse] and [noparse][CAI][/noparse]) to the Forts log file. They are only used locally to improve the AI. Nothing is sent anywhere.
+[*]Don't run this mod together with other mods that change the AI.
+[/list]
+
+[h2]Feedback[/h2]
+This is a preview and the AI is still learning. If it builds something odd, gets stuck or crashes, please leave a comment with the map, the game mode and what happened.
