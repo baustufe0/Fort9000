@@ -309,6 +309,7 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
 | Support by the shallowest chain (generator default) for the rush 20mm | pulled in the whole back block (100 struts instead of 42); now `support_cheapest` |
 | Upgrade centre on the munitions slot beside the factory (former laser Vanilla-5) | the two 90-wide boxes overlapped (155 apart, need 180): `CS_OCCUPIED`, then `CS_UNSTABLE`; the AI then sat at full storage waiting on the turbine upgrades. Now one strut back |
 | Laser placed before its fire lane (former laser Vanilla-5) | stood in an open cell from 219 s, sniped and destroyed at 292 s before it was finished; now the lane (with its door) first |
+| EMP rockets placed before their lanes and doors (Vanilla-5, 2v2 Vanilla 30.10.2026) | placed at 98/104 s, both destroyed under construction 2 and 5 s later by the player's sniper; the doors stood only at 116/146 s, the rockets again at 164/190 s, the upgrade to rockets waited until 380 s and the fort fell at 414 s. Now the lanes with their doors first |
 | Solid post 50 in front of the laser (former laser Vanilla-5) | outside the laser's body and before its recession box: every shot declined; now background bracing |
 
 ## Open problems

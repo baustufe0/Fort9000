@@ -1255,9 +1255,11 @@ VANILLA_VARIANTS = {
             # front ground node: the player builds it early in every match (16-74 s); the starting fort has nothing
             # across those two storeys, and its lower front gave way in two lost matches (Vanilla-6, Vanilla-5)
             ("struts", [((-2996, 504), (-2900, 700), "backbracing")]),
-            ("weapons", ["rocketemp", "rocketemp"]),
-            # their lanes with the doors at once (left to the final pass, the doors came only at the end of the plan)
+            # the rockets' lanes with their doors before the rockets (left to the final pass, the doors came only at the
+            # end of the plan; built right after the rockets, the player's sniper destroyed both under construction
+            # 2 and 5 s after placing, before their doors stood, 2v2 match 30.10.2026)
             ("build", [(-2945, 205), (-2945, 75)]),
+            ("weapons", ["rocketemp", "rocketemp"]),
             # the upgrade centre right after the EMP rockets, the flak and the first turbine while it builds (60 s), then
             # the rockets, then the mines: on 2v6 Vanilla the upgrade centre came at 270-392 s behind a turbine and two
             # mines and the rockets late or never; moved up there, the rockets came at 238/247 s (match 30.10.2026)
