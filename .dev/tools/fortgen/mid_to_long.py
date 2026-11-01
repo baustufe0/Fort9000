@@ -14,7 +14,9 @@ def f(p): return "x = %.2f, y = %.2f" % p
 
 def convert(src, long_orig, dst):
     h, acts = parse_plan(src)
-    mid_pos = node_positions(acts)
+    mods = parse_modules(src)
+    # the modules' starting-fort nodes too (a module may use one the plan never touches, e.g. Vanilla-5's laser front)
+    mid_pos = node_positions(acts + [a for m in mods for a in m["actions"]])
     _, lacts = parse_plan(long_orig)
     lpos = {k: v for k, v in node_positions(lacts).items() if k < 10000}
     idmap = {}
@@ -57,7 +59,6 @@ def convert(src, long_orig, dst):
         raise ValueError(a["raw"])
     out = [conv(a) for a in acts]
     # reactive build modules: converted the same way (their own node ids, 20000 and up, keep their numbers)
-    mods = parse_modules(src)
     for m in mods:
         m["lines"] = [conv(a) for a in m["actions"]]
     head = ("-- Fort recorded for AI replay\n"

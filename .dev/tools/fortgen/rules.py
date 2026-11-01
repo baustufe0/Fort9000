@@ -246,6 +246,51 @@ def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1, cautious=False):
     return out
 
 
+TECH = {"workshop", "factory", "upgrade", "munitions", "armoury"}
+
+
+def _in_triangle(p, a, b, c):
+    d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+    if abs(d) < 1e-9:
+        return False
+    l1 = ((b[1] - c[1]) * (p[0] - c[0]) + (c[0] - b[0]) * (p[1] - c[1])) / d
+    l2 = ((c[1] - a[1]) * (p[0] - c[0]) + (a[0] - c[0]) * (p[1] - c[1])) / d
+    return l1 >= -1e-6 and l2 >= -1e-6 and 1 - l1 - l2 >= -1e-6
+
+
+def tech_hidden(actions, start=None):
+    """Tech devices not hidden when placed (building rule 14): points of the device's box (9 x 6 grid) not in front
+    of a closed triangle of struts (any material but rope and fuse) built before it, the starting fort's included.
+    start: (node positions, links) of the starting fort in plan ids (gen_fort.start_fort); without it nothing is
+    checked. Returns warnings."""
+    if not start:
+        return []
+    pos, links, devices, _ = build_state(actions)
+    spos, slinks = start
+    allpos = dict(spos)
+    allpos.update(pos)
+    out = []
+    for name, ia, ib, t, pair, k in devices:
+        if name not in TECH or ia not in allpos or ib not in allpos:
+            continue
+        adj = {}
+        for pr in set(slinks) | {pr for pr, (m, a, b, kk) in links.items() if kk < k and m not in ("rope", "fuse")}:
+            if len(pr) == 2:
+                a, b = tuple(pr)
+                adj.setdefault(a, set()).add(b)
+                adj.setdefault(b, set()).add(a)
+        tris = [(allpos[a], allpos[b], allpos[c]) for a in adj for b in adj[a] if b > a for c in adj[a] & adj[b]
+                if c > b and a in allpos and b in allpos and c in allpos]
+        p = _point(allpos, ia, ib, t)
+        w, top = SIZE[name][0], BOX_TOP[name]
+        miss = [q for q in ((p[0] + (w - 4) * xi / 4, p[1] - 4 - (top - 6) * yi / 5) for xi in range(-4, 5)
+                            for yi in range(6)) if not any(_in_triangle(q, *tr) for tr in tris)]
+        if miss:
+            out.append("%s at %s not hidden when placed: %d of 54 points of its box outside closed triangles, e.g. %s"
+                       % (name, _fmt(p), len(miss), _fmt(miss[0])))
+    return out
+
+
 def _fmt(p):
     return "(%d,%d)" % (round(p[0]), round(p[1]))
 

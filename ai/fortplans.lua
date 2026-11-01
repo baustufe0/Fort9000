@@ -124,8 +124,37 @@ FortPlanConfig =
 				},
 			},
 		},
+		-- Stalactites (1v1) and Stalactites 2v2: the forts hang from the underside of a stalactite (the game's shared
+		-- hanging plans, also used by Caverns, Up & Down and others: told apart by the fort's position). Plans from
+		-- .dev/tools/fortgen/gen_hang.py (.dev/docs/maps/stalactites.md)
+		Stalactites =
+		{
+			OriginalsDir = "ai/forts/hanging/long/",
+			-- weapon_pack's hanging plans: same starting fort, other FortPos (ignored when the mod is not installed); the
+			-- first Stalactites match (01.11.2026) got ToGHngA1 and kept it (unknown-game-plan)
+			Originals = { "fort-t1f1-TemplateHang-1.lua", "fort-t1f1-TemplateHang-2.lua", "fort-t1f1-TemplateHang-3.lua",
+				"mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-ToGA1.lua",
+				"mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-ToGHngA1.lua",
+				"mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-ToGW1.lua" },
+			-- fort 1 (both maps) and the 2v2 fort 2, team 2 mirrored
+			FortPositions = { { x = -2500, y = -1350 }, { x = 2500, y = -1350 }, { x = -4100, y = -150 }, { x = 4100, y = -150 } },
+			Plans = { "fort-t1f1-Stalactites-1.lua", "fort-t1f1-Stalactites-2.lua", "fort-t1f1-Stalactites-3.lua", "fort-t1f1-Stalactites-4.lua" },
+			-- 5000 between the forts under a rock ceiling (mortar arcs hit it): direct fire only; the enemy's turbines
+			-- hang at the bottom of its fort, its snipers in the front column
+			Strategy =
+			{
+				EarlySeconds = 150,
+				Aggression = { Early = 0.8 },
+				TargetValue =
+				{
+					Heavy = { turbine = 90 },
+					Small = { sniper = 105 },
+				},
+			},
+		},
 	},
 	Force =
 	{
+		Vanilla = "fort-t1f1-Vanilla-5.lua",
 	},
 }

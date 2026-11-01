@@ -57,9 +57,10 @@ DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "canno
 # put it on the highest storey
 LOBBED_WEAPONS = {"mortar", "mortar2", "smokebomb"}
 LARGE = {"cannon", "cannon20mm", "laser"}
+TECH = {"workshop", "factory", "upgrade", "munitions", "armoury"}
 # weapon_pack: flak and EMP rockets need the armoury, shotgun (flak) and rocket (EMP rocket) are their upgrades;
 # the smoke bomb follows the armoury in the game's own plans (Crevice-Howie: armoury is its only tech)
-PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "laser": "factory",
+PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "laser": "factory", "firebeam": "factory",
           "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade",
           "flak": "armoury", "rocketemp": "armoury", "smokebomb": "armoury", "shotgun": "upgrade", "rocket": "upgrade"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
@@ -122,6 +123,19 @@ MAPS = {
             "munitions": [((-2100, 300), (-2001, 305), 0.3)],
             # the same slot for the armoury (same size; no plan builds both)
             "armoury": [((-2100, 300), (-2001, 305), 0.3)],
+        },
+        # starting-fort nodes the base plan does not name (spr.py; the game finds a plan's node by its position)
+        "spr_nodes": {312: (-2100.0, 150.0), 314: (-2100.0, 300.0)},
+        # the triangles the starting fort leaves open over the tech slots (cover_tech covers only grid cells; Michael,
+        # 01.11.2026: tech must not be visible): the workshop's top left corner (no post 313-314 at x -2100), the
+        # armoury's (Abyss-5, 170 high: also 312-313 and the triangle 296-312-286 over it), and the upgrade centre's
+        # top right on Abyss-3/-5 (the starting fort's top storey ends in the diagonal 308-302)
+        "tech_cover": {
+            "workshop": [((-2100, 200), (-2100, 300), "backbracing")],
+            "armoury": [((-2100, 200), (-2100, 300), "backbracing"), ((-2100, 150), (-2100, 200), "backbracing"),
+                        ((-2096.88, 2.63), (-2100, 150), "backbracing")],
+            "upgrade": [((-1896.89, 6.05), (-1897, -96), "backbracing"),
+                        ((-1897, -96), (-1997.13, -95.86), "backbracing")],
         },
         # weapon_pack is always installed: cannons and 20mm cannons need the munitions plant
         "prereq": {"cannon": "munitions", "cannon20mm": "munitions", "munitions": "workshop"},
@@ -248,6 +262,7 @@ MAPS = {
 # a back node (-3600, 602) was refused with CS_OBSTRUCTION and stalled that fort for 8 minutes (match 30.10.2026, when
 # only T2-3's terrain was checked). fwe_dir is relative to data/; the map lives in the Workshop folder.
 MAPS["Vanilla2v6"] = dict(MAPS["Vanilla"], **{
+    "spr_map": "Vanilla",       # the starting fort (its .spr) of the plans' frame
     "fwe_dir": "../../../workshop/content/410900/2927068191",
     "fwe": "2v6 Vanilla clean.fwe",
     # world -> plan frame per fort: x' = -3200 -+ (x - anchor x), y' = 700 + (y - anchor y)
@@ -733,6 +748,9 @@ VARIANTS = {
             (y0 >= -846 and y1 <= -250 and x0 >= -2100 and x1 <= -2000) or     # spine tower on the cliff wall
             (y0 >= -846 and y1 <= -746 and x0 >= -2500 and x1 <= -2100) or     # ledge roof (mines, turbines)
             (y0 >= 405 and y1 <= 750 and x0 >= -2100 and x1 <= -1700)),        # lower block under the starting fort
+        # the armoury in the middle of its strut (no workshop here): at 0.3 its box (x -2115..-2025) stuck out 15
+        # behind the starting fort's back post x -2100, where nothing closes a triangle
+        "tech_slots": {"armoury": [((-2100, 300), (-2001, 305), 0.5)]},
         "cfg": {
             "cols": [-2500, -2400, -2300, -2200, -2100, -2000, -1900, -1800, -1700, -1600],
             # Abyss-2's rows: the nest 130 high (y 5..-125), the lower block's storeys 405..550 (rocket 1's), 550..600
@@ -1207,7 +1225,11 @@ VANILLA_VARIANTS = {
         "shape": _union(_box(-3500, -2845, -55, 205), _V_BACK, _box(-3500, -3400, -155, -55)),
         # the armoury on the munitions slot (same size; the munitions plant was built there in Vanilla-3/-4)
         "tech_slots": {"armoury": [((-3400, 602), (-3299, 604), 0.49)],
-                       "upgrade": [((-3200, 600), (-3098, 602), 0.02)]},
+                       "upgrade": [((-3200, 600), (-3098, 602), 0.02)],
+                       # the beams' tech in the back block (the factory's proven slot is the upgrade centre's): the
+                       # workshop at x -3600..-3420, clear of the armoury's 170-high box, the factory a storey higher
+                       "workshop": [((-3600, 503), (-3500, 503), 0.9)],
+                       "factory": [((-3500, 405), (-3400, 405), 0.5)]},
         "roof_weapons": {"machinegun"},
         # Vanilla-2's config with these changes (merged below the table)
         "cfg": {
@@ -1243,7 +1265,13 @@ VANILLA_VARIANTS = {
             # the smoke launcher's storey rests on the gallery only (like the tower cage on Vanilla-3)
             "tower_connect": {"base_y": 205, "storeys": 2, "skip_floors": (-55,)},
             # the player's brace across the starting fort's two lower storeys (217-218 long in the game, which allows 218)
-            "long_struts": [((-2996, 504), (-2900, 700))]},
+            "long_struts": [((-2996, 504), (-2900, 700))],
+            # the firebeam (surplus module) in front of the fort like 2v6-4's: on the mine row's top strut, which is one
+            # 120-wide layer so it carries the firebeam (50 to each side of its LinkT point), its own row (y 602)
+            "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
+                          "outside": "bracing"},
+                         _V_LOWER_FACE_WS, dict(_V_MINE_ROW_WS, layers=[-2692])],
+            "weapon_struts": [((-2812, 602), (-2692, 602), 0.45, "firebeam")]},
         "plan": [
             # the armoury, a mine while it builds, the long brace, the EMP rockets (deck, nest) with their lanes and
             # doors, then the flak behind its shield (the shield first: placing the flak turns the armour in front of
@@ -1286,12 +1314,27 @@ VANILLA_VARIANTS = {
             ("upgrades", ["minigun"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
+            # the firebeam's tech last (workshop 400 m / 2000 e, factory 800 m / 6000 e, 60 s each): in the two matches
+            # of 30.10.2026 the plan was finished at 525-590 s and the AI then sat at its storage caps (1200 / 9000) for
+            # 3-6 minutes until the player's laser and firebeams broke through
+            ("tech", ["workshop", "factory"]),
+        ],
+        # the firebeam (400 m / 3000 e) once the plan is built and the storage keeps filling up (Surplus,
+        # .dev/docs/ai.md), on the mine row with a door in front of it, a wooden roof and a background diagonal like
+        # 2v6-4's (match 31.10.2026: in at 635 s, built 727 s, 11 shots). A laser under the reactor (nodes 52-51,
+        # y ~405) was refused with CS_UNSTABLE in the same match (the starting fort's struts below node 51 strained to
+        # 1.017) and dropped
+        "modules": [
+            {"name": "firebeam", "after": 23, "trigger": {"surplus": {"metal": 500, "energy": 3500, "seconds": 20}},
+             "plan": [("struts", [((-2692, 602), (-2692, 497), "door"), ((-2812, 505), (-2692, 497), "bracing"),
+                                  ((-2812, 602), (-2692, 497), "backbracing")]),
+                      ("weapons", ["firebeam"])]},
         ],
     },
 }
 
 
-VANILLA_VARIANTS["rockets"]["cfg"] = dict(VANILLA_VARIANTS["artillerie"]["cfg"], **VANILLA_VARIANTS["rockets"]["cfg"])
+VANILLA_VARIANTS["rockets"]["cfg"] =dict(VANILLA_VARIANTS["artillerie"]["cfg"], **VANILLA_VARIANTS["rockets"]["cfg"])
 
 # Vanilla-6, the modular fort: Vanilla-2's low fort (the most tested layout: the hidden mortar nest and turbine gallery
 # two storeys over the starting fort, nothing in the mortars' arc), but its weapons are reactive build modules
@@ -1544,12 +1587,13 @@ VANILLA2V6_VARIANTS = {
         ],
     },
     # 2v6-4, sniper and laser rush: the laser behind the deck's lane (factory on its proven slot, the upgrade centre one
-    # strut behind the munitions slot: beside the factory their boxes overlapped), anti-air (machine gun -> minigun) in
-    # the front cell above it, the sniper (-> AP sniper) in the third front cell
+    # strut behind the munitions slot: beside the factory their boxes overlapped; at LinkT 0.9, 34 clear of the
+    # factory's box, so its own box stays out of the column x -3600..-3500 at the rock, where it hung in the open),
+    # anti-air (machine gun -> minigun) in the front cell above it, the sniper (-> AP sniper) in the third front cell
     "laser": {
         "title": "Sniper and laser rush: laser behind the deck lane, anti-air and sniper above, fortified turbine storey, firebeam in front (2v6)",
         "shape": _V26_BLOCK,
-        "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.5)]},
+        "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.9)]},
         "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5)],
                     weapon_cells=[(-3100, -45, "sniper", 0.28), (-3100, 80, "machinegun", 0.7)],
                     roof_weapon_cells=[],
@@ -2011,6 +2055,12 @@ class Plan:
         a, b = self.devices.get(c) or "", self.devices.get((c[0] + 1, c[1])) or ""
         if self.cfg.get("large_rear_solid") and (a in LARGE or b in LARGE):
             return False            # the weapon's body stays inside its own cell (large_t)
+        if a.rstrip("+") in TECH or b.rstrip("+") in TECH:
+            # a tech device's box (cover_tech): its cells' "+" marks also stand for occupied, not reached (the upgrade
+            # centre at LinkT 0.02 on 2v6 turned the starting fort's back post 45-48 into background bracing, which
+            # broke under the load in physics.py)
+            box = self.__dict__.get("tech_box", {})
+            return box.get(c) is not None and box.get(c) == box.get((c[0] + 1, c[1]))
         return bool(a and b) and (a + "+" == b or b + "+" == a)
 
     def prereq(self, dev):
@@ -2220,6 +2270,72 @@ class Plan:
                     self.late_crossbrace.remove((i, j))
                 j += 1
 
+    def cover_tech(self, dev, ia, ib, t):
+        """Build every cell the box of tech device dev (on the floor link ia-ib at LinkT t) reaches into before it is
+        placed, with background diagonals: the player sees a device that does not stand in front of a closed
+        triangle, and from the tech the AI's plan (Michael, 01.11.2026: on Vanilla the upper part of the workshop and
+        the upgrade centre stuck out into the open). Returns the cells of the box that could not be built (outside
+        the shape: tech_cover closes what the starting fort leaves open there)."""
+        a, b = self.nodes[ia][1], self.nodes[ib][1]
+        p = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        w, top = rules.SIZE[dev][0], rules.BOX_TOP[dev]
+        rows, outside = self.cfg["rows"], []
+        for j in range(len(rows) - 1):
+            if rows[j + 1] <= p[1] - top + 3 or rows[j] >= p[1] - 3:
+                continue
+            for i in range(len(self.cfg["cols"]) - 1):
+                x0, x1 = self.cell_x((i, j))
+                if x1 <= p[0] - w + 3 or x0 >= p[0] + w - 3:
+                    continue
+                c = (i, j)
+                self.__dict__.setdefault("tech_box", {})[c] = dev
+                if c not in self.all_cells:
+                    outside.append(c)
+                    continue
+                self.devices.setdefault(c, dev + "+")      # background diagonals (the device stands in front)
+                # the cell alone, hung on its built neighbours: the cells holding it up (require_support) follow in
+                # the plan as before (on Vanilla they put 22 actions in front of the workshop)
+                deps = self.__dict__.setdefault("deps", {})
+                held = deps.pop(c, None)
+                try:
+                    ok = c in self.built_cells or self.build_cell(c)
+                    if ok and held is not None and not held <= self.built_cells:
+                        self.__dict__.setdefault("cover_cells", set()).add(c)
+                finally:
+                    if held is not None:
+                        deps[c] = held
+                if not ok and not self.build_cell_path(c):
+                    outside.append(c)
+        return outside
+
+    def cover_strut(self, pa, pb, mat):
+        """tech_cover: one strut closing a triangle over a tech device's box where the grid has no cell (between
+        starting-fort nodes, spr_nodes); B is created from A if no node is there yet."""
+        keys = []
+        for q in (pa, pb):
+            k = self.orig_node_at(q) or self.node_at(q, tol=5)
+            if k is not None and self.nodes[k][0] not in self.built_nodes and k[0] != "orig":
+                self.ensure_node(k, via_material="backbracing")
+            keys.append(k)
+        ka, kb = keys
+        if ka is None or self.nodes[ka][0] not in self.built_nodes:
+            self.problems.append("tech cover from (%d,%d): node not built" % tuple(pa))
+        elif kb is None:
+            self.ws_node(("strut",) + tuple(pb), tuple(pb), ka, mat)
+        elif self.nodes[kb][0] not in self.built_nodes:
+            self.problems.append("tech cover to (%d,%d): node not built" % tuple(pb))
+        else:
+            self.link(ka, kb, mat)
+
+    def support_covers(self):
+        """The cells holding up the hung tech covers, before the next tech device and at the end of the plan (right
+        after the workshop they put 17 actions in front of Vanilla-6's sniper cell; never built early, the starting
+        fort's back post 45-48 broke in physics.py under Vanilla-3's munitions plant hung beside the workshop)."""
+        for cc in sorted(self.__dict__.get("cover_cells", ()), key=lambda x: -x[1]):
+            for d in sorted(self.deps.get(cc, ()), key=lambda d: -d[1]):
+                if d not in self.built_cells:
+                    self.build_cell_path(d)
+
     def build_cell_path(self, c):
         """Build a cell; if necessary first the cells on the way from the starting fort."""
         if self.build_cell(c):
@@ -2370,7 +2486,7 @@ class Plan:
     def orig_node_at(self, p, tol=5):
         """A node of the starting fort outside the grid (e.g. its lower front face), registered as a built node
         under the key ("orig", id); None if there is none within tol."""
-        for nid, q in self.orig.items():
+        for nid, q in list(self.orig.items()) + list(self.cfg.get("spr_nodes", {}).items()):
             if math.dist(p, q) <= tol:
                 key = ("orig", nid)
                 if key not in self.nodes:
@@ -2775,7 +2891,8 @@ class Plan:
         self.problems += problems
         tr = m["trigger"]
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
-                             "time": tr.get("time"), "after": tr.get("after"), "lines": lines})
+                             "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
+                             "lines": lines})
 
     def module_requires(self):
         """Requires of each module: the last plan action it builds on (nodes, struts), and its devices' tech (a
@@ -3343,6 +3460,7 @@ class Plan:
         if step == "tech":
             if dev in self.tech_done:
                 return
+            self.support_covers()
             for (pa, pb, t) in self.tech_slots.get(dev, []):
                 ia, ib = self.node_at(pa), self.node_at(pb)
                 if ia and ib:
@@ -3358,6 +3476,10 @@ class Plan:
                     if self.ensure_node(ia) is None or self.ensure_node(ib) is None:
                         continue
                     self.link(ia, ib, "bracing")
+                    # (what stays open is reported by rules.tech_hidden in main())
+                    self.cover_tech(dev, ia, ib, t)
+                    for pa_, pb_, mat in self.cfg.get("tech_cover", {}).get(dev, []):
+                        self.cover_strut(pa_, pb_, mat)
                     a, b = self.nodes[ia], self.nodes[ib]
                     self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
                                         % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, dev))
@@ -3616,8 +3738,9 @@ class Plan:
     # --- Validation and output
     def validate(self):
         errors = []
-        built = set(self.orig)
+        built = set(self.orig) | set(self.cfg.get("spr_nodes", {}))
         pos = dict(self.orig)
+        pos.update(self.cfg.get("spr_nodes", {}))
         import re
         for k, line in enumerate(self.actions):
             m = re.search(r"Type = (\w+)", line).group(1)
@@ -3671,11 +3794,12 @@ class Plan:
                 if nid >= 10000 and nid not in found and self.t.nearest_surface(p)[1] < clear - 0.5:
                     errors.append("node %d at (%d,%d) only %.0f from the rock (rock_clear %d)"
                                   % (nid, p[0], p[1], self.t.nearest_surface(p)[1], clear))
-        # every cell is built only after the cells that hold it up
+        # every cell is built only after the cells that hold it up (a tech device's cover hangs on its neighbours
+        # until right after the device)
         done = set(self.orig_cells)
         for c in getattr(self, "build_order", []):
             missing = getattr(self, "deps", {}).get(c, set()) - done
-            if missing:
+            if missing and c not in getattr(self, "cover_cells", ()):
                 errors.append("cell %s built before its support %s" % (c, sorted(missing)))
             done.add(c)
         seen = set()
@@ -3738,6 +3862,8 @@ def main():
         name = "fort-t1f1-%s-%d.lua" % (args.map, args.start_number + n)
         p.write(os.path.join(args.out, name), var["title"])
         rule_errors, rule_warnings = rules.check_plan(parse_lines(p.actions))
+        rule_warnings += rules.tech_hidden(parse_lines(p.actions), start_fort(cfg.get("spr_map", args.map),
+                                                                         {**base_pos, **node_positions(parse_lines(p.actions))}))
         devs = {}
         for line in p.actions:
             if "CREATE_DEVICE" in line:
@@ -3767,6 +3893,8 @@ def main():
             devs = [ln.split('DeviceSaveName = "')[1].split('"')[0] for ln in m["lines"] if "CREATE_DEVICE" in ln]
             trig = ["%s x%d" % ("/".join(m["types"]), m["count"])] if m["types"] else []
             trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
+            trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
+                                                       m["surplus"].get("seconds", 20))] if m.get("surplus") else []
             print("   module %s: %d actions (%s), trigger %s%s, requires plan action %d"
                   % (m["name"], len(m["lines"]), ", ".join(devs), " or ".join(trig),
                      " (once %s is in)" % m["after"] if m.get("after") else "", m["requires"]))
@@ -3779,6 +3907,14 @@ def main():
         plan_nodes[name] = node_positions(parse_lines(p.actions))
     for e in neighbour_errors(cfg.get("neighbour"), plan_nodes):
         print("ERROR:", e)
+
+
+def start_fort(map_name, base_pos):
+    """The map's starting fort for rules.tech_hidden: (node positions, links) in plan ids (physics.load_startfort);
+    None without a readable .spr."""
+    import physics
+    f = physics.load_startfort(map_name, None, {n: p for n, p in base_pos.items() if n < 10000})
+    return None if f is None else ({n: tuple(q) for n, q in f.pos.items()}, set(f.links))
 
 
 def neighbour_errors(nb, plan_nodes):

@@ -230,7 +230,22 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   two mines, it came at 270-392 s and the rockets late or never, moved up the rockets came at 238/247 s), the flak's
   shield and the flak (64) and the first turbine while it builds, rockets (104-105), two mines, the gallery's
   sandbags, smoke on its storey, woodspam, machine gun, two turbines, battery and store, upgraded turbines, battery,
-  minigun (the starting fort's machine gun), upgraded mines, woodspam.
+  minigun (the starting fort's machine gun), upgraded mines, woodspam, then workshop and factory (since 31.10.2026).
+- A firebeam for the surplus (31.10.2026; the player's choice): in the two matches of 30.10.2026 the plan was finished
+  at 525-590 s and the AI then sat at its storage caps (1200 / 9000) for 3-6 minutes until the player's laser and
+  firebeams broke through. Workshop (x -3600..-3420, y 503) and factory (x -3500..-3400, y 405; the factory's proven slot
+  is the upgrade centre's) end the plan; the `Surplus` module `firebeam` ([ai.md](../ai.md#reactive-build-modules);
+  500 metal / 3500 energy for 20 s) follows, like 2v6-4's: on the mine row's top strut (x -2812..-2692, y 602, LinkT
+  0.45; the mine row is one 120-wide layer for it, before three 40 apart), a door in front, a wooden roof, a background
+  diagonal; its own row, nothing in front of it. physics.py: max stress 0.47 -> 0.48, sag 92 -> 103.
+  - Test match (31.10.2026, lost at 972 s): plan finished ~565 s, workshop 574 s, factory 652 s; the module went in at
+    635 s (`surplus:m=1200,e=6266`), the firebeam was placed at 652 s as the factory finished, built at 727 s and fired
+    11 times. When it was finished the game removed its door and diagonal (`UNLINK` at 727 s); it fired without them.
+  - A laser as a second module (after the firebeam, 1000 / 6000) on the starting fort's floor under the reactor (nodes
+    52-51, y ~405, LinkT 0.4; the diagonal 51-53 in front of it as background bracing, the reactor storey's armour
+    front 50-53 / 50-57 as doors) was refused in the same match: `CS_OCCUPIED`, then `CS_UNSTABLE` (the starting
+    fort's struts below node 51 strained to 1.017; physics.py had not predicted it). It hung in the rebuild queue to
+    the end; dropped.
 - Second test (26.10.2026): armoury at 20 s, EMP rockets at 80/84 s, smoke at 92 s, 17 rocket shots; lost at 486 s.
   Energy stayed below 900 from 90 to 330 s (first turbine at 293 s) while metal sat at its cap. Changed since: the
   turbine and the doors right after the rockets, the smoke shield, `RebuildCap` for smoke launchers (3).

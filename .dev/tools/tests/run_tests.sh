@@ -42,18 +42,41 @@ for o in before after; do
   check "2v6 $o: Vanilla's own fort stays Vanilla" "PLAN map=Vanilla file=.* fort=2900,700" "$LUA" t_vanilla2v6.lua $o $MID 102 2900 700
   check "2v6 $o: Vanilla 2v2 upper fort stays VanillaLong" "PLAN map=VanillaLong file=" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 -250
 done
-check "Modules load and are cut out after Load" "^after load: actions=233 expected=233 tagged=0$" "$LUA" t_modules.lua
+# Stalactites: the shared hanging plans (any of the three), told apart by where the fort stands; the first action is the
+# starting fort's front post node (-2502, -1199), 151 below the fort's position
+HANG=ai/forts/hanging/long/fort-t1f1-TemplateHang
+for o in before after; do
+  check "Stalactites $o: 1v1 fort team 1"          "PLAN map=Stalactites file=fort-t1f1-Stalactites-1.lua .* fort=-2500,-1350" "$LUA" t_vanilla2v6.lua $o $HANG-1.lua 1 -2500 -1350
+  check "Stalactites $o: first action in place"    "first action rel = -1.9, 151.4" "$LUA" t_vanilla2v6.lua $o $HANG-2.lua 102 2500 -1350
+  check "Stalactites $o: 2v2 fort 2 team 102"      "PLAN map=Stalactites file=.* fort=4100,-150" "$LUA" t_vanilla2v6.lua $o $HANG-3.lua 102 4100 -150
+  check "Stalactites $o: other hanging forts keep the game's plan" "PLAN file=original reason=unknown-game-plan" "$LUA" t_vanilla2v6.lua $o $HANG-1.lua 1 -3000 500
+done
+# weapon_pack's hanging plans (the first Stalactites match got ToGHngA1); only if the mod is installed
+if [ -d "$WP" ]; then for o in before after; do for e in ToGA1 ToGHngA1 ToGW1; do
+  check "Stalactites $o: weapon_pack $e team 102"  "PLAN map=Stalactites .* fort=2500,-1350" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 102 2500 -1350
+  check "Stalactites $o: weapon_pack $e in place"   "first action rel = -1.9, 151.4" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 1 -4100 -150
+done; done; fi
+check "Modules load and are cut out after Load" "^after load: actions=232 expected=232 tagged=0$" "$LUA" t_modules.lua
 check "Modules are moved by the transform"     "^module mirrored: 3000.0, 400.0$" "$LUA" t_modules.lua
 check "Module waits for its Requires"          "MODULE_WAIT counterbattery trigger=mortar:1,mortar2:1 requires=50 now=9$" "$LUA" t_modules.lua
 check "Module wait is logged once"             "^1$" bash -c "\"$LUA\" t_modules.lua | grep -c MODULE_WAIT"
 check "Module is inserted at the build index"  "MODULE counterbattery trigger=mortar:1,mortar2:1 at=65 actions=3$" "$LUA" t_modules.lua
 check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
 check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
-check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=238$" "$LUA" t_modules.lua
+check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=237$" "$LUA" t_modules.lua
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
-check "Plan file with modules loads in Lua"     "^218 sniper 1 13 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
-check "Modular plan loads with time triggers"  "^218 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
+check "Plan file with modules loads in Lua"     "^217 sniper 1 18 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
+check "Modular plan loads with time triggers"  "^217 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
+check "Surplus: not while the plan is built"    "^building: nil,nil$" "$LUA" t_surplus.lua
+check "Surplus: not while a rebuild is queued"  "^rebuilding: nil,nil$" "$LUA" t_surplus.lua
+check "Surplus: not below the thresholds"       "^short of energy: nil,nil$" "$LUA" t_surplus.lua
+check "Surplus: not before Seconds"             "^after 15 s: nil,nil$" "$LUA" t_surplus.lua
+check "Surplus module fires"                    "MODULE firebeam trigger=surplus:m=1200,e=9000 at=233 actions=1$" "$LUA" t_surplus.lua
+check "Surplus: After module waits for the build" "^firebeam building: true,nil$" "$LUA" t_surplus.lua
+check "Surplus: a dip restarts the clock"       "^after the dip: true,nil$" "$LUA" t_surplus.lua
+check "Surplus: second module fires"            "^laser: true,true laser$" "$LUA" t_surplus.lua
+check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua
@@ -85,6 +108,8 @@ check "Machine guns stay off the fort"           "machinegun offensive=0$"      
 check "Rockets held again after the window"      "t12:.24$"                      "$LUA" t_smoke.lua
 check "Rockets fire after MaxHold without smoke" "released after hold:.true$"    "$LUA" t_smoke.lua
 check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$"  "$LUA" t_smoke.lua
+check "Smoke cover shots are logged"            "SMOKETRY smokebomb 22 fired=1"  "$LUA" t_smoke.lua
+check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"     "$LUA" t_smoke.lua
 check "Volley: firebeam waits for its partner"   "^partner reloading:.33$"       "$LUA" t_volley.lua
 check "Volley: built-in AI's shot held too"      "^base firebeam held:.true$"    "$LUA" t_volley.lua
 check "Volley: both fire as one group"           "^both ready:.31:31\+32,33$"    "$LUA" t_volley.lua
@@ -134,8 +159,8 @@ if [ -n "$PY" ]; then
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
   check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
-  check "Tools read plan modules apart from the plan" "^218 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 13$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
-  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 13\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Tools read plan modules apart from the plan" "^217 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 18\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
   ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"
   if [ -n "$ID" ]; then
@@ -163,7 +188,34 @@ if [ -n "$PY" ]; then
   check "Map .spr: Abyss starting fort"          "team 1: 31 nodes \(9 foundations\), 69 struts, devices \['reactor 291-294@0.52', 'machinegun 292-293@0.35'\]" $PY "$MOD/.dev/tools/fortgen/spr.py" Abyss
   check "Map .spr: Vanilla starting fort"        "team 1: 19 nodes \(4 foundations\), 36 struts" $PY "$MOD/.dev/tools/fortgen/spr.py" Vanilla
   check "Map .fwe: Abyss terrain"                "version 20, gravity 981, .* 15 blocks, 3 views" $PY "$MOD/.dev/tools/fortgen/fwe.py" Abyss
+  check "Tech hidden when placed (Abyss, Vanilla, 2v6)" "^tech not hidden: 0$" $PY -c "import sys, glob; sys.path.insert(0, sys.argv[1]); import gen_fort, rules; from fortplan import parse_plan, node_positions; n = 0
+for f in glob.glob(sys.argv[2] + '/fortplans/*/*.lua'):
+    d = f.replace(chr(92), '/').split('/')[-2]
+    if d not in ('Abyss', 'Vanilla', 'Vanilla2v6'): continue
+    a = parse_plan(f)[1]; m = gen_fort.MAPS[d].get('spr_map', d)
+    w = rules.tech_hidden(a, gen_fort.start_fort(m, node_positions(a))); n += len(w); [print(f, x) for x in w]
+print('tech not hidden: %d' % n)" "$MOD/.dev/tools/fortgen" "$MOD"
   check "Physics: Vanilla-5's long brace refused" "REFUSED action [0-9]* link: 47-40 length 21[89]" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua"
+  # a foundation created along the rock from a neighbouring foundation is refused (CS_OBSTRUCTION, Stalactites-3,
+  # 01.11.2026), and so is one on an edge not decorated "foundations" (the rock lip over the mine pocket): every new
+  # node on the rock of a Stalactites plan is created straight up from the node below it, on a "foundations" edge
+  check "Stalactites foundations from below, on foundation edges" "^bad foundations: 0$" $PY -c "import sys, glob, re, math; sys.path.insert(0, sys.argv[1]); import fwe
+edges = [(v[k][:2], v[(k + 1) % len(v)][:2], v[k][2]) for b in fwe.read(sys.argv[3])['blocks'] if b['id'] >= 0 or b['id'] == -1 for v in [b['vertices']] for k in range(len(v))]
+def near(p, a, b):
+    L = math.dist(a, b); t = max(0, min(1, ((p[0] - a[0]) * (b[0] - a[0]) + (p[1] - a[1]) * (b[1] - a[1])) / (L * L or 1)))
+    return math.dist(p, (a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))
+n = 0
+for f in glob.glob(sys.argv[2] + '/fortplans/Stalactites/*.lua'):
+    for line in open(f):
+        if line.startswith('{ Type = CREATE_NODE'):
+            a, b = [(float(x), float(y)) for x, y in re.findall(r'x = (-?[\d.]+), y = (-?[\d.]+)', line)][:2]
+            on = [d for p, q, d in edges if near(b, p, q) <= 1.5]
+            if on and (not (abs(a[0] - b[0]) < 2 and a[1] > b[1]) or 'foundations' not in on): n += 1; print(f, b, 'from', a, on)
+print('bad foundations: %d' % n)" "$MOD/.dev/tools/fortgen" "$MOD" "$DATA/maps/Stalactites 1v1/Stalactites 1v1.fwe"
+  # a player cuts a hanging fort off the rock (Stalactites-3, 01.11.2026: the starting fort's bottom storey was cut and
+  # everything below fell): with every foreground strut through any storey removed, each plan still hangs on its
+  # background bracing (gen_hang.py cut, physics.py)
+  check "Stalactites plans survive a cut through any storey" "^cut test: 0 falls$" $PY "$MOD/.dev/tools/fortgen/gen_hang.py" cut "$MOD"/fortplans/Stalactites/fort-t1f1-Stalactites-*.lua
 else
   echo "SKIP  recorded build -> plan, probe parser (no Python 3)"
 fi

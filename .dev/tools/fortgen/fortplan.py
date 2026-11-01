@@ -34,9 +34,12 @@ def parse_modules(path):
             tr = m.group(2)
             types = re.search(r"Types = \{ ([^}]*) \}", tr)
             count, time, after = (re.search(k + r' = "?(\w+)"?', tr) for k in ("Count", "Time", "After"))
+            surplus = re.search(r"Surplus = \{ Metal = (\d+), Energy = (\d+), Seconds = (\d+) \}", tr)
             mods.append({"name": m.group(1), "types": re.findall(r'"(\w+)"', types.group(1)) if types else [],
                          "count": int(count.group(1)) if count else 1, "time": int(time.group(1)) if time else None,
-                         "after": after.group(1) if after else None, "requires": int(m.group(3)), "lines": []})
+                         "after": after.group(1) if after else None, "requires": int(m.group(3)), "lines": [],
+                         "surplus": {"metal": int(surplus.group(1)), "energy": int(surplus.group(2)),
+                                     "seconds": int(surplus.group(3))} if surplus else None})
         elif mods and line.strip().startswith("{ Type"):
             mods[-1]["lines"].append(line.strip())
     for m in mods:
@@ -45,8 +48,8 @@ def parse_modules(path):
 
 
 def format_modules(mods):
-    """FortModules table for the plan file, after the Fort table (mods: name, types, count, time, after, requires,
-    lines; time and after may be None)."""
+    """FortModules table for the plan file, after the Fort table (mods: name, types, count, time, after, surplus,
+    requires, lines; time, after and surplus may be None; surplus: {metal, energy, seconds})."""
     if not mods:
         return ""
     out = ["FortModules =", "{"]
@@ -58,6 +61,9 @@ def format_modules(mods):
             tr.append("Time = %d" % m["time"])
         if m.get("after"):
             tr.append('After = "%s"' % m["after"])
+        if m.get("surplus"):
+            s = m["surplus"]
+            tr.append("Surplus = { Metal = %d, Energy = %d, Seconds = %d }" % (s["metal"], s["energy"], s.get("seconds", 20)))
         out.append('{ Name = "%s", Trigger = { %s }, Requires = %d, Actions = {' % (m["name"], ", ".join(tr), m["requires"]))
         out.extend(m["lines"])
         out.append("} },")

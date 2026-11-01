@@ -250,6 +250,11 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
     after its first device; every device on its own strut, ~90 from its neighbours at the same height. Weapon doors only
     as long as the shot needs (`split_doors`). Upgrades after the upgrade centre with devices that need no tech in
     between.
+14. **Tech in a closed box:** workshop, factory, upgrade centre, munitions plant and armoury are placed only after
+    every cell their box reaches into is built with its diagonals (background bracing), so the whole device stands in
+    front of closed triangles (Michael, 01.11.2026: on Vanilla the upper part stuck out into the open and showed the
+    player what the AI built, and with it its plan). The game hides a device only in front of a closed triangle of
+    struts; an open square (no diagonal) or open air shows it (Abyss-3's perch weapons).
 
 ## Validation (`.dev/tools/fortgen/rules.py`)
 

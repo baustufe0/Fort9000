@@ -547,6 +547,7 @@ function CAI_FireSmokeFirst()
 			end
 			st.fireAttempts = st.fireAttempts + 1
 			st.smokeFiring = true
+			st.smokeTried = sid
 			local okF, errF = pcall(TryFireGun, sid)
 			st.smokeFiring = nil
 			if not okF then CAI_Log("ERROR smoke: " .. tostring(errF)) end
@@ -775,6 +776,24 @@ function CAI_RetireCheck(st, id, kind, fired)
 		.. " result=" .. tostring(result))
 end
 
+-- smoke cover diagnostics (the round robin's FIRETRY / FIREWAIT do not see these shots), one line per weapon and
+-- reason every CAI_FIREWAIT_EVERY seconds (Stalactites-3, 01.11.2026: the upgraded rockets never fired, unexplained):
+--   FIRETRY <rocket> <id> fired=<0|1> code= [ray=] smoke=<s since the last smoke shell|->   rocket fired after smoke
+--   SMOKETRY <launcher> <id> fired=<0|1> code= [ray=] smoke=                              smoke shell as cover
+--   FIREHOLD <rocket> <id> fired=0 code= smoke=                                           held, no smoke fired
+function CAI_SmokeCoverNote(st, id, what)
+	local kind = type(GetDeviceType) == "function" and GetDeviceType(id) or "?"
+	local fired = what ~= "FIREHOLD" and not IsWeaponReadyToFire(id)
+	local ray = ""
+	if what ~= "FIREHOLD" and not fired then
+		local okRay, r = pcall(CAI_FireRay, id)
+		ray = okRay and r or " ray=error"
+	end
+	local since = st.lastSmoke and st.fireClock and CAI_Round(st.fireClock - st.lastSmoke) or "-"
+	CAI_FireNote(st, id, kind, what .. " " .. tostring(kind) .. " " .. id .. " fired=" .. (fired and 1 or 0)
+		.. " code=" .. (fired and CAI_FireCode() or "-") .. ray .. " smoke=" .. since, what .. (fired and 1 or 0))
+end
+
 function CAI_FireTick()
 	local st = data.CAI
 	local f = Strategy.Fire
@@ -819,9 +838,16 @@ function CAI_FireTick()
 						st.fireAttempts = st.fireAttempts + 1
 						TryFireGun(id)
 						checked = checked + 1
+						CAI_SmokeCoverNote(st, id, "FIRETRY")
 					end
 				else
+					st.smokeTried = nil
 					if CAI_FireSmokeFirst() then checked = checked + 1 end
+					if st.smokeTried then
+						CAI_SmokeCoverNote(st, st.smokeTried, "SMOKETRY")
+					else
+						for _, id in ipairs(rockets) do CAI_SmokeCoverNote(st, id, "FIREHOLD") end
+					end
 				end
 				-- fired or held: the round robin skips them without using up a turn
 				for k in pairs(sc.Rockets) do skip[k] = true end
@@ -1687,6 +1713,29 @@ end
 -- one think step: fire the modules whose trigger is reached, once per match each. Trigger: the enemy has Count
 -- devices of Types together, or the game time has reached Time (seconds; a module that is also the plan's goal comes
 -- even if the enemy never builds its trigger); After = <module name>: only once that module has gone in.
+-- Surplus = { Metal = m, Energy = e, Seconds = s }: the plan (with the modules inserted so far) is built, no rebuild is
+-- queued, and metal and energy have stayed at or above m and e for s seconds (default 20): the AI has nothing left
+-- to build while its storage fills up.
+
+-- "surplus:m=<metal>,e=<energy>" once module m's Surplus condition has held long enough, else nil
+function CAI_SurplusReason(m, elapsed)
+	local s = m.trigger.Surplus
+	if type(s) ~= "table" then return nil end
+	local idle = Fort ~= nil and data.fortIndex > #Fort and (type(data.Rebuild) ~= "table" or next(data.Rebuild) == nil)
+	local metal, energy = -1, -1
+	if idle then
+		local res = GetTeamResources(teamId)
+		if type(res) == "table" or type(res) == "userdata" then metal, energy = res.metal or -1, res.energy or -1 end
+	end
+	if not idle or metal < (s.Metal or 0) or energy < (s.Energy or 0) then
+		m.surplusSince = nil
+		return nil
+	end
+	m.surplusSince = m.surplusSince or elapsed
+	if elapsed - m.surplusSince < (s.Seconds or 20) then return nil end
+	return "surplus:m=" .. CAI_Round(metal) .. ",e=" .. CAI_Round(energy)
+end
+
 function CAI_UpdateModules()
 	local mods = data.CAIModules
 	if mods == nil or type(data.fortIndex) ~= "number" or Fort == nil then return end
@@ -1713,6 +1762,8 @@ function CAI_UpdateModules()
 				why = table.concat(hits, ",")
 			elseif tr.Time and elapsed >= tr.Time then
 				why = "time:" .. tr.Time
+			else
+				why = CAI_SurplusReason(m, elapsed)
 			end
 			if why then
 				progress = progress or CAI_PlanProgress()

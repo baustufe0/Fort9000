@@ -33,6 +33,7 @@ The specification is split into files so a session only loads what it needs.
 | [.dev/docs/maps/abyss.md](docs/maps/abyss.md) | Abyss: variants, cliff-ledge rules, failed approaches | working on an Abyss plan |
 | [.dev/docs/maps/vanillalong.md](docs/maps/vanillalong.md) | VanillaLong: converted Vanilla plans | working on a VanillaLong plan |
 | [.dev/docs/maps/2v6-vanilla.md](docs/maps/2v6-vanilla.md) | 2v6 Vanilla (Workshop): terrain, ceiling, the four low plans, position detection | working on a 2v6 plan |
+| [.dev/docs/maps/stalactites.md](docs/maps/stalactites.md) | Stalactites 1v1 / 2v2: hanging forts, the hanging generator (`gen_hang.py`), the four plans | working on a Stalactites plan or another hanging fort |
 | [.dev/docs/history/vanilla-2.md](docs/history/vanilla-2.md) | Vanilla-2 test matches in order | debugging a regression, "did we try X?" |
 | [.dev/docs/history/vanilla-3-5.md](docs/history/vanilla-3-5.md) | Vanilla-3/-4/-5 test matches (tower, cannons (Vanilla-4, removed 28.10.2026), 20mm rush, the former laser Vanilla-5, the rocket Vanilla-5) | debugging a regression, "did we try X?" |
 | [.dev/docs/history/vanilla-6.md](docs/history/vanilla-6.md) | Vanilla-6 (modular fort) test matches | debugging a regression, "did we try X?" |
@@ -53,6 +54,6 @@ A test result goes into the history file of its plan; what it changes in the cur
 
 ## Known limitations
 
-- Plans only for Abyss, Vanilla and VanillaLong.
+- Plans only for Abyss, Vanilla, VanillaLong, 2v6 Vanilla and Stalactites (1v1, 2v2).
 - Training learns from few matches (35 with a result on 25.10.2026); `--strength` limits the deviation.
 - Assumes 25 frames per second for the game phases in training.

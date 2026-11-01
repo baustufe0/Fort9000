@@ -100,6 +100,12 @@ its trigger.
    mortars after the mortars). If the AI has not yet passed plan action `Requires` (progress = the `CAI_K` of the
    last plan action before `data.fortIndex`), it waits. Several modules ready in the same step go in the order listed
    in the plan. The log names the reason: `trigger=mortar:2` or `trigger=time:150`.
+   `Surplus = { Metal = m, Energy = e, Seconds = s }` (`CAI_SurplusReason`): the plan and every module inserted so
+   far are built (`data.fortIndex > #Fort`), no rebuild is queued, and metal and energy have stayed at or above m and
+   e for s seconds (default 20; a dip restarts the clock). It spends what the AI piles up once it has nothing left to
+   build: in the archived matches most forts that finished their plan then sat at 800+ metal for 100-645 s (Vanilla
+   worst). Chained with `After`, each module of the chain waits until the one before is built. Log:
+   `trigger=surplus:m=1200,e=9000`.
 5. **Insertion.** The module's `n` actions are inserted at `data.fortIndex` (copies, so a rebuild works on them like
    any plan action). All index-keyed state at or after that index moves up by `n`: keys of `data.Rebuild`,
    `data.Frustration` and `st.rebuildSince`, values of `data.Devices`; `st.buildIndex` is reset so the skip valve
