@@ -7,7 +7,8 @@ FORT 9000 AI extends the built-in Forts AI instead of replacing it. The AI plays
 [h2]Features[/h2]
 [list]
 [*][b]Custom fort layouts:[/b] on supported maps the AI picks one of several layouts each match (sniper and mortar nest, 20mm rush, rocket rush, cannon fort, sniper and laser rush, a modular fort, a swarm missile rush that fires through portals, ...), so it doesn't build the same fort every time.
-[*][b]Sturdy forts:[/b] the layouts brace the starting fort first and build from the ground up, checked with a physics model, so the forts carry their own weight; on the Vanilla maps the wind turbines sit in protected storeys.
+[*][b]Sturdy forts:[/b] the layouts brace the starting fort first and are checked with a physics model, so the forts carry their own weight, standing or hanging; on the Vanilla maps the wind turbines sit in protected storeys, and a hanging fort no longer drops everything below a storey you cut.
+[*][b]Hidden plans:[/b] workshops, factories and other tech buildings, and the missile launchers on Stalactites, are only placed where they are fully covered, so you can't see what the AI is up to until it fires.
 [*][b]Reactive building:[/b] some layouts add weapons in response to what you build, for example anti-air when you build missiles or rockets.
 [*][b]Adaptive targeting:[/b] the AI rates your devices and goes for what hurts you most: weapons that threaten it, your economy, your reactor.
 [*][b]Aggression by game phase:[/b] it builds up its economy early and gets more aggressive as the match goes on and its economy grows.
@@ -30,14 +31,14 @@ Other maps that use the same starting fort as Vanilla may also get the custom la
 [list]
 [*]Forts (base game).
 [*]Enable [b]FORT 9000 AI[/b] in the mod selection when you set up a match (category "AI").
-[*]For the full layouts also enable the built-in [b]Weapon Pack[/b]: many layouts use its 20mm cannon, EMP rockets, flak and firebeam. One layout adds a smoke launcher if you have it. The AI skips a device it cannot build after a few tries.
-[*]Stalactites' missile layouts build portals.
+[*]For the full layouts also enable the built-in [b]Weapon Pack[/b]: many layouts use its 20mm cannon, EMP rockets, flak and firebeam. Some layouts add a smoke launcher if you have it. The AI skips a device it cannot build after a few tries.
 [*]Multiplayer: every player needs the mod installed.
 [*]Compatible with Weapon Pack: its AI forts are recognised and replaced on the supported maps.
 [/list]
 
 [h2]Good to know[/h2]
 [list]
+[*]On Stalactites the missile layouts fire through portals; the AI connects them itself.
 [*]If you take over an AI as your anti-air assistant, the mod switches itself off for that AI.
 [*]The mod writes short match notes (lines starting with [noparse][CREC][/noparse] and [noparse][CAI][/noparse]) to the Forts log file. They are only used locally to improve the AI. Nothing is sent anywhere.
 [*]Don't run this mod together with other mods that change the AI.
