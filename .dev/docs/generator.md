@@ -49,6 +49,7 @@ Options added for the Vanilla defence (25.10.2026; the facts behind them in [bui
 - Plan step `("struts", [(point A, point B, material), ...])`: extra struts, B created from A if no node stands there;
   A and B may be grid nodes or nodes of the starting fort (e.g. Vanilla-5's armour shield in front of its smoke
   launcher, its long brace across the starting fort).
+- Plan steps `("ground", [(device, (x, y)), ...])` (a ground device at a fixed spot, e.g. inverted swarm launchers on a cave roof; upgraded like a mine) and `("connect", [(A, B, dest A, dest B), ...])` (a `CONNECT` action: the portal strut A-B to the portal strut dest A-B). Stalactites-4 uses both.
 - `long_struts [(A, B)]`: struts allowed up to the game's limit (`GAME_MAX_LINK` 218, +1 like `MAX_LINK`) instead of the
   generator's 205, e.g. Vanilla-5's 218.7 brace across the starting fort.
 - `door_posts [(x, y_top, y_floor)]`: front posts split like doors although they are not doors (e.g. background

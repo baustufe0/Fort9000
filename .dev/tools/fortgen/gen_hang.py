@@ -194,6 +194,8 @@ MAP = {
         {"ground": (-2950.95, -1500.0)},
         {"ground": (-3078.55, -1500.0)},
         {"ground": (-2695.75, -1500.0)},
+        # a fifth site in front of it (plan 4, under the swarm launchers' portal; the player's mine of 02.11.2026)
+        {"ground": (-2568.15, -1500.0)},
     ],
     "rebrace_after_mine": [],
     # the starting fort's machine gun stands on its bottom strut 162-157 (y -897) and fires through its door 161-162 at
@@ -231,6 +233,76 @@ MAP.update(_S_GALLERY)
 # full door, split_doors finds no brace clear of a sniper's box) take machine guns, or the first sniper; -897 is the
 # starting fort's machine gun's fire lane; -767 and -637 (130 high) take the snipers and the laser behind two short
 # doors in a row (door_layers) against the AP sniper.
+# Swarm missiles out of the mine pocket (plan 4, the player's layout of 02.11.2026): the inverted launchers hang from the
+# pocket's roof (y -1650, flat from x -3100 to the mouth at -2500) over the two right mine sites (the mines below them
+# stay: five mine sites) and fire straight down into the entry portal 72 below the roof, held by background bracing
+# only (the missiles pass it) from the starting fort's mouth post 134-135 and one foundation on the roof between the
+# launchers (only x -2700..-2500 of the roof takes foundations; created straight up from a node below it, like every
+# Stalactites foundation). The exit portal stands upright in front of the shield's outer wood layer (x -2280), with nothing in front
+# of it. Orientation: a portal maps its strut A->B onto the destination's A->B and keeps the crossing side, so a
+# missile falling through A(west)->B(east) leaves A(lower)->B(upper) to the right (towards the enemy; mirrored forts
+# mirror both portals); confirmed in the test match of 02.11.2026 (the missiles flew to the enemy).
+_S_SWARM_SITES = [(-2696.12, -1650.0), (-2568.52, -1650.0)]
+# The launchers' cover, before the first launcher (the user, 02.11.2026: the player must not see what is built there;
+# the portals are the surprise, from then on he knows missiles come). A launcher hangs 90 from the roof and is 64 wide
+# (missileswarm.lua), the game hides a device only in front of closed triangles: background triangles from the mouth
+# post 134-135 and the roof foundation (-2632, -1650) over x -2745..-2500 down to the portal's row (-1578), whose nodes
+# they are. Left open: a strip ~20 high along the roof west of x -2700 (the roof there takes no foundations) and below
+# the lines from (-2632, -1600) to the portal's ends until the portal closes them.
+_S_SWARM_COVER = ("struts", [
+    ((-2499.33, -1599.47), (-2555, -1578), "backbracing"),
+    ((-2500, -1650), (-2555, -1578), "backbracing"),
+    ((-2500, -1500), (-2555, -1578), "backbracing"),
+    ((-2555, -1578), (-2632, -1600), "backbracing"),
+    ((-2632, -1600), (-2632, -1650), "backbracing"),
+    ((-2555, -1578), (-2632, -1650), "backbracing"),
+    ((-2632, -1600), (-2705, -1578), "backbracing"),
+    ((-2632, -1650), (-2705, -1578), "backbracing"),
+    ((-2705, -1578), (-2745, -1625), "backbracing"),
+    ((-2632, -1650), (-2745, -1625), "backbracing"),
+])
+# the entry portal on the cover's bottom nodes
+_S_PORTAL_IN = ("struts", [((-2705, -1578), (-2555, -1578), "portal")])
+_S_PORTAL_OUT = ("struts", [
+    ((-2280, -1500), (-2210, -1500), "bracing"),
+    ((-2320, -1590), (-2210, -1500), "backbracing"),
+    ((-2320, -1590), (-2210, -1630), "bracing"),
+    ((-2280, -1500), (-2210, -1630), "backbracing"),
+    ((-2210, -1500), (-2210, -1630), "portal"),
+])
+_S_PORTAL_LINK = ((-2705, -1578), (-2555, -1578), (-2210, -1500), (-2210, -1630))
+# and back (exit -> entry, the same ends paired); a CONNECT fails while a portal strut is still being built (test match
+# 02.11.2026: the back one succeeded first; ai.lua checks and reconnects every 5 s)
+_S_PORTAL_BACK = _S_PORTAL_LINK[2:] + _S_PORTAL_LINK[:2]
+
+# The mines behind the portal (the user, 02.11.2026: not at the start, but well protected once the enemy has its later
+# weapons): two sandbags on the floor right in front of the pocket mouth (the starting fort's struts 134-133 and
+# 133-(-2320, -1500), 100 and 80 long; their boxes recess the shield's wood diagonal there) and the shield's inner post
+# over the mouth (-2320, -1590..-1500) armour; the mouth itself is armour since the shield
+_S_MINE_GUARD = [
+    ("device", [("sandbags", (-2500, -1500), (-2400.17, -1498.31), 0.5),
+                ("sandbags", (-2400.17, -1498.31), (-2320, -1500), 0.5)]),
+    ("struts", [((-2320, -1590), (-2320, -1500), "armour")]),
+]
+# Plans 1-3 end with the swarm launchers (the user, 02.11.2026: an extension once everything else stands; the roof over
+# the mines is free there, the exit portal fits in front): a plain sniper as spotter (their snipers become AP snipers,
+# which cannot spot), the cover, the hidden launcher, the portals, the mine guard, the second launcher, warheads
+_S_SWARM_LATE = [
+    # the spotter in the starting machine gun's fire lane (front cell -997..-897, free since every plan sells that gun);
+    # left to the generator it took the slanted top front cell, whose armour door reached into its body
+    ("build", [(-2503, -897, "sniper")]),
+    ("weapons", ["sniper"]),
+    _S_SWARM_COVER,
+    ("ground", [("missileinv", _S_SWARM_SITES[0])]),
+    ("eco", ["battery"]),
+    _S_PORTAL_IN,
+    _S_PORTAL_OUT,
+    ("connect", [_S_PORTAL_LINK, _S_PORTAL_BACK]),
+] + _S_MINE_GUARD + [
+    ("ground", [("missileinv", _S_SWARM_SITES[1])]),
+    ("upgrades", ["missile2inv", "missile2inv"]),
+]
+
 STALACTITES_VARIANTS = {
     # 1, cannons: an early sniper, then the workshop and the munitions plant (on the back block's floor -627, through
     # the storey above), two 20mm cannons (-627, -357) and two cannons (-762, -492) one above the other behind the deep
@@ -268,7 +340,7 @@ STALACTITES_VARIANTS = {
             ("upgrades", ["minigun"]),
             ("eco", ["mine", "turbine"]),
             ("upgrades", ["mine2", "mine2"]),
-        ],
+        ] + _S_SWARM_LATE,
     },
     # 2, laser: workshop -> factory -> laser behind the 130-high front cell below the starting fort, a sniper below it
     "laser": {
@@ -296,7 +368,7 @@ STALACTITES_VARIANTS = {
             ("upgrades", ["minigun"]),
             ("eco", ["turbine", "mine"]),
             ("upgrades", ["mine2"]),
-        ],
+        ] + _S_SWARM_LATE,
     },
     # 3, rockets: the armoury first, two EMP rockets (-> rockets) behind the front cells -627 and -492, the smoke launcher on
     # the perch in front of the empty cell -762, two machine guns (-> miniguns) in the 100-high cells; late the
@@ -347,37 +419,67 @@ STALACTITES_VARIANTS = {
             ("build", [(-2503, -357)]),
             _s_door_wall(-492, [-357]),
             ("weapons", ["cannon"]),
-        ],
+        ] + _S_SWARM_LATE,
     },
-    # 4, miniguns: two machine guns early (one front cell each), the upgrade centre, both become miniguns, two snipers
-    # (-> AP snipers) below them, behind the front column
-    "miniguns": {
-        "title": "Two miniguns and two AP snipers in the front column, turbines in the bottom gallery (Stalactites)",
-        "shape": _S_SHAPE,
-        # the snipers behind the front column, firing through its empty cells: in the front column itself (x -2503..-2368,
-        # hanging ~600 below the rock) both were refused with CS_UNSTABLE in both Stalactites-4 forts of the 2v2 match
-        # (01.11.2026, the game saw the nodes moving: v=2-3) and given up; the cells behind hang on the starting fort's
-        # posts like plan 3's rockets, which were placed
+    # 4, swarm missiles (the player's layout, Stalactites 2v2 of 02.11.2026): two inverted swarm launchers hang from the
+    # mine pocket's roof over the two right mine sites and fire down into a portal below them (y -1578, the pocket is
+    # 150 high), its partner stands upright in front of the shield and sends them out towards the enemy; a plain sniper
+    # paints the target (an AP sniper cannot spot: SpotterFactor 0), both launchers become warheads late
+    "swarm": {
+        "title": "Swarm missile rush: workshop, spotter sniper, hidden launcher, portals; warheads, late cannon below (Stalactites)",
+        # the snipers behind the front column like plan 2's sniper (in the front column itself both were refused with
+        # CS_UNSTABLE in the 2v2 match of 01.11.2026)
+        "shape": _union(_S_SHAPE, _box(-2653, -2368, -507, -372)),
+        "tech_slots": {"munitions": [((-3000, -637), (-2925, -637), 0.6)]},
         "cfg": {"weapon_cells": [(-2503, -1098, "machinegun", 0.5), (-2503, -997, "machinegun", 0.5),
-                                 (-2503, -767, "sniper", 0.2), (-2503, -637, "sniper", 0.2)]},
+                                 (-2503, -767, "sniper", 0.2), (-2503, -637, "sniper", 0.2)],
+                "rows": _S_ROWS + [-372], "clear_boxes": ["munitions"], "large_cells": [(-2503, -372, 0.2)]},
+        # a rush (the user, 02.11.2026): the first test built the workshop at 3.9 min and the first launcher at 5.3 min
+        # (machine gun, sniper, two turbines and four mines before it), the second was still building at the end.
+        # Now one mine (the shield follows it), the workshop, the spotter sniper while it builds (a plain one: an AP
+        # sniper cannot spot), the portals, the first launcher; the starting reactor's energy pays for it (2500)
         "plan": [
-            ("aa", ["machinegun"]),
             ("eco", ["mine"]),
+            ("tech", ["workshop"]),
             ("weapons", ["sniper"]),
-            ("eco", ["turbine", "mine"]),
-            ("tech", ["upgrade"]),
+            # the cover first (it also holds the roof foundation: a launcher placed with no node of ours nearby was
+            # refused with CS_INVALIDNODES, test match 02.11.2026), then the hidden launcher, then the portals
+            _S_SWARM_COVER,
+            ("ground", [("missileinv", _S_SWARM_SITES[0])]),
+            # energy before the portals: a swarm volley costs 1000 energy, a warhead 4000, the portals drain energy all
+            # the time. In the rush test (02.11.2026) the first launcher was ready at 4.4 min, but energy fell to
+            # 80-900 from 5 min on (one launch FIRE_ENERGY) while metal sat at its cap of 900 from 5.3 to 8.6 min with
+            # one turbine: turbines (200 metal, 800 energy) turn that metal into energy
+            ("eco", ["turbine", "turbine"]),
+            _S_PORTAL_IN,
+            _S_PORTAL_OUT,
+            ("connect", [_S_PORTAL_LINK, _S_PORTAL_BACK]),
+            ("eco", ["mine"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "battery"]),
-            ("upgrades", ["minigun"]),
-            ("defence", ["sandbags", "sandbags"]),
-            ("eco", ["mine", "store"]),
-            ("upgrades", ["minigun"]),
-            ("upgrades", ["sniper2"]),
-            ("eco", ["turbine"]),
-            ("weapons", ["sniper"]),
+            ("ground", [("missileinv", _S_SWARM_SITES[1])]),
+            ("eco", ["turbine", "mine"]),
+            ("tech", ["upgrade"]),
             ("upgrades", ["turbine2", "turbine2"]),
+            ("aa", ["machinegun"]),
+            ("defence", ["sandbags", "sandbags"]),
+            # (the gallery holds four turbines)
             ("eco", ["battery", "mine"]),
-            ("upgrades", ["sniper2", "mine2"]),
+            ("upgrades", ["missile2inv"]),
+] + _S_MINE_GUARD + [
+            ("eco", ["store"]),
+            ("weapons", ["sniper"]),
+            ("upgrades", ["turbine2", "turbine2", "missile2inv"]),
+            ("eco", ["mine"]),
+            ("upgrades", ["minigun", "mine2", "mine2"]),
+            # then down towards a cannon (the user, 02.11.2026): the munitions plant in the back block, a storey under
+            # the turbine gallery's front (-507..-372, 135 high like the deep fort's) and the cannon in its front cell
+            # firing through two doors, as plan 3's late cannon
+            ("tech", ["munitions"]),
+            ("build", [(-2503, -372)]),
+            ("struts", [((-2368, -507), (-2260, -507), "armour")]),
+            _s_door_wall(-507, [-372]),
+            ("weapons", ["cannon"]),
         ],
     },
 }
@@ -447,6 +549,11 @@ def filter_supported_hanging(self):
         self.cells -= dropped
         self.problems.append("%d unsupported cells omitted: %s" % (len(dropped), sorted(dropped)))
 
+
+for _k in ("cannons", "laser", "rockets"):
+    # the late spotter's cell (_S_SWARM_LATE): only a build step that keeps it for the sniper opens the lane cell
+    _c = STALACTITES_VARIANTS[_k].setdefault("cfg", {})
+    _c["weapon_cells"] = list(_c.get("weapon_cells", [])) + [(-2503, -897, "sniper", 0.5)]
 
 for _v in STALACTITES_VARIANTS.values():
     # the starting machine gun is sold first (the player, 02.11.2026): the front column in front of it takes its line

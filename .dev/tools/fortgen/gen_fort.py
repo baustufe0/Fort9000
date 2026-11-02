@@ -62,9 +62,10 @@ TECH = {"workshop", "factory", "upgrade", "munitions", "armoury"}
 # the smoke bomb follows the armoury in the game's own plans (Crevice-Howie: armoury is its only tech)
 PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "laser": "factory", "firebeam": "factory",
           "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade",
-          "flak": "armoury", "rocketemp": "armoury", "smokebomb": "armoury", "shotgun": "upgrade", "rocket": "upgrade"}
+          "flak": "armoury", "rocketemp": "armoury", "smokebomb": "armoury", "shotgun": "upgrade", "rocket": "upgrade",
+          "missile": "workshop", "missileinv": "workshop", "missile2": "upgrade", "missile2inv": "upgrade"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
-              "shotgun": "flak", "rocket": "rocketemp"}
+              "shotgun": "flak", "rocket": "rocketemp", "missile2": "missile", "missile2inv": "missileinv"}
 # tall devices: their box reaches 112 (rockets) to 118 (flak, shotgun) above the strut (rules.BOX_TOP; the smoke
 # bomb is assumed like a turbine, 127); on a floor they need a storey at least this high, like a turbine
 TALL = {"rocketemp", "rocket", "flak", "shotgun", "smokebomb"}
@@ -3385,6 +3386,47 @@ class Plan:
                 self.slot_cells[c] = dev[2]
             if c is None or not self.build_cell_path(c):
                 self.problems.append("cell at x %d, floor %d not built" % tuple(dev[:2]))
+            return
+        if step == "ground":
+            # ("ground", [(device, (x, y)), ...]): a device on the ground at a fixed spot (swarm launchers: missileinv
+            # hangs from a cave roof), upgraded like a mine
+            name, p = dev
+            need = self.prereq(name)
+            if need and need not in self.tech_done:
+                self.problems.append("%s without %s - moved forward" % (name, need))
+                self.add("tech", need)
+            self.actions.append('{ Type = CREATE_DEVICE, GroundPosition = { %s }, LinkT = 1.57, DeviceSaveName = "%s" },'
+                                % (self._fmt(p), name))
+            self.placed.append((name, p, p, 0, None))
+            return
+        if step == "device":
+            # ("device", [(device, point A, point B, LinkT), ...]): a device on the strut A-B (both nodes built, the
+            # strut is linked if it is not there yet), e.g. sandbags behind a portal
+            name, pa, pb, t = dev
+            ka = self.node_at(pa, tol=5) or self.orig_node_at(pa)
+            kb = self.node_at(pb, tol=5) or self.orig_node_at(pb)
+            if ka is None or kb is None or self.nodes[ka][0] not in self.built_nodes or self.nodes[kb][0] not in self.built_nodes:
+                self.problems.append("%s on (%d,%d)-(%d,%d): node not built" % ((name,) + tuple(pa) + tuple(pb)))
+                return
+            if frozenset((self.nodes[ka][0], self.nodes[kb][0])) not in self.links:
+                self.link(ka, kb, "bracing")
+            a, b = self.nodes[ka], self.nodes[kb]
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, name))
+            self.placed.append((name, a[1], b[1], t, None))
+            return
+        if step == "connect":
+            # ("connect", [(A, B, destination A, destination B), ...]): connects the portal strut A-B to the portal
+            # strut destination A-B (CONNECT, the game's ConnectPortals; the base AI rebuilds it with the struts)
+            ids = []
+            for q in dev:
+                k = self.node_at(q, tol=5) or self.orig_node_at(q)
+                if k is None or self.nodes[k][0] not in self.built_nodes:
+                    self.problems.append("portal node (%d,%d) not built" % tuple(q))
+                    return
+                ids.append(self.nodes[k][0])
+            self.actions.append('{ Type = CONNECT, OriginalNodeAId = %d, OriginalNodeBId = %d, OriginalNodeAIdDest = %d, OriginalNodeBIdDest = %d },'
+                                % tuple(ids))
             return
         need = self.prereq(dev)
         if need and need not in self.tech_done and dev not in UPGRADE_OF:

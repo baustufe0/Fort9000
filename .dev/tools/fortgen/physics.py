@@ -61,6 +61,7 @@ MATERIALS = {
     "shield": (200000.0, 0.05, 0.90, 1.10),
     "rope": (50000.0, 0.001, 0.60, 1.50),
     "solar": (200000.0, 0.4, 0.90, 1.10),
+    "portal": (250000.0, 0.5, 0.90, 1.10),      # assumed like armour: its definition is packed (dlc1_portal.pack)
 }
 DEFAULT_DEVICE_MASS = 60.0    # devices whose file is packed (smoke bomb)
 

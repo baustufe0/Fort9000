@@ -91,7 +91,7 @@ front cell built first): a player cuts a hanging fort off the rock, and the mine
 | Stalactites-1 cannons | early sniper (-997), workshop, munitions plant; 20mm cannons (-627, -357) and cannons (-762, -492, two door layers) behind the front column, a machine gun -> minigun; deep fort |
 | Stalactites-2 laser | workshop, factory, laser and sniper (-> AP sniper) behind the front column below the starting fort, minigun |
 | Stalactites-3 rockets | armoury, two EMP rockets -> rockets (-627, -492), smoke launcher on the perch, two machine guns -> miniguns; late the munitions plant (opened by the armoury) and a cannon (-357); deep fort |
-| Stalactites-4 miniguns | two machine guns -> miniguns, two snipers -> AP snipers behind the front column |
+| Stalactites-4 swarm | a swarm rush (since 02.11.2026: one mine, workshop, spotter sniper, the launchers' background cover, the first launcher hidden, then the portals (the surprise, the user); the economy after it): two inverted swarm launchers (`missileinv` -> warheads `missile2inv`) on the mine pocket's roof over the two right mine sites, firing down into a portal that sends them out of a second portal in front of the shield; two plain snipers as spotters (no AP upgrade: an AP sniper cannot spot), two machine guns (one -> minigun), five mines (replaced plan 4 "miniguns" on 02.11.2026: the user: only AP snipers and miniguns win no match) |
 
 Checked 01.11.2026: `validate()` and `rules.py` 0 errors (expected warnings: a diagonal in the upgrade centre's box,
 and in plan 1 the diagonal of the cell behind each cannon inside its box), tech hidden when placed, turbine wind clear
@@ -134,6 +134,33 @@ height is removed (9 heights, -1275 .. -290) and the rest settled. Before the sk
 hold at every height. It also stiffened the forts: Stalactites-1 STANDS 0.43 (sag 36), -2 0.35 (32), -3 0.44 (43, was
 WEAK by sag), -4 0.56 (35).
 
+**Swarm missiles through a portal** (plan 4, 02.11.2026, the player's layout of the 2v2 match that day): swarm
+launchers need a workshop (warheads the upgrade centre), stand on the ground only, and fire only at a target a plain
+sniper paints (`RequiresSpotterToFire`; sniper SpotterFactor 1, AP sniper 0). The inverted ones hang from a roof and
+fire straight down. The pocket's roof (y -1650) is flat from x -3100 to the mouth at -2500, foundations only on
+x -2700..-2500. The launchers stand at x -2696.12 / -2568.52 (the player's spots, over mine sites 4 and 5; both mines
+stay below). Entry portal: strut (-2705, -1578)->(-2555, -1578), held only by background bracing (the missiles pass it)
+from the mouth post 134-135, a node (-2632, -1600) and the roof foundation (-2632, -1650) straight above it. Exit
+portal: upright (-2210, -1500)->(-2210, -1630) in front of the shield's outer wood layer, nothing in front of it.
+`CONNECT` (the base AI's ConnectPortals, rebuilt with its struts) links entry A-B to exit A-B. Assumed: a portal maps
+its A->B onto the destination's A->B keeping the crossing side, so a missile falling through west->east leaves
+lower->upper to the right: **confirmed** in the fifth test match (02.11.2026, the player saw the missiles fly to the
+enemy). Risk: enemy shots entering the exit portal come out under the launchers.
+The portal material is packed (`dlc1_portal.pack`): physics.py assumes armour values. Generator steps `("ground",
+[(device, (x, y))])` and `("connect", [(A, B, dest A, dest B)])` (gen_fort). Rules 0 errors, physics STANDS (0.31,
+sag 35), all tests pass.
+
+**Swarm extension, mine guard, plan 4's cannon** (02.11.2026, the user): plans 1-3 end with the swarm launchers
+(`_S_SWARM_LATE`): a plain spotter sniper in the starting machine gun's old fire lane (front cell -997..-897, pinned by
+`weapon_cells` + a build step; left to the generator it took the slanted top front cell with armour in its body), the
+cover, the hidden launcher, a battery, the portals, the mine guard, the second launcher, both warheads (plan 3 gets
+the workshop for it). The mine guard (`_S_MINE_GUARD`, plan 4 after its first warhead): two sandbags on the floor in
+front of the pocket mouth (struts 134-133 and 133-(-2320, -1500)) and the shield's inner post over the mouth armour.
+Plan 4 then grows down: munitions plant on the back block's floor -637, a storey under the gallery's front
+(-507..-372, rows + -372) and a cannon in its front cell behind two doors (a node (-2260, -507) for the outer door
+layer). All four: rules 0 errors, physics STANDS (0.35-0.54, sag 33-50), every CONNECT points at the other portal
+after the renumbering, tests pass.
+
 ## Matches
 
 | Date | Plan (game plan) | Result | Notes |
@@ -146,6 +173,15 @@ WEAK by sag), -4 0.56 (35).
 | 01.11.2026 | 2v2, difficulty 1: ally T201 Stalactites-4, enemy T102 Stalactites-4, T202 Stalactites-3 (lower spot) | player's side won, 12.1 min | in both Stalactites-4 forts the snipers in the front column below the starting fort (-767, -637) and their AP upgrades were refused with `CS_UNSTABLE` (the game saw the nodes moving, `v=2-3`, strain ~1.0) and given up, and the fourth mine (-2696) too; plans 2 and 4 got their snipers behind the front column at first; moved forward again the same day for the angle on both enemy forts (see Weapons forward) (this time the upgraded rockets fired 22 times under smoke). Side 2 fell when both reactors went (T202's at 11.4 min) |
 | 01.11.2026 | 2v2, difficulty 1: ally T201 Stalactites-1 (lower spot), enemy T102 Stalactites-2, T202 Stalactites-1 (lower spot) | player's side won, 13.6 min | every front-column sniper / cannon / 20mm of all three forts `CS_UNSTABLE` and given up (T201 sniper -997 and 20mm; T202 sniper and cannon; T102 sniper, AP sniper, a mine); side 2 ended with 1 laser + 1 20mm and sat on 1200 metal. The mirrored forts' `sag=115-157`, strain 0.27-1.46 were a logging error (MirrorFort swaps a device's node ids but not PosA/PosB; fixed in `CAI_BuildPlanIndex`): SHAPE shows both sides alike (dy median 10, max ~21), so the refusals are real but not from sag. T102 fell at 12.6 min when the player cut the struts round its reactor |
 | 02.11.2026 | 2v2, difficulty 1: ally T201 Stalactites-2, enemy T102 Stalactites-4, T202 Stalactites-3 (lower spot) | player's side won, 17.6 min | first match after "metal out of the bodies": no weapon refused (no `CS_UNSTABLE` on weapons), the starting machine guns sold in the first minute, T102 and T201 built their plans to the end; T202 waited 8 minutes (t 525-1020) on the munitions plant (800 metal; its metal never passed ~540 while it rebuilt 16 miniguns), with two mines, turbine2 and a battery behind it -> plan 3's economy moved before the munitions plant. Side 2 1559 shots (1117 minigun) vs 642, metal 590 vs 1467 (11 turbine2 on side 1) |
+| 02.11.2026 | 1v1, Stalactites-4 (swarm) forced | aborted at ~6.5 min | both portals and `CONNECT` built; the first launcher was refused before the portals (`CS_INVALIDNODES`) and placed once the struts stood (now after them); both launchers ready from 5.3 / 5.8 min, no missile left in ~1 min: the built-in `LaunchMissile` fires with `FIREFLAG_TERRAINBLOCKS` (rock between the pocket and the target), now replaced in ai.lua (no terrain test, logs `PAINT` / `MISSILE`) |
+| 02.11.2026 | 1v1, Stalactites-4 (swarm) forced, again | aborted | the sniper painted (`PAINT painted=1`) but the launch was `FIRE_BLOCKED`; only the entry portal glowed, the exit portal stayed dark (the player: connected portals both glow) -> a second `CONNECT` back from the exit to the entry, and `CONNECT` lines in the log (result, both portals' destinations) |
+| 02.11.2026 | 1v1, Stalactites-4 (swarm) forced, third | aborted at ~7.7 min | launchers ready only at 7.0 / 7.2 min, no `PAINT` before the end; no `CONNECT` line at all although the build passed both CONNECT actions (the wrapper's pcall may have swallowed an error). Assumed cause of the dark exit portal: CONNECT runs while the exit strut is still being built -> ai.lua now checks every 5 s that each CONNECT's portal leads to its destination and connects again (`PORTAL` lines), and logs `CONNECT` before anything else |
+| 02.11.2026 | 1v1, Stalactites-4 (swarm) forced, fourth | (running) | `PORTAL`/`CONNECT` lines showed the cause: the entry portal 308-304 was connected to 307-308, the back CONNECT failed (dest=0-0). MirrorFort/OffsetFort renumber the plan's nodes (`MakeAINodesInSequence`) but not a CONNECT's destination ids -> replaced in ai.lua (destinations mapped too); checked on plan 4 in Lua (both CONNECTs point at the other portal) |
+| 02.11.2026 | 1v1, Stalactites-4 (swarm) forced, fifth (with the renumbering fix) | (running at ~5 min) | **the launchers fired** (`MISSILE ... result=FIRE_SUCCESS`, 36 swarm missiles in the SNAPs by ~5 min). The first CONNECT failed while the exit strut was still being built (`cp=-1`), the portal check connected the back direction (`CP_SUCCESS`), then both plan CONNECTs succeeded (dest = the other portal both ways); the missiles leave the exit portal towards the enemy (the player) |
+| 02.11.2026 | (same match, until ~5.5 min) | - | workshop only at 3.9 min (machine gun, sniper, two turbines, four mines before it), first launcher placed 4.3 / built 5.3 min, the second placed 4.9 min, still building; metal mostly under 300 -> plan 4 reordered as a rush (the user): mine, workshop, sniper, portals, first launcher (action 102 instead of 131), then mines, machine gun, turbine, second launcher |
+| 02.11.2026 | 1v1, Stalactites-4 swarm rush with hidden launchers, forced | player won, 15.1 min | first launcher placed 3.4 / ready 4.4 min (5.3 before), portals 3.6 / 4.0 min, second launcher ready 7.3 min, warheads 11.5 min; 3 launches `FIRE_SUCCESS`, 1 `FIRE_ENERGY`: energy 80-900 from 5 min on (a swarm volley 1000 energy, a warhead 4000, the portals drain all the time) while metal sat at its cap of 900 from 5.3 to 8.6 min with one turbine; the player's 135 20mm and 288 shrapnel shots took 7 snipers and the reactor -> plan 4: two turbines right after the first launcher (before the portals), four turbines (the gallery's slots) all upgraded to turbine2 before the warheads |
+| 02.11.2026 | 1v1, Stalactites-4 (turbines, mine guard, late cannon), forced | player won, 18.2 min | launcher 1 ready 4.0 min, portals 3.9 / 4.0, launcher 2 6.8, upgrade centre 8.4, warheads 10.9 / 11.6, munitions 12.3, cannon 14.8; launches: swarm 9 `FIRE_SUCCESS` (126 missiles), warheads 10 (all shot down: `damagedmissile2`, the player's 108 flak shots), 4 `FIRE_ENERGY`, 1 `FIRE_METAL`, 3 `FIRE_BLOCKED` (before the portals connected); kills flak 6, cannon, turbine, 2 sandbags. The spotter is the weak point: `PAINT` painted=0 in 58 of 87 requests (9 with no sniper at all), snipers lost 9 times to 1236 shrapnel shots |
+| 02.11.2026 | 2v2, random: ally T201 Stalactites-4 (lower spot), enemy T102 Stalactites-2, T202 Stalactites-3 (lower spot) | player's side won, 15.6 min | the missile extension of plans 1-3 came too late to matter: T102 (plan 2) reached action 374 of 422 (the extension starts ~390; rebuild queue 47-312 at the end), T202 (plan 3) reached its first launcher at ~13.3 min (action 458, `CS_OCCUPIED`, then waiting) and stayed there to the end. The ally T201 (plan 4) fired 10 swarm volleys and 8 warheads (`FIRE_SUCCESS`), painted in 38 of 91 requests; T202's munitions plant again `UNSTABLE` |
 
 **Weapons forward, two doors each** (user, 01.11.2026): behind a 135-wide lane the muzzle was ~125 behind the door and
 the opening covered too narrow a cone for both enemy forts on 2v2, and a lane had one door only (AP sniper). Every weapon

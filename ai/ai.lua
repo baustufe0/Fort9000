@@ -668,6 +668,168 @@ function TryFireGun(id, useGroup)
 	return res
 end
 
+-- Missiles (swarm, warhead): the built-in AI paints the target with a sniper (PaintTarget) and launches 5 s later
+-- (LaunchMissile) with FIREFLAG_TERRAINBLOCKS, which refuses a launcher with rock between it and the target: the
+-- inverted launchers of Stalactites-4 hang in the mine pocket and fire down into a portal (02.11.2026: built, never
+-- fired). Launched here without the terrain test; logged:
+--   PAINT <ids> painted=<0|1> spotters=<n>       a missile group asked for a target (painted: a sniper marked one)
+--   MISSILE <type> <id> marked=<0|1> result=<FIRE name>   the launch
+-- Portals: the built-in AI connects them with a CONNECT plan action (ConnectPortals) and logs nothing. In the
+-- Stalactites-4 test (02.11.2026) only the entry portal glowed and the launch was FIRE_BLOCKED. Logged per action
+-- whenever its outcome changes:
+--   CONNECT action=<k> <A>-<B> to <destA>-<destB> ok=<result> dest=<A-B's destination> back=<destA-B's destination>
+local CAI_BaseExecuteFortAction = ExecuteFortAction
+function ExecuteFortAction(action, index)
+	local r, skip = CAI_BaseExecuteFortAction(action, index)
+	if action.Type == CONNECT then
+		CAI_Log("CONNECT action=" .. tostring(index) .. " ok=" .. tostring(r))
+		local okC, errC = pcall(function()
+			local m = data.OriginalToActual
+			local a, b = m[action.OriginalNodeAId], m[action.OriginalNodeBId]
+			local da, db = m[action.OriginalNodeAIdDest], m[action.OriginalNodeBIdDest]
+			local function dest(p, q)
+				if not (p and q and IsPortal(p, q)) then return "-" end
+				return tostring(GetPortalDestinationA(p, q)) .. "-" .. tostring(GetPortalDestinationB(p, q))
+			end
+			local msg = "CONNECT action=" .. tostring(index) .. " " .. tostring(a) .. "-" .. tostring(b) .. " to "
+				.. tostring(da) .. "-" .. tostring(db) .. " ok=" .. tostring(r) .. " dest=" .. dest(a, b)
+				.. " back=" .. dest(da, db)
+			local seen = data.CAI and data.CAI.connectLog
+			if data.CAI and not seen then seen = {}; data.CAI.connectLog = seen end
+			if not seen or seen[index] ~= msg then
+				if seen then seen[index] = msg end
+				CAI_Log(msg)
+			end
+		end)
+		if not okC then CAI_Log("ERROR connect: " .. tostring(errC)) end
+	end
+	return r, skip
+end
+
+-- MirrorFort and OffsetFort first renumber the plan's own nodes (10000+) in the order they are created
+-- (MakeAINodesInSequence), but only OriginalNodeAId/BId: a CONNECT's destination ids kept the old numbers and named
+-- other nodes (fourth Stalactites-4 test, 02.11.2026: entry portal 308-304 "connected" to 307-308, the exit portal
+-- 310-311 stayed dark). The same renumbering, with the destinations mapped too.
+function MakeAINodesInSequence()
+	local oldToNew = {}
+	local current = AI_NODE_START
+	if not Fort then return end
+	for _, action in ipairs(Fort) do
+		if action.Type == CREATE_NODE then
+			oldToNew[action.OriginalNodeBId] = current
+			current = current + 1
+		end
+		if oldToNew[action.OriginalNodeAId] ~= nil then
+			action.OriginalNodeAId = oldToNew[action.OriginalNodeAId]
+		end
+		if oldToNew[action.OriginalNodeBId] ~= nil then
+			action.OriginalNodeBId = oldToNew[action.OriginalNodeBId]
+		end
+	end
+	for _, action in ipairs(Fort) do
+		if action.OriginalNodeAIdDest and oldToNew[action.OriginalNodeAIdDest] then
+			action.OriginalNodeAIdDest = oldToNew[action.OriginalNodeAIdDest]
+		end
+		if action.OriginalNodeBIdDest and oldToNew[action.OriginalNodeBIdDest] then
+			action.OriginalNodeBIdDest = oldToNew[action.OriginalNodeBIdDest]
+		end
+	end
+end
+
+-- Safety net: every CAI_PORTAL_EVERY seconds of the fire clock each CONNECT of the plan whose portals stand is checked
+-- and, if its portal does not lead to its destination (e.g. it was rebuilt), connected again:
+--   PORTAL action=<k> <A>-<B> to <destA>-<destB> dest=<now> [cp=<ConnectPortals result>|err=<message>]
+local CAI_PORTAL_EVERY = 5
+function CAI_PortalTick(st)
+	if (st.fireClock or 0) < (st.portalNext or 0) then return end
+	st.portalNext = (st.fireClock or 0) + CAI_PORTAL_EVERY
+	st.portalLog = st.portalLog or {}
+	local m = data.OriginalToActual or {}
+	for k, action in ipairs(Fort or {}) do
+		if action.Type == CONNECT then
+			local a, b = m[action.OriginalNodeAId], m[action.OriginalNodeBId]
+			local da, db = m[action.OriginalNodeAIdDest], m[action.OriginalNodeBIdDest]
+			local msg = "PORTAL action=" .. k .. " " .. tostring(a) .. "-" .. tostring(b) .. " to " .. tostring(da) .. "-"
+				.. tostring(db)
+			local ok, err = pcall(function()
+				if not (a and b and da and db and IsPortal(a, b) and IsPortal(da, db)) then
+					msg = msg .. " dest=- (portals not standing)"
+					return
+				end
+				local pa, pb = GetPortalDestinationA(a, b), GetPortalDestinationB(a, b)
+				msg = msg .. " dest=" .. tostring(pa) .. "-" .. tostring(pb)
+				if not ((pa == da and pb == db) or (pa == db and pb == da)) then
+					local cp = ConnectPortals(teamId, a, b, da, db)
+					msg = msg .. " cp=" .. (cp == CP_SUCCESS and "CP_SUCCESS" or tostring(cp))
+				end
+			end)
+			if not ok then msg = msg .. " err=" .. tostring(err) end
+			if st.portalLog[k] ~= msg then
+				st.portalLog[k] = msg
+				CAI_Log(msg)
+			end
+		end
+	end
+end
+
+local CAI_BasePaintTarget = PaintTarget
+function PaintTarget(group, paintTarget)
+	local res = CAI_BasePaintTarget(group, paintTarget)
+	pcall(function()
+		local ids, spotters = {}, 0
+		for _, id in ipairs(group) do ids[#ids + 1] = tostring(id) end
+		for i = 0, GetWeaponCount(teamId) - 1 do
+			if IsSpotter(GetDeviceType(GetWeaponId(teamId, i)), teamId) then spotters = spotters + 1 end
+		end
+		CAI_Log("PAINT " .. table.concat(ids, ",") .. " painted=" .. (data.MissileLaunching[group[1]] and 1 or 0)
+			.. " spotters=" .. spotters)
+	end)
+	return res
+end
+
+function LaunchMissile(group, currentTarget, spotterId)
+	local doorBlock = false
+	for k = #group, 1, -1 do
+		local id = group[k]
+		if not DeviceExists(id) then
+			table.remove(group, k)
+			data.MissileLaunching[id] = nil
+		elseif not OpenAllWeaponDoors(id, currentTarget) then
+			doorBlock = true
+		end
+	end
+	if #group > 0 then
+		if doorBlock then
+			ScheduleCall(data.MissileDoorFireDelay, LaunchMissile, group, currentTarget, spotterId)
+			return
+		end
+		for k = #group, 1, -1 do
+			local id = group[k]
+			local kind = GetDeviceType(id)
+			local marked = IsAIDeviceAvailable(id) and GetWeaponPaintTargetMarked(id)
+			local result
+			if marked then
+				result = FireWeaponHandler(id, kind, currentTarget, 0, FIREFLAG_EXTRACLEARANCE)
+				if result == FIRE_SUCCESS then
+					ScheduleCall(7.9, MissileLaunchEnded, id)
+					ScheduleCall(8, TryCloseWeaponDoors, id)
+				else
+					data.MissileLaunching[id] = nil
+					TryCloseWeaponDoors(id)
+				end
+			else
+				data.MissileLaunching[id] = nil
+				TryCloseWeaponDoors(id)
+			end
+			CAI_Log("MISSILE " .. tostring(kind) .. " " .. id .. " marked=" .. (marked and 1 or 0)
+				.. " result=" .. tostring(result and (FIRE[result] or result) or "-"))
+			ClearWeaponPaintTarget(id)
+		end
+	end
+	data.SpotterInUse[spotterId] = nil
+	TryCloseWeaponDoors(spotterId)
+end
+
 function CAI_RestoreFire()
 	local b = data.CAI and data.CAI.baseFire
 	if not b then return end
@@ -801,6 +963,8 @@ function CAI_FireTick()
 		return
 	end
 	st.fireClock = (st.fireClock or 0) + (f.Interval or 1)
+	local okP, errP = pcall(CAI_PortalTick, st)
+	if not okP then CAI_Log("ERROR portals: " .. tostring(errP)) end
 	local ok, err = pcall(function()
 		local n = GetWeaponCount(teamId) or 0
 		if n == 0 or (data.offencePoints or 1) < 1 then return end
