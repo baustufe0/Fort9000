@@ -46,6 +46,7 @@ TURBINES = {"turbine", "turbine2"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
               "shotgun": "flak", "rocket": "rocketemp"}
 FOREGROUND = {"bracing", "armour", "door"}     # materials that stop shots (and wind); background bracing does not
+METAL = {"armour", "door"}                     # never recessed by a device placed over them (only wood bracing is)
 MIN_LENGTH = 37.5          # StandardMinLength
 MIN_DOOR_LENGTH = 49
 FIRE_RANGE = 600           # checked length of the line of fire (beyond that it is outside the fort)
@@ -66,21 +67,25 @@ RECESSION = {"machinegun": (42.5, 62.5), "minigun": (130, 330), "sniper": (200, 
 # must reach BODY_MARGIN into the body. Diagonals sloping back over a weapon cross its body above the barrel.
 BODY_SHIFT = {"sniper": 40, "sniper2": 40, "cannon": 18, "cannon20mm": 18}
 BODY_MARGIN = 5
+# Metal must stay this far clear of a weapon's body sides: in the Stalactites probe a door 3 outside the modelled
+# sniper body still refused it (strut thickness, sag); with metal up to 10 outside counted, 114 refused / 8 placed
+# (without metal there: 69 / 133)
+METAL_CLEARANCE = 10
 # the earlier model: a strut built before a weapon counted as recessed up to 200 ahead (machine gun 20). Still used
 # for lobbed weapons (along their arc) and by the generator's cautious mode (fire_blockers)
 OLD_RECESSION = 200
 OLD_RECESSION_MG = 20
 
 
-def body_overlaps(name, p, a, b, enemy_dir=1):
-    """True if the strut a-b reaches into the weapon's body box (shrunk by BODY_MARGIN)."""
-    w = SIZE.get(name, (40, 40))[0] - BODY_MARGIN
+def body_overlaps(name, p, a, b, enemy_dir=1, margin=BODY_MARGIN):
+    """True if the strut a-b reaches into the weapon's body box (its sides moved in by margin; out if negative)."""
+    w = SIZE.get(name, (40, 40))[0] - margin
     cx = p[0] + enemy_dir * BODY_SHIFT.get(name, 0)
     top = p[1] - BOX_TOP.get(name, 81)
     n = max(2, int(math.dist(a, b) / 2))
     for k in range(n + 1):
         x, y = a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n
-        if abs(x - cx) < w and top < y < p[1] - BODY_MARGIN:
+        if abs(x - cx) < w and top < y < p[1] - BODY_MARGIN:     # struts at floor level stay outside
             return True
     return False
 
@@ -320,6 +325,15 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
                 where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
                 " (built after the weapon, not recessed)" if k > kd else " (outside the recession box and the body)"))
+        # no armour or door in a weapon's body (the player, 02.11.2026): placing it turns only wood bracing there into
+        # background bracing; metal blocks it (CS_UNSTABLE). Stalactites probe: metal in the body refused 101 of 106
+        # attempts. Doors and armour built later count too: they block the weapon's rebuild
+        if name in WEAPONS:
+            for pr, (m, a, b, k) in sorted(links.items(), key=lambda kv: kv[1][3]):
+                if m in METAL and pr != pair and a in pos and b in pos and body_overlaps(name, p, pos[a], pos[b], enemy_dir, -METAL_CLEARANCE):
+                    errors.append("%s: %s %s-%s reaches into its body (metal is not recessed, CS_UNSTABLE)"
+                                  % (where, m, _fmt(pos[a]), _fmt(pos[b])))
+                    break
         # nothing solid inside the device's box above its strut
         top = BOX_TOP.get(name)
         if top and name not in TURBINES:

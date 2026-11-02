@@ -199,6 +199,8 @@ MAP = {
     # the starting fort's machine gun stands on its bottom strut 162-157 (y -897) and fires through its door 161-162 at
     # x -2503: the front cell ahead of it is a fire lane (door in front, background diagonals)
     "lane_cells": [(-2503, -897)],
+    # the starting machine gun (strut 157-162), sold by every plan's first step
+    "orig_devices": [((-2653.35, -896.52), (-2503.34, -896.14), "machinegun")],
     "clear_fire_lines": True,
     "split_doors": True,
     # the front post sags against the weapon behind it: the doors reach door_sag higher than the shot needs
@@ -336,13 +338,15 @@ STALACTITES_VARIANTS = {
             ("aa", ["machinegun"]),
             ("upgrades", ["minigun", "minigun"]),
             ("eco", ["mine", "store", "turbine"]),
+            # the economy before the munitions plant (800 metal): in the 2v2 match of 02.11.2026 the fort never had more
+            # than ~540 metal while it rebuilt its miniguns, and waited 8 minutes on the plant with the mines behind it
+            ("upgrades", ["turbine2", "turbine2"]),
+            ("eco", ["battery", "mine"]),
+            ("upgrades", ["mine2", "mine2"]),
             ("tech", ["munitions"]),
             ("build", [(-2503, -357)]),
             _s_door_wall(-492, [-357]),
             ("weapons", ["cannon"]),
-            ("upgrades", ["turbine2", "turbine2"]),
-            ("eco", ["battery", "mine"]),
-            ("upgrades", ["mine2", "mine2"]),
         ],
     },
     # 4, miniguns: two machine guns early (one front cell each), the upgrade centre, both become miniguns, two snipers
@@ -445,7 +449,9 @@ def filter_supported_hanging(self):
 
 
 for _v in STALACTITES_VARIANTS.values():
-    _v["plan"] = _shielded(_v["plan"])
+    # the starting machine gun is sold first (the player, 02.11.2026): the front column in front of it takes its line
+    # of fire (the grid rebuilds its door 161-162 as the lane cell's wood post); the refund goes into the economy
+    _v["plan"] = [("defence", ["sell:machinegun"])] + _shielded(_v["plan"])
 
 
 _ensure_node = gen_fort.Plan.ensure_node
@@ -574,7 +580,7 @@ def background_skeleton(self):
             cx, y0 = a[0] + lt * (b[0] - a[0]), a[1] + lt * (b[1] - a[1])
             boxes += _device_boxes(d, cx, y0)
             continue
-        if not m or len(pts) < 2:
+        if not m or len(pts) < 2 or "DESTROY_DEVICE" in line:     # a sale (sell:) is no strut
             continue
         a, b = int(m.group(1)), int(m.group(2))
         pos.setdefault(a, pts[0])

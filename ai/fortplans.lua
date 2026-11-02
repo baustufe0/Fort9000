@@ -155,6 +155,5 @@ FortPlanConfig =
 	},
 	Force =
 	{
-		Vanilla = "fort-t1f1-Vanilla-5.lua",
 	},
 }

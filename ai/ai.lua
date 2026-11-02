@@ -981,9 +981,13 @@ local function CAI_BuildPlanIndex()
 	CAI_PlanPos = {}
 	CAI_PlanMat = {}
 	for _, a in ipairs(Fort or {}) do
-		if a.OriginalNodeAId and a.PosA then CAI_PlanPos[a.OriginalNodeAId] = a.PosA end
-		if a.OriginalNodeBId and a.PosB then CAI_PlanPos[a.OriginalNodeBId] = a.PosB end
-		if a.OriginalNodeBId and a.NewNodePos then CAI_PlanPos[a.OriginalNodeBId] = a.NewNodePos end
+		-- device positions are skipped: MirrorFort swaps a device's node ids but not PosA/PosB, which put both nodes
+		-- of every device strut a strut length off in mirrored forts (the "sag" of 130 on Stalactites 2v2, 01.11.2026)
+		if a.Type ~= CREATE_DEVICE then
+			if a.OriginalNodeAId and a.PosA then CAI_PlanPos[a.OriginalNodeAId] = a.PosA end
+			if a.OriginalNodeBId and a.PosB then CAI_PlanPos[a.OriginalNodeBId] = a.PosB end
+			if a.OriginalNodeBId and a.NewNodePos then CAI_PlanPos[a.OriginalNodeBId] = a.NewNodePos end
+		end
 		if a.MaterialSaveName and a.OriginalNodeAId and a.OriginalNodeBId then
 			CAI_PlanMat[CAI_PairKey(a.OriginalNodeAId, a.OriginalNodeBId)] = a.MaterialSaveName
 		end

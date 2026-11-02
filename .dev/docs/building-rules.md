@@ -135,6 +135,13 @@ posts, or behind woodspam at its hub height gets (almost) no wind from that side
   floor beam of a high narrow top storey, a floor above a weapon cell (its diagonals are background bracing, so the
   floor sags), cells squeezed by a leaning tower. The `UNSTABLE` line ([debugging.md](debugging.md)) showed struts
   stretched 4–7 % with the structure sagging 13–27, or moving under fire.
+- **Metal in the device's body** (the player, 02.11.2026, confirmed by the Stalactites probe): placing a device turns
+  the foreground *wood* bracing it overlaps into background bracing, but not armour or doors. With armour or a door
+  in the body (`rules.SIZE`/`BOX_TOP`/`BODY_SHIFT`, toward the enemy) the probe was refused 101 of 106 times (cannon
+  59:1, sniper 42:4); without, 136 of 218 placed. So the door-framed front column of a hanging fort takes no weapon
+  ([history/probe-runs.md](history/probe-runs.md)); `rules.py`'s "armour -> door" recession is wrong for the body.
+  Most remaining refusals: rock right above the strut (underside, pocket roof), or the bigger cannon where the
+  sniper fits.
 - Devices added late to a finished, loaded fort fail where early ones on a light structure worked: on the finished fort
   the probe was refused on 80 of 84 attempts on a strut sharing a node with a strut that carries a device (38 of 144
   without; best other split sag > 40). Built together in plan order, devices on struts sharing a node are fine (the

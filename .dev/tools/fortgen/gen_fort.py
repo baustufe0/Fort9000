@@ -3735,6 +3735,45 @@ class Plan:
                 return
         self.problems.append("no mine site left")
 
+    def fit_weapon_bodies(self):
+        """No armour or door in a weapon's body (the player, 02.11.2026: placing a weapon recesses only wood bracing,
+        metal there blocks it, CS_UNSTABLE; the Stalactites probe confirmed it). A weapon with metal in its body
+        (rules.py's check, METAL_CLEARANCE included) slides back on its strut, away from the enemy, to the first LinkT
+        (steps of 0.01) where its body is clear; an upgrade on the same strut moves with it. Runs last, on the
+        final plan: struts built after the weapon count too (they would block its rebuild)."""
+        parsed = parse_lines(self.actions)
+        pos, links, devices, _ = rules.build_state(parsed)
+        new_t = {}
+        for name, ia, ib, t, pair, k in devices:
+            if name not in rules.WEAPONS or pair in new_t or ia not in pos or ib not in pos:
+                continue
+            a, b = pos[ia], pos[ib]
+
+            def blocked(tt):
+                p = (a[0] + (b[0] - a[0]) * tt, a[1] + (b[1] - a[1]) * tt)
+                return any(m in rules.METAL and pr != pair and x in pos and y in pos
+                           and rules.body_overlaps(name, p, pos[x], pos[y], 1, -rules.METAL_CLEARANCE)
+                           for pr, (m, x, y, kk) in links.items())
+            if not blocked(t):
+                continue
+            step = -0.01 if b[0] > a[0] else 0.01           # away from the enemy (team 1 frame: enemy to the right)
+            tt = round(t, 2)
+            while 0 <= tt <= 1 and blocked(tt):
+                tt = round(tt + step, 2)
+            if 0 <= tt <= 1:
+                new_t[pair] = tt
+                self.problems.append("%s at (%d,%d): LinkT %.2f -> %.2f, metal out of its body"
+                                     % (name, round(a[0] + (b[0] - a[0]) * t), round(a[1]), t, tt))
+            else:
+                self.problems.append("%s at (%d,%d): metal in its body at every LinkT" % (name, round(a[0]), round(a[1])))
+        if not new_t:
+            return
+        for k, (line, act) in enumerate(zip(self.actions, parsed)):
+            if act["Type"] == "CREATE_DEVICE":
+                pr = frozenset((act.get("OriginalNodeAId"), act.get("OriginalNodeBId")))
+                if pr in new_t:
+                    self.actions[k] = re.sub(r"LinkT = -?[\d.]+", "LinkT = %.2f" % new_t[pr], line)
+
     # --- Validation and output
     def validate(self):
         errors = []
@@ -3858,6 +3897,7 @@ def main():
         if var is None:     # a removed variant: keeps the numbers (and seeds) of the ones after it
             continue
         p = Plan(cfg, terrain, base_pos, args.seed * 100 + n).generate(var)
+        p.fit_weapon_bodies()
         errors = p.validate()
         name = "fort-t1f1-%s-%d.lua" % (args.map, args.start_number + n)
         p.write(os.path.join(args.out, name), var["title"])
