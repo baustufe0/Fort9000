@@ -3,6 +3,32 @@
 One entry per Workshop upload (`ItemVersion` in `workshop/content/410900/3829000413/itemversion.lua`). Each version
 has a git tag `workshop-v<N>` on the commit that was published; the next entry covers `workshop-v<N-1>..workshop-v<N>`.
 
+## Version 6 (02.11.2026, workshop-v6 = 50b2301)
+
+New map: Stalactites (1v1 and 2v2)
+- The AI builds its own forts hanging from the stalactite, with 4 layouts: a cannon fort (20mm cannons and cannons),
+  a laser fort, an EMP rocket rush with smoke cover, and a swarm missile rush.
+- Swarm missile rush: the launchers are built hidden in the mine pocket above the fort and fire down through a pair
+  of portals that send the missiles out towards the enemy. A sniper marks the targets, the launchers become warheads
+  later, and a cannon follows at the bottom of the fort.
+- The other three layouts add the same swarm launchers once everything else is built.
+- The hanging forts are braced so that cutting one storey no longer drops everything below it, and the mines behind
+  the portal are protected by sandbags and armour.
+- The starting machine gun is sold early, since the fort in front of it blocks its line of fire.
+
+All maps
+- Workshops, factories and other tech buildings are placed only where they are fully hidden.
+- Weapons no longer get stuck on placement when metal or a door is in the way.
+
+Vanilla
+- The rocket fort builds its rocket lanes and doors before the EMP rockets, so they are no longer destroyed while
+  still under construction.
+
+2v6 Vanilla (clean)
+- The lower AI forts stay clear of the fort above them, so that one can build its mines again.
+
+Workshop page: description updated (Stalactites, hidden plans, portals), new preview image.
+
 ## Version 5 (30.10.2026, workshop-v5 = 5313c13)
 
 New map: 2v6 Vanilla (clean) (Workshop map 2927068191)
