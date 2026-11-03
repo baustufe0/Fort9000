@@ -101,6 +101,13 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
   earlier than the mark (Bastion: after the first turbine; in the opening they cost ~600 metal before the first
   sniper). `door_layer_reach` (default 105): how far in front an existing node may serve as a layer's end (Bastion 60,
   so B1's layer stands 50 out instead of on the prow node 100 out, with arms half as long).
+- Variant key `loadouts {kind: [devices]}` (`tag_sockets`, end of `generate`): every device line in a socket gets
+  `Socket = "<name>"` (its strut point in the socket's cell, on its floor); for each socket every candidate is put in
+  place of the socket's first device (later upgrades there left out) and checked with `rules.py`; those that add no
+  error are written as `Loadouts`, with their tech as `Needs` (`gen_fort` prints `socket B1 loadouts: ...; dropped
+  ...`). Vanilla-8: B1/B2 sniper, cannon20mm, laser, firebeam, machinegun; M1/M2 mortar only (a machine gun there is
+  blocked by the nest's front armour or stands in front of the other mortar).
+- Module keys `repeat` and `cooldown`: written as `Repeat = n, Cooldown = s` ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)).
 - Module keys `socket` and `loadout`: written into the module's line (`Socket = "B1", Loadout = "sniper2"`), read
   back by `fortplan.parse_modules`.
 

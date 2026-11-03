@@ -68,6 +68,9 @@ def format_modules(mods):
             tr.append("Surplus = { Metal = %d, Energy = %d, Seconds = %d }" % (s["metal"], s["energy"], s.get("seconds", 20)))
         # socket / loadout (Bastion): the socket the module fills and the weapon it puts there (the AI's socket state)
         tag = "".join(', %s = "%s"' % (k, m[key]) for k, key in (("Socket", "socket"), ("Loadout", "loadout")) if m.get(key))
+        # Repeat / Cooldown (Bastion): the module may go in again, n more times, each s seconds after the last
+        if m.get("repeat"):
+            tag += ", Repeat = %d, Cooldown = %d" % (m["repeat"], m.get("cooldown", 60))
         out.append('{ Name = "%s", Trigger = { %s }, Requires = %d%s, Actions = {' % (m["name"], ", ".join(tr), m["requires"], tag))
         out.extend(m["lines"])
         out.append("} },")

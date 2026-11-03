@@ -88,6 +88,13 @@ check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Bastion loads with sockets and zones"   "^230 5 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[2].Name, s[2].Default, s[2].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
+check "Sockets: listed with their loadouts"     "SOCKETS A0:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:" "$LUA" t_sockets.lua
+check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
+check "Sockets: swap to a loadout whose tech stands" "^after two losses: machinegun rebuild=true$" "$LUA" t_sockets.lua
+check "Sockets: the swap goes on in order"      "^after four losses: sniper$" "$LUA" t_sockets.lua
+check "Sockets: an old loss is forgotten"       "^late loss: sniper losses=1$" "$LUA" t_sockets.lua
+check "Modules: Repeat and Cooldown"            "^again inserted 3 times$" "$LUA" t_sockets.lua
+check "Modules: a repeat is logged"             "MODULE again trigger=time:5 at=[0-9]+ actions=1 repeat=2$" "$LUA" t_sockets.lua
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua

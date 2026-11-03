@@ -105,6 +105,11 @@ In `ai/ai.lua`:
 
 Tests: `t_modules_repeat.lua`, `t_socket_swap.lua`.
 
+**Result (03.11.2026):** done as described ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)); one test file,
+`t_sockets.lua` (199 checks pass). The generator checks each socket's loadouts with `rules.py` and tags every socket
+device. Not yet in the game. As Vanilla-8 stands, a B socket can only swap to the machine gun: cannon20mm, laser and
+firebeam need a munitions plant or factory the plan does not build; the posture engine (step 4) decides that tech.
+
 ## Step 3: AI – zone hit map
 
 - `OnLinkHit` / `OnLinkDestroyed` for own links: damage per zone (`FortZones`), decayed like `st.threat`.

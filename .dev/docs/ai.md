@@ -138,6 +138,27 @@ restart (key frame restore) keeps `Fort` and `data.CAIModules` consistent.
 
 Test: `.dev/tools/tests/t_modules.lua` (hand-written module on Vanilla-2, team 102, mirrored).
 
+## Sockets and repeatable modules (Bastion)
+
+Branch `bastion` ([bastion-plan.md](bastion-plan.md)). A plan with `FortSockets` names its weapon places; every
+device action in one carries `Socket = "<name>"` (written by `gen_fort.py`, `tag_sockets`; the game keeps unknown
+action fields through its transform).
+- **Socket state** (`CAI_InitSockets`, log `SOCKETS B1:sniper/cannon20mm/...`): per socket its `Loadouts` (the
+  weapons `rules.py` accepted in that place, in order) and their tech (`Needs`).
+- **Swap** (`CAI_SocketLost`, in the `QueueDeviceRebuild` wrapper before the rebuild cap): the built-in AI queues a
+  lost device's action for rebuilding. A socket that loses its weapon `Strategy.Socket.SwapAfter` times (default 2),
+  each loss within `Window` seconds (180) of the one before, gets the next loadout after the current one (an upgrade
+  counts as its base, e.g. sniper2 as sniper) whose tech stands among the own devices: the action's `DeviceSaveName`
+  is changed and the rebuild builds the other weapon in the empty socket. No reclaim (it refunds half and empties the
+  socket for ~5 s, [forts-api.md](forts-api.md)). The rebuild cap's count for that action starts over. Log
+  `SOCKET B1 lost sniper losses=1`, `SOCKET B1 sniper->machinegun action=19 swaps=1`, or `... no other loadout ready`.
+  A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
+- **Repeat / Cooldown** on a module (`FortModules`, `Repeat = n, Cooldown = s`): after it went in, it may go in n more
+  times, each at least s seconds after the last, while its trigger holds (log `MODULE <name> ... repeat=<k>`). Every
+  insert puts in copies of the module's actions (`CAI_CopyAction`). Meant for zone reinforcements (step 3).
+
+Test: `.dev/tools/tests/t_sockets.lua`.
+
 ## Custom build plan variants per map
 
 - Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).

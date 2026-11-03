@@ -1490,6 +1490,10 @@ VANILLA_VARIANTS["bastion"] = {
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper"},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
+    # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
+    # tag_sockets keeps those that pass rules.py in the socket
+    "loadouts": {"direct": ["sniper", "cannon20mm", "laser", "firebeam", "machinegun"],
+                 "lobbed": ["mortar", "machinegun"]},
     "zones": [{"name": "Z0", "box": (-2900, -2600, 205, 700)},
               {"name": "Z1", "box": (-3100, -2780, -55, 205)},
               {"name": "Z2", "box": (-3500, -2780, -315, -55)},
@@ -2952,7 +2956,75 @@ class Plan:
         names = [m["name"] for m in variant.get("modules", [])]
         self.modules.sort(key=lambda m: names.index(m["name"]))
         self.module_requires()
+        self.tag_sockets()
         return self
+
+    def socket_of(self, line):
+        """The socket (variant "sockets") a CREATE_DEVICE line stands in: its strut point inside the socket's cell, on
+        the cell's floor. None for any other line."""
+        import re
+        if "CREATE_DEVICE" not in line or "GroundPosition" in line:
+            return None
+        pts = [(float(a), float(b)) for a, b in re.findall(r"x = (-?[\d.]+), y = (-?[\d.]+)", line)]
+        t = float(re.search(r"LinkT = (-?[\d.]+)", line).group(1))
+        if len(pts) < 2:
+            return None
+        (ax, ay), (bx, by) = pts[:2]
+        px, py = ax + (bx - ax) * t, ay + (by - ay) * t
+        rows = self.cfg["rows"]
+        for sk in self.variant.get("sockets", []):
+            x0, y0 = sk["cell"]
+            c = next((c for c in self.all_cells if abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == y0), None)
+            if c is None:
+                continue
+            x1 = self.cell_x(c)[1]
+            if x0 - 1 <= px <= x1 + 1 and abs(py - y0) < 8:
+                return sk["name"]
+        return None
+
+    def tag_sockets(self):
+        """Bastion: every device line in a socket gets Socket = "<name>" (plan and modules; the AI keeps its socket
+        state by it), and each socket's alternative loadouts (variant "loadouts" {kind: [devices]}) are checked with
+        rules.py in its place: the socket's first device line swapped for the candidate, its later devices (upgrades)
+        left out; a candidate that adds rule errors is dropped (self.socket_loadouts)."""
+        sockets = self.variant.get("sockets")
+        if not sockets:
+            return
+        def tag(lines):
+            out = []
+            for line in lines:
+                sk = self.socket_of(line)
+                out.append(line[:-len(" },")] + ', Socket = "%s" },' % sk if sk and line.endswith(" },") else line)
+            return out
+        self.actions = tag(self.actions)
+        for m in self.modules:
+            m["lines"] = tag(m["lines"])
+        self.socket_loadouts = {}
+        for sk in sockets:
+            name, cands = sk["name"], self.variant.get("loadouts", {}).get(sk["kind"], [])
+            # the socket's first device: in the plan, or in the first module that fills it (with that module inserted)
+            acts = None
+            for lines in [self.actions] + [self.with_module(m) for m in self.modules]:
+                if any('Socket = "%s"' % name in l for l in lines):
+                    acts = lines
+                    break
+            if acts is None or not cands:
+                self.socket_loadouts[name] = [sk.get("default")] if sk.get("default") else []
+                continue
+            idx = [k for k, l in enumerate(acts) if 'Socket = "%s"' % name in l]
+            base_errors = len(rules.check_plan(parse_lines([l for k, l in enumerate(acts) if k not in idx[1:]]))[0])
+            ok, why = [], []
+            for cand in cands:
+                test = [re.sub(r'DeviceSaveName = "\w+"', 'DeviceSaveName = "%s"' % cand, l) if k == idx[0] else l
+                        for k, l in enumerate(acts) if k not in idx[1:]]
+                errs = rules.check_plan(parse_lines(test))[0]
+                if len(errs) <= base_errors:
+                    ok.append(cand)
+                else:
+                    why.append("%s (%s)" % (cand, errs[-1]))
+            self.socket_loadouts[name] = ok
+            self.problems.append("socket %s loadouts: %s%s" % (name, ", ".join(ok) or "-",
+                                 "; dropped " + "; ".join(why) if why else ""))
 
     def gen_module(self, m):
         """A reactive build module (.dev/docs/ai.md): its steps are generated on the plan as it stands after m["after"]
@@ -2993,7 +3065,8 @@ class Plan:
         tr = m["trigger"]
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
-                             "socket": m.get("socket"), "loadout": m.get("loadout"), "lines": lines})
+                             "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
         """Requires of each module: the last plan action it builds on (nodes, struts), and its devices' tech (a
@@ -4025,21 +4098,31 @@ class Plan:
         retire = self.variant.get("retire")
         if retire:
             tail += "FortRetire = { %s }\n" % ", ".join("%s = %d" % kv for kv in sorted(retire.items()))
-        tail += format_sockets(self.variant.get("sockets"), self.variant.get("zones"))
+        tail += format_sockets(self.variant.get("sockets"), self.variant.get("zones"), getattr(self, "socket_loadouts", {}),
+                               lambda d: self.prereq(d))
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
             f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail
                     + format_modules(getattr(self, "modules", [])))
 
 
-def format_sockets(sockets, zones):
+def format_sockets(sockets, zones, loadouts=None, prereq=None):
     """FortSockets and FortZones (Bastion, .dev/docs/bastion-plan.md) after the Fort table, in plan coordinates (team 1):
     a socket is a weapon place the modules fill (Kind direct or lobbed, Cell = left x and floor y of its cell, Default =
-    the plan's first weapon there); a zone is a box of the fort whose damage the AI tracks and reinforces."""
+    the plan's first weapon there, Loadouts = the weapons checked to fit there, in order, Needs = their tech); a zone
+    is a box of the fort whose damage the AI tracks and reinforces."""
     out = ""
     if sockets:
+        loadouts = loadouts or {}
+        def extra(s):
+            lo = loadouts.get(s["name"])
+            if not lo:
+                return ""
+            needs = {d: prereq(d) for d in lo if prereq and prereq(d)}
+            return ', Loadouts = { %s }, Needs = { %s }' % (", ".join('"%s"' % d for d in lo),
+                                                            ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())))
         out += "FortSockets =\n{\n" + "".join(
-            '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s" },\n'
-            % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", "")) for s in sockets) + "}\n"
+            '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
+            % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"
     if zones:
         out += "FortZones =\n{\n" + "".join(
             '{ Name = "%s", Box = { x0 = %d, x1 = %d, y0 = %d, y1 = %d } },\n' % ((z["name"],) + tuple(z["box"]))

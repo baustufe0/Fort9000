@@ -45,6 +45,9 @@ local CAI_Defaults =
 	-- within Window seconds of the one before) is not rebuilt again (Vanilla-5, 25.10.2026: one machine gun
 	-- rebuilt ten times under mortar fire; Vanilla-5, 26.10.2026: a smoke launcher on an open roof five times)
 	RebuildCap = { Window = 180, Max = { machinegun = 3, minigun = 3, smokebomb = 3 } },
+	-- Socket (Bastion, plans with FortSockets): a socket whose weapon is lost SwapAfter times, each loss within Window
+	-- seconds of the one before, gets the next of its Loadouts whose tech stands instead of the same weapon again
+	Socket = { SwapAfter = 2, Window = 180 },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
 	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one
@@ -102,7 +105,7 @@ end
 local function CAI_GetPlanGlobals()
 	return { Fort = Fort, FortTeam = FortTeam, FortId = FortId, FortPos = FortPos,
 		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines, FortModules = FortModules,
-		FortRetire = FortRetire }
+		FortRetire = FortRetire, FortSockets = FortSockets, FortZones = FortZones }
 end
 
 local function CAI_SetPlanGlobals(t)
@@ -114,6 +117,8 @@ local function CAI_SetPlanGlobals(t)
 	FortTableCommentLines = t.FortTableCommentLines
 	FortModules = t.FortModules
 	FortRetire = t.FortRetire
+	FortSockets = t.FortSockets
+	FortZones = t.FortZones
 end
 
 local function CAI_LoadPlanFile(path)
@@ -321,6 +326,8 @@ function CAI_TrySwapPlan(where, realOf)
 	end
 	CAI_Plan.modules = ours.FortModules
 	CAI_Plan.retire = type(ours.FortRetire) == "table" and ours.FortRetire or nil
+	CAI_Plan.sockets = type(ours.FortSockets) == "table" and ours.FortSockets or nil
+	CAI_Plan.zones = type(ours.FortZones) == "table" and ours.FortZones or nil
 	CAI_SetPlanGlobals({
 		Fort = ours.Fort,
 		FortTeam = ours.FortTeam or FortTeam,
@@ -1694,6 +1701,8 @@ function CAI_Init()
 	for k, v in pairs(data.OffensiveFireProbability) do
 		data.CAI.baseOff[k] = v
 	end
+	local okS, errS = pcall(CAI_InitSockets)
+	if not okS then CAI_Log("ERROR sockets: " .. tostring(errS)) end
 	for k, v in pairs(data.AntiAirFireProbability) do
 		data.CAI.baseAA[k] = v
 	end
@@ -1813,7 +1822,8 @@ function CAI_ExtractModules()
 	if type(defs) ~= "table" or #defs == 0 or type(Fort) ~= "table" then return end
 	local mods = { list = {} }
 	for i, m in ipairs(defs) do
-		mods.list[i] = { name = tostring(m.Name or i), trigger = m.Trigger or {}, requires = m.Requires or 0, actions = {} }
+		mods.list[i] = { name = tostring(m.Name or i), trigger = m.Trigger or {}, requires = m.Requires or 0, actions = {},
+			repeats = tonumber(m.Repeat) or 0, cooldown = tonumber(m.Cooldown) or 60, socket = m.Socket }
 	end
 	local kept = {}
 	for _, a in ipairs(Fort) do
@@ -1849,6 +1859,21 @@ local function CAI_PlanProgress()
 		if Fort[k].CAI_K then return Fort[k].CAI_K end
 	end
 	return 0
+end
+
+-- a plan action with its own position tables
+function CAI_CopyAction(a)
+	local c = {}
+	for k, v in pairs(a) do
+		if type(v) == "table" then
+			local t = {}
+			for kk, vv in pairs(v) do t[kk] = vv end
+			c[k] = t
+		else
+			c[k] = v
+		end
+	end
+	return c
 end
 
 -- insert n actions at index fi and move everything the built-in AI and the mod keep by action index
@@ -1916,7 +1941,10 @@ function CAI_UpdateModules()
 	local ready = {}
 	for _, m in ipairs(mods.list) do
 		local tr = m.trigger
-		if not m.fired and (tr.After == nil or fired[tr.After]) then
+		-- Repeat = n, Cooldown = s (Bastion): a module may go in up to n more times, each Cooldown seconds after the
+		-- last, while its trigger still holds (e.g. a zone's reinforcement while that zone keeps being hit)
+		local again = m.fired and (m.done or 0) < m.repeats and elapsed - (m.firedAt or 0) >= m.cooldown
+		if (not m.fired or again) and (tr.After == nil or fired[tr.After]) then
 			seen = seen or CAI_EnemyDevices()
 			local hits, total = {}, 0
 			for _, t in ipairs(tr.Types or {}) do
@@ -1936,7 +1964,9 @@ function CAI_UpdateModules()
 			if why then
 				progress = progress or CAI_PlanProgress()
 				if progress >= m.requires then
+					if m.fired then m.done = (m.done or 0) + 1 end
 					m.fired = true
+					m.firedAt = elapsed
 					fired[m.name] = true
 					m.why = why
 					ready[#ready + 1] = m
@@ -1951,8 +1981,10 @@ function CAI_UpdateModules()
 	local fi = data.fortIndex
 	local all = {}
 	for _, m in ipairs(ready) do
-		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions)
-		for _, a in ipairs(m.actions) do all[#all + 1] = a end
+		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions
+			.. ((m.done or 0) > 0 and (" repeat=" .. m.done) or ""))
+		-- copies: the same module may go in again (Repeat), and the built-in AI keeps state per action
+		for _, a in ipairs(m.actions) do all[#all + 1] = CAI_CopyAction(a) end
 	end
 	CAI_InsertActions(fi, all)
 end
@@ -2221,6 +2253,79 @@ function OnDeviceHit(deviceTeamId, deviceId, saveName, newHealth, projectileNode
 	end
 end
 
+--------------------------------------------------------------------------------
+-- Sockets (Bastion, .dev/docs/bastion-plan.md): the plan's FortSockets name its weapon places; every device action in
+-- one carries Socket = "<name>" (gen_fort.py tag_sockets). A socket that keeps losing its weapon gets the next of its
+-- Loadouts (checked by rules.py in that place) whose tech stands: the rebuild action's device is swapped, so the
+-- empty socket is rebuilt with the other weapon (no reclaim: a reclaim refunds only half and empties the socket ~5 s).
+
+CAI_UpgradeOf = { sniper2 = "sniper", minigun = "machinegun", mortar2 = "mortar", cannon = "cannon20mm",
+	shotgun = "flak", rocket = "rocketemp", missile2 = "missile", missile2inv = "missileinv" }
+
+function CAI_InitSockets()
+	local list = CAI_Plan.sockets
+	if type(list) ~= "table" or data.CAI == nil then return end
+	local st = data.CAI
+	st.sockets = {}
+	local names = {}
+	for _, s in ipairs(list) do
+		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0 }
+		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
+	end
+	CAI_Log("SOCKETS " .. table.concat(names, " "))
+end
+
+-- own devices by type (game state, deterministic)
+function CAI_OwnDevices()
+	local count, side = {}, CAI_Side(teamId)
+	for i = 0, GetDeviceCountSide(side) - 1 do
+		local t = GetDeviceType(GetDeviceIdSide(side, i))
+		if t then count[t] = (count[t] or 0) + 1 end
+	end
+	return count
+end
+
+-- called when the built-in AI queues a lost device for rebuilding: true if the socket's action was swapped
+function CAI_SocketLost(deviceId)
+	local st = data.CAI
+	local k = data.Devices and data.Devices[deviceId]
+	local a = k and Fort and Fort[k]
+	if st == nil or st.sockets == nil or a == nil or a.Socket == nil then return false end
+	local s = st.sockets[a.Socket]
+	if s == nil then return false end
+	local cfg = Strategy.Socket or CAI_Defaults.Socket
+	local now = st.ticks * Strategy.ThinkInterval
+	local last = s.losses[#s.losses]
+	if last ~= nil and now - last > (cfg.Window or 180) then s.losses = {} end
+	s.losses[#s.losses + 1] = now
+	local old = a.DeviceSaveName
+	if #s.losses < (cfg.SwapAfter or 2) then
+		CAI_Log("SOCKET " .. a.Socket .. " lost " .. tostring(old) .. " losses=" .. #s.losses)
+		return false
+	end
+	-- the next loadout after the current one (its base type for an upgrade), whose tech stands
+	local base = CAI_UpgradeOf[old] or old
+	local n, at = #s.loadouts, 0
+	for i, d in ipairs(s.loadouts) do
+		if d == base then at = i end
+	end
+	local own = CAI_OwnDevices()
+	for j = 1, n - 1 do
+		local d = s.loadouts[(at + j - 1) % n + 1]
+		local need = s.needs[d]
+		if d ~= base and (need == nil or (own[need] or 0) > 0) then
+			a.DeviceSaveName = d
+			s.losses = {}
+			s.swaps = s.swaps + 1
+			if st.rebuilds then st.rebuilds[k] = nil end
+			CAI_Log("SOCKET " .. a.Socket .. " " .. tostring(old) .. "->" .. d .. " action=" .. k .. " swaps=" .. s.swaps)
+			return true
+		end
+	end
+	CAI_Log("SOCKET " .. a.Socket .. " lost " .. tostring(old) .. " losses=" .. #s.losses .. " no other loadout ready")
+	return false
+end
+
 -- Rebuild cap: the built-in AI queues every lost device for rebuilding (CheckDeviceForRebuild schedules
 -- QueueDeviceRebuild). A device that keeps dying at one place only eats metal; past Strategy.RebuildCap it stays lost.
 function CAI_RebuildCapped(deviceId)
@@ -2245,6 +2350,11 @@ end
 local CAI_BaseQueueDeviceRebuild = QueueDeviceRebuild
 if CAI_BaseQueueDeviceRebuild then
 	function QueueDeviceRebuild(deviceId)
+		local okS, swapped = pcall(CAI_SocketLost, deviceId)
+		if not okS then CAI_Log("ERROR socket: " .. tostring(swapped)) end
+		if okS and swapped then
+			return CAI_BaseQueueDeviceRebuild(deviceId)
+		end
 		local ok, capped = pcall(CAI_RebuildCapped, deviceId)
 		if not ok then
 			CAI_Log("ERROR rebuild cap: " .. tostring(capped))
