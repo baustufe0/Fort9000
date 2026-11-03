@@ -107,6 +107,10 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
   error are written as `Loadouts`, with their tech as `Needs` (`gen_fort` prints `socket B1 loadouts: ...; dropped
   ...`). Vanilla-8: B1/B2 sniper, cannon20mm, laser, firebeam, machinegun; M1/M2 mortar only (a machine gun there is
   blocked by the nest's front armour or stands in front of the other mortar).
+- Module trigger key `postures`: written as `Postures = { ... }` ([ai.md](ai.md#posture)).
+- A module with a tech device waits for its snapshot (`snapshot_index`, a marker line kept through the final passes):
+  the cells that hide the device (`cover_tech`) stand only from there on (Vanilla-8's factory module was 42 of 54 box
+  points in the open right after its strut).
 - Module trigger keys `zone` and `damage`: written as `Zone = "Z0", Damage = n` ([ai.md](ai.md#zone-hit-map)).
 - Module keys `repeat` and `cooldown`: written as `Repeat = n, Cooldown = s` ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)).
 - Module keys `socket` and `loadout`: written into the module's line (`Socket = "B1", Loadout = "sniper2"`), read

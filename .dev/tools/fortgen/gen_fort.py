@@ -1428,7 +1428,9 @@ _V8_ROWS = [-445, -315, -185, -55, 75, 205, 308, 405, 503, 602, 700]
 VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
     "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3200, -2945, -315, -185)),
-    "tech_slots": VANILLA_VARIANTS["artillerie"]["tech_slots"],
+    # the factory (posture module: lasers and firebeams for the B sockets) on Vanilla-5's slot in the back block
+    "tech_slots": dict(VANILLA_VARIANTS["artillerie"]["tech_slots"],
+                       factory=[((-3500, 405), (-3400, 405), 0.5)]),
     "cfg": {"small_low_first": True, "weapon_pick_best": True,
             "rows": _V8_ROWS,
             # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
@@ -1520,6 +1522,11 @@ VANILLA_VARIANTS["bastion"] = {
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": [], "outside": "bracing"}]},
          "plan": [("defence", ["woodspam:3"])]},
+        # step 4: the factory when the posture asks for heavy direct fire (Siege: a zone keeps being hit; Punish: the
+        # enemy builds economy or the AI piles up metal), at the latest at 450 s; then a B socket that keeps losing
+        # its sniper is rebuilt with a laser or firebeam (Prefer)
+        {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 450},
+         "plan": [("tech", ["factory"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
@@ -2965,6 +2972,12 @@ class Plan:
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
             self.split_doors()
+        self.snapshot_at, n = {}, 0
+        for l in self.actions:
+            if l.startswith("-- MARK snapshot:"):
+                self.snapshot_at[l[len("-- MARK snapshot:"):]] = n
+            elif not l.startswith("-- MARK "):
+                n += 1
         self.actions = [l for l in self.actions if not l.startswith("-- MARK ")]
         # in the variant's order: the order the AI goes by when several modules fire at once
         names = [m["name"] for m in variant.get("modules", [])]
@@ -3071,6 +3084,8 @@ class Plan:
         self.__dict__.update(saved)
         self.cfg, self.variant = saved_cfg, saved_variant
         self.rng.setstate(rng_state)
+        # where the snapshot ended in the plan (snapshot_at, counted after the final passes)
+        self.actions.append("-- MARK snapshot:%s" % m["name"])
         for c in cells:
             self.devices[c] = "module"
         self.mortar_cells |= mortar_cells
@@ -3079,7 +3094,8 @@ class Plan:
         tr = m["trigger"]
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
-                             "zone": tr.get("zone"), "damage": tr.get("damage"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
+                             "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
@@ -3111,6 +3127,10 @@ class Plan:
                 if later == req:
                     break
                 req = later
+            # a tech device (cover_tech) is hidden by the cells built up to the module's snapshot: not before them
+            # (Vanilla-8's factory module, placed right after its strut, stood 42 of 54 box points in the open)
+            if any(a.get("DeviceSaveName", "") in TECH for a in mod):
+                req = max(req, self.snapshot_index(m))
             m["requires"] = req
             # struts the plan builds too (only after the module's snapshot): the module then builds them without the
             # plan's later changes (hidden cage, woodspam, cleared fire lines); move its "after" past them
@@ -3120,6 +3140,11 @@ class Plan:
                 (tuple(a.get("PosA") or ()), tuple(a.get("NewNodePos") or a.get("PosB") or ()))) in plan_struts)
             if dup:
                 self.problems.append("module %s builds %d struts the plan also builds later" % (m["name"], dup))
+
+    def snapshot_index(self, m):
+        """The number of plan actions before the module's snapshot point (gen_module, after its "after" steps), in the
+        final plan (a marker line kept through the final passes)."""
+        return getattr(self, "snapshot_at", {}).get(m["name"], 0)
 
     def with_module(self, m):
         """The plan's actions with the module inserted right after its Requires (the earliest the AI may build it)."""
@@ -4213,6 +4238,7 @@ def main():
             trig = ["%s x%d" % ("/".join(m["types"]), m["count"])] if m["types"] else []
             trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
             trig += ["zone %s damage %d" % (m["zone"], m.get("damage") or 300)] if m.get("zone") else []
+            trig += ["posture %s" % "/".join(m["postures"])] if m.get("postures") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []
             print("   module %s: %d actions (%s), trigger %s%s, requires plan action %d"

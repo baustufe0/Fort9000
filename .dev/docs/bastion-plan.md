@@ -146,6 +146,13 @@ variants and target values:
 
 Test: `t_posture.lua` (scripted enemy device sets and hits → expected posture and modules).
 
+**Result (03.11.2026):** done ([ai.md](ai.md#posture)); 213 checks pass. Effects so far: target boosts, preferred
+loadouts for socket swaps, posture-triggered modules. Vanilla-8 got a `factory` module (Vanilla-5's slot in the back
+block, hidden when placed) on Siege or Punish, at the latest at 450 s; with it a B socket that keeps losing its sniper
+is rebuilt with a laser or firebeam. Not done: a proactive swap of a living weapon (reclaim) when a posture holds long,
+and reinforcements for Z1-Z4. All scores and multipliers are first guesses, to be tuned from matches (`train.py`
+could learn them later).
+
 ## Step 5: test matches and tuning
 
 - `ai/fortplans.lua` on this branch: `Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }` so every DEV match tests it.

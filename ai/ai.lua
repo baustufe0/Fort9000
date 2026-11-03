@@ -52,6 +52,35 @@ local CAI_Defaults =
 	-- lost (BreakDamage each, also beams and splash, which OnLinkHit does not see); Decay per think step for the logged
 	-- pressure; zone modules fire on the undecayed sum since they last went in
 	Zone = { BreakDamage = 100, Decay = 0.9, LogEvery = 30 },
+	-- Posture (Bastion, plans with FortSockets): every think step a score per posture from the enemy's devices, the
+	-- threat of their weapons, the zone pressure and the economy; the best one is taken when it beats the current one
+	-- by Switch and the current one has held MinHold seconds. A posture boosts target values (Boost), picks the
+	-- socket loadouts tried first after repeated losses (Prefer) and triggers modules (Trigger Postures)
+	Posture = { MinHold = 30, Switch = 1.25, Base = 3, DeviceWeight = 2, SiegeScale = 50, PunishRich = 4,
+		Threats = {
+			AntiArtillery = { mortar = true, mortar2 = true },
+			AntiSniper = { sniper2 = true, laser = true, firebeam = true },
+			AntiAir = { missile = true, missile2 = true, missileinv = true, missile2inv = true, rocket = true, rocketemp = true },
+		},
+		Eco = { mine = true, mine2 = true, turbine = true, turbine2 = true, battery = true, store = true, solar = true },
+		Weapons = { machinegun = true, minigun = true, sniper = true, sniper2 = true, mortar = true, mortar2 = true,
+			cannon = true, cannon20mm = true, laser = true, firebeam = true, flak = true, shotgun = true, rocket = true,
+			rocketemp = true, missile = true, missile2 = true, missileinv = true, missile2inv = true, buzzsaw = true,
+			smokebomb = true, smokebomb2 = true },
+		Boost = {
+			Pressure = { sniper = 1.2, machinegun = 1.1, mine = 1.2, turbine = 1.2 },
+			AntiArtillery = { mortar = 2.0, mortar2 = 2.0 },
+			AntiSniper = { sniper2 = 2.0, sniper = 1.5, laser = 1.8, firebeam = 1.8 },
+			AntiAir = { missile = 1.4, missile2 = 1.4, missileinv = 1.4, missile2inv = 1.4, rocket = 1.4, rocketemp = 1.4 },
+			Siege = { cannon = 1.3, cannon20mm = 1.3, laser = 1.3, firebeam = 1.3, mortar2 = 1.2, buzzsaw = 1.3 },
+			Punish = { mine = 1.4, mine2 = 1.4, turbine = 1.4, turbine2 = 1.4, battery = 1.3, store = 1.2 },
+		},
+		Prefer = {
+			AntiAir = { direct = { "machinegun" } },
+			AntiSniper = { direct = { "sniper" } },
+			Siege = { direct = { "laser", "firebeam", "cannon20mm" } },
+			Punish = { direct = { "laser", "cannon20mm", "firebeam" } },
+		} },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
 	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one
@@ -1728,7 +1757,9 @@ function CAI_BuildPriorityList(baseList, values)
 		-- saturating: half the bonus at ThreatHalf, almost the full bonus under heavy threat
 		local threat = data.CAI.threat[saveName] or 0
 		local bonus = Strategy.ThreatWeight * threat / (threat + Strategy.ThreatHalf)
-		table.insert(entries, { name = saveName, score = base + bonus, idx = i })
+		-- the posture's boost (Bastion)
+		local boost = data.CAI.postureBoost and data.CAI.postureBoost[saveName] or 1
+		table.insert(entries, { name = saveName, score = (base + bonus) * boost, idx = i })
 	end
 	-- sort stably and deterministically
 	table.sort(entries, function(a, b)
@@ -1866,6 +1897,11 @@ local function CAI_PlanProgress()
 	return 0
 end
 
+function CAI_ListHas(list, v)
+	for _, x in ipairs(list) do if x == v then return true end end
+	return false
+end
+
 -- a plan action with its own position tables
 function CAI_CopyAction(a)
 	local c = {}
@@ -1962,6 +1998,9 @@ function CAI_UpdateModules()
 			local zoneSum = tr.Zone and data.CAI and data.CAI.zoneTotal and data.CAI.zoneTotal[tr.Zone] or 0
 			if #hits > 0 and total >= (tr.Count or 1) then
 				why = table.concat(hits, ",")
+			elseif tr.Postures and data.CAI and data.CAI.posture and CAI_ListHas(tr.Postures, data.CAI.posture) then
+				-- Postures = { ... } (Bastion): while the AI holds one of them
+				why = "posture:" .. data.CAI.posture
 			elseif tr.Zone and zoneSum - (m.zoneMark or 0) >= (tr.Damage or 300) then
 				-- Zone = <name>, Damage = n: that much damage in the zone since the module last went in
 				why = "zone:" .. tr.Zone .. "=" .. CAI_Round(zoneSum - (m.zoneMark or 0))
@@ -2115,6 +2154,8 @@ function CAI_Think()
 	end
 
 	local parts = { "THINK t=" .. elapsed .. " build=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " rebuild=" .. rebuildCount }
+	local okP, errP = pcall(CAI_UpdatePosture, elapsed)
+	if not okP then CAI_Log("ERROR posture: " .. tostring(errP)) end
 	local ok, res = pcall(CAI_UpdateTargets)
 	parts[#parts + 1] = ok and res or ("ERROR targets: " .. tostring(res))
 	ok, res = pcall(CAI_UpdateAggression, elapsed)
@@ -2401,20 +2442,93 @@ function CAI_SocketLost(deviceId)
 		if d == base then at = i end
 	end
 	local own = CAI_OwnDevices()
-	for j = 1, n - 1 do
-		local d = s.loadouts[(at + j - 1) % n + 1]
+	-- the posture's preferred loadouts first (Bastion), then the socket's own order
+	local order = {}
+	local pcfg = Strategy.Posture or CAI_Defaults.Posture
+	local pref = st.posture and pcfg.Prefer and pcfg.Prefer[st.posture] and pcfg.Prefer[st.posture][s.kind] or {}
+	for _, d in ipairs(pref) do
+		for _, l in ipairs(s.loadouts) do
+			if l == d then order[#order + 1] = d end
+		end
+	end
+	for j = 1, n - 1 do order[#order + 1] = s.loadouts[(at + j - 1) % n + 1] end
+	for _, d in ipairs(order) do
 		local need = s.needs[d]
 		if d ~= base and (need == nil or (own[need] or 0) > 0) then
 			a.DeviceSaveName = d
 			s.losses = {}
 			s.swaps = s.swaps + 1
 			if st.rebuilds then st.rebuilds[k] = nil end
-			CAI_Log("SOCKET " .. a.Socket .. " " .. tostring(old) .. "->" .. d .. " action=" .. k .. " swaps=" .. s.swaps)
+			CAI_Log("SOCKET " .. a.Socket .. " " .. tostring(old) .. "->" .. d .. " action=" .. k .. " swaps=" .. s.swaps
+				.. " posture=" .. tostring(st.posture))
 			return true
 		end
 	end
 	CAI_Log("SOCKET " .. a.Socket .. " lost " .. tostring(old) .. " losses=" .. #s.losses .. " no other loadout ready")
 	return false
+end
+
+--------------------------------------------------------------------------------
+-- Posture (Bastion, .dev/docs/bastion-plan.md): one of Pressure (default), AntiArtillery, AntiSniper, AntiAir, Siege,
+-- Punish, chosen every think step from the enemy's devices, their weapons' threat (st.threat), the zone pressure and
+-- the economy. Only for plans with FortSockets.
+
+CAI_Postures = { "Pressure", "AntiArtillery", "AntiSniper", "AntiAir", "Siege", "Punish" }
+
+-- enemy devices by type (game state, deterministic)
+function CAI_EnemyDevicesAll()
+	local count = {}
+	for i = 0, GetDeviceCountSide(enemyTeamId) - 1 do
+		local t = GetDeviceType(GetDeviceIdSide(enemyTeamId, i))
+		if t then count[t] = (count[t] or 0) + 1 end
+	end
+	return count
+end
+
+function CAI_PostureScores()
+	local st, cfg = data.CAI, Strategy.Posture or CAI_Defaults.Posture
+	local enemy = CAI_EnemyDevicesAll()
+	local score = { Pressure = cfg.Base or 3 }
+	for name, types in pairs(cfg.Threats or {}) do
+		local v = 0
+		for t in pairs(types) do v = v + (st.threat[t] or 0) + (cfg.DeviceWeight or 2) * (enemy[t] or 0) end
+		score[name] = v
+	end
+	local zmax = 0
+	for _, v in pairs(st.zoneDmg or {}) do zmax = math.max(zmax, v) end
+	score.Siege = zmax / (cfg.SiegeScale or 50)
+	-- the enemy builds economy rather than weapons, or the AI piles up metal: hit the economy
+	local eco, weapons = 0, 0
+	for t, n in pairs(enemy) do
+		if cfg.Eco and cfg.Eco[t] then eco = eco + n elseif cfg.Weapons and cfg.Weapons[t] then weapons = weapons + n end
+	end
+	local res = GetTeamResources(teamId)
+	local metal = (type(res) == "table" or type(res) == "userdata") and res.metal or 0
+	score.Punish = 0.5 * math.max(0, eco - 2 * weapons) + ((metal or 0) >= Strategy.RichMetal and (cfg.PunishRich or 4) or 0)
+	return score
+end
+
+function CAI_UpdatePosture(elapsed)
+	local st = data.CAI
+	if st == nil or CAI_Plan.sockets == nil then return end
+	local cfg = Strategy.Posture or CAI_Defaults.Posture
+	local score = CAI_PostureScores()
+	local cur = st.posture or "Pressure"
+	local best, bestScore = cur, score[cur] or 0
+	for _, p in ipairs(CAI_Postures) do
+		if (score[p] or 0) > bestScore then best, bestScore = p, score[p] end
+	end
+	local held = elapsed - (st.postureSince or -1e9)
+	if st.posture == nil or (best ~= cur and held >= (cfg.MinHold or 30) and bestScore >= (score[cur] or 0) * (cfg.Switch or 1.25)) then
+		local parts = {}
+		for _, p in ipairs(CAI_Postures) do
+			if (score[p] or 0) > 0 then parts[#parts + 1] = p .. ":" .. CAI_Round(score[p]) end
+		end
+		CAI_Log("POSTURE " .. tostring(st.posture or "-") .. "->" .. best .. " t=" .. elapsed .. " scores=" .. table.concat(parts, ","))
+		st.posture = best
+		st.postureSince = elapsed
+		st.postureBoost = cfg.Boost and cfg.Boost[best] or nil
+	end
 end
 
 -- Rebuild cap: the built-in AI queues every lost device for rebuilding (CheckDeviceForRebuild schedules

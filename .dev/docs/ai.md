@@ -177,6 +177,28 @@ A plan with `FortZones` (boxes in plan coordinates, team 1) gets a hit map:
 
 Test: `.dev/tools/tests/t_zones.lua`.
 
+### Posture
+
+For plans with `FortSockets` (`CAI_UpdatePosture`, every think step before the targets). Scores
+(`CAI_PostureScores`, `Strategy.Posture`):
+- **Pressure:** `Base` (3), the default.
+- **AntiArtillery / AntiSniper / AntiAir:** the threat (`st.threat`, shots and hits, decaying) of the posture's
+  `Threats` types plus `DeviceWeight` (2) per enemy device of those types (mortars; AP snipers, lasers, firebeams;
+  missiles and rockets).
+- **Siege:** the highest zone pressure / `SiegeScale` (50).
+- **Punish:** 0.5 per enemy economy device beyond twice its weapons, plus `PunishRich` (4) while the AI has
+  `RichMetal` or more.
+
+The best posture is taken when it scores at least `Switch` (1.25) times the current one and the current one has held
+`MinHold` (30) seconds (log `POSTURE Pressure->AntiArtillery t=35 scores=Pressure:3,AntiArtillery:8.66`). Effects:
+- **Boost:** the posture's target multipliers on the priority lists (e.g. AntiArtillery mortars x2, Punish mines and
+  turbines x1.4).
+- **Prefer:** the socket loadouts a socket swap tries first (Siege and Punish: laser, firebeam, cannon20mm; AntiAir:
+  machine gun); logged in `SOCKET ... posture=Siege`.
+- **Modules:** trigger `Postures = { "Siege", "Punish" }` fires while the AI holds one of them.
+
+Test: `.dev/tools/tests/t_posture.lua`.
+
 ## Custom build plan variants per map
 
 - Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).

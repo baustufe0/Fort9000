@@ -102,6 +102,13 @@ check "Zones: damage fires the zone module"     "MODULE Z0face trigger=zone:Z0=3
 check "Zones: lost struts count, deletes do not" "^after breaks: Z0=800$" "$LUA" t_zones.lua
 check "Zones: a second module at its own damage" "MODULE Z0prow trigger=zone:Z0=800 at=[0-9]+ actions=5$" "$LUA" t_zones.lua
 check "Zones: again after the cooldown"         "MODULE Z0face trigger=zone:Z0=1000 at=[0-9]+ actions=6 repeat=1$" "$LUA" t_zones.lua
+check "Posture: starts with Pressure"           "POSTURE -->Pressure t=5 scores=Pressure:3$" "$LUA" t_posture.lua
+check "Posture: holds 30 s before a switch"     "^at 10 s: Pressure$" "$LUA" t_posture.lua
+check "Posture: enemy mortars -> AntiArtillery" "POSTURE Pressure->AntiArtillery t=35 " "$LUA" t_posture.lua
+check "Posture: boosts its targets"             "^heavy targets: cannon,mortar,mine$" "$LUA" t_posture.lua
+check "Posture: zone pressure -> Siege"         "POSTURE AntiArtillery->Siege t=65 " "$LUA" t_posture.lua
+check "Posture: triggers its module"            "MODULE factory trigger=posture:Siege at=[0-9]+ actions=1$" "$LUA" t_posture.lua
+check "Posture: preferred loadout on a swap"    "SOCKET B1 sniper->laser action=[0-9]+ swaps=1 posture=Siege$" "$LUA" t_posture.lua
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua
