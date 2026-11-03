@@ -107,6 +107,9 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
   error are written as `Loadouts`, with their tech as `Needs` (`gen_fort` prints `socket B1 loadouts: ...; dropped
   ...`). Vanilla-8: B1/B2 sniper, cannon20mm, laser, firebeam, machinegun; M1/M2 mortar only (a machine gun there is
   blocked by the nest's front armour or stands in front of the other mortar).
+- `lobbed_front_door`: a lobbed weapon in a front cell gets a door as its front post (not armour; Vanilla-8's mortar
+  nest declined 28 of 34 shots behind armour). `door_roof_cells [(left x, floor y)]`: these cells get a door roof (an
+  anti-air machine gun's cell, Vanilla-8's A1).
 - Module trigger key `postures`: written as `Postures = { ... }` ([ai.md](ai.md#posture)).
 - A module with a tech device waits for its snapshot (`snapshot_index`, a marker line kept through the final passes):
   the cells that hide the device (`cover_tech`) stand only from there on (Vanilla-8's factory module was 42 of 54 box

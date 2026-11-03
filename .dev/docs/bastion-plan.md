@@ -179,6 +179,25 @@ after the first turbine (`door_layers_late`, B1's layer 50 out instead of on the
 metal before the first sniper 1119 -> 402 (sniper at plan action 15), workshop 694, B2 1006; all struts 4574 -> 4371.
 `physics.py` max stress 0.46 -> 0.63 (B1's door, which now carries its layer alone; still WEAK, i.e. stands).
 
+**Test 2 (03.11.2026, Vanilla 1v1 vs the player, difficulty 1, lost at 635 s, reactor destroyed):**
+- Opening faster than test 1 but still short of metal all match (mostly below 300): first sniper 32 s (60), workshop
+  107 s (147), mines 100/123/145 s, B2 sniper 154 s (214), mortars 205/211 s (263), first turbine 218 s (295),
+  heavy mortars 457 s, factory module at 450 s, built 572 s.
+- Postures plausible: Pressure, AntiArtillery at 180 s (player mortars), AntiAir at 420 s (missile), back to
+  AntiArtillery 450 s, Siege at 575 s (zone pressure). Zone modules fired: Z0face at 345 s (twice more), Z0prow 420 s.
+- Socket swaps: B1 sniper -> machine gun at ~300 s (no factory yet), B2 sniper -> laser at ~610 s (Siege, factory).
+- The AI destroyed only three snipers. Its mortars fired 24 times in ~430 s: 28 of 34 tries declined, the nest's
+  front post is armour and stands in the shells' path (rule: a lobbed weapon gets a door roof and a front door).
+- The player won with mortars and heavy mortars (66 shots), a missile and machine guns (259 shots). Bastion has no
+  anti-air place: only the starting machine gun and B1's swapped machine gun; AntiArtillery could only re-rank targets.
+- A machine gun in a B socket does not fire at the enemy fort (`NoOffence`): the swap gave up B1's offence.
+
+**After test 2:** the nest's front post is a door (`lobbed_front_door`); socket A1, a closed cell behind the nest on
+the turbine storey with a door roof (`door_roof_cells`), gets an anti-air machine gun from module `antiair` (enemy
+mortars or missiles, posture AntiArtillery or AntiAir, at the latest 240 s; plan action ~154, its support comes from
+the back column x -3300); a swap to a weapon that never fires at the enemy fort (the machine gun) only under AntiAir;
+a swap's tech counts only when fully built (`IsDeviceFullyBuilt`). `physics.py` max stress 0.60; 216 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

@@ -151,7 +151,9 @@ action fields through its transform).
   counts as its base, e.g. sniper2 as sniper) whose tech stands among the own devices: the action's `DeviceSaveName`
   is changed and the rebuild builds the other weapon in the empty socket. No reclaim (it refunds half and empties the
   socket for ~5 s, [forts-api.md](forts-api.md)). The rebuild cap's count for that action starts over. Log
-  `SOCKET B1 lost sniper losses=1`, `SOCKET B1 sniper->machinegun action=19 swaps=1`, or `... no other loadout ready`.
+  `SOCKET B1 lost sniper losses=1`, `SOCKET B1 sniper->cannon20mm action=19 swaps=1`, or `... no other loadout ready`.
+  Only fully built tech counts (`IsDeviceFullyBuilt`). A weapon in `Fire.NoOffence` (the machine gun, which never fires
+  at the enemy fort) replaces one that does only while the AI holds AntiAir.
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
 - **Repeat / Cooldown** on a module (`FortModules`, `Repeat = n, Cooldown = s`): after it went in, it may go in n more
   times, each at least s seconds after the last, while its trigger holds (log `MODULE <name> ... repeat=<k>`). Every

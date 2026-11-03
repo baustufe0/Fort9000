@@ -1427,7 +1427,7 @@ VANILLA_VARIANTS["recorded"] = None
 _V8_ROWS = [-445, -315, -185, -55, 75, 205, 308, 405, 503, 602, 700]
 VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
-    "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3200, -2945, -315, -185)),
+    "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3300, -2945, -315, -185)),
     # the factory (posture module: lasers and firebeams for the B sockets) on Vanilla-5's slot in the back block
     "tech_slots": dict(VANILLA_VARIANTS["artillerie"]["tech_slots"],
                        factory=[((-3500, 405), (-3400, 405), 0.5)]),
@@ -1435,7 +1435,6 @@ VANILLA_VARIANTS["bastion"] = {
             "rows": _V8_ROWS,
             # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
             # 0.18 of the 148-wide cell the barrel ends at the front door
-            "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18)],
             "split_doors": True, "door_layers": 2, "door_brace_front": True,
             # the second doors only after the economy (test 1, 03.11.2026: with them in the opening ~1120 metal went
             # into struts before the first sniper, which stood at 60 s), 50 in front (not on the prow node 58, 100
@@ -1450,6 +1449,12 @@ VANILLA_VARIANTS["bastion"] = {
             # the nest over two cells (x -3200..-2945): a mortar's body needs 50 to the metal posts on both sides,
             # 130 between the two (MORTAR_SPACING 90)
             "mortar_slots": [((-3200, -185), (-3100, -185), 0.5), ((-3100, -185), (-2945, -185), 0.52)],
+            # the nest's front post a door (the shells leave forward and up), and socket A1 behind the nest: a closed
+            # cell on the turbine storey with a door roof for an anti-air machine gun (test 2: no anti-air place, the
+            # player's mortars and heavy mortars took the fort down)
+            "lobbed_front_door": True,
+            "door_roof_cells": [(-3300, -185)],
+            "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18), (-3300, -185, "machinegun", 0.5)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
@@ -1471,7 +1476,7 @@ VANILLA_VARIANTS["bastion"] = {
         # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
         # and the nest over it
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
-                   (-3200, -185), (-3100, -185)]),                  # 8
+                   (-3200, -185), (-3100, -185), (-3300, -185, "machinegun")]),  # 8 (and A1)
         ("defence", ["sandbags", "sandbags"]),                      # 9
         ("eco", ["turbine"]),                                       # 10
         ("mark", ["door_layers"]),                                  # 11 the second doors from here on
@@ -1488,6 +1493,7 @@ VANILLA_VARIANTS["bastion"] = {
     # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
     # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
     "sockets": [{"name": "A0", "kind": "direct", "cell": (-2996, 504), "default": "machinegun"},
+                {"name": "A1", "kind": "antiair", "cell": (-3300, -185), "default": "machinegun"},
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper"},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper"},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
@@ -1525,6 +1531,12 @@ VANILLA_VARIANTS["bastion"] = {
         # step 4: the factory when the posture asks for heavy direct fire (Siege: a zone keeps being hit; Punish: the
         # enemy builds economy or the AI piles up metal), at the latest at 450 s; then a B socket that keeps losing
         # its sniper is rebuilt with a laser or firebeam (Prefer)
+        # anti-air in A1 against shells and missiles: when the posture turns AntiArtillery or AntiAir, or the
+        # enemy builds mortars or missiles, at the latest at 240 s
+        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 9,
+         "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
+                     "time": 240},
+         "plan": [("aa", ["machinegun"])]},
         {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 450},
          "plan": [("tech", ["factory"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
@@ -2265,7 +2277,13 @@ class Plan:
         if edge == "right" and dev == "sandbags":
             return "bracing"
         if edge == "right" and self.is_front(c):
+            # a lobbed weapon in a front cell: a door in front as well as over it (its shells leave forward and up;
+            # Vanilla-8 test 2, 03.11.2026: behind an armour front 28 of 34 mortar shots were declined)
+            if dev in LOBBED_WEAPONS and self.cfg.get("lobbed_front_door"):
+                return "door"
             return "door" if dev in DIRECT_WEAPONS or dev == "lane" else "armour"
+        if edge == "top" and c in self.door_roof_cells():
+            return "door"
         if edge == "top" and self.is_top(c) and self.cfg.get("light_roof"):
             # no metal roof (heavy, guide "How to be a PRO at Vanilla Forts"): doors only over mortars
             return "door" if dev in LOBBED_WEAPONS else "bracing"
@@ -2276,6 +2294,14 @@ class Plan:
                 return "bracing"
             return "armour"
         return "bracing"
+
+    def door_roof_cells(self):
+        """door_roof_cells [(left x, floor y)]: cells whose roof is a door (an anti-air machine gun fires up through it)."""
+        rows = self.cfg["rows"]
+        out = set()
+        for x0, y0 in self.cfg.get("door_roof_cells", []):
+            out |= {c for c in self.all_cells if abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == y0}
+        return out
 
     def build_cell(self, c):
         if c in self.built_cells:

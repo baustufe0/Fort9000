@@ -2391,7 +2391,7 @@ end
 -- Loadouts (checked by rules.py in that place) whose tech stands: the rebuild action's device is swapped, so the
 -- empty socket is rebuilt with the other weapon (no reclaim: a reclaim refunds only half and empties the socket ~5 s).
 
-CAI_UpgradeOf = { sniper2 = "sniper", minigun = "machinegun", mortar2 = "mortar", cannon = "cannon20mm",
+CAI_UpgradeOf = { sniper2 = "sniper", minigun = "machinegun", mortar2 = "mortar",
 	shotgun = "flak", rocket = "rocketemp", missile2 = "missile", missile2inv = "missileinv" }
 
 function CAI_InitSockets()
@@ -2407,12 +2407,16 @@ function CAI_InitSockets()
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
 end
 
--- own devices by type (game state, deterministic)
-function CAI_OwnDevices()
+-- own devices by type (game state, deterministic); builtOnly: only those fully built (a factory under construction does
+-- not allow a laser yet: the rebuild would wait for it with the socket empty)
+function CAI_OwnDevices(builtOnly)
 	local count, side = {}, CAI_Side(teamId)
 	for i = 0, GetDeviceCountSide(side) - 1 do
-		local t = GetDeviceType(GetDeviceIdSide(side, i))
-		if t then count[t] = (count[t] or 0) + 1 end
+		local id = GetDeviceIdSide(side, i)
+		local t = GetDeviceType(id)
+		if t and (not builtOnly or type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) then
+			count[t] = (count[t] or 0) + 1
+		end
 	end
 	return count
 end
@@ -2441,7 +2445,7 @@ function CAI_SocketLost(deviceId)
 	for i, d in ipairs(s.loadouts) do
 		if d == base then at = i end
 	end
-	local own = CAI_OwnDevices()
+	local own = CAI_OwnDevices(true)
 	-- the posture's preferred loadouts first (Bastion), then the socket's own order
 	local order = {}
 	local pcfg = Strategy.Posture or CAI_Defaults.Posture
@@ -2454,7 +2458,10 @@ function CAI_SocketLost(deviceId)
 	for j = 1, n - 1 do order[#order + 1] = s.loadouts[(at + j - 1) % n + 1] end
 	for _, d in ipairs(order) do
 		local need = s.needs[d]
-		if d ~= base and (need == nil or (own[need] or 0) > 0) then
+		-- a weapon that never fires at the enemy fort (Fire.NoOffence: the machine gun) only replaces a weapon that
+		-- does while the AI holds AntiAir (test 2, 03.11.2026: B1's sniper became a machine gun and its offence was gone)
+		local passive = st.noOffence and st.noOffence[d] and not (st.noOffence[base]) and st.posture ~= "AntiAir"
+		if d ~= base and not passive and (need == nil or (own[need] or 0) > 0) then
 			a.DeviceSaveName = d
 			s.losses = {}
 			s.swaps = s.swaps + 1

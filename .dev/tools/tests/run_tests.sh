@@ -87,12 +87,15 @@ check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end
 check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
-check "Bastion loads with sockets and zones"   "^230 5 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[2].Name, s[2].Default, s[2].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
-check "Sockets: listed with their loadouts"     "SOCKETS A0:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:" "$LUA" t_sockets.lua
+check "Bastion loads with sockets and zones"   "^234 6 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
+check "Sockets: listed with their loadouts"     "SOCKETS A0:machinegun A1:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
 check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
-check "Sockets: swap to a loadout whose tech stands" "^after two losses: machinegun rebuild=true$" "$LUA" t_sockets.lua
-check "Sockets: the swap goes on in order"      "^after four losses: sniper$" "$LUA" t_sockets.lua
-check "Sockets: an old loss is forgotten"       "^late loss: sniper losses=1$" "$LUA" t_sockets.lua
+check "Sockets: no machine gun for a sniper"   "^after two losses: sniper rebuild=true$" "$LUA" t_sockets.lua
+check "Sockets: swap to a loadout whose tech stands" "^with munitions: cannon20mm$" "$LUA" t_sockets.lua
+check "Sockets: tech under construction does not count" "^factory building: sniper$" "$LUA" t_sockets.lua
+check "Sockets: the posture's preferred loadout" "^factory built: laser$" "$LUA" t_sockets.lua
+check "Sockets: machine gun under AntiAir"     "^anti-air: machinegun$" "$LUA" t_sockets.lua
+check "Sockets: an old loss is forgotten"       "^late loss: machinegun losses=1$" "$LUA" t_sockets.lua
 check "Modules: Repeat and Cooldown"            "^again inserted 3 times$" "$LUA" t_sockets.lua
 check "Modules: a repeat is logged"             "MODULE again trigger=time:5 at=[0-9]+ actions=1 repeat=2$" "$LUA" t_sockets.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua

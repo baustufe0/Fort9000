@@ -309,7 +309,9 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
   storey I (75..205) socket B1 on the starting fort's roof beam, storey II (-55..75) socket B2, storey III
   (-185..-55) the turbine storey (hidden, three turbines on its floor, two stacked sandbags in its front cell), and over
   x -3200..-2945 the mortar nest (-315..-185, door roof, armour front): sockets M1/M2, 130 apart, 50+ from the metal
-  posts. The starting fort's machine gun is socket A0.
+  posts; its front post is a door (the shells leave forward and up). The starting fort's machine gun is socket A0;
+  socket A1 is a closed cell behind the nest (x -3300..-3200, on the turbine storey) with a door roof for an anti-air
+  machine gun (module `antiair`).
 - **Sockets at the front door:** each direct socket is its storey's front cell; the weapon at LinkT 0.18 (a sniper's
   body with the barrel reaches ~120 ahead of its strut point), its door split to ~63 with a second door 50 in front.
   No connecting cell from storey I to the prow top (`no_connect`), so B1 fires straight out of its own door.
