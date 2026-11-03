@@ -76,6 +76,11 @@ check "Surplus module fires"                    "MODULE firebeam trigger=surplus
 check "Surplus: After module waits for the build" "^firebeam building: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: a dip restarts the clock"       "^after the dip: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: second module fires"            "^laser: true,true laser$" "$LUA" t_surplus.lua
+check "Repeated inserts: rebuilds stay on their actions"  "^rebuild: 3 of 3, 0 wrong$" "$LUA" t_insert_repeat.lua
+check "Repeated inserts: frustration stays on its actions" "^frustration: 2 of 2, 0 wrong$" "$LUA" t_insert_repeat.lua
+check "Repeated inserts: rebuild clocks stay on their actions" "^since: 3 of 3, 0 wrong$" "$LUA" t_insert_repeat.lua
+check "Repeated inserts: devices stay on their actions" "^devices: 3, 0 wrong$" "$LUA" t_insert_repeat.lua
+check "Repeated inserts: later modules go in front"  "^order: m3 m3 m5 m5 m5 m5 m5 m4 m4 m4 m4 m3 m2 m2 m1 k60 k61$" "$LUA" t_insert_repeat.lua
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua

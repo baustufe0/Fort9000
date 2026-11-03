@@ -29,6 +29,25 @@ the branch is merged and published.
 
 Done when: each answer is written into [forts-api.md](forts-api.md) "Notes for this mod" and a Lua test covers 4.
 
+**Results (03.11.2026, from the game's AI source and the API reference; details in forts-api.md):**
+
+1. Same material: the action passes without cost, modules may share plan struts. Different material on an existing
+   strut: open, needs a match. Until then zone reinforcements add new struts instead of changing materials.
+2. `DestroyDeviceById` is the reclaim (salvage), already used by `DESTROY_DEVICE`. Swaps can be module actions of
+   type `DESTROY_DEVICE` followed by the new device. Refund amount: open, needs a match (metal before/after in the log).
+3. `OnLinkHit` only sees projectile hits on struts, no beams and no splash. The zone hit map therefore uses
+   `OnLinkHit` (damage) **plus** `OnLinkDestroyed` (any cause) **plus** `OnDeviceHit`. Whether `OnLinkHit` reaches
+   the AI environment: open, needs a match.
+4. `t_insert_repeat.lua`: five modules inserted on five think steps, three at the same build index, then two more two
+   actions further: `data.Rebuild`, `data.Frustration`, `data.Devices` and the rebuild clocks all stay on their actions.
+   Finding: a module that fires while another is still being built goes **in front of the rest of it** (later modules
+   first, the earlier one is split). Harmless while every socket module only uses its own cell; step 2 decides
+   whether inserts should wait for the end of the module being built.
+
+Still open for one probe match: 1 (different material), 2 (refund), 3 (`OnLinkHit` in the AI). Plan: a temporary
+`Strategy.Bastion.Probe` that logs `OnLinkHit` calls, reclaims the starting machine gun with metal logged before and
+after, and builds armour over one starting bracing strut, then logs the result code.
+
 ## Step 1: generator – sockets and zones
 
 In `gen_fort.py`, a new variant `Vanilla-7` (`VARIANTS`), its own layout, not derived from Vanilla-2/6:
