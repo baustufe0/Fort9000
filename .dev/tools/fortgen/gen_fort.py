@@ -1412,6 +1412,94 @@ VANILLA_VARIANTS["modular"] = {
     ],
 }
 
+# Vanilla-7 (a recorded player's fort) was removed; the placeholder keeps Bastion at number 8
+VANILLA_VARIANTS["recorded"] = None
+
+# Vanilla-8, Bastion (branch bastion, .dev/docs/bastion-plan.md): a stack of storeys over the starting fort, each with
+# one direct-fire socket in its front cell, barrel at the front door (x -2945, over the rock) behind two short door
+# layers; no prow storeys and no lane cells (weapons forward). Storey I (75..205) on the starting fort's roof beam:
+# socket B1, the first sniper, built first (early pressure). Storey II (-55..75): socket B2. Storey III (-185..-55):
+# the turbines in their own hidden storey (no weapon in it), two stacked sandbags in its front cell. On top, over the
+# front column only (-315..-185): the mortar nest, sockets M1/M2 on the split floor, a door roof and a door in front;
+# nothing above it, so the arcs are open. The starting fort's machine gun is socket A0. The woodspam regions in front
+# (prow, lower face, mine row) are the crumple zone Z0; the AI rebuilds what is shot away. Which weapon goes into a
+# socket is decided by modules (later the posture engine); the plan builds the empty sockets, the economy and the tech.
+_V8_ROWS = [-445, -315, -185, -55, 75, 205, 308, 405, 503, 602, 700]
+VANILLA_VARIANTS["bastion"] = {
+    "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
+    "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3200, -2945, -315, -185)),
+    "tech_slots": VANILLA_VARIANTS["artillerie"]["tech_slots"],
+    "cfg": {"small_low_first": True, "weapon_pick_best": True,
+            "rows": _V8_ROWS,
+            # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
+            # 0.18 of the 148-wide cell the barrel ends at the front door
+            "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18)],
+            "split_doors": True, "door_layers": 2, "door_brace_front": True,
+            "rebrace_after_mine": [],
+            # no connecting cell from storey I to the starting fort's prow top (node 58): B1's door is the front
+            "no_connect": [(-2945, -2845, 75, 205)],
+            "hidden_box": (-3500, -2945, -185, -55),
+            "turbine_floor_y": -55, "turbine_floor_t": 0.35,
+            "split_cell": [(-3100, -185)], "sandbag_slots": [(0, "floor", 0.5), (0, "mid", 0.5)],
+            # the nest over two cells (x -3200..-2945): a mortar's body needs 50 to the metal posts on both sides,
+            # 130 between the two (MORTAR_SPACING 90)
+            "mortar_slots": [((-3200, -185), (-3100, -185), 0.5), ((-3100, -185), (-2945, -185), 0.52)],
+            # the nest rests on its two columns only
+            "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
+            "support_cheapest": True,
+            "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
+                          "outside": "bracing"},
+                         _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
+            "footing": _V_FOOTING,
+            "single_diagonal": True},
+    "plan": [
+        ("build", [(-3100, 205, "sniper")]),                        # 1 socket B1
+        ("weapons", ["sniper"]),                                    # 2 first shot
+        ("tech", ["workshop"]),                                     # 3 (60 s: the mortars wait for it)
+        ("eco", ["mine", "mine", "mine"]),                          # 4 metal first
+        ("build", [(-3100, 75, "sniper")]),                         # 5 socket B2
+        ("weapons", ["sniper"]),                                    # 6
+        # sockets M1/M2 while the workshop builds: the turbine storey's front cell (split for the sandbags) and the
+        # nest over it, with their support down the column x -3200..-3100
+        ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
+                   (-3200, -185), (-3100, -185)]),                  # 7
+        ("defence", ["sandbags", "sandbags"]),                      # 8
+        ("eco", ["turbine"]),                                       # 9
+        ("defence", ["woodspam"]),                                  # 10
+        ("eco", ["turbine", "turbine"]),                            # 11
+        ("tech", ["upgrade"]),                                      # 12
+        ("eco", ["battery", "store"]),                              # 13
+        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 14
+        ("eco", ["battery"]),                                       # 15
+        ("upgrades", ["mine2", "mine2"]),                           # 16
+        ("defence", ["woodspam"]),                                  # 17
+    ],
+    # the weapon places (the starting fort's machine gun A0 on its lower front strut) and the zones the AI watches
+    # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
+    # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
+    "sockets": [{"name": "A0", "kind": "direct", "cell": (-2996, 504), "default": "machinegun"},
+                {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper"},
+                {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper"},
+                {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
+                {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
+    "zones": [{"name": "Z0", "box": (-2900, -2600, 205, 700)},
+              {"name": "Z1", "box": (-3100, -2780, -55, 205)},
+              {"name": "Z2", "box": (-3500, -2780, -315, -55)},
+              {"name": "Z3", "box": (-3500, -3100, -55, 205)},
+              {"name": "Z4", "box": (-3600, -2900, 205, 700)}],
+    "modules": [
+        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 8,
+         "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
+         "plan": [("weapons", ["mortar", "mortar"])]},
+        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 12,
+         "trigger": {"time": 330, "after": "artillery"},
+         "plan": [("upgrades", ["mortar2", "mortar2"])]},
+        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 12,
+         "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
+         "plan": [("upgrades", ["sniper2"])]},
+    ],
+}
+
 
 # ----------------------------------------------------------------------------- 2v6 Vanilla (clean)
 # The Vanilla plans adapted to the 2v6 map (.dev/docs/maps/2v6-vanilla.md): the same starting fort, but
@@ -1771,7 +1859,10 @@ class Plan:
                 (x0, x1), y0, y1 = self.cell_x((i, j)), rows[j], rows[j + 1]
                 if shape(x0, y0, x1, y1):
                     self.cells.add((i, j))
-                elif sum(self.nodes[c][2] == "orig" for c in corners) >= 1:
+                elif sum(self.nodes[c][2] == "orig" for c in corners) >= 1 and not any(
+                        kx0 <= (x0 + x1) / 2 <= kx1 and ky0 <= (y0 + y1) / 2 <= ky1
+                        for kx0, kx1, ky0, ky1 in self.cfg.get("no_connect", [])):
+                    # no_connect [(x0, x1, y0, y1)]: no connecting cell there (Bastion: nothing in front of a front door)
                     self.connectors.add((i, j))
         # connecting cells only if they border a shape cell
         def neigh(c):
@@ -2893,7 +2984,7 @@ class Plan:
         tr = m["trigger"]
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
-                             "lines": lines})
+                             "socket": m.get("socket"), "loadout": m.get("loadout"), "lines": lines})
 
     def module_requires(self):
         """Requires of each module: the last plan action it builds on (nodes, struts), and its devices' tech (a
@@ -3162,14 +3253,28 @@ class Plan:
                 if len(braces) == n_before:
                     braces = None
                     break
-            if braces is None:
+            # door_brace_front: no brace behind (the weapon fills its cell, Bastion's front-door sockets): the door
+            # layer in front ties the new nodes instead, with background diagonals from its outer door's ends to the
+            # post's ends (above and below the shot)
+            brace_front = braces is None and self.cfg.get("door_brace_front") and layers and self.cfg.get("door_layers", 1) > 1
+            if braces is None and not brace_front:
                 self.problems.append("door of %s at x %.0f: not split (no brace clear of the devices)" % (d, x))
                 continue
-            appended.extend(braces)
+            appended.extend(braces or [])
             edits[k0] = lines
             if layers:
                 outer.append(self.door_layers(d, x, ids[ys.index(dt)], ids[ys.index(db)], pos, k0, made, first, final,
                                               edits, appended))
+            if brace_front:
+                if not outer or not outer[-1]:
+                    self.problems.append("door of %s at x %.0f: split without any brace (no door layer)" % (d, x))
+                else:
+                    lt, lb, kl = outer[-1]
+                    for q, end in ((lt, top_id), (lb, bot_id)):
+                        if q != end and MIN_STRUT <= math.dist(pos[q], pos[end]) <= MAX_NEW_NODE:
+                            appended.append((kl, '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "backbracing" },'
+                                             % (q, self._fmt(pos[q]), end, self._fmt(pos[end]))))
+                    self.problems.append("door of %s at x %.0f: braced from its door layer" % (d, x))
             for k, line in enumerate(self.actions):     # later material changes of the whole post: dropped
                 m = node_re.search(line)
                 if k != k0 and m and frozenset((int(m.group(1)), int(m.group(2)))) == pair and "CREATE_" in line:
@@ -3902,9 +4007,26 @@ class Plan:
         retire = self.variant.get("retire")
         if retire:
             tail += "FortRetire = { %s }\n" % ", ".join("%s = %d" % kv for kv in sorted(retire.items()))
+        tail += format_sockets(self.variant.get("sockets"), self.variant.get("zones"))
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
             f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail
                     + format_modules(getattr(self, "modules", [])))
+
+
+def format_sockets(sockets, zones):
+    """FortSockets and FortZones (Bastion, .dev/docs/bastion-plan.md) after the Fort table, in plan coordinates (team 1):
+    a socket is a weapon place the modules fill (Kind direct or lobbed, Cell = left x and floor y of its cell, Default =
+    the plan's first weapon there); a zone is a box of the fort whose damage the AI tracks and reinforces."""
+    out = ""
+    if sockets:
+        out += "FortSockets =\n{\n" + "".join(
+            '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s" },\n'
+            % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", "")) for s in sockets) + "}\n"
+    if zones:
+        out += "FortZones =\n{\n" + "".join(
+            '{ Name = "%s", Box = { x0 = %d, x1 = %d, y0 = %d, y1 = %d } },\n' % ((z["name"],) + tuple(z["box"]))
+            for z in zones) + "}\n"
+    return out
 
 
 def main():

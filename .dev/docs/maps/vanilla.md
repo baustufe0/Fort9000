@@ -16,6 +16,7 @@ the doors that reached into their bodies; VanillaLong-3 converted again. Vanilla
 | Vanilla-3 | two 20mm cannons and a sniper, each behind two short doors in a row (28.10.2026) | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-5 | two EMP rockets (later rockets) behind short doors (the lower one two in a row since 28.10.2026), smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
+| Vanilla-8 | Bastion (branch `bastion`): two snipers in sockets at the front doors, mortar nest on top, modules fill the sockets | B1 sniper at plan action 21, mines, B2 sniper 43, nest ~83 | not yet |
 
 ## Starting fort
 
@@ -299,6 +300,25 @@ plan file kept its name, so `train.py`'s wins per plan mix both plans).
   570 s). With the late modules there is more to build after ~480 s, but once they are in, the AI only rebuilds.
   In the second test the player's rockets pulled both anti-air modules forward; the first still waited ~90 s for
   the gallery roof (`Requires` 145).
+
+## Vanilla-8 – Bastion
+
+Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bastion.png](vanilla-8-bastion.png).
+
+- **Stack** over the starting fort (rows 205, 75, -55, -185, -315, all 130 high), x -3500..-2945, nothing on the prow:
+  storey I (75..205) socket B1 on the starting fort's roof beam, storey II (-55..75) socket B2, storey III
+  (-185..-55) the turbine storey (hidden, three turbines on its floor, two stacked sandbags in its front cell), and over
+  x -3200..-2945 the mortar nest (-315..-185, door roof, armour front): sockets M1/M2, 130 apart, 50+ from the metal
+  posts. The starting fort's machine gun is socket A0.
+- **Sockets at the front door:** each direct socket is its storey's front cell; the weapon at LinkT 0.18 (a sniper's
+  body with the barrel reaches ~120 ahead of its strut point), its door split to ~63 with a second door 50 in front.
+  No connecting cell from storey I to the prow top (`no_connect`), so B1 fires straight out of its own door.
+- **Back column first:** the nest needs the column x -3200..-3100 down to the rock (`build` step before the nest).
+  With the cheapest support only, the nest stood on the starting fort's back post and `physics.py` broke 45-48 at
+  action 73. With the shallowest support (default) the generator pulled the whole back block in (113 actions).
+- **physics.py:** WEAK (stands), max stress 0.46 (the lowest Vanilla plan), sag 93 at the back of the turbine storey.
+- **Zones** (`FortZones`): Z0 the woodspam in front of the starting fort, Z1 the socket front, Z2 turbine storey and
+  nest, Z3 the back of the socket storeys, Z4 back block and starting fort.
 
 ## Approaches that failed (Vanilla)
 

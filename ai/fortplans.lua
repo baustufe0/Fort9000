@@ -53,7 +53,8 @@ FortPlanConfig =
 			Originals = { "fort-t1f1-Template-1.lua", "fort-t1f1-Template-2.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGAF1.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGWM2.lua" },
-			Plans = { "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua" },
+			Plans = { "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua",
+				"fort-t1f1-Vanilla-8.lua" },
 			-- wide, flat map (forts ~6000 units apart, no cover): slower start,
 			-- economy and long-range weapons (mortar/sniper) matter more
 			Strategy =
@@ -159,6 +160,8 @@ FortPlanConfig =
 	},
 	Force =
 	{
+		-- branch bastion: every DEV match on Vanilla plays Bastion, remove before merge
+		Vanilla = "fort-t1f1-Vanilla-8.lua",
 	},
 	-- branch bastion: switched on for the probe match, remove before merge
 	EngineProbe = { Material = 30, Reclaim = 45, Devices = { "machinegun", "sniper", "mortar" }, Window = 8, Frame = 0.04, Report = 30 },

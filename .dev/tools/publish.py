@@ -3,7 +3,7 @@
 
 The git repo and the mod used for development live in data/mods/fort9000dev ("FORT 9000 AI DEV" in game).
 The published mod is data/mods/fort9000 ("FORT 9000 AI"). This script:
-  1. checks the dev mod (no .bat/.cmd/.exe, no Probe switched on, Force empty),
+  1. checks the dev mod (no .bat/.cmd/.exe, no Probe or EngineProbe switched on, Force empty),
   2. empties the target folder, except publishedfileid.lua (written by the game after the first upload),
   3. copies every root entry that does not start with "." (dot folders are development only),
   4. rewrites mods/fort9000dev/ to mods/fort9000/ in the .lua files and drops " DEV" from displayname.lua,
@@ -66,6 +66,8 @@ def check(src, files):
         text = fh.read()
     if re.search(r"^\s*Probe\s*=", text, re.M):
         errors.append("ai/fortplans.lua: Probe is switched on")
+    if re.search(r"^\s*EngineProbe\s*=", text, re.M):
+        errors.append("ai/fortplans.lua: EngineProbe is switched on")
     m = re.search(r"^\s*Force\s*=\s*\{(.*?)\}", text, re.M | re.S)
     if m and re.search(r"\w+\s*=", m.group(1)):
         errors.append("ai/fortplans.lua: Force is not empty: " + " ".join(m.group(1).split()))

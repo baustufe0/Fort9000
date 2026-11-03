@@ -1,6 +1,6 @@
 # Bastion – implementation plan (branch `bastion`)
 
-A new Vanilla fort (`fort-t1f1-Vanilla-7.lua`) that puts pressure on the player early and reacts to what they do:
+A new Vanilla fort (`fort-t1f1-Vanilla-8.lua`; the number 7 belonged to a removed recorded fort) that puts pressure on the player early and reacts to what they do:
 a fixed skeleton with independent weapon **sockets**, reinforcement **zones** and a sacrificial **crumple zone** in
 front, driven by a **posture engine** that keeps re-deciding which socket variant and which zone reinforcement goes in.
 Everything stays pre-generated and checked by `rules.py` (free placement at runtime stays rejected, [ai.md](ai.md#reactive-build-modules)).
@@ -60,7 +60,7 @@ Step 0 is done; the probe switch in `ai/fortplans.lua` comes out before the merg
 
 ## Step 1: generator – sockets and zones
 
-In `gen_fort.py`, a new variant `Vanilla-7` (`VARIANTS`), its own layout, not derived from Vanilla-2/6:
+In `gen_fort.py`, a new variant `Vanilla-8` (`VANILLA_VARIANTS["bastion"]`), its own layout, not derived from Vanilla-2/6:
 
 - **Skeleton:** wide, low; front-weight hub with background spokes in the lower front storeys
   ([[front-weight-fortification]]); tech hidden at the back, turbine storey of its own.
@@ -75,7 +75,23 @@ In `gen_fort.py`, a new variant `Vanilla-7` (`VARIANTS`), its own layout, not de
 - Module metadata for the AI: `Socket = "B2"`, `Zone = "Z1"`, `Repeat = true`, `Cooldown = s`,
   `Variant = "sniper"`. Zone membership of each plan link (by position) written as `FortZones` in the plan file.
 
-Done when: `gen_fort.py` writes Vanilla-7, `rules.py` and `physics.py check` pass, `render_all.py` image reviewed.
+Done when: `gen_fort.py` writes Vanilla-8, `rules.py` and `physics.py check` pass, `render_all.py` image reviewed.
+
+**Result (03.11.2026):** `fortplans/Vanilla/fort-t1f1-Vanilla-8.lua`, picture `maps/vanilla-8-bastion.png`
+([maps/vanilla.md](maps/vanilla.md#vanilla-8--bastion)). 230 actions, `rules.py` 0 errors / 0 warnings (plan and
+modules), `physics.py` WEAK (stands; max stress 0.46, the lowest of the Vanilla plans, sag 93). Deviations from the
+sketch above, forced by the rules and the physics:
+- One direct socket per storey (B1, B2), no A sockets behind them: a weapon behind another in its row is blocked
+  ([[weapons-block-weapons]]), and the turbines need their own storey, so the stack is sockets, turbines, nest.
+- The crumple zone Z0 is the existing woodspam (prow, lower face, mine row); the AI rebuilds shot-away struts anyway.
+- Mortars come at plan action ~83 (not ~60-90 s): the nest is four storeys up and needs the back column x -3200..-3100
+  from the ground (`build` step); built on the starting fort's back post alone it fell in `physics.py` (45-48 broke).
+- Snipers stand at LinkT 0.18: a sniper's body with the barrel reaches ~120 ahead of its strut point, so 0.18 is the
+  barrel at the front door. Their doors are split (~63 long) with one more door in front (`door_layers` 2).
+Order: B1 sniper (action 21), workshop 28, three mines 29-31, B2 sniper 43, nest + back column, sandbags 90-91, first
+turbine 92, woodspam, turbines, upgrade centre, eco. Modules: artillery (M1+M2, enemy mortars or 75 s), heavy
+artillery (330 s), AP sniper in B1 (enemy AP sniper/laser/firebeam or 420 s). On this branch `ai/fortplans.lua`
+forces Vanilla-8 on Vanilla (`Force`, remove before merge; publish.py refuses to publish with it).
 
 ## Step 2: AI – repeatable modules
 
@@ -120,10 +136,10 @@ Test: `t_posture.lua` (scripted enemy device sets and hits → expected posture 
 
 ## Step 5: test matches and tuning
 
-- `ai/fortplans.lua` on this branch: Vanilla draws only `fort-t1f1-Vanilla-7.lua` so every DEV match tests it.
+- `ai/fortplans.lua` on this branch: `Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }` so every DEV match tests it.
 - Matches against mortar, sniper/laser, missile and turtle styles; evaluate with `train.py` and the log
   (`POSTURE`, `SOCKET`, `ZONE`, first-shot time).
-- Afterwards: put Vanilla-7 back into the normal draw with the other plans, convert to VanillaLong (`mid_to_long.py`),
+- Afterwards: Vanilla-8 in the normal draw with the other plans, convert to VanillaLong (`mid_to_long.py`),
   then other maps.
 
 ## Risks

@@ -89,6 +89,17 @@ Options of the Vanilla tower variants (Vanilla-3/-5; details in [maps/vanilla.md
 - `SWAP_WINDOW` (20, a constant): a strut whose material the plan changes within that many actions is placed with its final material at once.
 - `cfg`: a variant's overrides of any map option.
 
+Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.md)):
+- `no_connect [(x0, x1, y0, y1)]`: no connecting cell (a cell added because it touches a starting-fort node) whose
+  centre lies in a box. Bastion: none from storey I to the prow top (node 58), so B1's door is the storey's front.
+- `door_brace_front`: when no brace from a split door's new nodes to the cell's back corners is clear of the devices,
+  the door is split anyway and its outermost door layer is braced with background diagonals to the post's ends
+  (needs `door_layers` 2+). Not needed by Vanilla-8 in the end (its snipers at LinkT 0.18 leave the braces clear).
+- Variant keys `sockets [{name, kind, cell, default}]` and `zones [{name, box (x0, x1, y0, y1)}]`: written after the
+  `Fort` table as `FortSockets` / `FortZones` (plan coordinates, team 1; `mid_to_long.py` copies them unconverted).
+- Module keys `socket` and `loadout`: written into the module's line (`Socket = "B1", Loadout = "sniper2"`), read
+  back by `fortplan.parse_modules`.
+
 ## Reactive build modules
 
 A variant's `modules` are written after the plan's `Fort` table as `FortModules` (the AI side: [ai.md](ai.md#reactive-build-modules)):

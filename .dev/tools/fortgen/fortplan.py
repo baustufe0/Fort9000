@@ -29,7 +29,7 @@ def parse_modules(path):
         return []
     mods = []
     for line in parts[1].splitlines():
-        m = re.match(r'\s*\{ Name = "(\w+)", Trigger = \{ (.*) \}, Requires = (\d+), Actions = \{', line)
+        m = re.match(r'\s*\{ Name = "(\w+)", Trigger = \{ (.*) \}, Requires = (\d+)(.*?), Actions = \{', line)
         if m:
             tr = m.group(2)
             types = re.search(r"Types = \{ ([^}]*) \}", tr)
@@ -38,6 +38,8 @@ def parse_modules(path):
             mods.append({"name": m.group(1), "types": re.findall(r'"(\w+)"', types.group(1)) if types else [],
                          "count": int(count.group(1)) if count else 1, "time": int(time.group(1)) if time else None,
                          "after": after.group(1) if after else None, "requires": int(m.group(3)), "lines": [],
+                         "socket": (re.search(r'Socket = "([^"]*)"', m.group(4)) or [None, None])[1],
+                         "loadout": (re.search(r'Loadout = "([^"]*)"', m.group(4)) or [None, None])[1],
                          "surplus": {"metal": int(surplus.group(1)), "energy": int(surplus.group(2)),
                                      "seconds": int(surplus.group(3))} if surplus else None})
         elif mods and line.strip().startswith("{ Type"):
@@ -64,7 +66,9 @@ def format_modules(mods):
         if m.get("surplus"):
             s = m["surplus"]
             tr.append("Surplus = { Metal = %d, Energy = %d, Seconds = %d }" % (s["metal"], s["energy"], s.get("seconds", 20)))
-        out.append('{ Name = "%s", Trigger = { %s }, Requires = %d, Actions = {' % (m["name"], ", ".join(tr), m["requires"]))
+        # socket / loadout (Bastion): the socket the module fills and the weapon it puts there (the AI's socket state)
+        tag = "".join(', %s = "%s"' % (k, m[key]) for k, key in (("Socket", "socket"), ("Loadout", "loadout")) if m.get(key))
+        out.append('{ Name = "%s", Trigger = { %s }, Requires = %d%s, Actions = {' % (m["name"], ", ".join(tr), m["requires"], tag))
         out.extend(m["lines"])
         out.append("} },")
     out.append("}")
