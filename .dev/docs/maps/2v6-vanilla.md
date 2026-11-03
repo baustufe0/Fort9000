@@ -49,6 +49,10 @@ tested in a match.
 
 ## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches; plans 1 and 3 narrowed at the top after the sixth, not yet played in that form)
 
+03.11.2026: regenerated with the metal-in-body rule (`fit_weapon_bodies`): only LinkT changed, out of the doors in
+the weapons' bodies. Plans 1, 2, 4: sniper/sniper2 0.28 -> 0.22; plan 3: EMP rocket/rocket 0.70 -> 0.67; plan 4:
+machine gun/minigun 0.70 -> 0.67. Vanilla2v6Long converted again. Not played yet.
+
 `gen_fort.py --map Vanilla2v6` (`VANILLA2V6_VARIANTS`): the Vanilla base plan and starting fort, the map's terrain of all
 eight spots laid over each other in the plan frame (`fwe_dir`, `fwe_frame.anchors`, `rock_clear` 15), and a `ceiling`:
 no node above y -400, no device box above -450. The next fort up stands on rock at y -300, all of it behind x -3592; its

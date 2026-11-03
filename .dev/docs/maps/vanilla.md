@@ -6,6 +6,10 @@ Current state of the Vanilla plans (`fortplans/Vanilla/fort-t1f1-Vanilla-N.lua`,
 [history/vanilla-6.md](../history/vanilla-6.md) or [history/vanilla-7.md](../history/vanilla-7.md); general
 rules are in [building-rules.md](../building-rules.md).
 
+**03.11.2026:** regenerated with the metal-in-body rule (`fit_weapon_bodies`, see building-rules.md): only Vanilla-3
+changed, its machine gun (LinkT 0.50 -> 0.49) and sniper (0.28 -> 0.22, ~7 back from the front door) slide back out of
+the doors that reached into their bodies; VanillaLong-3 converted again. Vanilla-2/-5/-6 unchanged. Not played yet.
+
 | Plan | Main weapon | Opening | Tested |
 |---|---|---|---|
 | Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |

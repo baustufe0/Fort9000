@@ -4,6 +4,9 @@
   with a laser as the end game (rebuilt 27.10.2026, see below), Abyss-5 rocket rush with smoke (rebuilt 28.10.2026 on
   Abyss-2/-3, see below). Abyss-4 (two cannons) was dropped on 29.10.2026 (see Results); its variant is `None`, so
   Abyss-5 keeps its number.
+- 03.11.2026: regenerated with the metal-in-body rule (`fit_weapon_bodies`): only LinkT changed, each weapon out of
+  a door or armour strut in its body. Abyss-2: sniper/sniper2 0.42 -> 0.40, 20mm 0.42 -> 0.41, cannon 0.41 -> 0.40;
+  Abyss-3: sniper 0.42 -> 0.40; Abyss-5: smoke bomb 0.50 -> 0.48. Not played yet.
 
 **Lessons from Vanilla (29.10.2026, Abyss-2/-3/-5, `physics.py`, not validated for Abyss, so before/after only):**
 - **Ledge anchor** (`footing`, `_A_FOOTING`, before the first plan step): a foundation on the rock ledge at

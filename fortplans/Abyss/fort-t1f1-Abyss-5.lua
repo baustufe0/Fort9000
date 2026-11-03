@@ -106,7 +106,7 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 301, PosA = {x = -1796.61, y = 9.30 }, OriginalNodeBId = 10037, PosB = { x = -1700.00, y = 5.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10036, PosA = {x = -1700.00, y = -125.00 }, OriginalNodeBId = 10037, PosB = { x = -1700.00, y = 5.00 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 10036, PosA = {x = -1700.00, y = -125.00 }, OriginalNodeBId = 301, PosB = { x = -1796.61, y = 9.30 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 301, PosA = { x = -1796.61, y = 9.30 }, OriginalNodeBId = 10037, PosB = { x = -1700.00, y = 5.00 }, LinkT = 0.50, DeviceSaveName = "smokebomb" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 301, PosA = { x = -1796.61, y = 9.30 }, OriginalNodeBId = 10037, PosB = { x = -1700.00, y = 5.00 }, LinkT = 0.48, DeviceSaveName = "smokebomb" },
 { Type = CREATE_LINK, OriginalNodeAId = 304, PosA = {x = -1751.69, y = 314.55 }, OriginalNodeBId = 10010, PosB = { x = -1700.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 304, PosA = {x = -1751.69, y = 314.55 }, OriginalNodeBId = 10008, PosB = { x = -1800.00, y = 405.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 305, PosA = {x = -1694.52, y = 223.44 }, OriginalNodeBId = 10010, PosB = { x = -1700.00, y = 405.00 }, MaterialSaveName = "armour" },
