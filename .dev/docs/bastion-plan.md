@@ -44,9 +44,19 @@ Done when: each answer is written into [forts-api.md](forts-api.md) "Notes for t
    first, the earlier one is split). Harmless while every socket module only uses its own cell; step 2 decides
    whether inserts should wait for the end of the module being built.
 
-Still open for one probe match: 1 (different material), 2 (refund), 3 (`OnLinkHit` in the AI). Plan: a temporary
-`Strategy.Bastion.Probe` that logs `OnLinkHit` calls, reclaims the starting machine gun with metal logged before and
-after, and builds armour over one starting bracing strut, then logs the result code.
+**Probe match (03.11.2026, Vanilla, AI on Vanilla-5, `FortPlanConfig.EngineProbe`):**
+
+1. Different material: `CreateLink` replaces it at once (`CS_SUCCESS`, armour, 199 metal in the same frame). Zone
+   reinforcements may upgrade existing struts (bracing → armour) as plain `CREATE_LINK` actions, no new struts needed.
+2. Reclaim: 50 % refund (37.5 of 75 for a machine gun), arriving after about 5 s. A swap costs half the old weapon
+   plus the new one and leaves the socket empty for about 5 s. So swaps only when a socket keeps losing its weapon
+   or the posture holds a long time, never for short threat spikes.
+3. `OnLinkHit` reaches the AI, including the AI's own projectiles (its EMP rocket hit its own door): filter on the
+   enemy team. Enemy hits are still untested (the player did not fire); the first real Bastion match will show them.
+
+Side finding: on Vanilla-5 an own EMP rocket hit an own door (struts 92-95), a line-of-fire problem of that plan.
+
+Step 0 is done; the probe switch in `ai/fortplans.lua` comes out before the merge.
 
 ## Step 1: generator – sockets and zones
 
