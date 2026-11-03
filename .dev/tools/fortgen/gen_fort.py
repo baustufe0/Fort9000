@@ -1552,9 +1552,11 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 330,
                                                      "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("tech", ["factory"])]},
-        {"name": "munitions", "after": 14, "trigger": {"after": "factory", "time": 420,
+        # generated on the whole plan (after 19): its store must not take an eco slot the plan fills later
+        {"name": "munitions", "after": 19, "trigger": {"after": "factory", "time": 420,
                                                        "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
-         "plan": [("tech", ["munitions"])]},
+         # and a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built)
+         "plan": [("tech", ["munitions"]), ("eco", ["store"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},

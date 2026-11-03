@@ -162,6 +162,11 @@ action fields through its transform).
   (`CAI_SocketLost` sees `selling` and lets it through). One socket at a time in `Rank` order, `Hold` (60) seconds
   apart; a sale not seen within `Timeout` (60) is given up. Logs `SOCKET B2 sell sniper->laser action=38 result=-8
   m=900 e=9000 posture=Pressure` and `SOCKET B2 sold, rebuild as laser action=38`. Test: `t_upgrade.lua`.
+  A weapon dearer than the storage (`CAI_Affordable`: `GetDeviceCost` against the highest metal / energy seen this
+  match less 20 / 100) is never chosen, by an upgrade or a swap after losses; an upgrade also needs `AtHand` (80 %)
+  of its cost now. The game takes the whole cost when a device is placed; its "not enough resources" comes back as a
+  code the log names `CS_OCCUPIED` (Vanilla-8 test 4: three lasers at 1000 metal with a storage of 900-990, never
+  built).
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
 - **Repeat / Cooldown** on a module (`FortModules`, `Repeat = n, Cooldown = s`): after it went in, it may go in n more
   times, each at least s seconds after the last, while its trigger holds (log `MODULE <name> ... repeat=<k>`). Every

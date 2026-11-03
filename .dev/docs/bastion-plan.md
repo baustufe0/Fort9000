@@ -230,6 +230,22 @@ body). Socket upgrade in the AI (the player: two snipers pay only early in the m
 sockets), B1's 60 s later (firebeam with the factory alone, 20mm with the munitions plant). Rules 0/0, `physics.py`
 max stress 0.60; 222 checks pass.
 
+**Test 4 (03.11.2026, Vanilla, AI vs AI, both on Vanilla-8, ~810 s):**
+- Tech on time: factory 605 s (T1) / 609 s (T2), munitions plant 640 s / 494 s.
+- T2 sold B2's sniper at ~530 s for a 20mm: the first try failed, it stood at 692 s. T2 sold B1's AP sniper at
+  ~710 s for a laser, T1 sold B2's sniper at ~690 s for a laser, and T1's lost AP sniper in B1 was swapped to a laser:
+  **no laser was ever built**, those sockets stayed empty to the end (T1 had no direct weapon left).
+- Cause: the game takes the whole cost when a device is placed. A laser costs 1000 metal, the storage held 900 (T1)
+  / 990 (T2). The game's "not enough resources" comes back as a code the mod logs as `CS_OCCUPIED` (62 times in the
+  logs, never `INSUFFICIENTRESOURCES`): the 20mm (600) failed at 475 metal and went in when the metal was there.
+- T1 lost two upgraded turbines at ~731 s, not rebuilt by 810 s: 12 actions in the rebuild queue at 50-600 metal
+  (econ=poor), the empty lasers among them; energy stood at 9000 all the while.
+
+**After test 4:** a weapon dearer than the storage (the highest metal / energy seen this match, less a margin;
+`GetDeviceCost`) is never chosen, neither by an upgrade nor by a swap after losses; an upgrade also needs 80 % of the
+cost at hand. The munitions module adds a second metal store (+300: 1200, a laser fits). THINK lists the queued
+rebuild devices (`rebuild=12[turbine2,laser,...]`). 223 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

@@ -83,3 +83,13 @@ own[201] = "sniper"; data.Devices[201] = k1; Fort[k1].DeviceSaveName = "sniper"
 own[400] = "munitions"
 for i = 1, 16 do CAI_Think() end
 print("mix: B1=" .. Fort[k1].DeviceSaveName)
+-- the game takes the whole cost at placement: a laser (1000 metal) with a storage of 900 is never built; both
+-- sockets snipers again: B2 takes the 20mm instead, and a lost sniper is not swapped to a laser either
+local costs = { laser = { metal = 1000, energy = 6000 }, cannon20mm = { metal = 600, energy = 4000 },
+  cannon = { metal = 900, energy = 5000 }, firebeam = { metal = 400, energy = 3000 }, machinegun = { metal = 75, energy = 0 } }
+function GetDeviceCost(w) return costs[w] or { metal = 100, energy = 300 } end
+Fort[k1].DeviceSaveName = "sniper"; Fort[k2].DeviceSaveName = "sniper"
+own[201] = "sniper"; data.Devices[201] = k1
+own[203] = "sniper"; data.Devices[203] = k2
+for i = 1, 16 do CAI_Think() end
+print("storage 900: B2=" .. Fort[k2].DeviceSaveName .. " B1=" .. Fort[k1].DeviceSaveName)

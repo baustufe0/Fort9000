@@ -52,7 +52,7 @@ local CAI_Defaults =
 	-- Seconds; one socket at a time (Rank order), Hold seconds apart (Vanilla-8 test 3, 03.11.2026: the plan ran out
 	-- at ~565 s, both sides sat at 900 metal / 9000 energy behind two snipers each and no laser came)
 	Socket = { SwapAfter = 2, Window = 180,
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8,
 			From = { sniper = true, sniper2 = true, machinegun = true } } },
 	-- Zone (Bastion, plans with FortZones): damage per zone from enemy hits on own struts (OnLinkHit) and own struts
 	-- lost (BreakDamage each, also beams and splash, which OnLinkHit does not see); Decay per think step for the logged
@@ -2159,9 +2159,21 @@ function CAI_Think()
 		end
 	end
 
-	local parts = { "THINK t=" .. elapsed .. " build=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " rebuild=" .. rebuildCount }
+	-- the devices waiting in the rebuild queue, in the order the built-in AI tries them (Vanilla-8 test 4: lost turbines
+	-- not rebuilt for 80 s with 12 actions queued)
+	local queued = {}
+	if rebuildCount > 0 and Fort then
+		for k = 1, #Fort do
+			if data.Rebuild[k] and Fort[k].Type == CREATE_DEVICE and #queued < 8 then
+				queued[#queued + 1] = tostring(Fort[k].DeviceSaveName)
+			end
+		end
+	end
+	local parts = { "THINK t=" .. elapsed .. " build=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " rebuild=" .. rebuildCount
+		.. (#queued > 0 and ("[" .. table.concat(queued, ",") .. "]") or "") }
 	local okP, errP = pcall(CAI_UpdatePosture, elapsed)
 	if not okP then CAI_Log("ERROR posture: " .. tostring(errP)) end
+	if data.CAI then pcall(CAI_NotePeaks, data.CAI) end
 	okP, errP = pcall(CAI_SocketUpgrade, elapsed)
 	if not okP then CAI_Log("ERROR socket upgrade: " .. tostring(errP)) end
 	local ok, res = pcall(CAI_UpdateTargets)
@@ -2478,7 +2490,7 @@ function CAI_SocketLost(deviceId)
 		-- a weapon that never fires at the enemy fort (Fire.NoOffence: the machine gun) only replaces a weapon that
 		-- does while the AI holds AntiAir (test 2, 03.11.2026: B1's sniper became a machine gun and its offence was gone)
 		local passive = st.noOffence and st.noOffence[d] and not (st.noOffence[base]) and st.posture ~= "AntiAir"
-		if d ~= base and not passive and (need == nil or (own[need] or 0) > 0) then
+		if d ~= base and not passive and (need == nil or (own[need] or 0) > 0) and CAI_Affordable(st, d) then
 			a.DeviceSaveName = d
 			s.losses = {}
 			s.swaps = s.swaps + 1
@@ -2490,6 +2502,28 @@ function CAI_SocketLost(deviceId)
 	end
 	CAI_Log("SOCKET " .. a.Socket .. " lost " .. tostring(old) .. " losses=" .. #s.losses .. " no other loadout ready")
 	return false
+end
+
+-- can the AI ever pay for a weapon? The game takes the whole cost when a device is placed, so a weapon dearer than
+-- the storage (the highest metal / energy seen this match, ~900-990 metal on Vanilla) never gets built (Vanilla-8
+-- test 4, 03.11.2026: two sold snipers and a lost AP sniper became lasers, 1000 metal, and the sockets stayed empty;
+-- the game's "not enough resources" is logged as CS_OCCUPIED). Margin: a little below the peak.
+function CAI_Affordable(st, w)
+	if type(GetDeviceCost) ~= "function" then return true end
+	local ok, c = pcall(GetDeviceCost, w)
+	if not ok or c == nil then return true end
+	local cm, ce = c.metal or 0, c.energy or 0
+	return cm <= (st.metalPeak or 0) - 20 and ce <= (st.energyPeak or 0) - 100, cm, ce
+end
+
+-- highest metal and energy seen this match: the storage the AI can save up to
+function CAI_NotePeaks(st)
+	local res = GetTeamResources(teamId)
+	if not (type(res) == "table" or type(res) == "userdata") then return 0, 0 end
+	local m, e = res.metal or 0, res.energy or 0
+	st.metalPeak = math.max(st.metalPeak or 0, m)
+	st.energyPeak = math.max(st.energyPeak or 0, e)
+	return m, e
 end
 
 -- the socket's weapons in the order to try: the posture's Prefer first, then the list's own order
@@ -2525,9 +2559,7 @@ function CAI_SocketUpgrade(elapsed)
 			s.selling = nil
 		end
 	end
-	local res = GetTeamResources(teamId)
-	local m = (type(res) == "table" or type(res) == "userdata") and res.metal or 0
-	local e = (type(res) == "table" or type(res) == "userdata") and res.energy or 0
+	local m, e = CAI_NotePeaks(st)
 	if (m or 0) >= (cfg.Metal or 450) and (e or 0) >= (cfg.Energy or 3000) then
 		st.richFor = (st.richFor or 0) + Strategy.ThinkInterval
 	else
@@ -2568,7 +2600,10 @@ function CAI_SocketUpgrade(elapsed)
 			end
 			for _, w in ipairs(order) do
 				local need = s.needs[w]
-				if w ~= d.type and (need == nil or (own[need] or 0) > 0) then
+				-- payable at all (storage), and nearly at hand now (the sale refunds half the old weapon)
+				local can, cm, ce = CAI_Affordable(st, w)
+				if w ~= d.type and (need == nil or (own[need] or 0) > 0) and can
+						and m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8) then
 					local a = Fort[d.k]
 					local old = a.DeviceSaveName
 					a.DeviceSaveName = w

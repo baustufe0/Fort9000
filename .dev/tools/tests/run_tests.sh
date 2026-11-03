@@ -104,6 +104,7 @@ check "Upgrade: the sale is logged"              "SOCKET B2 sell sniper->laser a
 check "Upgrade: not while poor"                  "^poor: B1=sniper$" "$LUA" t_upgrade.lua
 check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser sold=2$" "$LUA" t_upgrade.lua
 check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon20mm$" "$LUA" t_upgrade.lua
+check "Upgrade: nothing dearer than the storage"   "^storage 900: B2=cannon20mm B1=sniper$" "$LUA" t_upgrade.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
 check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
 check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua
