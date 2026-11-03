@@ -1506,6 +1506,20 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 14,
          "trigger": {"time": 330, "after": "artillery"},
          "plan": [("upgrades", ["mortar2", "mortar2"])]},
+        # zone reinforcements (step 3): when the AI's hit map puts that much damage into the zone, a third woodspam
+        # layer in front of the starting fort's lower face (y 411..602, on the mine row's first layer) and one more
+        # in front of the prow below the deck (in front of the reactor); again while the zone keeps being hit
+        {"name": "Z0face", "zone": "Z0", "after": 19, "repeat": 3, "cooldown": 60,
+         "trigger": {"zone": "Z0", "damage": 300},
+         "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
+             {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602], "base": [], "outside": "bracing",
+              "pattern": "tri"}]},
+         "plan": [("defence", ["woodspam:3"])]},
+        {"name": "Z0prow", "zone": "Z0", "after": 19, "repeat": 3, "cooldown": 60,
+         "trigger": {"zone": "Z0", "damage": 500},
+         "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
+             {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": [], "outside": "bracing"}]},
+         "plan": [("defence", ["woodspam:3"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
@@ -3065,7 +3079,7 @@ class Plan:
         tr = m["trigger"]
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
-                             "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "zone": tr.get("zone"), "damage": tr.get("damage"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
@@ -4198,6 +4212,7 @@ def main():
             devs = [ln.split('DeviceSaveName = "')[1].split('"')[0] for ln in m["lines"] if "CREATE_DEVICE" in ln]
             trig = ["%s x%d" % ("/".join(m["types"]), m["count"])] if m["types"] else []
             trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
+            trig += ["zone %s damage %d" % (m["zone"], m.get("damage") or 300)] if m.get("zone") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []
             print("   module %s: %d actions (%s), trigger %s%s, requires plan action %d"

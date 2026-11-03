@@ -63,6 +63,9 @@ def format_modules(mods):
             tr.append("Time = %d" % m["time"])
         if m.get("after"):
             tr.append('After = "%s"' % m["after"])
+        if m.get("zone"):
+            # Zone (Bastion): the zone's damage (enemy hits, struts lost) reached Damage
+            tr.append('Zone = "%s", Damage = %d' % (m["zone"], m.get("damage", 300)))
         if m.get("surplus"):
             s = m["surplus"]
             tr.append("Surplus = { Metal = %d, Energy = %d, Seconds = %d }" % (s["metal"], s["energy"], s.get("seconds", 20)))

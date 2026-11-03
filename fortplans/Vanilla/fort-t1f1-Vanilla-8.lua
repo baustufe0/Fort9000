@@ -267,6 +267,21 @@ FortModules =
 { Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3200.00, y = -185.00 }, OriginalNodeBId = 10016, PosB = { x = -3100.00, y = -185.00 }, LinkT = 0.50, DeviceSaveName = "mortar2", Socket = "M1" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10016, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10017, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.52, DeviceSaveName = "mortar2", Socket = "M2" },
 } },
+{ Name = "Z0face", Trigger = { Zone = "Z0", Damage = 300 }, Requires = 122, Repeat = 3, Cooldown = 60, Actions = {
+{ Type = CREATE_NODE, OriginalNodeAId = 10028, PosA = { x = -2812.00, y = 411.00 }, OriginalNodeBId = 23000, NewNodePos = { x = -2772.00, y = 411.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_NODE, OriginalNodeAId = 10030, PosA = { x = -2812.00, y = 505.00 }, OriginalNodeBId = 23001, NewNodePos = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 23000, PosA = {x = -2772.00, y = 411.00 }, OriginalNodeBId = 23001, PosB = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 10028, PosA = {x = -2812.00, y = 411.00 }, OriginalNodeBId = 23001, PosB = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 23001, PosA = {x = -2772.00, y = 505.00 }, OriginalNodeBId = 10035, PosB = { x = -2772.00, y = 602.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 23001, PosA = {x = -2772.00, y = 505.00 }, OriginalNodeBId = 10032, PosB = { x = -2812.00, y = 602.00 }, MaterialSaveName = "bracing" },
+} },
+{ Name = "Z0prow", Trigger = { Zone = "Z0", Damage = 500 }, Requires = 95, Repeat = 3, Cooldown = 60, Actions = {
+{ Type = CREATE_NODE, OriginalNodeAId = 10024, PosA = { x = -2765.00, y = 205.00 }, OriginalNodeBId = 24000, NewNodePos = { x = -2725.00, y = 205.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_NODE, OriginalNodeAId = 10026, PosA = { x = -2765.00, y = 310.00 }, OriginalNodeBId = 24001, NewNodePos = { x = -2725.00, y = 310.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 24000, PosA = {x = -2725.00, y = 205.00 }, OriginalNodeBId = 24001, PosB = { x = -2725.00, y = 310.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 10024, PosA = {x = -2765.00, y = 205.00 }, OriginalNodeBId = 24001, PosB = { x = -2725.00, y = 310.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 24000, PosA = {x = -2725.00, y = 205.00 }, OriginalNodeBId = 10026, PosB = { x = -2765.00, y = 310.00 }, MaterialSaveName = "bracing" },
+} },
 { Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 1, Time = 420 }, Requires = 214, Socket = "B1", Loadout = "sniper2", Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, LinkT = 0.18, DeviceSaveName = "sniper2", Socket = "B1" },
 } },

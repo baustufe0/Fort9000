@@ -95,6 +95,13 @@ check "Sockets: the swap goes on in order"      "^after four losses: sniper$" "$
 check "Sockets: an old loss is forgotten"       "^late loss: sniper losses=1$" "$LUA" t_sockets.lua
 check "Modules: Repeat and Cooldown"            "^again inserted 3 times$" "$LUA" t_sockets.lua
 check "Modules: a repeat is logged"             "MODULE again trigger=time:5 at=[0-9]+ actions=1 repeat=2$" "$LUA" t_sockets.lua
+check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
+check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
+check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua
+check "Zones: damage fires the zone module"     "MODULE Z0face trigger=zone:Z0=300 at=[0-9]+ actions=6$" "$LUA" t_zones.lua
+check "Zones: lost struts count, deletes do not" "^after breaks: Z0=800$" "$LUA" t_zones.lua
+check "Zones: a second module at its own damage" "MODULE Z0prow trigger=zone:Z0=800 at=[0-9]+ actions=5$" "$LUA" t_zones.lua
+check "Zones: again after the cooldown"         "MODULE Z0face trigger=zone:Z0=1000 at=[0-9]+ actions=6 repeat=1$" "$LUA" t_zones.lua
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua
 check "Fire diagnostics: short of energy"        "FIREWAIT cannon20mm 22 avail=1 ready=0 code=FIREFAIL_NOENERGY queue=0" "$LUA" t_firewait.lua

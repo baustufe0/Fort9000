@@ -159,6 +159,24 @@ action fields through its transform).
 
 Test: `.dev/tools/tests/t_sockets.lua`.
 
+### Zone hit map
+
+A plan with `FortZones` (boxes in plan coordinates, team 1) gets a hit map:
+- **Nodes to zones** (`CAI_MapZones`, at the plan swap before any transform): every node the plan or its modules name
+  gets the zone its planned position lies in (log `ZONES-MAP zones=5 nodes=99`). A hit node's zone is found through
+  the reverse of `data.OriginalToActual` (`CAI_ZoneOfNode`, rebuilt at most once per think step).
+- **Damage** (`CAI_ZoneDamage`): `OnLinkHit` on an own strut by an enemy projectile adds its damage (own projectiles
+  are ignored: the AI's EMP rocket hit its own door, [forts-api.md](forts-api.md)); `OnLinkDestroyed` of an own strut
+  adds `Strategy.Zone.BreakDamage` (100) unless the AI deleted it (`LINKBREAK_DELETE`): this is how beams and splash,
+  which `OnLinkHit` does not report, are counted. Device hits are not counted (devices have their own rebuild).
+- **Pressure** (`CAI_UpdateZones`): decays by `Zone.Decay` (0.9) per think step; log every `LogEvery` seconds
+  `ZONES t=35 Z0:704/1300 Z1:33/70 (pressure/total)`.
+- **Zone modules**: trigger `Zone = "Z0", Damage = n` fires when the zone's undecayed total has grown by n since the
+  module last went in (log `MODULE Z0face trigger=zone:Z0=300`); with `Repeat`/`Cooldown` again while the zone keeps
+  being hit.
+
+Test: `.dev/tools/tests/t_zones.lua`.
+
 ## Custom build plan variants per map
 
 - Plans live in `fortplans/<Map>/` (Forts removes foreign files from `data/maps`).

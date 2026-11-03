@@ -48,6 +48,10 @@ local CAI_Defaults =
 	-- Socket (Bastion, plans with FortSockets): a socket whose weapon is lost SwapAfter times, each loss within Window
 	-- seconds of the one before, gets the next of its Loadouts whose tech stands instead of the same weapon again
 	Socket = { SwapAfter = 2, Window = 180 },
+	-- Zone (Bastion, plans with FortZones): damage per zone from enemy hits on own struts (OnLinkHit) and own struts
+	-- lost (BreakDamage each, also beams and splash, which OnLinkHit does not see); Decay per think step for the logged
+	-- pressure; zone modules fire on the undecayed sum since they last went in
+	Zone = { BreakDamage = 100, Decay = 0.9, LogEvery = 30 },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
 	-- SmokeCover: while the team has a smoke launcher, rockets only fire from MinDelay to Window seconds after one
@@ -304,6 +308,7 @@ function CAI_TrySwapPlan(where, realOf)
 			.. (ours == nil and choice ~= "original" and " (own plan missing)" or "") .. " at=" .. where)
 		return
 	end
+	pcall(CAI_MapZones, ours)
 	-- shift into the coordinates of the game's plan
 	local dx, dy = E.x - ours.FortPos.x, E.y - ours.FortPos.y
 	local function Shift(p)
@@ -1954,8 +1959,12 @@ function CAI_UpdateModules()
 				end
 			end
 			local why
+			local zoneSum = tr.Zone and data.CAI and data.CAI.zoneTotal and data.CAI.zoneTotal[tr.Zone] or 0
 			if #hits > 0 and total >= (tr.Count or 1) then
 				why = table.concat(hits, ",")
+			elseif tr.Zone and zoneSum - (m.zoneMark or 0) >= (tr.Damage or 300) then
+				-- Zone = <name>, Damage = n: that much damage in the zone since the module last went in
+				why = "zone:" .. tr.Zone .. "=" .. CAI_Round(zoneSum - (m.zoneMark or 0))
 			elseif tr.Time and elapsed >= tr.Time then
 				why = "time:" .. tr.Time
 			else
@@ -1967,6 +1976,7 @@ function CAI_UpdateModules()
 					if m.fired then m.done = (m.done or 0) + 1 end
 					m.fired = true
 					m.firedAt = elapsed
+					if tr.Zone then m.zoneMark = zoneSum end
 					fired[m.name] = true
 					m.why = why
 					ready[#ready + 1] = m
@@ -2118,6 +2128,9 @@ function CAI_Think()
 	local okA, errA = pcall(CAI_UpdateAntiAirFirst)
 	if not okA then CAI_Log("ERROR anti-air first: " .. tostring(errA)) end
 
+	local okZ, errZ = pcall(CAI_UpdateZones, elapsed)
+	if not okZ then CAI_Log("ERROR zones: " .. tostring(errZ)) end
+
 	if CAI_Probe == nil then
 		local okM, errM = pcall(CAI_UpdateModules)
 		if not okM then CAI_Log("ERROR modules: " .. tostring(errM)) end
@@ -2250,6 +2263,84 @@ function OnDeviceHit(deviceTeamId, deviceId, saveName, newHealth, projectileNode
 			add = add + Strategy.ThreatPerReactorHit
 		end
 		st.threat[weapon] = (st.threat[weapon] or 0) + add
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Zones (Bastion, .dev/docs/bastion-plan.md): FortZones are boxes in plan coordinates (team 1). At the plan swap,
+-- before any transform, every node the plan names gets its zone by its planned position (CAI_Plan.nodeZone, by
+-- original id); a hit node's zone is found through the reverse of data.OriginalToActual.
+
+local function CAI_InBox(p, b)
+	return p and type(p.x) == "number" and p.x >= b.x0 and p.x <= b.x1 and p.y >= b.y0 and p.y <= b.y1
+end
+
+function CAI_MapZones(plan)
+	local zones = type(plan.FortZones) == "table" and plan.FortZones or nil
+	CAI_Plan.nodeZone = nil
+	if zones == nil then return end
+	local map, n = {}, 0
+	local function Note(id, p)
+		if type(id) ~= "number" or map[id] then return end
+		for _, z in ipairs(zones) do
+			if CAI_InBox(p, z.Box) then map[id] = z.Name; n = n + 1; return end
+		end
+	end
+	local function Scan(actions)
+		for _, a in ipairs(actions or {}) do
+			Note(a.OriginalNodeAId, a.PosA)
+			Note(a.OriginalNodeBId, a.NewNodePos or a.PosB)
+		end
+	end
+	Scan(plan.Fort)
+	for _, m in ipairs(type(plan.FortModules) == "table" and plan.FortModules or {}) do Scan(m.Actions) end
+	CAI_Plan.nodeZone = map
+	CAI_PlanNote("ZONES-MAP zones=" .. #zones .. " nodes=" .. n)
+end
+
+-- the zone of an actual node id (nil if none)
+function CAI_ZoneOfNode(actual)
+	local st, map = data.CAI, CAI_Plan.nodeZone
+	if st == nil or map == nil or type(actual) ~= "number" then return nil end
+	local orig = st.a2o and st.a2o[actual]
+	if orig == nil and st.a2oTick ~= st.ticks then
+		st.a2oTick = st.ticks
+		st.a2o = {}
+		for o, a in pairs(data.OriginalToActual or {}) do st.a2o[a] = o end
+		orig = st.a2o[actual]
+	end
+	return orig and map[orig]
+end
+
+function CAI_ZoneDamage(nodeA, nodeB, amount)
+	local st = data.CAI
+	if st == nil or CAI_Plan.nodeZone == nil then return end
+	local z = CAI_ZoneOfNode(nodeA) or CAI_ZoneOfNode(nodeB)
+	if z == nil then return end
+	st.zoneDmg = st.zoneDmg or {}
+	st.zoneTotal = st.zoneTotal or {}
+	st.zoneDmg[z] = (st.zoneDmg[z] or 0) + amount
+	st.zoneTotal[z] = (st.zoneTotal[z] or 0) + amount
+end
+
+-- each think step: decay the pressure, log it now and then
+function CAI_UpdateZones(elapsed)
+	local st = data.CAI
+	if st == nil or st.zoneDmg == nil then return end
+	local cfg = Strategy.Zone or CAI_Defaults.Zone
+	local keys = {}
+	for z, v in pairs(st.zoneDmg) do
+		st.zoneDmg[z] = v * (cfg.Decay or 0.9)
+		keys[#keys + 1] = z
+	end
+	if elapsed >= (st.nextZoneLog or 0) and #keys > 0 then
+		st.nextZoneLog = elapsed + (cfg.LogEvery or 30)
+		table.sort(keys)
+		local parts = {}
+		for _, z in ipairs(keys) do
+			parts[#parts + 1] = z .. ":" .. CAI_Round(st.zoneDmg[z]) .. "/" .. CAI_Round(st.zoneTotal[z])
+		end
+		CAI_Log("ZONES t=" .. elapsed .. " " .. table.concat(parts, " ") .. " (pressure/total)")
 	end
 end
 
@@ -2516,6 +2607,10 @@ function OnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, dam
 	if CAI_BaseOnLinkHit then
 		CAI_BaseOnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, damage, pos, reflectedByEnemy)
 	end
+	if CAI_Plan.nodeZone and CAI_Side(objectTeamId) == enemyTeamId and NodeTeam(nodeIdA) == teamId then
+		local ok, err = pcall(CAI_ZoneDamage, nodeIdA, nodeIdB, tonumber(damage) or 0)
+		if not ok then CAI_Log("ERROR zone hit: " .. tostring(err)) end
+	end
 	local p = CAI_EngineProbe
 	if p == nil or NodeTeam(nodeIdA) ~= teamId then return end
 	local k = tostring(objectSaveName)
@@ -2531,6 +2626,11 @@ local CAI_BaseOnLinkDestroyed = OnLinkDestroyed
 function OnLinkDestroyed(linkTeamId, saveName, nodeA, nodeB, breakType)
 	if CAI_BaseOnLinkDestroyed then
 		CAI_BaseOnLinkDestroyed(linkTeamId, saveName, nodeA, nodeB, breakType)
+	end
+	if CAI_Plan.nodeZone and linkTeamId == teamId and (LINKBREAK_DELETE == nil or breakType ~= LINKBREAK_DELETE) then
+		local cfg = Strategy.Zone or CAI_Defaults.Zone
+		local ok, err = pcall(CAI_ZoneDamage, nodeA, nodeB, cfg.BreakDamage or 100)
+		if not ok then CAI_Log("ERROR zone break: " .. tostring(err)) end
 	end
 	local p = CAI_EngineProbe
 	if p == nil or linkTeamId ~= teamId then return end

@@ -118,6 +118,13 @@ firebeam need a munitions plant or factory the plan does not build; the posture 
 
 Test: `t_zones.lua`.
 
+**Result (03.11.2026):** done ([ai.md](ai.md#zone-hit-map)); 206 checks pass. Vanilla-8 has two zone modules, both
+for Z0 and checked with `rules.py` and `physics.py` (WEAK, max stress 0.63 with them): `Z0face`, a third woodspam
+layer in front of the starting fort's lower face (x -2772, y 411..602, on the mine row's first layer; 300 damage,
+3 repeats, 60 s cooldown), and `Z0prow`, a third layer in front of the prow below the deck (x -2725, y 205..310; 500).
+Z1-Z4 are only measured and logged so far; their reinforcements come with the posture engine (step 4), which also
+uses the zone pressure. The damage numbers (mortar 20 per hit, a lost strut 100) are first guesses from test 1.
+
 ## Step 4: AI – posture engine
 
 Each think step: from enemy devices, `st.threat`, zone damage and socket losses pick one posture and map it to socket
