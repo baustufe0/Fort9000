@@ -81,6 +81,11 @@ check "Repeated inserts: frustration stays on its actions" "^frustration: 2 of 2
 check "Repeated inserts: rebuild clocks stay on their actions" "^since: 3 of 3, 0 wrong$" "$LUA" t_insert_repeat.lua
 check "Repeated inserts: devices stay on their actions" "^devices: 3, 0 wrong$" "$LUA" t_insert_repeat.lua
 check "Repeated inserts: later modules go in front"  "^order: m3 m3 m5 m5 m5 m5 m5 m4 m4 m4 m4 m3 m2 m2 m1 k60 k61$" "$LUA" t_insert_repeat.lua
+check "Engine probe: material over an existing strut" "EPROBE MATERIAL 11-12 bracing->armour result=0:CS_SUCCESS now=armour linked=true m=500->500$" "$LUA" t_engineprobe.lua
+check "Engine probe: reclaim falls back to the next device" "EPROBE RECLAIM machinegun id=2 result=0 success=true cost=m=50,e=300 rate=m=2.5,e=30 m=500$" "$LUA" t_engineprobe.lua
+check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end=525 deleted@2 deltas=0,0,25,0,0$" "$LUA" t_engineprobe.lua
+check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
+check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua

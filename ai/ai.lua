@@ -2091,6 +2091,9 @@ function CAI_Think()
 		if not okM then CAI_Log("ERROR modules: " .. tostring(errM)) end
 	end
 
+	local okE, errE = pcall(CAI_EngineProbeTick, elapsed)
+	if not okE then CAI_Log("ERROR engine probe: " .. tostring(errE)) end
+
 	-- shape snapshot once per game minute (see CAI_LogShape)
 	if elapsed >= (st.nextShape or 60) then
 		st.nextShape = elapsed + 60
@@ -2268,6 +2271,171 @@ function OnDeviceDestroyed(deviceTeamId, deviceId, saveName, nodeA, nodeB, t)
 		if st.threat[saveName] then
 			st.threat[saveName] = st.threat[saveName] * 0.7
 		end
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Engine probe (Bastion step 0, testing only; FortPlanConfig.EngineProbe in ai/fortplans.lua, off by default).
+-- Answers three questions in a normal match, only by logging ([CAI] T<team> EPROBE ...):
+--   1. At Material seconds: CreateLink with "armour" over a bracing strut of the starting fort. Logs the result code,
+--      the strut's material right after and one think step later, and the metal before and after.
+--   2. At Reclaim seconds: DestroyDeviceById on the first own device of Devices. Logs its cost (GetDeviceCost), then the
+--      metal change every frame (Frame seconds) for Window seconds and the frame of OnDeviceDeleted; the refund is the jump.
+--   3. OnLinkHit on own struts: the first hit at once, then every Report seconds hits/damage by projectile type, and
+--      own struts lost by break type (OnLinkDestroyed) to compare with.
+-- EngineProbe = { Material = 30, Reclaim = 45, Devices = { "machinegun", "sniper", "mortar" }, Window = 8, Frame = 0.04, Report = 30 }
+
+local function CAI_EP_Metal()
+	local ok, res = pcall(GetTeamResources, teamId)
+	return (ok and res and res.metal) or -1
+end
+
+local function CAI_EP_Text(v)
+	if type(v) == "table" or type(v) == "userdata" then
+		local ok, m, e = pcall(function() return v.metal, v.energy end)
+		if ok and (m ~= nil or e ~= nil) then return "m=" .. tostring(m) .. ",e=" .. tostring(e) end
+	end
+	return tostring(v)
+end
+
+-- a bracing strut of the starting fort (its ExistingFort actions), both nodes existing
+local function CAI_EP_Bracing()
+	for _, a in ipairs(Fort or {}) do
+		if a.ExistingFort and a.Type == CREATE_LINK and a.MaterialSaveName == "bracing" then
+			local na = data.OriginalToActual and data.OriginalToActual[a.OriginalNodeAId]
+			local nb = data.OriginalToActual and data.OriginalToActual[a.OriginalNodeBId]
+			if na and nb and IsNodeLinkedTo(na, nb) and GetLinkMaterialSaveName(na, nb) == "bracing" then
+				return na, nb
+			end
+		end
+	end
+end
+
+local function CAI_EP_OwnDevice(saveName)
+	local side = CAI_Side(teamId)
+	for i = 0, GetDeviceCountSide(side) - 1 do
+		local id = GetDeviceIdSide(side, i)
+		if GetDeviceType(id) == saveName and GetDeviceTeamIdActual(id) == teamId then return id end
+	end
+end
+
+function CAI_EP_Frame()
+	local r = CAI_EngineProbe and CAI_EngineProbe.reclaim
+	if r == nil or r.done then return end
+	local m = CAI_EP_Metal()
+	r.series[#r.series + 1] = CAI_Round(m - r.last)
+	r.last = m
+	r.frames = r.frames + 1
+	if r.frames * r.dt >= r.window then
+		r.done = true
+		CAI_Log("EPROBE RECLAIM series m0=" .. CAI_Round(r.m0) .. " end=" .. CAI_Round(m) .. " deleted@" .. tostring(r.deletedFrame)
+			.. " deltas=" .. table.concat(r.series, ","))
+		return
+	end
+	ScheduleCall(r.dt, CAI_EP_Frame)
+end
+
+function CAI_EngineProbeTick(elapsed)
+	local cfg = FortPlanConfig and FortPlanConfig.EngineProbe
+	if type(cfg) ~= "table" or data.HumanAssist then return end
+	if CAI_EngineProbe == nil then
+		CAI_EngineProbe = { hits = {}, damage = {}, broken = {}, nextReport = cfg.Report or 30 }
+		CAI_Log("EPROBE ON material@" .. tostring(cfg.Material) .. " reclaim@" .. tostring(cfg.Reclaim))
+	end
+	local p = CAI_EngineProbe
+	local devices = cfg.Devices or { "machinegun" }
+	-- 1. another material over an existing strut
+	if p.material == nil and cfg.Material and elapsed >= cfg.Material then
+		local a, b = CAI_EP_Bracing()
+		if a == nil then
+			p.material = { done = true }
+			CAI_Log("EPROBE MATERIAL none (no bracing strut of the starting fort)")
+		else
+			local m0 = CAI_EP_Metal()
+			local r = CreateLink(teamId, "armour", a, b)
+			p.material = { a = a, b = b }
+			CAI_Log("EPROBE MATERIAL " .. a .. "-" .. b .. " bracing->armour result=" .. tostring(r) .. ":"
+				.. tostring(type(CS) == "table" and CS[r]) .. " now=" .. tostring(GetLinkMaterialSaveName(a, b))
+				.. " linked=" .. tostring(IsNodeLinkedTo(a, b)) .. " m=" .. CAI_Round(m0) .. "->" .. CAI_Round(CAI_EP_Metal()))
+		end
+	elseif p.material and not p.material.done then
+		p.material.done = true
+		local a, b = p.material.a, p.material.b
+		CAI_Log("EPROBE MATERIAL later " .. a .. "-" .. b .. " now=" .. tostring(GetLinkMaterialSaveName(a, b))
+			.. " linked=" .. tostring(IsNodeLinkedTo(a, b)))
+	end
+	-- 2. what a reclaim gives back
+	if p.reclaim == nil and cfg.Reclaim and elapsed >= cfg.Reclaim then
+		local id, device
+		for _, d in ipairs(devices) do
+			if id == nil then id, device = CAI_EP_OwnDevice(d), d end
+		end
+		if id == nil then
+			p.reclaim = { done = true }
+			CAI_Log("EPROBE RECLAIM none (no own " .. table.concat(devices, "/") .. ")")
+		else
+			local m0 = CAI_EP_Metal()
+			local okC, cost = pcall(GetDeviceCost, device)
+			local okR, rate = pcall(GetTeamResourceRate, teamId)
+			local res = DestroyDeviceById(id)
+			p.reclaim = { id = id, m0 = m0, last = m0, series = {}, frames = 0, dt = cfg.Frame or 0.04, window = cfg.Window or 8 }
+			CAI_Log("EPROBE RECLAIM " .. device .. " id=" .. id .. " result=" .. tostring(res)
+				.. " success=" .. tostring(res == DD_SUCCESS) .. " cost=" .. CAI_EP_Text(okC and cost or "?")
+				.. " rate=" .. CAI_EP_Text(okR and rate or "?") .. " m=" .. CAI_Round(m0))
+			ScheduleCall(p.reclaim.dt, CAI_EP_Frame)
+		end
+	end
+	-- 3. strut hits so far
+	if elapsed >= p.nextReport then
+		p.nextReport = elapsed + (cfg.Report or 30)
+		local function Dump(t, f)
+			local keys, parts = {}, {}
+			for k in pairs(t) do keys[#keys + 1] = tostring(k) end
+			table.sort(keys)
+			for _, k in ipairs(keys) do parts[#parts + 1] = k .. ":" .. f(k) end
+			return table.concat(parts, ",")
+		end
+		CAI_Log("EPROBE LINKHIT t=" .. elapsed
+			.. " hits=" .. Dump(p.hits, function(k) return p.hits[k] .. "/" .. CAI_Round(p.damage[k]) end)
+			.. " broken=" .. Dump(p.broken, function(k) return p.broken[tonumber(k) or k] end))
+	end
+end
+
+local CAI_BaseOnLinkHit = OnLinkHit
+function OnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, damage, pos, reflectedByEnemy)
+	if CAI_BaseOnLinkHit then
+		CAI_BaseOnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, damage, pos, reflectedByEnemy)
+	end
+	local p = CAI_EngineProbe
+	if p == nil or NodeTeam(nodeIdA) ~= teamId then return end
+	local k = tostring(objectSaveName)
+	if next(p.hits) == nil then
+		CAI_Log("EPROBE LINKHIT first " .. nodeIdA .. "-" .. nodeIdB .. " by=" .. k .. " team=" .. tostring(objectTeamId)
+			.. " damage=" .. tostring(damage) .. " material=" .. tostring(GetLinkMaterialSaveName(nodeIdA, nodeIdB)))
+	end
+	p.hits[k] = (p.hits[k] or 0) + 1
+	p.damage[k] = (p.damage[k] or 0) + (tonumber(damage) or 0)
+end
+
+local CAI_BaseOnLinkDestroyed = OnLinkDestroyed
+function OnLinkDestroyed(linkTeamId, saveName, nodeA, nodeB, breakType)
+	if CAI_BaseOnLinkDestroyed then
+		CAI_BaseOnLinkDestroyed(linkTeamId, saveName, nodeA, nodeB, breakType)
+	end
+	local p = CAI_EngineProbe
+	if p == nil or linkTeamId ~= teamId then return end
+	p.broken[breakType] = (p.broken[breakType] or 0) + 1
+end
+
+local CAI_BaseOnDeviceDeleted = OnDeviceDeleted
+function OnDeviceDeleted(deviceTeamId, deviceId, saveName, nodeA, nodeB, t)
+	if CAI_BaseOnDeviceDeleted then
+		CAI_BaseOnDeviceDeleted(deviceTeamId, deviceId, saveName, nodeA, nodeB, t)
+	end
+	local r = CAI_EngineProbe and CAI_EngineProbe.reclaim
+	if r and r.id == deviceId and r.deletedFrame == nil then
+		r.deletedFrame = r.frames
+		CAI_Log("EPROBE RECLAIM deleted " .. tostring(saveName) .. " frame=" .. r.frames .. " m=" .. CAI_Round(CAI_EP_Metal()))
 	end
 end
 

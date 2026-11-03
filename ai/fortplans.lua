@@ -20,6 +20,10 @@
 --                            Materials = { "bracing", "armour" }, MaxAngle = 20, Interval = 0.2, Hold = 0, Max = 3000,
 --                            Box = { x0, y0, x1, y1 } },   -- Box (world coordinates), Hold, Max optional;
 --                  MaxAngle: steeper struts are skipped (devices need roughly level struts: CS_INVALIDNODES)
+-- EngineProbe:     engine probe (testing only, works in a normal match; branch bastion, remove before merge): logs
+--                  whether armour can go over an existing bracing strut, what reclaiming a device gives back and
+--                  whether OnLinkHit reaches the AI ([CAI] ... EPROBE, ai/ai.lua), e.g.
+--                  EngineProbe = { Material = 30, Reclaim = 45, Devices = { "machinegun", "sniper", "mortar" }, Window = 8, Frame = 0.04, Report = 30 },
 
 FortPlanConfig =
 {
@@ -156,4 +160,6 @@ FortPlanConfig =
 	Force =
 	{
 	},
+	-- branch bastion: switched on for the probe match, remove before merge
+	EngineProbe = { Material = 30, Reclaim = 45, Devices = { "machinegun", "sniper", "mortar" }, Window = 8, Frame = 0.04, Report = 30 },
 }
