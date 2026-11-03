@@ -316,7 +316,9 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
 - **Back column first:** the nest needs the column x -3200..-3100 down to the rock (`build` step before the nest).
   With the cheapest support only, the nest stood on the starting fort's back post and `physics.py` broke 45-48 at
   action 73. With the shallowest support (default) the generator pulled the whole back block in (113 actions).
-- **physics.py:** WEAK (stands), max stress 0.46 (the lowest Vanilla plan), sag 93 at the back of the turbine storey.
+- **Opening** (after test 1, which starved for metal): hub, B1 with its door, the sniper (plan action 15, ~400 metal
+  of struts), the footing, workshop, three mines, B2; the second doors only after the first turbine.
+- **physics.py:** WEAK (stands), max stress 0.63 (B1's door carrying its layer), sag 93 at the back of the turbine storey.
 - **Zones** (`FortZones`): Z0 the woodspam in front of the starting fort, Z1 the socket front, Z2 turbine storey and
   nest, Z3 the back of the socket storeys, Z4 back block and starting fort.
 

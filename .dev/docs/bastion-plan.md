@@ -142,6 +142,24 @@ Test: `t_posture.lua` (scripted enemy device sets and hits → expected posture 
 - Afterwards: Vanilla-8 in the normal draw with the other plans, convert to VanillaLong (`mid_to_long.py`),
   then other maps.
 
+**Test 1 (03.11.2026, Vanilla 1v1 vs the player, difficulty 1, ~395 s, aborted; EngineProbe still on):**
+- The fort stood, every socket was filled; refusals only at first tries (sniper, workshop, mines, mortars, sandbags
+  `CS_OCCUPIED` / `CS_OBSTRUCTION` once each, then built).
+- Far too slow: first sniper built at 60 s, workshop 147 s, mines 140/163/182 s, second sniper 214 s, mortars
+  263/269 s, first turbine 295 s. Metal stayed below ~250 the whole time (3.8 at ~40 s). Cause: the opening spends
+  ~1120 metal on struts before the first sniper (Vanilla-2: ~460), mostly B1's door layer (armour arms 98 long to the
+  prow node 58, ~470 m) and door, and the footing's armour (206 m); 4574 m of struts in all (Vanilla-2: 2625).
+  The probe cost some too (MG reclaimed at 45 s, armour attempt refused for lack of metal).
+- The snipers fired little: 41 of 57 tries declined, the ray hit the player's front doors and bracing (nothing in
+  sight behind them). The mortars fired 12 times; their straight test ray hits the own nest floor (harmless for lobbed).
+- Lost: a mortar at 274 s (rebuilt 319 s), the B2 sniper at 374 s.
+- `OnLinkHit` sees the player's hits: mortar 20 damage each (12 hits), buzzsaw ~42 (9 hits); 7 own struts broken.
+
+**After test 1:** the hub stays first, the footing's armour brace comes after the first sniper, the second doors
+after the first turbine (`door_layers_late`, B1's layer 50 out instead of on the prow node), EngineProbe off. Strut
+metal before the first sniper 1119 -> 402 (sniper at plan action 15), workshop 694, B2 1006; all struts 4574 -> 4371.
+`physics.py` max stress 0.46 -> 0.63 (B1's door, which now carries its layer alone; still WEAK, i.e. stands).
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

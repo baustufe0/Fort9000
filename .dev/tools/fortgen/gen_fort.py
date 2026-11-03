@@ -1435,6 +1435,10 @@ VANILLA_VARIANTS["bastion"] = {
             # 0.18 of the 148-wide cell the barrel ends at the front door
             "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18)],
             "split_doors": True, "door_layers": 2, "door_brace_front": True,
+            # the second doors only after the economy (test 1, 03.11.2026: with them in the opening ~1120 metal went
+            # into struts before the first sniper, which stood at 60 s), 50 in front (not on the prow node 58, 100
+            # out: armour arms twice as long)
+            "door_layers_late": True, "door_layer_reach": 60,
             "rebrace_after_mine": [],
             # no connecting cell from storey I to the starting fort's prow top (node 58): B1's door is the front
             "no_connect": [(-2945, -2845, 75, 205)],
@@ -1450,29 +1454,33 @@ VANILLA_VARIANTS["bastion"] = {
             "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
                           "outside": "bracing"},
                          _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
-            "footing": _V_FOOTING,
+            # the hub first (cheap, background bracing), the footing's armour brace after the first sniper
+            "footing": _V_HUB,
             "single_diagonal": True},
     "plan": [
         ("build", [(-3100, 205, "sniper")]),                        # 1 socket B1
         ("weapons", ["sniper"]),                                    # 2 first shot
-        ("tech", ["workshop"]),                                     # 3 (60 s: the mortars wait for it)
-        ("eco", ["mine", "mine", "mine"]),                          # 4 metal first
-        ("build", [(-3100, 75, "sniper")]),                         # 5 socket B2
-        ("weapons", ["sniper"]),                                    # 6
-        # sockets M1/M2 while the workshop builds: the turbine storey's front cell (split for the sandbags) and the
-        # nest over it, with their support down the column x -3200..-3100
+        ("struts", _V_FOOTING[len(_V_HUB):]),                       # 3 the footing's foundation and braces
+        ("tech", ["workshop"]),                                     # 4 (60 s: the mortars wait for it)
+        ("eco", ["mine", "mine", "mine"]),                          # 5 metal first
+        ("build", [(-3100, 75, "sniper")]),                         # 6 socket B2
+        ("weapons", ["sniper"]),                                    # 7
+        # sockets M1/M2: the back column x -3200..-3100 from the rock up (the nest stands on it; on the starting
+        # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
+        # and the nest over it
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
-                   (-3200, -185), (-3100, -185)]),                  # 7
-        ("defence", ["sandbags", "sandbags"]),                      # 8
-        ("eco", ["turbine"]),                                       # 9
-        ("defence", ["woodspam"]),                                  # 10
-        ("eco", ["turbine", "turbine"]),                            # 11
-        ("tech", ["upgrade"]),                                      # 12
-        ("eco", ["battery", "store"]),                              # 13
-        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 14
-        ("eco", ["battery"]),                                       # 15
-        ("upgrades", ["mine2", "mine2"]),                           # 16
-        ("defence", ["woodspam"]),                                  # 17
+                   (-3200, -185), (-3100, -185)]),                  # 8
+        ("defence", ["sandbags", "sandbags"]),                      # 9
+        ("eco", ["turbine"]),                                       # 10
+        ("mark", ["door_layers"]),                                  # 11 the second doors from here on
+        ("defence", ["woodspam"]),                                  # 12
+        ("eco", ["turbine", "turbine"]),                            # 13
+        ("tech", ["upgrade"]),                                      # 14
+        ("eco", ["battery", "store"]),                              # 15
+        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 16
+        ("eco", ["battery"]),                                       # 17
+        ("upgrades", ["mine2", "mine2"]),                           # 18
+        ("defence", ["woodspam"]),                                  # 19
     ],
     # the weapon places (the starting fort's machine gun A0 on its lower front strut) and the zones the AI watches
     # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
@@ -1488,13 +1496,13 @@ VANILLA_VARIANTS["bastion"] = {
               {"name": "Z3", "box": (-3500, -3100, -55, 205)},
               {"name": "Z4", "box": (-3600, -2900, 205, 700)}],
     "modules": [
-        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 8,
+        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 9,
          "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
          "plan": [("weapons", ["mortar", "mortar"])]},
-        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 12,
+        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 14,
          "trigger": {"time": 330, "after": "artillery"},
          "plan": [("upgrades", ["mortar2", "mortar2"])]},
-        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 12,
+        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
     ],
@@ -2939,6 +2947,7 @@ class Plan:
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
             self.split_doors()
+        self.actions = [l for l in self.actions if not l.startswith("-- MARK ")]
         # in the variant's order: the order the AI goes by when several modules fire at once
         names = [m["name"] for m in variant.get("modules", [])]
         self.modules.sort(key=lambda m: names.index(m["name"]))
@@ -3372,7 +3381,7 @@ class Plan:
                 # (up to 105 ahead: Vanilla-3's low 20mm, whose door ends on the floor strut of the cell in front; a
                 # node at 50 would stand in the middle of that strut, so the layer takes its front end)
                 def at(y):
-                    return min((n for n, q in pos.items() if abs(q[1] - y) < 5 and MIN_STRUT <= q[0] - x0 <= 105),
+                    return min((n for n, q in pos.items() if abs(q[1] - y) < 5 and MIN_STRUT <= q[0] - x0 <= self.cfg.get("door_layer_reach", 105)),
                                key=lambda n: pos[n][0], default=None)
                 nt, nb = at(yt), at(yb)
                 if nt is not None and nb is not None and abs(pos[nt][0] - pos[nb][0]) > 3:
@@ -3408,6 +3417,10 @@ class Plan:
                                                  or ("OriginalNodeAId = %d," % b in l and "OriginalNodeBId = %d," % a in l)
                                                  for l in lines):
                     lines.append(mk("link", a, b, mat))
+            # door_layers_late: not before the plan's ("mark", ["door_layers"]) step (Bastion: the opening has no metal)
+            mark = next((k for k, l in enumerate(self.actions) if l == "-- MARK door_layers"), None)
+            if self.cfg.get("door_layers_late") and mark is not None:
+                after = max(after, mark)
             appended.extend((after, l) for l in lines)
             last = after
             top_id, bot_id = nt, nb
@@ -3479,6 +3492,11 @@ class Plan:
                 self.problems.append("strut to (%d,%d): node not built" % tuple(pb))
             else:
                 self.link(ka, kb, mat)
+            return
+        if step == "mark":
+            # ("mark", ["door_layers"]): a marker line (removed at the end of generate); door_layers_late builds the
+            # door layers no earlier than here
+            self.actions.append("-- MARK %s" % dev)
             return
         if step == "build":
             # ("build", [(left x, floor y[, device]), ...]): a cell and the cells on its way, no device yet (a slot a
