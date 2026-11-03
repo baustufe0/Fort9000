@@ -98,6 +98,12 @@ check "Sockets: machine gun under AntiAir"     "^anti-air: machinegun$" "$LUA" t
 check "Sockets: an old loss is forgotten"       "^late loss: machinegun losses=1$" "$LUA" t_sockets.lua
 check "Modules: Repeat and Cooldown"            "^again inserted 3 times$" "$LUA" t_sockets.lua
 check "Modules: a repeat is logged"             "MODULE again trigger=time:5 at=[0-9]+ actions=1 repeat=2$" "$LUA" t_sockets.lua
+check "Upgrade: nothing without the tech"        "^no tech: sniper sold=0$" "$LUA" t_upgrade.lua
+check "Upgrade: B2 first, sold and rebuilt as a laser" "^factory: B2=laser rebuild=true B1=sniper sold=1$" "$LUA" t_upgrade.lua
+check "Upgrade: the sale is logged"              "SOCKET B2 sell sniper->laser action=[0-9]+ result=-8 " "$LUA" t_upgrade.lua
+check "Upgrade: not while poor"                  "^poor: B1=sniper$" "$LUA" t_upgrade.lua
+check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser sold=2$" "$LUA" t_upgrade.lua
+check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon20mm$" "$LUA" t_upgrade.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
 check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
 check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua

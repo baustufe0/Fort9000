@@ -154,6 +154,14 @@ action fields through its transform).
   `SOCKET B1 lost sniper losses=1`, `SOCKET B1 sniper->cannon20mm action=19 swaps=1`, or `... no other loadout ready`.
   Only fully built tech counts (`IsDeviceFullyBuilt`). A weapon in `Fire.NoOffence` (the machine gun, which never fires
   at the enemy fort) replaces one that does only while the AI holds AntiAir.
+- Socket upgrade (`CAI_SocketUpgrade`, every think step): a socket with `Upgrade = { ... }` whose living, fully built
+  weapon is in `Strategy.Socket.Upgrade.From` (sniper, AP sniper, machine gun) is sold once the AI has held `Metal`
+  (450) and `Energy` (3000) for `Seconds` (15): its plan action is set to the first upgrade whose tech stands (the
+  posture's Prefer first, weapons no other socket holds before those another one does: a mix), the device is marked
+  `DeviceDeleteToRebuild` and reclaimed with `DestroyDeviceById`, so the built-in AI queues the action for rebuilding
+  (`CAI_SocketLost` sees `selling` and lets it through). One socket at a time in `Rank` order, `Hold` (60) seconds
+  apart; a sale not seen within `Timeout` (60) is given up. Logs `SOCKET B2 sell sniper->laser action=38 result=-8
+  m=900 e=9000 posture=Pressure` and `SOCKET B2 sold, rebuild as laser action=38`. Test: `t_upgrade.lua`.
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
 - **Repeat / Cooldown** on a module (`FortModules`, `Repeat = n, Cooldown = s`): after it went in, it may go in n more
   times, each at least s seconds after the last, while its trigger holds (log `MODULE <name> ... repeat=<k>`). Every

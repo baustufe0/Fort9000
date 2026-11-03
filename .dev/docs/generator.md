@@ -110,6 +110,17 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
 - `lobbed_front_door`: a lobbed weapon in a front cell gets a door as its front post (not armour; Vanilla-8's mortar
   nest declined 28 of 34 shots behind armour). `door_roof_cells [(left x, floor y)]`: these cells get a door roof (an
   anti-air machine gun's cell, Vanilla-8's A1).
+- `door_loadouts`: a split door covers the barrels of every direct weapon in the variant's `loadouts["direct"]`, not
+  only of the weapon it is built for (Vanilla-8's B sockets may become a laser, 20mm or cannon). `door_aim_up` (degrees):
+  the door's top on the line rising at that angle from the weapon (+12.5), each door layer in front on the same line as
+  far as the nodes around allow (MIN_STRUT); the sniper's shell falls ~177 over the 6000 to the enemy fort, its top
+  storeys need ~8-10 degrees (Vanilla-8 uses 9; test 3: doors cut to the barrel let the snipers hit only the lower
+  storeys). A top that would leave less than MIN_STRUT of armour above stays MIN_STRUT below the post's top.
+- `bg_diag_cells [(left x, floor y)]`: these cells' diagonals are background bracing; `bg_struts [((x, y), (x, y))]`:
+  these struts become background bracing (a later module's tall device stands in front of them: Vanilla-8's munitions
+  plant, 170 high, over two storeys).
+- Socket keys `upgrade` (weapons) and `rank`: written as `Upgrade = { ... }, Rank = n` in FortSockets, only weapons
+  that passed the loadout check ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)).
 - Module trigger key `postures`: written as `Postures = { ... }` ([ai.md](ai.md#posture)).
 - A module with a tech device waits for its snapshot (`snapshot_index`, a marker line kept through the final passes):
   the cells that hide the device (`cover_tech`) stand only from there on (Vanilla-8's factory module was 42 of 54 box

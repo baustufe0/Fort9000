@@ -311,7 +311,10 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
   x -3200..-2945 the mortar nest (-315..-185, door roof, armour front): sockets M1/M2, 130 apart, 50+ from the metal
   posts; its front post is a door (the shells leave forward and up). The starting fort's machine gun is socket A0;
   socket A1 is a closed cell behind the nest (x -3300..-3200, on the turbine storey) with a door roof for an anti-air
-  machine gun (module `antiair`).
+  machine gun (module `antiair`). The B doors cover every direct loadout and 9 degrees up (`door_aim_up`). Late in
+  the match the factory (330 s or a full storage) and the munitions plant (module `munitions`, x -3400..-3300 on the
+  floor at 602) come, then the AI sells B2's and later B1's sniper for a laser, 20mm, cannon or firebeam (socket
+  upgrade; B1 cannot take the cannon, its door reaches into the cannon's body).
 - **Sockets at the front door:** each direct socket is its storey's front cell; the weapon at LinkT 0.18 (a sniper's
   body with the barrel reaches ~120 ahead of its strut point), its door split to ~63 with a second door 50 in front.
   No connecting cell from storey I to the prow top (`no_connect`), so B1 fires straight out of its own door.

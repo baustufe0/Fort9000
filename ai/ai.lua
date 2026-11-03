@@ -47,7 +47,13 @@ local CAI_Defaults =
 	RebuildCap = { Window = 180, Max = { machinegun = 3, minigun = 3, smokebomb = 3 } },
 	-- Socket (Bastion, plans with FortSockets): a socket whose weapon is lost SwapAfter times, each loss within Window
 	-- seconds of the one before, gets the next of its Loadouts whose tech stands instead of the same weapon again
-	Socket = { SwapAfter = 2, Window = 180 },
+	-- Upgrade: a socket with Upgrade loadouts (FortSockets) whose weapon is one of From and alive is sold and rebuilt
+	-- with the first upgrade whose tech stands (the posture's Prefer first) once the AI has held Metal and Energy for
+	-- Seconds; one socket at a time (Rank order), Hold seconds apart (Vanilla-8 test 3, 03.11.2026: the plan ran out
+	-- at ~565 s, both sides sat at 900 metal / 9000 energy behind two snipers each and no laser came)
+	Socket = { SwapAfter = 2, Window = 180,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60,
+			From = { sniper = true, sniper2 = true, machinegun = true } } },
 	-- Zone (Bastion, plans with FortZones): damage per zone from enemy hits on own struts (OnLinkHit) and own struts
 	-- lost (BreakDamage each, also beams and splash, which OnLinkHit does not see); Decay per think step for the logged
 	-- pressure; zone modules fire on the undecayed sum since they last went in
@@ -2156,6 +2162,8 @@ function CAI_Think()
 	local parts = { "THINK t=" .. elapsed .. " build=" .. tostring(data.fortIndex) .. "/" .. tostring(Fort and #Fort) .. " rebuild=" .. rebuildCount }
 	local okP, errP = pcall(CAI_UpdatePosture, elapsed)
 	if not okP then CAI_Log("ERROR posture: " .. tostring(errP)) end
+	okP, errP = pcall(CAI_SocketUpgrade, elapsed)
+	if not okP then CAI_Log("ERROR socket upgrade: " .. tostring(errP)) end
 	local ok, res = pcall(CAI_UpdateTargets)
 	parts[#parts + 1] = ok and res or ("ERROR targets: " .. tostring(res))
 	ok, res = pcall(CAI_UpdateAggression, elapsed)
@@ -2401,7 +2409,8 @@ function CAI_InitSockets()
 	st.sockets = {}
 	local names = {}
 	for _, s in ipairs(list) do
-		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0 }
+		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0,
+			upgrade = s.Upgrade, rank = s.Rank or 1 }
 		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
 	end
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
@@ -2429,6 +2438,14 @@ function CAI_SocketLost(deviceId)
 	if st == nil or st.sockets == nil or a == nil or a.Socket == nil then return false end
 	local s = st.sockets[a.Socket]
 	if s == nil then return false end
+	-- the socket's own sale (CAI_SocketUpgrade): the action already names the new weapon
+	if s.selling ~= nil and s.selling == deviceId then
+		s.selling = nil
+		s.losses = {}
+		if st.rebuilds then st.rebuilds[k] = nil end
+		CAI_Log("SOCKET " .. a.Socket .. " sold, rebuild as " .. tostring(a.DeviceSaveName) .. " action=" .. k)
+		return true
+	end
 	local cfg = Strategy.Socket or CAI_Defaults.Socket
 	local now = st.ticks * Strategy.ThinkInterval
 	local last = s.losses[#s.losses]
@@ -2473,6 +2490,108 @@ function CAI_SocketLost(deviceId)
 	end
 	CAI_Log("SOCKET " .. a.Socket .. " lost " .. tostring(old) .. " losses=" .. #s.losses .. " no other loadout ready")
 	return false
+end
+
+-- the socket's weapons in the order to try: the posture's Prefer first, then the list's own order
+function CAI_SocketOrder(s, list)
+	local st = data.CAI
+	local pcfg = Strategy.Posture or CAI_Defaults.Posture
+	local pref = st.posture and pcfg.Prefer and pcfg.Prefer[st.posture] and pcfg.Prefer[st.posture][s.kind] or {}
+	local order, seen = {}, {}
+	for _, d in ipairs(pref) do
+		for _, l in ipairs(list) do
+			if l == d and not seen[d] then order[#order + 1] = d; seen[d] = true end
+		end
+	end
+	for _, l in ipairs(list) do
+		if not seen[l] then order[#order + 1] = l; seen[l] = true end
+	end
+	return order
+end
+
+-- Socket upgrade (Bastion): once the AI is rich, sell a socket's small weapon (a sniper) and rebuild the place with a
+-- heavy one (laser, 20mm, cannon, firebeam) whose tech stands. The device is marked DeviceDeleteToRebuild, so the
+-- built-in AI queues its plan action for rebuilding when it is gone; the action already names the new weapon
+-- (CAI_SocketLost sees s.selling). Logs SOCKET <name> sell <old>-><new> action=<k> result=<DestroyDeviceById>.
+function CAI_SocketUpgrade(elapsed)
+	local st = data.CAI
+	if st == nil or st.sockets == nil or Fort == nil or data.Devices == nil or type(DestroyDeviceById) ~= "function" then return end
+	local cfg = (Strategy.Socket or CAI_Defaults.Socket).Upgrade or CAI_Defaults.Socket.Upgrade
+	if not cfg then return end
+	for name, s in pairs(st.sockets) do
+		if s.selling ~= nil then
+			if elapsed - (st.upgradeAt or 0) <= (cfg.Timeout or 60) then return end
+			CAI_Log("SOCKET " .. name .. " sale of " .. tostring(s.selling) .. " not seen, given up")
+			s.selling = nil
+		end
+	end
+	local res = GetTeamResources(teamId)
+	local m = (type(res) == "table" or type(res) == "userdata") and res.metal or 0
+	local e = (type(res) == "table" or type(res) == "userdata") and res.energy or 0
+	if (m or 0) >= (cfg.Metal or 450) and (e or 0) >= (cfg.Energy or 3000) then
+		st.richFor = (st.richFor or 0) + Strategy.ThinkInterval
+	else
+		st.richFor = 0
+	end
+	if st.richFor < (cfg.Seconds or 15) or elapsed - (st.upgradeAt or -1e9) < (cfg.Hold or 60) then return end
+	-- the living device of each socket (the highest id if the plan lists more than one)
+	local dev = {}
+	for id, k in pairs(data.Devices) do
+		local a = Fort[k]
+		local t = a and a.Socket and GetDeviceType(id)
+		if t and (type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) and (dev[a.Socket] == nil or id > dev[a.Socket].id) then
+			dev[a.Socket] = { id = id, k = k, type = t }
+		end
+	end
+	local names = {}
+	for name, s in pairs(st.sockets) do
+		if s.upgrade then names[#names + 1] = name end
+	end
+	table.sort(names, function(x, y)
+		local rx, ry = st.sockets[x].rank or 1, st.sockets[y].rank or 1
+		if rx ~= ry then return rx < ry end
+		return x < y
+	end)
+	local own = CAI_OwnDevices(true)
+	for _, name in ipairs(names) do
+		local s, d = st.sockets[name], dev[name]
+		if d and cfg.From and cfg.From[d.type] then
+			-- a mix: weapons no other socket holds first (B2 a laser, then B1 a 20mm or a firebeam)
+			local held, order = {}, {}
+			for other, od in pairs(dev) do
+				if other ~= name then held[od.type] = true end
+			end
+			for pass = 1, 2 do
+				for _, w in ipairs(CAI_SocketOrder(s, s.upgrade)) do
+					if (pass == 1) == (not held[w]) then order[#order + 1] = w end
+				end
+			end
+			for _, w in ipairs(order) do
+				local need = s.needs[w]
+				if w ~= d.type and (need == nil or (own[need] or 0) > 0) then
+					local a = Fort[d.k]
+					local old = a.DeviceSaveName
+					a.DeviceSaveName = w
+					s.selling = d.id
+					data.DeviceDeleteToRebuild = data.DeviceDeleteToRebuild or {}
+					data.DeviceDeleteToRebuild[d.id] = true
+					local r = DestroyDeviceById(d.id)
+					st.upgradeAt = elapsed
+					st.richFor = 0
+					if DD_SUCCESS ~= nil and r ~= DD_SUCCESS then
+						a.DeviceSaveName = old
+						s.selling = nil
+						data.DeviceDeleteToRebuild[d.id] = nil
+					else
+						s.swaps = s.swaps + 1
+					end
+					CAI_Log("SOCKET " .. name .. " sell " .. tostring(d.type) .. "->" .. w .. " action=" .. d.k .. " result="
+						.. tostring(r) .. " m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e) .. " posture=" .. tostring(st.posture))
+					return
+				end
+			end
+		end
+	end
 end
 
 --------------------------------------------------------------------------------

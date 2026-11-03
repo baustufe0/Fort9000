@@ -1436,6 +1436,8 @@ VANILLA_VARIANTS["bastion"] = {
             # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
             # 0.18 of the 148-wide cell the barrel ends at the front door
             "split_doors": True, "door_layers": 2, "door_brace_front": True,
+            # the B doors cover every direct loadout and 9 degrees up (test 3: the snipers hit only the lower storeys)
+            "door_loadouts": True, "door_aim_up": 9,
             # the second doors only after the economy (test 1, 03.11.2026: with them in the opening ~1120 metal went
             # into struts before the first sniper, which stood at 60 s), 50 in front (not on the prow node 58, 100
             # out: armour arms twice as long)
@@ -1454,6 +1456,8 @@ VANILLA_VARIANTS["bastion"] = {
             # player's mortars and heavy mortars took the fort down)
             "lobbed_front_door": True,
             "door_roof_cells": [(-3300, -185)],
+            # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
+            "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
             "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18), (-3300, -185, "machinegun", 0.5)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
@@ -1494,13 +1498,18 @@ VANILLA_VARIANTS["bastion"] = {
     # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
     "sockets": [{"name": "A0", "kind": "direct", "cell": (-2996, 504), "default": "machinegun"},
                 {"name": "A1", "kind": "antiair", "cell": (-3300, -185), "default": "machinegun"},
-                {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper"},
-                {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper"},
+                # upgrade: once the tech stands and the storage fills up, the AI sells the socket's sniper and builds
+                # the first of these that is ready (the posture's Prefer first); rank: B2 first, B1 later (two
+                # snipers pay only early in the match, the player 03.11.2026)
+                {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
+                 "upgrade": ["laser", "cannon20mm", "cannon", "firebeam"], "rank": 2},
+                {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper",
+                 "upgrade": ["laser", "cannon20mm", "cannon", "firebeam"], "rank": 1},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
     # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
     # tag_sockets keeps those that pass rules.py in the socket
-    "loadouts": {"direct": ["sniper", "cannon20mm", "laser", "firebeam", "machinegun"],
+    "loadouts": {"direct": ["sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun"],
                  "lobbed": ["mortar", "machinegun"]},
     "zones": [{"name": "Z0", "box": (-2900, -2600, 205, 700)},
               {"name": "Z1", "box": (-3100, -2780, -55, 205)},
@@ -1537,8 +1546,15 @@ VANILLA_VARIANTS["bastion"] = {
          "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
-        {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 450},
+        # test 3 (AI vs AI, 03.11.2026): the factory at 450 s came too late, the plan ran out at ~565 s and both sides
+        # sat at 900 metal / 9000 energy: now at 330 s or as soon as the storage fills up, the munitions plant (20mm
+        # and cannon) after it; the AI then sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
+        {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 330,
+                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("tech", ["factory"])]},
+        {"name": "munitions", "after": 14, "trigger": {"after": "factory", "time": 420,
+                                                       "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+         "plan": [("tech", ["munitions"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
@@ -2295,6 +2311,31 @@ class Plan:
             return "armour"
         return "bracing"
 
+    def bg_struts(self):
+        """bg_struts [((x, y), (x, y))]: these struts become background bracing (a later module's device stands in
+        front of them; Vanilla-8's munitions plant over the floor strut at y 503)."""
+        import re
+        pts_re = re.compile(r"x = (-?[\d.]+), y = (-?[\d.]+)")
+        want = self.cfg.get("bg_struts", [])
+        if not want:
+            return
+        out = []
+        for line in self.actions:
+            pts = [(float(a), float(b)) for a, b in pts_re.findall(line)]
+            if ("CREATE_LINK" in line or "CREATE_NODE" in line) and len(pts) >= 2 and any(
+                    {tuple(round(v) for v in pts[0]), tuple(round(v) for v in pts[1])} in ({p_, q_}, {q_, p_})
+                    or (math.dist(pts[0], p_) < 3 and math.dist(pts[1], q_) < 3) or (math.dist(pts[0], q_) < 3 and math.dist(pts[1], p_) < 3)
+                    for p_, q_ in want):
+                line = re.sub(r'MaterialSaveName = "\w+"', 'MaterialSaveName = "backbracing"', line)
+            out.append(line)
+        self.actions = out
+
+    def bg_diag(self, c):
+        """bg_diag_cells [(left x, floor y)]: cells whose diagonals are background bracing (a tall device of a later
+        module stands in front of them: Vanilla-8's munitions plant, box 170 high, over two storeys)."""
+        rows = self.cfg["rows"]
+        return any(abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == y0 for x0, y0 in self.cfg.get("bg_diag_cells", []))
+
     def door_roof_cells(self):
         """door_roof_cells [(left x, floor y)]: cells whose roof is a door (an anti-air machine gun fires up through it)."""
         rows = self.cfg["rows"]
@@ -2338,7 +2379,7 @@ class Plan:
             if not self.is_split((i + 1, j)):   # the split cell builds that edge in two halves
                 self.link(tr, br, self.edge_material(c, "right"))
             self.link(tl, tr, self.edge_material(c, "top"))
-            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
+            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) or self.bg_diag(c) else "bracing"
             if mine_cell:
                 diag = "backbracing"
             if (i + j) % 2 == 0:
@@ -2388,7 +2429,7 @@ class Plan:
             return
         i, j = c
         if diag is None:
-            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) else "bracing"
+            diag = "backbracing" if self.has_device(c) or self.devices.get((i - 1, j)) in LARGE or self.in_turbine_row(c) or self.bg_diag(c) else "bracing"
         if (i + j) % 2 == 0:
             self.link((i + 1, j), (i, j + 1), diag)
         else:
@@ -2994,6 +3035,7 @@ class Plan:
         self.finalise_woodspam()
         self.hide_box()
         self.clear_boxes()
+        self.bg_struts()
         if self.cfg.get("clear_fire_lines"):
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
@@ -3335,8 +3377,29 @@ class Plan:
             muzzle = a[0] + (b[0] - a[0]) * t + BARREL_LEN[d]
             margin = 12.5 + 0.09 * max(0.0, x - muzzle - 44)
             y_strut = (a[1] + b[1]) / 2
-            h_lo, h_hi = sorted((BARREL_H[d], 0.6 * rules.SIZE.get(d, (40, 40))[1]))
-            span = self.door_span(y_top, y_floor, y_strut - h_hi - margin, y_strut - h_lo + margin)
+            # door_loadouts: the door covers the barrels of every direct weapon the socket may get later (Bastion's
+            # B sockets: sniper, 20mm, laser, firebeam), not only of the one it is built for
+            x_dev = a[0] + (b[0] - a[0]) * t
+            spanw = [d] + ([w for w in self.variant.get("loadouts", {}).get("direct", []) if w in DOOR_WEAPONS and w != d]
+                           if self.cfg.get("door_loadouts") else [])
+            y_hi, y_lo, h_top = [], [], 0.0
+            for w in spanw:
+                mg = 12.5 + 0.09 * max(0.0, x - (x_dev + BARREL_LEN[w]) - 44)
+                lo, hi = sorted((BARREL_H[w], 0.6 * rules.SIZE.get(w, (40, 40))[1]))
+                y_hi.append(y_strut - hi - mg)
+                y_lo.append(y_strut - lo + mg)
+                h_top = max(h_top, hi)
+            # door_aim_up (degrees): the door's top on the line rising at that angle from the weapon (+12.5); the
+            # sniper's shell falls ~177 over the 6000 to the enemy fort, its top storeys need ~8-10 degrees (Vanilla-8
+            # test 3, 03.11.2026: doors cut to the barrel +- 12.5 let the snipers hit only the lower storeys). The
+            # door layers in front follow the same line (self._aim_top)
+            aim = self.cfg.get("door_aim_up")
+            self._aim_top = (lambda xx, ys=y_strut, h=h_top, x0=x_dev, ta=math.tan(math.radians(aim)):
+                             ys - h - 12.5 - ta * (xx - x0)) if aim else None
+            if self._aim_top:
+                # a little less aim rather than a whole-post door (the armour above at least MIN_STRUT)
+                y_hi.append(max(self._aim_top(x), y_top + MIN_STRUT))
+            span = self.door_span(y_top, y_floor, min(y_hi), max(y_lo))
             boxes = []
             for dv, da, db_, dtt, dc in self.placed:
                 y0 = (da[1] + db_[1]) / 2
@@ -3474,6 +3537,16 @@ class Plan:
         for layer in range(1, self.cfg.get("door_layers", 1)):
             x0 = pos[top_id][0]
             yt, yb = pos[top_id][1], pos[bot_id][1]
+            if getattr(self, "_aim_top", None):          # door_aim_up: each layer's top on the shot's line, or as
+                # near it as the nodes around allow (Vanilla-8: B1's outer door ends over B2's, MIN_STRUT apart)
+                y_aim, xn = self._aim_top(x0 + DOOR_LAYER_GAP), x0 + DOOR_LAYER_GAP
+                # the nodes around, and those of the post column behind carried forward (the layer of the door
+                # below ends there, built later)
+                near_q = [q for n, q in pos.items() if n != top_id and abs(q[1] - yt) > 5]
+                near_q += [(xn, q[1]) for n, q in pos.items() if n != top_id and abs(q[0] - x0) < 3]
+                while y_aim < yt and any(math.dist((xn, y_aim), q) < MIN_STRUT for q in near_q):
+                    y_aim += 0.5
+                yt = min(yt, y_aim)
             after = k0
             lines = []
             post = None
@@ -4183,8 +4256,10 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None):
             if not lo:
                 return ""
             needs = {d: prereq(d) for d in lo if prereq and prereq(d)}
-            return ', Loadouts = { %s }, Needs = { %s }' % (", ".join('"%s"' % d for d in lo),
-                                                            ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())))
+            up = [d for d in s.get("upgrade", []) if d in lo]
+            return ', Loadouts = { %s }, Needs = { %s }%s' % (
+                ", ".join('"%s"' % d for d in lo), ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())),
+                ', Upgrade = { %s }, Rank = %d' % (", ".join('"%s"' % d for d in up), s.get("rank", 1)) if up else "")
         out += "FortSockets =\n{\n" + "".join(
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"

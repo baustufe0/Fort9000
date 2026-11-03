@@ -198,6 +198,38 @@ mortars or missiles, posture AntiArtillery or AntiAir, at the latest 240 s; plan
 the back column x -3300); a swap to a weapon that never fires at the enemy fort (the machine gun) only under AntiAir;
 a swap's tech counts only when fully built (`IsDeviceFullyBuilt`). `physics.py` max stress 0.60; 216 checks pass.
 
+**Test 3 (03.11.2026, Vanilla, AI vs AI, both on Vanilla-8, ~760 s, no side could kill the other):**
+- Opening as in test 2: snipers 32 s, workshop 110 s, mines 105/126/146 s, mortars 195-205 s, first turbine 340 s
+  (T1), anti-air machine gun (module `antiair`, enemy mortars) ~300 s, sniper2 and heavy mortars ~515 s, factory
+  built 549 s (T1) / 658 s (T2).
+- **The plan runs out:** from ~565 s the build index stands at the end (369/368, at 760 s 397/396 with the zone
+  modules) and both sides sit at the cap, 900 metal / 9000 energy, for minutes. Nothing spends it: only rebuilds and
+  repeated zone modules.
+- **No laser or cannon:** a socket swaps only after two losses of its weapon. Both B1 snipers were lost twice before
+  any factory existed ("no other loadout ready"), afterwards no socket lost its weapon. Cannon and 20mm need munitions,
+  which no plan builds. There is no socket for a heavy weapon (`heavy=cannon:108` stands in the priority list all
+  match).
+- Postures: AntiArtillery at 175/185 s (the other side's mortars), T2 AntiSniper/Siege around 565-640 s. Z0face and
+  Z0prow fired four and three times on each side.
+- Fire: snipers and mortars against snipers and mortars behind armour and door layers; the AI destroyed 4 snipers,
+  2 mortars and an anti-air machine gun of T2, T2 two heavy mortars and two snipers of T1. Neither reached a core.
+- The FIRETRY ray of a mortar (a straight line to the reactor) hits the sandbag storey's background diagonal under
+  the nest (-3040,-162): not a reason, the line is no shell path; the built-in AI declines for its own reasons.
+- **Sniper doors too short (the user's observation):** the snipers hit only the enemy's lower storeys. `split_doors`
+  cuts the door to the barrel ± 12.5 at the inner post (y 143..206 for B1); the second layer 50 ahead copies the same
+  span. The sniper shell flies at 10000 with gravity 981: ~177 drop over the 6000 to the enemy fort, so the top of a
+  fort (y -500 and higher) needs ~8-10° of elevation, ~30 above the barrel at the outer door.
+
+**After test 3:** the B doors cover every direct loadout and rise at 9° from the weapon (`door_loadouts`,
+`door_aim_up`; B1 inner 112.5..206.5 and outer 112.7..206.5, B2 -17.5..75 both, the outer doors tied); the factory
+module at 330 s or after 15 s at 500 metal / 3500 energy (Surplus); a new module `munitions` after it (420 s or
+Surplus) on the munitions slot x -3400..-3300 at 602, its cell's diagonal and the floor strut over it background
+(`bg_diag_cells`, `bg_struts`); the direct loadouts also list the cannon (B2 only: in B1 the door reaches into its
+body). Socket upgrade in the AI (the player: two snipers pay only early in the match): once rich (450 metal /
+3000 energy for 15 s) and the tech stands, B2's sniper is sold and rebuilt as a laser (Prefer first, a mix across
+sockets), B1's 60 s later (firebeam with the factory alone, 20mm with the munitions plant). Rules 0/0, `physics.py`
+max stress 0.60; 222 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
