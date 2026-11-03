@@ -320,7 +320,8 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
   of struts), the footing, workshop, three mines, B2; the second doors only after the first turbine.
 - **physics.py:** WEAK (stands), max stress 0.63 (B1's door carrying its layer), sag 93 at the back of the turbine storey.
 - **Zones** (`FortZones`): Z0 the woodspam in front of the starting fort, Z1 the socket front, Z2 turbine storey and
-  nest, Z3 the back of the socket storeys, Z4 back block and starting fort.
+  nest, Z3 the back of the socket storeys, Z4 back block and starting fort. Zone modules: `Z0face` (third layer in
+  front of the lower face) and `Z0prow` (third layer in front of the prow) when Z0 takes 300 / 500 damage.
 
 ## Approaches that failed (Vanilla)
 
