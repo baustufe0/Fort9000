@@ -334,6 +334,11 @@ the shots of the standing heavy weapons cost more than the storage (+1000). Trig
 device waiting for energy is no hang for the safety valve. Armour back only from 480 s, retried when refused. Snipers do not
 choose sandbags as a target (sandbags hit on the way can still happen). 246 checks pass.
 
+More wind (the player, 04.11.2026: storage gives no energy per second): module turbine4 with the first heavy weapon, at x -3465 on
+the turbine storey's floor, its cell's outer post and diagonal in the background; module turbine5 with the second, at x -3465 on
+the storey below (floor 75, four struts to the background; the nest's roof the generator first chose holds A1's door and would be
+an open roof). New step `device_on`, trigger key `Heavy`. `rules.py`: turbine4 no wind warning; turbine5 clear on the left (100 %), blocked on the right (0 %), so it may give less than the others. `physics.py` max stress 0.69, without the modules: it checks the plan only. 247 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

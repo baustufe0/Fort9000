@@ -122,3 +122,4 @@ own = { [100] = "reactor", [101] = "laser", [102] = "laser", [103] = "battery", 
 print("two lasers, 3 batteries short: " .. tostring(CAI_StorageShort()))
 own[106] = "battery"
 print("4 batteries short: " .. tostring(CAI_StorageShort()))
+print("heavy weapons: " .. CAI_HeavyCount())

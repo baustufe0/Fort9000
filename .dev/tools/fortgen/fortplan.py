@@ -72,6 +72,9 @@ def format_modules(mods):
         if m.get("storage"):
             # Storage (Bastion): the heavy weapons' shots together cost more than the energy storage holds
             tr.append("Storage = true")
+        if m.get("heavy"):
+            # Heavy (Bastion): that many of the AI's own heavy weapons stand
+            tr.append("Heavy = %d" % m["heavy"])
         if m.get("afford"):
             # Afford (Bastion): the module waits until 80 % of its devices' cost is there
             tr.append("Afford = true")

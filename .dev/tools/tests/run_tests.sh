@@ -109,6 +109,7 @@ check "Upgrade: a firebeam is replaced later"     "^firebeam replaced: B1=cannon
 check "Socket: all its actions follow the weapon" "^all actions: cannon20mm cannon20mm$" "$LUA" t_upgrade.lua
 check "Socket: a late module follows it too"      "^late module: cannon20mm$" "$LUA" t_upgrade.lua
 check "Storage: two lasers need more than 3 batteries" "^two lasers, 3 batteries short: true$" "$LUA" t_upgrade.lua
+check "Heavy weapons counted"                     "^heavy weapons: 2$" "$LUA" t_upgrade.lua
 check "Storage: 4 batteries with margin"          "^4 batteries short: false$" "$LUA" t_upgrade.lua
 check "Refill: not at once (a rebuild may be due)" "^short empty: rebuild=nil$" "$LUA" t_upgrade.lua
 check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=cannon20mm$" "$LUA" t_upgrade.lua

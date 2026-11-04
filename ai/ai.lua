@@ -2036,6 +2036,16 @@ function CAI_ModuleAffordable(m)
 	return (res.metal or 0) >= 0.8 * cm and (res.energy or 0) >= 0.8 * ce
 end
 
+-- own heavy weapons standing (SocketVolley.EnergyShot's types)
+function CAI_HeavyCount()
+	if type(GetDeviceCountSide) ~= "function" then return 0 end
+	local side, n = CAI_Side(teamId), 0
+	for i = 0, GetDeviceCountSide(side) - 1 do
+		if CAI_Defaults.SocketVolley.EnergyShot[GetDeviceType(GetDeviceIdSide(side, i))] then n = n + 1 end
+	end
+	return n
+end
+
 -- the heavy weapons' shots together cost more than the storage holds
 function CAI_StorageShort()
 	local v = CAI_Defaults.SocketVolley
@@ -2088,6 +2098,8 @@ function CAI_UpdateModules()
 				why = "time:" .. tr.Time
 			elseif tr.Storage and CAI_StorageShort() then
 				why = "storage"
+			elseif tr.Heavy and CAI_HeavyCount() >= tr.Heavy then
+				why = "heavy:" .. tr.Heavy
 			else
 				why = CAI_SurplusReason(m, elapsed)
 			end

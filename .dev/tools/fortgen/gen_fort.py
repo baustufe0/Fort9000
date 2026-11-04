@@ -1584,6 +1584,19 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 480,
                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
+        # more wind for the heavy weapons (the player, 04.11.2026: storage alone gives no energy per second; test 7: 3 turbines,
+        # 250-300 energy for minutes with two lasers): one more with the first heavy weapon, one with the second
+        {"name": "turbine4", "after": 21, "trigger": {"heavy": 1, "afford": True},
+         # its cell's outer post and diagonal in the background: the wind comes through, like the storey's others
+         "plan": [("eco", ["turbine"]),
+                  ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")]),
+                  ("upgrades", ["turbine2"])]},
+        # the storey below, on its outer cell (the top storey has no more room; the nest's roof holds no turbine:
+        # protected turbines, A1's door)
+        {"name": "turbine5", "after": 21, "trigger": {"after": "turbine4", "heavy": 2, "afford": True},
+         "plan": [("struts", [((-3500, 75), (-3500, -55), "backbracing"), ((-3500, -55), (-3400, 75), "backbracing"),
+                              ((-3400, 75), (-3400, -55), "backbracing"), ((-3300, -55), (-3400, 75), "backbracing")]),
+                  ("device_on", [((-3500, 75), (-3400, 75), 0.35, "turbine"), ((-3500, 75), (-3400, 75), 0.35, "turbine2")])]},
         # batteries when the heavy weapons' shots together cost more than the storage holds (the player, test 7: two
         # lasers 10000 energy, three batteries 9000): they fire together, deep into one spot
         {"name": "battery4", "after": 21, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
@@ -3210,7 +3223,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
@@ -3756,6 +3769,19 @@ class Plan:
                 self.problems.append("strut to (%d,%d): node not built" % tuple(pb))
             else:
                 self.link(ka, kb, mat)
+            return
+        if step == "device_on":
+            # ("device_on", [(node A, node B, LinkT, device), ...]): a device on an explicit strut, its upgrade the same
+            # way (Vanilla-8's fifth turbine, where the eco step finds no place)
+            pa, pb, t, d = dev
+            ka, kb = self.node_at(pa, tol=5), self.node_at(pb, tol=5)
+            if not ka or not kb or self.nodes[ka][0] not in self.built_nodes or self.nodes[kb][0] not in self.built_nodes:
+                self.problems.append("device_on %s: nodes not built" % d)
+                return
+            a, b = self.nodes[ka], self.nodes[kb]
+            self.actions.append('{ Type = CREATE_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, LinkT = %.2f, DeviceSaveName = "%s" },'
+                                % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), t, d))
+            self.placed.append((d, a[1], b[1], t, ("slot", ka, kb)))
             return
         if step == "mark":
             # ("mark", ["door_layers"]): a marker line (removed at the end of generate); door_layers_late builds the
@@ -4398,6 +4424,7 @@ def main():
             trig += ["zone %s damage %d" % (m["zone"], m.get("damage") or 300)] if m.get("zone") else []
             trig += ["posture %s" % "/".join(m["postures"])] if m.get("postures") else []
             trig += ["storage short"] if m.get("storage") else []
+            trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []

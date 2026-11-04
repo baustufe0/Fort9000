@@ -188,6 +188,7 @@ action fields through its transform).
   the sniper hold (`volleySaving`). At the timeout as many fire together as can be paid (`VOLLEY_PART ids=`).
 - Module trigger keys: `Storage = true` (`CAI_StorageShort`: the standing heavy weapons' `EnergyShot` sum + `Margin` exceeds 3000 +
   2000 per battery), `Afford = true` (`CAI_ModuleAffordable`: waits for 80 % of its devices' cost, logs `MODULE_AFFORD`).
+- Module trigger key `Heavy = n` (`CAI_HeavyCount`): that many own heavy weapons stand (Vanilla-8's turbine4 and turbine5).
 - `CAI_SocketSet(name, weapon)`: every action of the socket names the weapon, and `current` makes modules going in later follow
   it; an upgrade action left over would build its precursor on the empty strut.
 - Log every 60 s (`CAI_LogCombat`): `COMBAT t= reactor= enemy= sniper=seen:,pierced:,hold: shots=` and `DEALT t= dev=`,
