@@ -247,7 +247,7 @@ Fort =
 { Type = CREATE_DEVICE, OriginalNodeAId = 10025, PosA = { x = -3600.00, y = 602.00 }, OriginalNodeBId = 10028, PosB = { x = -3500.00, y = 602.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
 { Type = CREATE_DEVICE, GroundPosition = { x = -3029.41, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_DEVICE, GroundPosition = { x = -3412.21, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10013, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10040, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 10013, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10040, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10043, PosA = {x = -3300.00, y = 205.00 }, OriginalNodeBId = 10013, PosB = { x = -3200.00, y = 308.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10047, PosA = {x = -3300.00, y = 75.00 }, OriginalNodeBId = 10015, PosB = { x = -3200.00, y = 75.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3200.00, y = 75.00 }, OriginalNodeBId = 10043, PosB = { x = -3300.00, y = 205.00 }, MaterialSaveName = "bracing" },
@@ -304,16 +304,26 @@ FortModules =
 { Name = "antiair", Trigger = { Types = { "mortar", "mortar2", "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Time = 240, Postures = { "AntiArtillery", "AntiAir" } }, Requires = 166, Socket = "A1", Loadout = "machinegun", Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10054, PosA = { x = -3300.00, y = -185.00 }, OriginalNodeBId = 10017, PosB = { x = -3200.00, y = -185.00 }, LinkT = 0.50, DeviceSaveName = "machinegun", Socket = "A1" },
 } },
-{ Name = "munitions", Trigger = { Time = 300, Postures = { "Siege", "Punish" }, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 171, Actions = {
+{ Name = "munitions", Trigger = { Time = 300, Postures = { "Siege", "Punish" }, Afford = true, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 171, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10039, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10006, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10011, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10026, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10011, PosB = { x = -3300.00, y = 602.00 }, LinkT = 0.49, DeviceSaveName = "munitions" },
 } },
-{ Name = "factory", Trigger = { Time = 480, After = "munitions", Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 229, Actions = {
+{ Name = "factory", Trigger = { Time = 480, After = "munitions", Afford = true, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 229, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10034, PosA = { x = -3500.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3400.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "factory" },
 } },
 { Name = "store2", Trigger = { Time = 480, After = "munitions", Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 98, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10028, PosA = { x = -3500.00, y = 602.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 602.00 }, LinkT = 0.50, DeviceSaveName = "store" },
+} },
+{ Name = "battery4", Trigger = { Storage = true, Afford = true }, Requires = 105, Actions = {
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10031, PosA = { x = -3600.00, y = 503.00 }, OriginalNodeBId = 10032, PosB = { x = -3500.00, y = 503.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
+} },
+{ Name = "battery5", Trigger = { After = "battery4", Storage = true, Afford = true }, Requires = 112, Actions = {
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10032, PosA = { x = -3500.00, y = 503.00 }, OriginalNodeBId = 10035, PosB = { x = -3400.00, y = 503.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
+} },
+{ Name = "battery6", Trigger = { After = "battery5", Storage = true, Afford = true }, Requires = 124, Actions = {
+{ Type = CREATE_LINK, OriginalNodeAId = 10013, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10040, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10040, PosA = { x = -3300.00, y = 405.00 }, OriginalNodeBId = 10005, PosB = { x = -3200.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
 } },
 { Name = "heavy3", Trigger = { After = "store2", Surplus = { Metal = 1000, Energy = 6000, Seconds = 20 } }, Requires = 0, Socket = "B3", Loadout = "laser", Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 51, PosA = {x = -2993.30, y = 407.38 }, OriginalNodeBId = 53, PosB = { x = -2943.08, y = 312.08 }, MaterialSaveName = "backbracing" },

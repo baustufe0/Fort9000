@@ -62,8 +62,10 @@ CAI_FrontStrip(35)
 print("not yet back: " .. state())
 mats[key(504, 503)] = "door"                -- a module made it a door meanwhile: it stays one
 res.metal = 900
-CAI_FrontStrip(40); res.metal = 900; CAI_FrontStrip(45); res.metal = 900; CAI_FrontStrip(50)
+CAI_FrontStrip(400)
+print("too early: " .. state())
+CAI_FrontStrip(480); res.metal = 900; CAI_FrontStrip(485); res.metal = 900; CAI_FrontStrip(490)
 print("plenty: " .. state())
 res.metal = 50
-CAI_FrontStrip(55); CAI_FrontStrip(60)
+CAI_FrontStrip(495); CAI_FrontStrip(500)
 print("once per strut: " .. state())

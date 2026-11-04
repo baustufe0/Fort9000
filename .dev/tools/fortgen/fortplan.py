@@ -69,6 +69,12 @@ def format_modules(mods):
         if m.get("zone"):
             # Zone (Bastion): the zone's damage (enemy hits, struts lost) reached Damage
             tr.append('Zone = "%s", Damage = %d' % (m["zone"], m.get("damage", 300)))
+        if m.get("storage"):
+            # Storage (Bastion): the heavy weapons' shots together cost more than the energy storage holds
+            tr.append("Storage = true")
+        if m.get("afford"):
+            # Afford (Bastion): the module waits until 80 % of its devices' cost is there
+            tr.append("Afford = true")
         if m.get("surplus"):
             s = m["surplus"]
             tr.append("Surplus = { Metal = %d, Energy = %d, Seconds = %d }" % (s["metal"], s["energy"], s.get("seconds", 20)))

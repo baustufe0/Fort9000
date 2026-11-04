@@ -68,7 +68,17 @@ local CAI_Defaults =
 	-- armour struts of the list become wood (armour reclaims 0.9 per unit of length, wood costs 0.1);
 	-- once metal is at RestoreAbove after that, they become armour again, one per think step. Once per strut: a round
 	-- trip loses metal
-	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800 },
+	-- RestoreAfter: not before (the metal goes to the tech first; test 7: restored at 285-385 s, 600 metal, while the
+	-- munitions plant waited)
+	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800, RestoreAfter = 480 },
+	-- SocketVolley (plans with FortSockets, instead of Fire.Volley; the player, test 7): the heavy weapons fire together at
+	-- one spot. MaxHold: seconds a ready weapon waits for the others and for the energy; then as many as can be paid fire
+	-- together. While the group waits only for energy, other offensive weapons but the sniper hold fire (SaveEnergy).
+	-- EnergyShot: what a shot costs (laser 5000, 2 cost more than the 9000 of three batteries, test 7): a module with
+	-- Trigger Storage fires when the weapons' sum and Margin exceed the storage (3000 + Battery per battery)
+	SocketVolley = { Enabled = true, Types = { firebeam = true, laser = true, cannon20mm = true, cannon = true }, MaxHold = 90,
+		SaveEnergy = true, EnergyShot = { firebeam = 1500, laser = 5000, cannon20mm = 2000, cannon = 2000 }, Margin = 1000,
+		BaseStorage = 3000, Battery = 2000 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
 	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
 	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
@@ -529,7 +539,7 @@ function CAI_ApplyFire()
 	data.CAI.lastSmoke = nil
 	data.CAI.rocketHoldSince = nil
 	data.CAI.smokeCover = f.SmokeCover or CAI_Defaults.Fire.SmokeCover
-	data.CAI.volley = f.Volley or CAI_Defaults.Fire.Volley
+	data.CAI.volley = (CAI_Plan.sockets and CAI_Defaults.SocketVolley) or f.Volley or CAI_Defaults.Fire.Volley
 	data.CAI.volleyHoldSince = nil
 	if ScheduledCallCountOfFunc(CAI_FireTick) == 0 then
 		ScheduleCall(f.Interval or 1, CAI_FireTick)
@@ -672,7 +682,7 @@ function CAI_Volley(id)
 	local afford = CAI_CanAffordGroup(group)
 	local now = st.fireClock or 0
 	if #group >= #all and afford then
-		st.volleyHoldSince, st.volleyHoldWhy = nil, nil
+		st.volleyHoldSince, st.volleyHoldWhy, st.volleySaving = nil, nil, nil
 		local ids = table.concat(group, ",")
 		local members = { unpack(group) }   -- the built-in AI empties the group table while it fires
 		CAI_BaseTryFireGun(id, group)
@@ -686,9 +696,20 @@ function CAI_Volley(id)
 	if st.volleyHoldSince == nil then st.volleyHoldSince = now end
 	if now - st.volleyHoldSince >= (v.MaxHold or 20) then
 		CAI_Log("VOLLEY_TIMEOUT " .. GetDeviceType(id) .. " " .. id .. " after=" .. (now - st.volleyHoldSince) .. "s")
-		st.volleyHoldSince, st.volleyHoldWhy = nil, nil
+		st.volleyHoldSince, st.volleyHoldWhy, st.volleySaving = nil, nil, nil
+		-- as many together as can be paid (SocketVolley); one alone as usual
+		if v.SaveEnergy then
+			while #group > 1 and not CAI_CanAffordGroup(group) do group[#group] = nil end
+			if #group > 1 then
+				local ids = table.concat(group, ",")
+				CAI_BaseTryFireGun(id, group)
+				CAI_Log("VOLLEY_PART ids=" .. ids)
+				return true
+			end
+		end
 		return false
 	end
+	st.volleySaving = v.SaveEnergy and #group >= #all and not afford or nil
 	local why = "ready=" .. #group .. "/" .. #all .. " energy=" .. (afford and 1 or 0)
 	if st.volleyHoldWhy ~= why then
 		st.volleyHoldWhy = why
@@ -699,6 +720,11 @@ end
 
 function TryFireGun(id, useGroup)
 	local hold = false
+	-- the heavy weapons save up for a volley: no other offensive shots but the sniper's (30 energy)
+	if useGroup == nil and data.CAI and data.CAI.volleySaving and type(GetDeviceType) == "function" then
+		local t, v = GetDeviceType(id), data.CAI.volley
+		if not (v and v.Types[t]) and t ~= "sniper" then return end
+	end
 	-- volley weapons wait for each other (also when the built-in AI picks one); a group already firing goes on
 	if useGroup == nil and data.CAI and data.CAI.volley then
 		local ok, res = pcall(CAI_Volley, id)
@@ -1996,6 +2022,34 @@ function CAI_SurplusReason(m, elapsed)
 	return "surplus:m=" .. CAI_Round(metal) .. ",e=" .. CAI_Round(energy)
 end
 
+function CAI_ModuleAffordable(m)
+	if type(GetDeviceCost) ~= "function" then return true end
+	local res = GetTeamResources(teamId)
+	if not (type(res) == "table" or type(res) == "userdata") then return true end
+	local cm, ce = 0, 0
+	for _, a in ipairs(m.actions) do
+		if a.DeviceSaveName then
+			local ok, c = pcall(GetDeviceCost, a.DeviceSaveName)
+			if ok and c then cm, ce = cm + (c.metal or 0), ce + (c.energy or 0) end
+		end
+	end
+	return (res.metal or 0) >= 0.8 * cm and (res.energy or 0) >= 0.8 * ce
+end
+
+-- the heavy weapons' shots together cost more than the storage holds
+function CAI_StorageShort()
+	local v = CAI_Defaults.SocketVolley
+	if type(GetDeviceCountSide) ~= "function" then return false end
+	local side = CAI_Side(teamId)
+	local need, batteries = 0, 0
+	for i = 0, GetDeviceCountSide(side) - 1 do
+		local t = GetDeviceType(GetDeviceIdSide(side, i))
+		need = need + (v.EnergyShot[t] or 0)
+		if t == "battery" then batteries = batteries + 1 end
+	end
+	return need > 0 and need + v.Margin > v.BaseStorage + v.Battery * batteries
+end
+
 function CAI_UpdateModules()
 	local mods = data.CAIModules
 	if mods == nil or type(data.fortIndex) ~= "number" or Fort == nil then return end
@@ -2032,8 +2086,19 @@ function CAI_UpdateModules()
 				why = "zone:" .. tr.Zone .. "=" .. CAI_Round(zoneSum - (m.zoneMark or 0))
 			elseif tr.Time and elapsed >= tr.Time then
 				why = "time:" .. tr.Time
+			elseif tr.Storage and CAI_StorageShort() then
+				why = "storage"
 			else
 				why = CAI_SurplusReason(m, elapsed)
+			end
+			-- Afford (Bastion): waits until 80 % of its devices' cost is there, so a dear device does not hold up the
+			-- plan behind it (test 7: the munitions plant stood first in line at 177 energy, turbines waited, skipped at last)
+			if why and tr.Afford and not CAI_ModuleAffordable(m) then
+				if not m.affordWait then
+					m.affordWait = true
+					CAI_Log("MODULE_AFFORD " .. m.name .. " trigger=" .. why)
+				end
+				why = nil
 			end
 			if why then
 				progress = progress or CAI_PlanProgress()
@@ -2059,7 +2124,14 @@ function CAI_UpdateModules()
 		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions
 			.. ((m.done or 0) > 0 and (" repeat=" .. m.done) or ""))
 		-- copies: the same module may go in again (Repeat), and the built-in AI keeps state per action
-		for _, a in ipairs(m.actions) do all[#all + 1] = CAI_CopyAction(a) end
+		for _, a in ipairs(m.actions) do
+			local c = CAI_CopyAction(a)
+			-- a socket that has moved on: a pending upgrade must not bring its old weapon back (test 7: B1 sold for a 20mm,
+			-- then module sniper2 built the sniper as its precursor on the empty strut)
+			local sk = c.Socket and data.CAI and data.CAI.sockets and data.CAI.sockets[c.Socket]
+			if sk and sk.current and CAI_UpgradeOf[c.DeviceSaveName] ~= sk.current then c.DeviceSaveName = sk.current end
+			all[#all + 1] = c
+		end
 	end
 	CAI_InsertActions(fi, all)
 end
@@ -2167,7 +2239,15 @@ function CAI_Think()
 			if okR and res and (res.metal or 0) >= Strategy.BuildSkipMinMetal then
 				st.buildHadRes = true
 			end
-			if st.buildHadRes and elapsed - st.buildSince >= Strategy.BuildSkipSeconds then
+			-- (Bastion) a device waiting for energy is no hang (test 7: the munitions plant skipped after 90 s at 177 energy)
+			local waitEnergy = false
+			if CAI_Plan.sockets and okR and res and Fort[fi] and Fort[fi].DeviceSaveName and type(GetDeviceCost) == "function" then
+				local okC, c = pcall(GetDeviceCost, Fort[fi].DeviceSaveName)
+				waitEnergy = okC and c and (res.energy or 0) < (c.energy or 0)
+			end
+			if waitEnergy then
+				st.buildSince = elapsed
+			elseif st.buildHadRes and elapsed - st.buildSince >= Strategy.BuildSkipSeconds then
 				local a = Fort[fi]
 				CAI_Log("SKIPPED action " .. fi .. " type=" .. tostring(a and a.Type) .. " "
 					.. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " after " .. (elapsed - st.buildSince) .. "s")
@@ -2503,7 +2583,7 @@ function CAI_SniperTarget(weaponId, weaponPos, sideDevices)
 	end
 	local prio = data.CustomWeaponPriorities[w] or data.SmallArmsPrioritiesOverride or SmallArmsPriorities
 	for _, kind in ipairs(prio) do
-		for _, id in ipairs(sideDevices[kind] or {}) do
+		for _, id in ipairs(kind ~= "sandbags" and sideDevices[kind] or {}) do
 			if not IsCloaked(id) then
 				local c = GetDeviceCentrePosition(id)
 				for _, up in ipairs(cfg.AimUp) do
@@ -2536,6 +2616,16 @@ function CAI_OwnDevices(builtOnly)
 		end
 	end
 	return count
+end
+
+-- the socket's weapon from now on: every action of the socket names it (an upgrade action left over would build its
+-- precursor on the empty strut), and modules not yet in follow (CAI_UpdateModules)
+function CAI_SocketSet(name, w)
+	local s = data.CAI.sockets[name]
+	s.current = w
+	for _, a in ipairs(Fort) do
+		if a.Socket == name and a.Type == CREATE_DEVICE then a.DeviceSaveName = w end
+	end
 end
 
 -- called when the built-in AI queues a lost device for rebuilding: true if the socket's action was swapped
@@ -2587,7 +2677,7 @@ function CAI_SocketLost(deviceId)
 		-- does while the AI holds AntiAir (test 2, 03.11.2026: B1's sniper became a machine gun and its offence was gone)
 		local passive = st.noOffence and st.noOffence[d] and not (st.noOffence[base]) and st.posture ~= "AntiAir"
 		if d ~= base and not passive and (need == nil or (own[need] or 0) > 0) and CAI_Affordable(st, d) then
-			a.DeviceSaveName = d
+			CAI_SocketSet(a.Socket, d)
 			s.losses = {}
 			s.swaps = s.swaps + 1
 			if st.rebuilds then st.rebuilds[k] = nil end
@@ -2688,7 +2778,7 @@ function CAI_SocketRefill(elapsed)
 					s.refills = (s.refills or 0) + 1
 					s.refillAt = elapsed
 					local w = ready[(s.refills - 1) % #ready + 1]
-					Fort[k].DeviceSaveName = w
+					CAI_SocketSet(name, w)
 					data.Rebuild[k] = true
 					if data.Frustration then data.Frustration[k] = nil end
 					if st.rebuilds then st.rebuilds[k] = nil end
@@ -2731,6 +2821,7 @@ function CAI_FrontStrip(elapsed)
 		st.stripSkip[i .. why] = true
 		CAI_Log("STRIP_SKIP " .. i .. " " .. why .. " t=" .. elapsed)
 	end
+	local lastResult
 	local function swap(i, new)
 		local q = CAI_Plan.strip[i]
 		local a, b = CAI_StripNode(q[1], q[2]), CAI_StripNode(q[3], q[4])
@@ -2740,6 +2831,7 @@ function CAI_FrontStrip(elapsed)
 		if old ~= (new == "armour" and "bracing" or "armour") then skip(i, "material " .. tostring(old)); return false end
 		local before = metal()
 		local r = CreateLink(teamId, new, a, b)
+		lastResult = r
 		CAI_Log("STRIP " .. q[1] .. "," .. q[2] .. "-" .. q[3] .. "," .. q[4] .. " " .. tostring(old) .. "->" .. new .. " result=" .. tostring(r)
 			.. " m=" .. CAI_Round(before) .. "->" .. CAI_Round(metal()) .. " t=" .. elapsed)
 		return true
@@ -2749,11 +2841,13 @@ function CAI_FrontStrip(elapsed)
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == nil and metal() < cfg.Below and swap(i, "bracing") then st.strip[i] = "wood" end
 		end
-	elseif metal() >= cfg.RestoreAbove then
+	elseif elapsed >= cfg.RestoreAfter and metal() >= cfg.RestoreAbove then
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == "wood" then
-				st.strip[i] = "done"
-				if swap(i, "armour") then return end
+				-- refused (test 7: result -4, that strut stayed wood): again next step
+				local did = swap(i, "armour")
+				if not did or lastResult == (CS_SUCCESS or -15) then st.strip[i] = "done" end
+				if did then return end
 			end
 		end
 	end
@@ -2871,7 +2965,8 @@ function CAI_SocketUpgrade(elapsed)
 						and m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8) then
 					local a = Fort[d.k]
 					local old = a.DeviceSaveName
-					a.DeviceSaveName = w
+					local before = s.current
+					CAI_SocketSet(name, w)
 					s.selling = d.id
 					data.DeviceDeleteToRebuild = data.DeviceDeleteToRebuild or {}
 					data.DeviceDeleteToRebuild[d.id] = true
@@ -2879,7 +2974,8 @@ function CAI_SocketUpgrade(elapsed)
 					st.upgradeAt = elapsed
 					st.richFor = 0
 					if DD_SUCCESS ~= nil and r ~= DD_SUCCESS then
-						a.DeviceSaveName = old
+						CAI_SocketSet(name, old)
+						s.current = before
 						s.selling = nil
 						data.DeviceDeleteToRebuild[d.id] = nil
 					else

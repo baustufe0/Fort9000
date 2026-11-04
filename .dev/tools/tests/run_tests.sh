@@ -106,6 +106,10 @@ check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser s
 check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon20mm$" "$LUA" t_upgrade.lua
 check "Upgrade: nothing dearer than the storage"   "^storage 900: B2=cannon20mm B1=sniper$" "$LUA" t_upgrade.lua
 check "Upgrade: a firebeam is replaced later"     "^firebeam replaced: B1=cannon20mm$" "$LUA" t_upgrade.lua
+check "Socket: all its actions follow the weapon" "^all actions: cannon20mm cannon20mm$" "$LUA" t_upgrade.lua
+check "Socket: a late module follows it too"      "^late module: cannon20mm$" "$LUA" t_upgrade.lua
+check "Storage: two lasers need more than 3 batteries" "^two lasers, 3 batteries short: true$" "$LUA" t_upgrade.lua
+check "Storage: 4 batteries with margin"          "^4 batteries short: false$" "$LUA" t_upgrade.lua
 check "Refill: not at once (a rebuild may be due)" "^short empty: rebuild=nil$" "$LUA" t_upgrade.lua
 check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=cannon20mm$" "$LUA" t_upgrade.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
@@ -118,6 +122,7 @@ check "Front strip: not while metal is there"     "^metal there: armour armour a
 check "Front strip: as many as the metal needs"   "^one step: bracing bracing armour m=210$" "$LUA" t_strip.lua
 check "Front strip: all three while short"        "^short: bracing bracing bracing$" "$LUA" t_strip.lua
 check "Front strip: back only with plenty"        "^not yet back: bracing bracing bracing$" "$LUA" t_strip.lua
+check "Front strip: not before RestoreAfter"       "^too early: bracing door bracing$" "$LUA" t_strip.lua
 check "Front strip: armour again, a door stays"   "^plenty: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: once per strut"               "^once per strut: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: logged with the metal"        "STRIP -2844.7,309.73--2892.17,411.07 armour->bracing result=-15 m=50->130 t=15$" "$LUA" t_strip.lua

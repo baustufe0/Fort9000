@@ -1573,10 +1573,10 @@ VANILLA_VARIANTS["bastion"] = {
         # sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
         # on its own cells (test 6: stood at 661-700 s, 240 s after its module could start): as soon as the turbine storey
         # is on, before the upgrade centre
-        {"name": "munitions", "after": 12, "trigger": {"postures": ("Siege", "Punish"), "time": 300,
+        {"name": "munitions", "after": 12, "trigger": {"afford": True, "postures": ("Siege", "Punish"), "time": 300,
                                                        "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
-        {"name": "factory", "after": 16, "trigger": {"after": "munitions", "time": 480,
+        {"name": "factory", "after": 16, "trigger": {"afford": True, "after": "munitions", "time": 480,
                                                      "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
@@ -1584,6 +1584,13 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 480,
                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
+        # batteries when the heavy weapons' shots together cost more than the storage holds (the player, test 7: two
+        # lasers 10000 energy, three batteries 9000): they fire together, deep into one spot
+        {"name": "battery4", "after": 21, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
+        {"name": "battery5", "after": 21, "trigger": {"after": "battery4", "storage": True, "afford": True},
+         "plan": [("eco", ["battery"])]},
+        {"name": "battery6", "after": 21, "trigger": {"after": "battery5", "storage": True, "afford": True},
+         "plan": [("eco", ["battery"])]},
         # the third heavy weapon from a full storage (test 6: at the metal cap in 27 of the last 50 snapshots)
         # a laser: a 20mm's box (111 high, 90 wide) hits the plan's battery beside it and the door in front of it; the
         # laser is 101 high and fits under the reactor's floor. 1000 metal: only with the second store
@@ -3203,7 +3210,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
@@ -4390,6 +4397,8 @@ def main():
             trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
             trig += ["zone %s damage %d" % (m["zone"], m.get("damage") or 300)] if m.get("zone") else []
             trig += ["posture %s" % "/".join(m["postures"])] if m.get("postures") else []
+            trig += ["storage short"] if m.get("storage") else []
+            trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []
             print("   module %s: %d actions (%s), trigger %s%s, requires plan action %d"

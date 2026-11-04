@@ -315,6 +315,25 @@ list held node ids, `data.OriginalToActual` knows a node only after an action us
 failed swap was marked as tried without a word. Now by position, with `STRIP_SKIP` lines, retried, below 150 metal, as many
 per step as the metal needs.
 
+**Test 7 (04.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 won at 1517 s):**
+- Front strip works: +90, +80, +89 metal per strut, 260 by 35 s on both sides (the game pays the material table's refund).
+  Armour again at 285-385 s, about -200 each; one refused (result -4) stayed wood.
+- Opening: first mine 60 s (105 before), workshop 119 s (111), third mine 129 s (146).
+- T2: munitions plant 486 s (661), first 20mm 646 s (850). T1's munitions plant was skipped by the safety valve after 90 s,
+  waiting at 177 energy, and never built, so T1 went firebeam 844/933 s, then laser 1101/1169 s.
+- The player's sniper sold and placed again: T2 sold B1's sniper at ~660 s for a 20mm; module sniper2's action built its
+  precursor, a sniper, on the empty strut at 665 s and the 20mm found the strut occupied. T2 never had a second heavy weapon.
+- T1 won slowly: 17 laser shots in 400 s, one laser at a time, at 254-295 energy and the metal cap of 1500. A laser shot
+  costs 5000 energy: two are 10000, three batteries hold 9000. Module heavy3 never fired (6000 energy for 20 s).
+- Sniper sight: `hold` goes on rising (444 / 319); `seen` 94 / 131, `pierced` 41 / 182. Still 26 and 23 hits on sandbags.
+
+**After test 7:** `CAI_SocketSet`: all actions of a socket follow its weapon, and modules going in later too. `SocketVolley`:
+heavy weapons fire together at one spot, up to 90 s of waiting, other offensive weapons but the sniper hold while only the
+energy is missing, after that as many together as can be paid (`VOLLEY_PART`). Modules battery4-6 with Trigger `Storage`: when
+the shots of the standing heavy weapons cost more than the storage (+1000). Trigger `Afford` on munitions and factory, and a
+device waiting for energy is no hang for the safety valve. Armour back only from 480 s, retried when refused. Snipers do not
+choose sandbags as a target (sandbags hit on the way can still happen). 246 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

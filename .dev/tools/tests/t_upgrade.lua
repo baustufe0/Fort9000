@@ -106,3 +106,19 @@ for i = 1, 8 do CAI_Think() end
 print("short empty: rebuild=" .. tostring(data.Rebuild[k2]))
 for i = 1, 4 do CAI_Think() end
 print("refill: rebuild=" .. tostring(data.Rebuild[k2]) .. " B2=" .. Fort[k2].DeviceSaveName)
+-- every action of a socket follows its weapon, and a module that goes in later too (module sniper2 brought the sniper back)
+Fort[#Fort + 1] = { Type = CREATE_DEVICE, Socket = "B1", DeviceSaveName = "sniper2" }
+CAI_SocketSet("B1", "cannon20mm")
+print("all actions: " .. Fort[#Fort].DeviceSaveName .. " " .. Fort[k1].DeviceSaveName)
+Fort[#Fort] = nil
+local m = { name = "late", trigger = { Time = 0 }, requires = 0, repeats = 0, cooldown = 0,
+  actions = { { Type = CREATE_DEVICE, Socket = "B1", DeviceSaveName = "sniper2" } } }
+data.CAIModules.list[#data.CAIModules.list + 1] = m
+data.fortIndex = #Fort + 1
+CAI_UpdateModules()
+print("late module: " .. tostring(Fort[data.fortIndex] and Fort[data.fortIndex].DeviceSaveName))
+-- storage: two lasers (10000) and three batteries (9000)
+own = { [100] = "reactor", [101] = "laser", [102] = "laser", [103] = "battery", [104] = "battery", [105] = "battery" }
+print("two lasers, 3 batteries short: " .. tostring(CAI_StorageShort()))
+own[106] = "battery"
+print("4 batteries short: " .. tostring(CAI_StorageShort()))

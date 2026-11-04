@@ -183,6 +183,13 @@ action fields through its transform).
   strut (a round trip loses metal). Nodes are found by position: the game renumbers only the ids in the plan's actions, and
   `data.OriginalToActual` holds a node only after an action used it. Logs `STRIP -2844.7,309.73--2892.17,411.07 armour->bracing
   result=-15 m=50->130 t=15`, and `STRIP_SKIP` once per reason. Refund not confirmed yet: read it from that line. Test: `t_strip.lua`.
+- `SocketVolley` (plans with FortSockets, replaces `Fire.Volley`): firebeam, laser, 20mm and cannon wait for each other, `MaxHold`
+  90 s, and fire at the leader's target. While the whole group is ready and only energy is missing, other offensive weapons but
+  the sniper hold (`volleySaving`). At the timeout as many fire together as can be paid (`VOLLEY_PART ids=`).
+- Module trigger keys: `Storage = true` (`CAI_StorageShort`: the standing heavy weapons' `EnergyShot` sum + `Margin` exceeds 3000 +
+  2000 per battery), `Afford = true` (`CAI_ModuleAffordable`: waits for 80 % of its devices' cost, logs `MODULE_AFFORD`).
+- `CAI_SocketSet(name, weapon)`: every action of the socket names the weapon, and `current` makes modules going in later follow
+  it; an upgrade action left over would build its precursor on the empty strut.
 - Log every 60 s (`CAI_LogCombat`): `COMBAT t= reactor= enemy= sniper=seen:,pierced:,hold: shots=` and `DEALT t= dev=`,
   `link=`, `band=` (own hits by weapon on devices and struts; band: top above y 75, mid, low below y 300).
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
