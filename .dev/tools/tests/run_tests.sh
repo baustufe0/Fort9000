@@ -87,7 +87,7 @@ check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end
 check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
-check "Bastion loads with sockets and zones"   "^234 6 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
+check "Bastion loads with sockets and zones"   "^246 7 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
 check "Sockets: listed with their loadouts"     "SOCKETS A0:machinegun A1:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
 check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
 check "Sockets: no machine gun for a sniper"   "^after two losses: sniper rebuild=true$" "$LUA" t_sockets.lua
@@ -113,7 +113,15 @@ check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: not through two doors"      "^two doors: sniper hold ap hold$" "$LUA" t_sniper.lua
 check "Sniper sight: a door above the centre"    "^door over the centre: sniper y185$" "$LUA" t_sniper.lua
-check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=3$" "$LUA" t_sniper.lua
+check "Front strip: listed in the plan"           "^list: 3$" "$LUA" t_strip.lua
+check "Front strip: not while metal is there"     "^metal there: armour armour armour$" "$LUA" t_strip.lua
+check "Front strip: one strut per step"           "^one step: bracing armour armour$" "$LUA" t_strip.lua
+check "Front strip: all three while short"        "^short: bracing bracing bracing$" "$LUA" t_strip.lua
+check "Front strip: back only with plenty"        "^not yet back: bracing bracing bracing$" "$LUA" t_strip.lua
+check "Front strip: armour again, a door stays"   "^plenty: armour door armour$" "$LUA" t_strip.lua
+check "Front strip: once per strut"               "^once per strut: armour door armour$" "$LUA" t_strip.lua
+check "Sniper sight: another device is no target" "^sandbags in the way: sniper hold$" "$LUA" t_sniper.lua
+check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=4$" "$LUA" t_sniper.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
 check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
 check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua
@@ -126,7 +134,7 @@ check "Posture: holds 30 s before a switch"     "^at 10 s: Pressure$" "$LUA" t_p
 check "Posture: enemy mortars -> AntiArtillery" "POSTURE Pressure->AntiArtillery t=35 " "$LUA" t_posture.lua
 check "Posture: boosts its targets"             "^heavy targets: cannon,mortar,mine$" "$LUA" t_posture.lua
 check "Posture: zone pressure -> Siege"         "POSTURE AntiArtillery->Siege t=65 " "$LUA" t_posture.lua
-check "Posture: triggers its module"            "MODULE munitions trigger=posture:Siege at=[0-9]+ actions=1$" "$LUA" t_posture.lua
+check "Posture: triggers its module"            "MODULE munitions trigger=posture:Siege at=[0-9]+ actions=3$" "$LUA" t_posture.lua
 check "Posture: preferred loadout on a swap"    "SOCKET B1 sniper->laser action=[0-9]+ swaps=1 posture=Siege$" "$LUA" t_posture.lua
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua

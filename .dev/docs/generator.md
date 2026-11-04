@@ -119,6 +119,9 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
 - `bg_diag_cells [(left x, floor y)]`: these cells' diagonals are background bracing; `bg_struts [((x, y), (x, y))]`:
   these struts become background bracing (a later module's tall device stands in front of them: Vanilla-8's munitions
   plant, 170 high, over two storeys).
+- Variant key `front_strip [(a, b)]`: written as `FortStrip = { {a, b}, ... }` (plan node ids) after the sockets
+  ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)). Module cfg `prereq: {}`: a weapon whose tech comes from another
+  module; a module's tech counts as built for the order check.
 - Socket keys `upgrade` (weapons) and `rank`: written as `Upgrade = { ... }, Rank = n` in FortSockets, only weapons
   that passed the loadout check ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)).
 - Module trigger key `postures`: written as `Postures = { ... }` ([ai.md](ai.md#posture)).

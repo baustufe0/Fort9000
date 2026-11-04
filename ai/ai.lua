@@ -62,7 +62,13 @@ local CAI_Defaults =
 	-- fired all match at targets behind closed doors). Hitpoints: what the ray may pass, the AP sniper's
 	-- PenetrationDamage (one door of 400, not two; the built-in value 810 passes two). AimUp: points tested above
 	-- a device's centre, since a weapon's door is often cut to its barrel height
-	SniperSight = { Enabled = true, Hitpoints = { sniper = 0, sniper2 = 600 }, AimUp = { 0, 15, 30 } },
+	-- Near: the ray must end this close to the point aimed at; any other device on the way (sandbags, test 6) is no target
+	SniperSight = { Enabled = true, Hitpoints = { sniper = 0, sniper2 = 600 }, AimUp = { 0, 15, 30 }, Near = 60 },
+	-- FrontStrip (plans with FortStrip, the player 04.11.2026): while metal is below Below in the first Until seconds, an
+	-- armour strut of the list becomes wood (one per think step; armour reclaims 0.9 per unit of length, wood costs 0.1);
+	-- once metal is at RestoreAbove after that, they become armour again, one per think step. Once per strut: a round
+	-- trip loses metal
+	FrontStrip = { Enabled = true, Below = 120, Until = 300, RestoreAbove = 800 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
 	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
 	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
@@ -156,7 +162,7 @@ end
 local function CAI_GetPlanGlobals()
 	return { Fort = Fort, FortTeam = FortTeam, FortId = FortId, FortPos = FortPos,
 		FortTableStartLine = FortTableStartLine, FortTableCommentLines = FortTableCommentLines, FortModules = FortModules,
-		FortRetire = FortRetire, FortSockets = FortSockets, FortZones = FortZones }
+		FortRetire = FortRetire, FortSockets = FortSockets, FortZones = FortZones, FortStrip = FortStrip }
 end
 
 local function CAI_SetPlanGlobals(t)
@@ -169,6 +175,7 @@ local function CAI_SetPlanGlobals(t)
 	FortModules = t.FortModules
 	FortRetire = t.FortRetire
 	FortSockets = t.FortSockets
+	FortStrip = t.FortStrip
 	FortZones = t.FortZones
 end
 
@@ -379,6 +386,7 @@ function CAI_TrySwapPlan(where, realOf)
 	CAI_Plan.modules = ours.FortModules
 	CAI_Plan.retire = type(ours.FortRetire) == "table" and ours.FortRetire or nil
 	CAI_Plan.sockets = type(ours.FortSockets) == "table" and ours.FortSockets or nil
+	CAI_Plan.strip = type(ours.FortStrip) == "table" and ours.FortStrip or nil
 	CAI_Plan.zones = type(ours.FortZones) == "table" and ours.FortZones or nil
 	CAI_SetPlanGlobals({
 		Fort = ours.Fort,
@@ -2190,6 +2198,8 @@ function CAI_Think()
 	if not okP then CAI_Log("ERROR socket upgrade: " .. tostring(errP)) end
 	okP, errP = pcall(CAI_SocketRefill, elapsed)
 	if not okP then CAI_Log("ERROR socket refill: " .. tostring(errP)) end
+	okP, errP = pcall(CAI_FrontStrip, elapsed)
+	if not okP then CAI_Log("ERROR front strip: " .. tostring(errP)) end
 	okP, errP = pcall(CAI_LogCombat, elapsed)
 	if not okP then CAI_Log("ERROR combat log: " .. tostring(errP)) end
 	local ok, res = pcall(CAI_UpdateTargets)
@@ -2486,7 +2496,10 @@ function CAI_SniperTarget(weaponId, weaponPos, sideDevices)
 	local flags = RAY_EXCLUDE_CONSTRUCTION + RAY_ALLIED_BG_BLOCKS + RAY_EXCLUDE_DYNAMIC_TERRAIN   -- separate bits
 	local function hits(pos, through)
 		local hit = CastRayFromDevice(weaponId, pos, through, flags, 0)
-		return GetRayHitSideId() == enemyTeamId and (hit == RAY_HIT_WEAPON or hit == RAY_HIT_DEVICE)
+		if not (GetRayHitSideId() == enemyTeamId and (hit == RAY_HIT_WEAPON or hit == RAY_HIT_DEVICE)) then return false end
+		local at = GetRayHitPosition()
+		local dx, dy = at.x - pos.x, at.y - pos.y
+		return dx * dx + dy * dy <= cfg.Near * cfg.Near
 	end
 	local prio = data.CustomWeaponPriorities[w] or data.SmallArmsPrioritiesOverride or SmallArmsPriorities
 	for _, kind in ipairs(prio) do
@@ -2681,6 +2694,47 @@ function CAI_SocketRefill(elapsed)
 					if st.rebuilds then st.rebuilds[k] = nil end
 					CAI_Log("SOCKET " .. name .. " refill " .. w .. " action=" .. k .. " tries=" .. s.refills)
 				end
+			end
+		end
+	end
+end
+
+-- Front strip: see CAI_Defaults.FrontStrip. Logs STRIP <a>-<b> <old>-><new> result=<CreateLink> m=<before>-><after>:
+-- what the swap really pays back is measured here, the game's own reference does not say.
+function CAI_FrontStrip(elapsed)
+	local st = data.CAI
+	local cfg = Strategy.FrontStrip or CAI_Defaults.FrontStrip
+	if st == nil or CAI_Plan.strip == nil or not (cfg and cfg.Enabled) or type(CreateLink) ~= "function" then return end
+	st.strip = st.strip or {}
+	local res = GetTeamResources(teamId)
+	if not (type(res) == "table" or type(res) == "userdata") then return end
+	local m = res.metal or 0
+	local function swap(pair, new)
+		local a, b = data.OriginalToActual and data.OriginalToActual[pair[1]], data.OriginalToActual and data.OriginalToActual[pair[2]]
+		if a == nil or b == nil or not IsNodeLinkedTo(a, b) then return false end
+		local old = GetLinkMaterialSaveName(a, b)
+		if old ~= (new == "armour" and "bracing" or "armour") then return false end
+		local r = CreateLink(teamId, new, a, b)
+		local after = GetTeamResources(teamId)
+		CAI_Log("STRIP " .. pair[1] .. "-" .. pair[2] .. " " .. tostring(old) .. "->" .. new .. " result=" .. tostring(r)
+			.. " m=" .. CAI_Round(m) .. "->" .. CAI_Round(after and after.metal or 0) .. " t=" .. elapsed)
+		return true
+	end
+	if elapsed <= cfg.Until and m < cfg.Below then
+		for i, pair in ipairs(CAI_Plan.strip) do
+			if not st.strip[i] then
+				st.strip[i] = "tried"
+				if swap(pair, "bracing") then
+					st.strip[i] = "wood"
+					return
+				end
+			end
+		end
+	elseif m >= cfg.RestoreAbove then
+		for i, pair in ipairs(CAI_Plan.strip) do
+			if st.strip[i] == "wood" then
+				st.strip[i] = "done"
+				if swap(pair, "armour") then return end
 			end
 		end
 	end

@@ -176,6 +176,11 @@ action fields through its transform).
   15 and 30 above it. The AP sniper's ray may pass `Hitpoints` 600 (its PenetrationDamage: one door of 400, not two; the
   built-in 810 passes two), assuming the ray adds up the hitpoints it passes. Fire chance 1. Nothing visible: no shot,
   own door stays shut. Test: `t_sniper.lua` (mocked ray).
+- Near (`SniperSight.Near`, 60): the ray must end that close to the point aimed at; another device on the way is no target.
+- Front strip (`CAI_FrontStrip`, plans with `FortStrip = { {a, b}, ... }`, `Strategy.FrontStrip`): below `Below` (120)
+  metal in the first `Until` (300) seconds an armour strut of the list becomes wood with `CreateLink`, one per think step;
+  at `RestoreAbove` (800) armour again, only struts still wood, once per strut (a round trip loses metal). Logs `STRIP 57-50
+  armour->bracing result=-15 m=50->140 t=25`. Refund not confirmed by a probe: read it from that line. Test: `t_strip.lua`.
 - Log every 60 s (`CAI_LogCombat`): `COMBAT t= reactor= enemy= sniper=seen:,pierced:,hold: shots=` and `DEALT t= dev=`,
   `link=`, `band=` (own hits by weapon on devices and struts; band: top above y 75, mid, low below y 300).
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.

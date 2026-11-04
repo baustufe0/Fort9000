@@ -48,6 +48,11 @@ function CastRayFromDevice(id, pos, hitpoints, flags, fieldFlags)
   return RAY_HIT_WEAPON
 end
 function GetRayHitSideId() return side end
+local hitAt = nil          -- where the ray ends; nil: at the point aimed at
+local lastAim
+local BaseCast = CastRayFromDevice
+function CastRayFromDevice(id, pos, hitpoints, flags, fieldFlags) lastAim = pos; return BaseCast(id, pos, hitpoints, flags, fieldFlags) end
+function GetRayHitPosition() return hitAt or lastAim end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
 dofile("mods/fort9000dev/ai/ai.lua")
 FortPlanConfig.Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }
@@ -71,5 +76,8 @@ print("two doors: sniper " .. try(1) .. " ap " .. try(2))
 blockers = {}; lowDoor = true
 print("door over the centre: sniper " .. try(1))
 lowDoor = false
+hitAt = { x = 2860, y = 200 }
+print("sandbags in the way: sniper " .. try(1))
+hitAt = nil
 local ss = data.CAI.sniperSight
 print("counts: seen=" .. ss.seen .. " pierced=" .. ss.pierced .. " hold=" .. ss.hold)

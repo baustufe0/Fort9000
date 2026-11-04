@@ -273,6 +273,43 @@ ends at 66.5, 8.5 above its floor, so the tie is 46 long and gets built; `physic
 before. Open: the sag itself, whether rays stop at closed and pass open doors as assumed, and the reaction time at an
 opening door (fire tick 1 s, own door opening about 2 s). 232 checks pass.
 
+**Test 6 (04.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 won at 1190 s: first decided AI-vs-AI match of Bastion;
+the log file also holds test 5, this match starts at its third PLAN pair):**
+- The 20mm decided it. Built: T2 850 and 951 s, T1 903 and 976 s. T2 lost both at 1023 and 1032 s and did not get them
+  back; T1 fired 128 rounds (T2 72 + 8). T2's reactor stood at 1.00 at 1020 s and 0.54 at 1080 s; struts lost by T2 per
+  50 s from 1000 s: 43, 3, 41, 58. T1's 20mm hits: 99 low (below y 300), 19 mid, 14 top at 1140 s. No direct reactor hit
+  appears in DEALT, so the reactor damage came some other way (not identified).
+- Tech: munitions plant 661 s (T2), 700 s (T1); factory 590 s, 757 s: both modules fire when plan action 217 is reached
+  (~420-480 s), so the order changed little. Firebeam only once (T2 B2, 782 s), sold for a 20mm. No laser. No refill fired.
+- Door tie: no more `GAVE_UP` on the armour (tie 46 long). Sag at 900 s about (-24,20) / (-30,19); test 5 had (-60,76) on T2.
+  `UNSTABLE` lines 6 instead of 12 (one match each). All turbines built and upgraded on both sides.
+- Sniper sight: rays do stop at closed doors: `hold` 173 of 184 tries (T1) and 166 of 181 (T2) in the first 180 s. But
+  `hold` freezes from ~360 s on (178 / 262) while `seen` climbs to 325 / 277. Sandbags stand behind no door, and a ray
+  towards a target behind them counts as seen, since any enemy device hit passes: `sniper>sandbags` 20 (T1), 21 + 6 (T2).
+  Sniper shots did not fall much: 128 + 16 (T1), 114 + 17 (T2), against 128 + 25 and 169 + 7 in test 5. Their hits on
+  struts: T1 door 40, armour 18, bracing 13, against 32 on devices; T2 door 27, armour 16, bracing 9, against 44 on
+  devices. So blind fire is reduced early and not solved.
+- Doors: snipers reach the top now, hits at top / mid / low: T1 67 / 36 / 0, T2 64 / 29 / 1 (top means above y 75).
+- Storage again idle late: T1 at the metal cap in 27 of the last 50 snapshots, at the energy cap in 13.
+
+**After test 6:**
+- Sniper sight: the ray must end within 60 of the point aimed at, so sandbags on the way are no target.
+- First mine before the workshop (the player). Two more hubs like `_V_HUB`, one and two cells further left (`_V8_HUB2`
+  at (-3049,532) after the first shot, `_V8_HUB3` at (-3149,532) after the workshop; the player: much stiffer upwards).
+  `physics.py`: the main post's old peak (45-48, 0.60) is gone from the top list, next 54-56 0.53; the headline is now
+  0.73, the short armour arm 10002-10075 of B2's outer door. Max sag 93 unchanged (a back node). The hubs were not
+  tried with the arm's load alone.
+- Munitions module on its own cells at plan action 171 instead of 229 (trigger 300 s, Siege/Punish or Surplus).
+  Energy is the likely limit now: 5000 are needed and test 6 had 500-2000 until about 420 s.
+- Module `heavy3`, socket B3: a laser on the starting fort's strut at y 404 under the reactor, through the two slanted
+  armour struts in front of it, made doors (a 20mm does not fit there: box against the plan's battery and that door). From
+  a full storage: 1000 metal / 6000 energy for 20 s, after `store2`. Plan 246 actions.
+- Front strip (`FortStrip`, `CAI_FrontStrip`, the player): below 120 metal in the first 300 s the armour struts 57-50,
+  58-57, 50-53 in front of the reactor become wood, one per think step; at 800 metal armour again, once per strut. Post
+  53-55 stays armour: it carries the tower's front. By the material table that is about 100 metal per strut less 10 for
+  the wood; whether `CreateLink` really pays that back is not known, the `STRIP` log line shows it. `physics.py` with
+  the three as wood: 0.72. 246 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

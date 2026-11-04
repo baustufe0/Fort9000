@@ -1425,6 +1425,17 @@ VANILLA_VARIANTS["recorded"] = None
 # (prow, lower face, mine row) are the crumple zone Z0; the AI rebuilds what is shot away. Which weapon goes into a
 # socket is decided by modules (later the posture engine); the plan builds the empty sockets, the economy and the tech.
 _V8_ROWS = [-445, -315, -185, -55, 75, 205, 308, 405, 503, 602, 700]
+# the player (04.11.2026): the hub's long struts again one cell further left, and once more, make the fort much stiffer
+# upwards. Same pattern as _V_HUB, background bracing: the second right after the first shot, the third once the back
+# column's nodes stand (before the workshop)
+_V8_HUB2_NODE = (-3049, 532)
+_V8_HUB2 = [((-2996.23, 503.57), _V8_HUB2_NODE, "backbracing")] + [
+    (_V8_HUB2_NODE, q, "backbracing") for q in ((-3096.14, 502.53), (-3001.26, 700.0), (-3100.0, 700.0),
+                                                (-2993.3, 407.38), (-3094.27, 403.43))]
+_V8_HUB3_NODE = (-3149, 532)
+_V8_HUB3 = [((-3096.14, 502.53), _V8_HUB3_NODE, "backbracing")] + [
+    (_V8_HUB3_NODE, q, "backbracing") for q in ((-3200.0, 503.0), (-3100.0, 700.0), (-3200.0, 700.0),
+                                                (-3094.27, 403.43), (-3200.0, 405.0))]
 VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
     "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3300, -2945, -315, -185)),
@@ -1471,9 +1482,11 @@ VANILLA_VARIANTS["bastion"] = {
     "plan": [
         ("build", [(-3100, 205, "sniper")]),                        # 1 socket B1
         ("weapons", ["sniper"]),                                    # 2 first shot
-        ("struts", _V_FOOTING[len(_V_HUB):]),                       # 3 the footing's foundation and braces
+        ("struts", _V_FOOTING[len(_V_HUB):] + _V8_HUB2),            # 3 the footing's foundation and braces, second hub
+        ("eco", ["mine"]),                                          # the first mine before the workshop (the player)
         ("tech", ["workshop"]),                                     # 4 (60 s: the mortars wait for it)
-        ("eco", ["mine", "mine", "mine"]),                          # 5 metal first
+        ("struts", _V8_HUB3),                                       # the third hub on the workshop's back column
+        ("eco", ["mine", "mine"]),                                  # 5 metal first
         ("build", [(-3100, 75, "sniper")]),                         # 6 socket B2
         ("weapons", ["sniper"]),                                    # 7
         # sockets M1/M2: the back column x -3200..-3100 from the rock up (the nest stands on it; on the starting
@@ -1505,11 +1518,18 @@ VANILLA_VARIANTS["bastion"] = {
                  "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 2},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper",
                  "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 1},
+                {"name": "B3", "kind": "heavy", "cell": (-3100, 405), "default": "laser"},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
+    # B3 (late, module heavy3): a third heavy weapon under the reactor, on the starting fort's strut y 404, firing through
+    # the two slanted armour struts in front of it, made doors by the module
     # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
     # tag_sockets keeps those that pass rules.py in the socket
-    "loadouts": {"direct": ["sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun"],
+    # front strip: the starting fort's armour in front of the reactor, sold for wood while metal is short and put back
+    # when it is plentiful (the player, 04.11.2026; AI: CAI_FrontStrip). Node pairs in plan ids
+    "front_strip": [(57, 50), (58, 57), (50, 53)],
+    "loadouts": {"heavy": ["laser", "firebeam"],
+                 "direct": ["sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun"],
                  "lobbed": ["mortar", "machinegun"]},
     "zones": [{"name": "Z0", "box": (-2900, -2600, 205, 700)},
               {"name": "Z1", "box": (-3100, -2780, -55, 205)},
@@ -1517,22 +1537,22 @@ VANILLA_VARIANTS["bastion"] = {
               {"name": "Z3", "box": (-3500, -3100, -55, 205)},
               {"name": "Z4", "box": (-3600, -2900, 205, 700)}],
     "modules": [
-        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 9,
+        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 11,
          "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
          "plan": [("weapons", ["mortar", "mortar"])]},
-        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 14,
+        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 16,
          "trigger": {"time": 330, "after": "artillery"},
          "plan": [("upgrades", ["mortar2", "mortar2"])]},
         # zone reinforcements (step 3): when the AI's hit map puts that much damage into the zone, a third woodspam
         # layer in front of the starting fort's lower face (y 411..602, on the mine row's first layer) and one more
         # in front of the prow below the deck (in front of the reactor); again while the zone keeps being hit
-        {"name": "Z0face", "zone": "Z0", "after": 19, "repeat": 3, "cooldown": 60,
+        {"name": "Z0face", "zone": "Z0", "after": 21, "repeat": 3, "cooldown": 60,
          "trigger": {"zone": "Z0", "damage": 300},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602], "base": [], "outside": "bracing",
               "pattern": "tri"}]},
          "plan": [("defence", ["woodspam:3"])]},
-        {"name": "Z0prow", "zone": "Z0", "after": 19, "repeat": 3, "cooldown": 60,
+        {"name": "Z0prow", "zone": "Z0", "after": 21, "repeat": 3, "cooldown": 60,
          "trigger": {"zone": "Z0", "damage": 500},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": [], "outside": "bracing"}]},
@@ -1542,7 +1562,7 @@ VANILLA_VARIANTS["bastion"] = {
         # its sniper is rebuilt with a laser or firebeam (Prefer)
         # anti-air in A1 against shells and missiles: when the posture turns AntiArtillery or AntiAir, or the
         # enemy builds mortars or missiles, at the latest at 240 s
-        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 9,
+        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 11,
          "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
@@ -1550,18 +1570,31 @@ VANILLA_VARIANTS["bastion"] = {
         # the sockets had their firebeams long before it stood), at 330 s or as soon as the storage fills up, the factory
         # after it. Test 3: at 450 s it came too late, the plan ran out at ~565 s at 900 metal / 9000 energy. The AI then
         # sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
-        {"name": "munitions", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 330,
+        # on its own cells (test 6: stood at 661-700 s, 240 s after its module could start): as soon as the turbine storey
+        # is on, before the upgrade centre
+        {"name": "munitions", "after": 12, "trigger": {"postures": ("Siege", "Punish"), "time": 300,
                                                        "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
-         "plan": [("tech", ["munitions"])]},
-        {"name": "factory", "after": 14, "trigger": {"after": "munitions", "time": 480,
+         "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
+        {"name": "factory", "after": 16, "trigger": {"after": "munitions", "time": 480,
                                                      "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
-        {"name": "store2", "after": 19, "trigger": {"after": "munitions", "time": 480,
+        {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 480,
                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
-        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
+        # the third heavy weapon from a full storage (test 6: at the metal cap in 27 of the last 50 snapshots)
+        # a laser: a 20mm's box (111 high, 90 wide) hits the plan's battery beside it and the door in front of it; the
+        # laser is 101 high and fits under the reactor's floor. 1000 metal: only with the second store
+        {"name": "heavy3", "socket": "B3", "loadout": "laser", "after": 21,
+         "trigger": {"after": "store2", "surplus": {"metal": 1000, "energy": 6000, "seconds": 20}},
+         "cfg": {"weapon_struts": [((-3094.27, 403.43), (-2993.3, 407.38), 0.4, "laser")],
+                 "prereq": {}},     # module factory builds its tech; the socket's Needs make the AI wait for it
+         "plan": [("struts", [((-2993.3, 407.38), (-2943.08, 312.08), "backbracing"),
+                              ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
+                              ((-2844.7, 309.73), (-2892.17, 411.07), "door")]),
+                  ("weapons", ["laser"])]},
+        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 16,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
     ],
@@ -4229,7 +4262,9 @@ class Plan:
             if missing and c not in getattr(self, "cover_cells", ()):
                 errors.append("cell %s built before its support %s" % (c, sorted(missing)))
             done.add(c)
-        seen = set()
+        # the tech a module builds counts: its trigger waits for it
+        seen = {d for m_ in getattr(self, "modules", []) for ln in m_.get("lines", [])
+                for d in re.findall(r'DeviceSaveName = "(\w+)"', ln) if d in TECH}
         for line in self.actions:
             m = re.search(r'DeviceSaveName = "(\w+)"', line)
             if m:
@@ -4249,13 +4284,13 @@ class Plan:
         if retire:
             tail += "FortRetire = { %s }\n" % ", ".join("%s = %d" % kv for kv in sorted(retire.items()))
         tail += format_sockets(self.variant.get("sockets"), self.variant.get("zones"), getattr(self, "socket_loadouts", {}),
-                               lambda d: self.prereq(d))
+                               lambda d: self.prereq(d), self.variant.get("front_strip"))
         with open(path, "w", encoding="ascii", newline="\r\n") as f:
             f.write(head + self.cfg["header"] + "\n\nFort =\n{\n" + "\n".join(self.actions) + "\n}\n" + tail
                     + format_modules(getattr(self, "modules", [])))
 
 
-def format_sockets(sockets, zones, loadouts=None, prereq=None):
+def format_sockets(sockets, zones, loadouts=None, prereq=None, strip=None):
     """FortSockets and FortZones (Bastion, .dev/docs/bastion-plan.md) after the Fort table, in plan coordinates (team 1):
     a socket is a weapon place the modules fill (Kind direct or lobbed, Cell = left x and floor y of its cell, Default =
     the plan's first weapon there, Loadouts = the weapons checked to fit there, in order, Needs = their tech); a zone
@@ -4275,6 +4310,8 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None):
         out += "FortSockets =\n{\n" + "".join(
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"
+    if strip:
+        out += "FortStrip = { %s }\n" % ", ".join("{ %d, %d }" % tuple(q) for q in strip)
     if zones:
         out += "FortZones =\n{\n" + "".join(
             '{ Name = "%s", Box = { x0 = %d, x1 = %d, y0 = %d, y1 = %d } },\n' % ((z["name"],) + tuple(z["box"]))

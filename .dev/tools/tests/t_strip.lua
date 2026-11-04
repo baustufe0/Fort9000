@@ -1,0 +1,63 @@
+rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
+-- Bastion after test 6: front strip. While metal is short early, the armour in front of the reactor becomes wood, one
+-- strut per think step; when metal is plentiful it becomes armour again, once per strut. CreateLink is mocked.
+MAX_SIDES = 100
+data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
+HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
+function Log(s) print(s) end
+function GetRandomInteger(a, b, desc) return 1 end
+function ScheduleCall() end
+function ScheduledCallCountOfFunc() return 0 end
+local res = { metal = 50, energy = 1000 }
+function GetTeamResources() return res end
+function GetDeviceCountSide(side) return 0 end
+function GetDeviceIdSide(side, i) return 0 end
+function GetDeviceType(id) return nil end
+local mats = {}
+local function key(a, b) if a > b then a, b = b, a end return a .. "-" .. b end
+function IsNodeLinkedTo(a, b) return mats[key(a, b)] ~= nil end
+function GetLinkMaterialSaveName(a, b) return mats[key(a, b)] end
+function CreateLink(team, mat, a, b) mats[key(a, b)] = mat; return -15 end
+function Load(g)
+  for i = 1, 5 do table.insert(Fort, i, { Type = 3, MaterialSaveName = "bracing", ExistingFort = true }) end
+  data.fortIndex = 6
+  data.Rebuild = {}
+  data.Devices = {}
+  data.OriginalToActual = { [50] = 50, [53] = 53, [57] = 57, [58] = 58 }
+  enemyTeamId = 1
+end
+function OnWeaponFired() end
+function OnDeviceDestroyed() end
+function MirrorFort(pivot, offset)
+  for _, a in ipairs(Fort) do for _, k in ipairs({"PosA","PosB","NewNodePos","GroundPosition"}) do
+    local p = a[k]; if p then p.x = 2*pivot - p.x + offset.x; p.y = p.y + offset.y end end end
+end
+dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
+dofile("mods/fort9000dev/ai/ai.lua")
+FortPlanConfig.Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }
+teamId = 102
+local E = FortPos
+MirrorFort(0, { x = 2900 + E.x, y = 700 - E.y })
+Load(true)
+mats[key(57, 50)] = "armour"; mats[key(58, 57)] = "armour"; mats[key(50, 53)] = "armour"
+local function state() return mats[key(57, 50)] .. " " .. mats[key(58, 57)] .. " " .. mats[key(50, 53)] end
+data.fortIndex = #Fort + 1
+print("list: " .. #CAI_Plan.strip)
+res.metal = 500
+CAI_FrontStrip(10)
+print("metal there: " .. state())
+res.metal = 50
+CAI_FrontStrip(15)
+print("one step: " .. state())
+CAI_FrontStrip(20); CAI_FrontStrip(25); CAI_FrontStrip(30)
+print("short: " .. state())
+res.metal = 500
+CAI_FrontStrip(35)
+print("not yet back: " .. state())
+mats[key(58, 57)] = "door"                  -- a module made it a door meanwhile: it stays one
+res.metal = 900
+CAI_FrontStrip(40); CAI_FrontStrip(45); CAI_FrontStrip(50)
+print("plenty: " .. state())
+res.metal = 50
+CAI_FrontStrip(55); CAI_FrontStrip(60)
+print("once per strut: " .. state())
