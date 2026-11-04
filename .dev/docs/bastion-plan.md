@@ -308,7 +308,7 @@ the log file also holds test 5, this match starts at its third PLAN pair):**
   58-57, 50-53 in front of the reactor become wood, one per think step; at 800 metal armour again, once per strut. Post
   53-55 stays armour: it carries the tower's front. By the material table that is about 100 metal per strut less 10 for
   the wood; whether `CreateLink` really pays that back is not known, the `STRIP` log line shows it. `physics.py` with
-  the three as wood: 0.72. 246 checks pass.
+  the three as wood: 0.72. 240 checks pass.
 
 ## Risks
 
