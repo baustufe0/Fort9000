@@ -105,6 +105,15 @@ check "Upgrade: not while poor"                  "^poor: B1=sniper$" "$LUA" t_up
 check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser sold=2$" "$LUA" t_upgrade.lua
 check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon20mm$" "$LUA" t_upgrade.lua
 check "Upgrade: nothing dearer than the storage"   "^storage 900: B2=cannon20mm B1=sniper$" "$LUA" t_upgrade.lua
+check "Upgrade: a firebeam is replaced later"     "^firebeam replaced: B1=cannon20mm$" "$LUA" t_upgrade.lua
+check "Refill: not at once (a rebuild may be due)" "^short empty: rebuild=nil$" "$LUA" t_upgrade.lua
+check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=cannon20mm$" "$LUA" t_upgrade.lua
+check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
+check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
+check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
+check "Sniper sight: not through two doors"      "^two doors: sniper hold ap hold$" "$LUA" t_sniper.lua
+check "Sniper sight: a door above the centre"    "^door over the centre: sniper y185$" "$LUA" t_sniper.lua
+check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=3$" "$LUA" t_sniper.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
 check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
 check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua
@@ -117,7 +126,7 @@ check "Posture: holds 30 s before a switch"     "^at 10 s: Pressure$" "$LUA" t_p
 check "Posture: enemy mortars -> AntiArtillery" "POSTURE Pressure->AntiArtillery t=35 " "$LUA" t_posture.lua
 check "Posture: boosts its targets"             "^heavy targets: cannon,mortar,mine$" "$LUA" t_posture.lua
 check "Posture: zone pressure -> Siege"         "POSTURE AntiArtillery->Siege t=65 " "$LUA" t_posture.lua
-check "Posture: triggers its module"            "MODULE factory trigger=posture:Siege at=[0-9]+ actions=1$" "$LUA" t_posture.lua
+check "Posture: triggers its module"            "MODULE munitions trigger=posture:Siege at=[0-9]+ actions=1$" "$LUA" t_posture.lua
 check "Posture: preferred loadout on a swap"    "SOCKET B1 sniper->laser action=[0-9]+ swaps=1 posture=Siege$" "$LUA" t_posture.lua
 check "Fire control"                           "fired:.11,12,14,15"            "$LUA" t_fire.lua
 check "Fire diagnostics: fired"                  "FIRETRY cannon20mm 21 fired=1 code=FIREFAIL_RELOADING m=120 e=1500" "$LUA" t_firewait.lua

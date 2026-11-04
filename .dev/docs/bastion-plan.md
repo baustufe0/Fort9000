@@ -246,6 +246,33 @@ max stress 0.60; 222 checks pass.
 cost at hand. The munitions module adds a second metal store (+300: 1200, a laser fits). THINK lists the queued
 rebuild devices (`rebuild=12[turbine2,laser,...]`). 223 checks pass.
 
+**Test 5 (04.11.2026, Vanilla, AI vs AI, both on Vanilla-8, ~1045 s, both reactors still standing in the last snapshot):**
+- The second store works: T2 held 1200 metal from ~920 s. Payable weapons get built: firebeams at 793 s and 895 s (T1)
+  and 840 s (T2). No laser, cannon or 20mm: three of the four B changes were swaps after losses (Siege prefers the
+  firebeam once the laser is too dear); a firebeam is not in `Upgrade.From`, so it is never replaced later.
+- Tech late: factory module at 330 s, built 602/614 s; munitions module ~640 s, built 869/894 s, so no 20mm was possible
+  before the sockets had their firebeams.
+- T2's B2 stayed empty from ~590 s to the end: the firebeam was refused (`CS_UNSTABLE`, floor strut strain 1.125,
+  sag 29/46; node 10009 displaced -61,75 at 710 s), the rebuild was given up after 120 s (`GAVE_UP action 149`), and
+  `CAI_SocketUpgrade` only looks at living devices. T2 sat on 1200 metal meanwhile.
+- T1's third turbine was never lost: it was refused for ~490 s (`CS_OBSTRUCTION`, then `CS_UNSTABLE`, floor strut
+  337-182 compressed to 0.873, sag 33) and built at 932 s. Its turbine2 upgrade was given up. T1 ended at 238 energy
+  with two firebeams drawing on it. Sag, not metal, stopped this one.
+- Not measured: reactor health, and whether the taller doors let the snipers hit the top storeys (the log has no hit
+  positions; the FIRETRY ray is a straight line to the reactor).
+- Found afterwards: a011454 worsened the plan, `physics.py` max stress 0.69 instead of 0.60 (earlier notes of 0.60 for
+  it were wrong, read off a list of single struts). The armour tying the outer doors was 37.7 long: refused in
+  `physics.py` and in the game (`CS_NODESTOOCLOSE`, `GAVE_UP action 287`), so the door layers hung free.
+
+**After test 5:** empty B sockets are queued again (`CAI_SocketRefill`, 45 s empty, every 130 s, the next ready weapon each
+try); a firebeam may be sold for a better weapon; Siege prefers the 20mm over the firebeam. The munitions plant comes
+before the factory (330 s, Siege/Punish or Surplus), factory and second store after it (`store2`). Sniper sight
+(`CAI_SniperTarget`, the player: snipers fired all match at closed doors): a shot only when a ray reaches a device, the
+AP sniper's ray may pass 600 hitpoints (one door of 400, not two). COMBAT and DEALT log lines every 60 s. B2's outer door
+ends at 66.5, 8.5 above its floor, so the tie is 46 long and gets built; `physics.py` max stress 0.68, max sag 93 as
+before. Open: the sag itself, whether rays stop at closed and pass open doors as assumed, and the reaction time at an
+opening door (fire tick 1 s, own door opening about 2 s). 232 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

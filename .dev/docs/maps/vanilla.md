@@ -313,7 +313,7 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
   socket A1 is a closed cell behind the nest (x -3300..-3200, on the turbine storey) with a door roof for an anti-air
   machine gun (module `antiair`). The B doors cover every direct loadout and 9 degrees up (`door_aim_up`). Late in
   the match the factory (330 s or a full storage) and the munitions plant (module `munitions`, x -3400..-3300 on the
-  floor at 602, with a second metal store for the laser's 1000) come, then the AI sells B2's and later B1's sniper for a laser, 20mm, cannon or firebeam (socket
+  floor at 602) comes first, the factory and a second metal store (for the laser's 1000) after it, then the AI sells B2's and later B1's sniper for a laser, 20mm, cannon or firebeam (socket
   upgrade; B1 cannot take the cannon, its door reaches into the cannon's body).
 - **Sockets at the front door:** each direct socket is its storey's front cell; the weapon at LinkT 0.18 (a sniper's
   body with the barrel reaches ~120 ahead of its strut point), its door split to ~63 with a second door 50 in front.

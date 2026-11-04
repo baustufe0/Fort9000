@@ -166,7 +166,18 @@ action fields through its transform).
   match less 20 / 100) is never chosen, by an upgrade or a swap after losses; an upgrade also needs `AtHand` (80 %)
   of its cost now. The game takes the whole cost when a device is placed; its "not enough resources" comes back as a
   code the log names `CS_OCCUPIED` (Vanilla-8 test 4: three lasers at 1000 metal with a storage of 900-990, never
-  built).
+  built; inferred from the logs, not confirmed by a probe).
+- Refill (`CAI_SocketRefill`, every think step): a socket with `Upgrade`, no device and no queued rebuild for `RefillAfter`
+  (45) seconds is queued again with a ready, payable weapon, the next one on each try, `RefillEvery` (130) seconds apart.
+  Logs `SOCKET B2 refill cannon20mm action=38 tries=1`. The firebeam is in `Upgrade.From`: it may be sold for a better one.
+- Sniper sight (`CAI_InitSniperSight`, `CAI_SniperTarget`, plans with FortSockets, `Strategy.SniperSight`): the built-in
+  search accepts any enemy strut in the line, so a sniper fires at a closed door. With `WeaponFireBlockedByStructure` and
+  `WeaponFindTargetFunction` it fires only when a ray from the weapon reaches an enemy device, tested at its centre and
+  15 and 30 above it. The AP sniper's ray may pass `Hitpoints` 600 (its PenetrationDamage: one door of 400, not two; the
+  built-in 810 passes two), assuming the ray adds up the hitpoints it passes. Fire chance 1. Nothing visible: no shot,
+  own door stays shut. Test: `t_sniper.lua` (mocked ray).
+- Log every 60 s (`CAI_LogCombat`): `COMBAT t= reactor= enemy= sniper=seen:,pierced:,hold: shots=` and `DEALT t= dev=`,
+  `link=`, `band=` (own hits by weapon on devices and struts; band: top above y 75, mid, low below y 300).
   A later upgrade module for the old weapon then finds another device there and is given up by the built-in AI.
 - **Repeat / Cooldown** on a module (`FortModules`, `Repeat = n, Cooldown = s`): after it went in, it may go in n more
   times, each at least s seconds after the last, while its trigger holds (log `MODULE <name> ... repeat=<k>`). Every

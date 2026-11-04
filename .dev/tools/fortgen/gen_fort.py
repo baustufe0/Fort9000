@@ -1502,9 +1502,9 @@ VANILLA_VARIANTS["bastion"] = {
                 # the first of these that is ready (the posture's Prefer first); rank: B2 first, B1 later (two
                 # snipers pay only early in the match, the player 03.11.2026)
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
-                 "upgrade": ["laser", "cannon20mm", "cannon", "firebeam"], "rank": 2},
+                 "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 2},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper",
-                 "upgrade": ["laser", "cannon20mm", "cannon", "firebeam"], "rank": 1},
+                 "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 1},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
     # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
@@ -1546,17 +1546,21 @@ VANILLA_VARIANTS["bastion"] = {
          "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
-        # test 3 (AI vs AI, 03.11.2026): the factory at 450 s came too late, the plan ran out at ~565 s and both sides
-        # sat at 900 metal / 9000 energy: now at 330 s or as soon as the storage fills up, the munitions plant (20mm
-        # and cannon) after it; the AI then sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
-        {"name": "factory", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 330,
+        # tech for heavy weapons: the munitions plant first (20mm and cannon; test 5, 04.11.2026: with the factory first
+        # the sockets had their firebeams long before it stood), at 330 s or as soon as the storage fills up, the factory
+        # after it. Test 3: at 450 s it came too late, the plan ran out at ~565 s at 900 metal / 9000 energy. The AI then
+        # sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
+        {"name": "munitions", "after": 14, "trigger": {"postures": ("Siege", "Punish"), "time": 330,
+                                                       "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+         "plan": [("tech", ["munitions"])]},
+        {"name": "factory", "after": 14, "trigger": {"after": "munitions", "time": 480,
                                                      "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("tech", ["factory"])]},
-        # generated on the whole plan (after 19): its store must not take an eco slot the plan fills later
-        {"name": "munitions", "after": 19, "trigger": {"after": "factory", "time": 420,
-                                                       "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
-         # and a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built)
-         "plan": [("tech", ["munitions"]), ("eco", ["store"])]},
+        # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
+        # whole plan (after 19): it must not take an eco slot the plan fills later
+        {"name": "store2", "after": 19, "trigger": {"after": "munitions", "time": 480,
+                                                    "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+         "plan": [("eco", ["store"])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 14,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
@@ -3549,6 +3553,12 @@ class Plan:
                 while y_aim < yt and any(math.dist((xn, y_aim), q) < MIN_STRUT for q in near_q):
                     y_aim += 0.5
                 yt = min(yt, y_aim)
+                # the door below starts under this one: the armour tying the two needs a margin over MIN_STRUT, the
+                # fort sags (test 5, 04.11.2026: 37.7 long, the game refused it with CS_NODESTOOCLOSE and the door layers
+                # hung free; physics.py 0.69 instead of 0.60). This door ends a little above its floor instead
+                below = [q[1] for q in pos.values() if abs(q[0] - xn) < 3 and q[1] > yb and q[1] - yb < MIN_LINK + 1]
+                while below and min(below) - yb < MIN_LINK + 1 and yb - yt > DOOR_MIN:
+                    yb -= 0.5
             after = k0
             lines = []
             post = None

@@ -53,7 +53,19 @@ local CAI_Defaults =
 	-- at ~565 s, both sides sat at 900 metal / 9000 energy behind two snipers each and no laser came)
 	Socket = { SwapAfter = 2, Window = 180,
 		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8,
-			From = { sniper = true, sniper2 = true, machinegun = true } } },
+			From = { sniper = true, sniper2 = true, machinegun = true, firebeam = true } },
+		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
+		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
+		-- each time with the next ready weapon (a refused one may fit where another did not)
+		RefillAfter = 45, RefillEvery = 130 },
+	-- SniperSight (plans with FortSockets): snipers fire only at a device they can really hit (test 5, the player: they
+	-- fired all match at targets behind closed doors). Hitpoints: what the ray may pass, the AP sniper's
+	-- PenetrationDamage (one door of 400, not two; the built-in value 810 passes two). AimUp: points tested above
+	-- a device's centre, since a weapon's door is often cut to its barrel height
+	SniperSight = { Enabled = true, Hitpoints = { sniper = 0, sniper2 = 600 }, AimUp = { 0, 15, 30 } },
+	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
+	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
+	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
 	-- Zone (Bastion, plans with FortZones): damage per zone from enemy hits on own struts (OnLinkHit) and own struts
 	-- lost (BreakDamage each, also beams and splash, which OnLinkHit does not see); Decay per think step for the logged
 	-- pressure; zone modules fire on the undecayed sum since they last went in
@@ -84,7 +96,7 @@ local CAI_Defaults =
 		Prefer = {
 			AntiAir = { direct = { "machinegun" } },
 			AntiSniper = { direct = { "sniper" } },
-			Siege = { direct = { "laser", "firebeam", "cannon20mm" } },
+			Siege = { direct = { "laser", "cannon20mm", "firebeam" } },
 			Punish = { direct = { "laser", "cannon20mm", "firebeam" } },
 		} },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
@@ -2176,6 +2188,10 @@ function CAI_Think()
 	if data.CAI then pcall(CAI_NotePeaks, data.CAI) end
 	okP, errP = pcall(CAI_SocketUpgrade, elapsed)
 	if not okP then CAI_Log("ERROR socket upgrade: " .. tostring(errP)) end
+	okP, errP = pcall(CAI_SocketRefill, elapsed)
+	if not okP then CAI_Log("ERROR socket refill: " .. tostring(errP)) end
+	okP, errP = pcall(CAI_LogCombat, elapsed)
+	if not okP then CAI_Log("ERROR combat log: " .. tostring(errP)) end
 	local ok, res = pcall(CAI_UpdateTargets)
 	parts[#parts + 1] = ok and res or ("ERROR targets: " .. tostring(res))
 	ok, res = pcall(CAI_UpdateAggression, elapsed)
@@ -2290,6 +2306,18 @@ function OnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, proje
 		st.smokeShots = (st.smokeShots or 0) + 1
 		return
 	end
+	if weaponTeamId == teamId then
+		st.ownShots = st.ownShots or {}
+		st.ownShots[saveName] = (st.ownShots[saveName] or 0) + 1
+		if type(projectileNodeId) == "number" and projectileNodeId > 0 then
+			if (st.ownProjCount or 0) > 400 then
+				st.ownProj, st.ownProjCount = {}, 0
+			end
+			st.ownProj = st.ownProj or {}
+			st.ownProj[projectileNodeId] = saveName
+			st.ownProjCount = (st.ownProjCount or 0) + 1
+		end
+	end
 	if CAI_Side(weaponTeamId) ~= enemyTeamId then
 		return
 	end
@@ -2314,6 +2342,9 @@ function OnDeviceHit(deviceTeamId, deviceId, saveName, newHealth, projectileNode
 		CAI_BaseOnDeviceHit(deviceTeamId, deviceId, saveName, newHealth, projectileNodeId, projectileTeamId, pos, reflectedByEnemy)
 	end
 	local st = data.CAI
+	if st and projectileTeamId == teamId and CAI_Side(deviceTeamId) == enemyTeamId then
+		pcall(CAI_NoteDealt, "dev", st.ownProj and st.ownProj[projectileNodeId] or "?", saveName, pos)
+	end
 	if st == nil or CAI_Side(deviceTeamId) ~= CAI_Side(teamId) or CAI_Side(projectileTeamId) ~= enemyTeamId then
 		return
 	end
@@ -2422,10 +2453,62 @@ function CAI_InitSockets()
 	local names = {}
 	for _, s in ipairs(list) do
 		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0,
-			upgrade = s.Upgrade, rank = s.Rank or 1 }
+			upgrade = s.Upgrade, rank = s.Rank or 1, default = s.Default }
 		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
 	end
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
+	CAI_InitSniperSight()
+end
+
+-- Sniper sight: see CAI_Defaults.SniperSight. The built-in AI's first search accepts any enemy strut in the line
+-- (needLineToStructure), so a sniper fires at a closed door in front of its target. WeaponFireBlockedByStructure drops
+-- that; CAI_SniperTarget (WeaponFindTargetFunction) looks first, also above the device's centre. A shot is worth
+-- taking when it comes, so the fire chance is 1. Nothing visible: no shot and no own door opened.
+function CAI_InitSniperSight()
+	local cfg = Strategy.SniperSight or CAI_Defaults.SniperSight
+	local st = data.CAI
+	if not (cfg and cfg.Enabled) or type(CastRayFromDevice) ~= "function" then return end
+	st.sniperSight = { seen = 0, pierced = 0, hold = 0 }
+	for w, hp in pairs(cfg.Hitpoints) do
+		WeaponFireBlockedByStructure[w] = true
+		WeaponFindTargetFunction[w] = "CAI_SniperTarget"
+		data.ProjectileHitpoints[w] = hp
+		data.OffensiveFireProbability[w] = 1
+		st.baseOff[w] = 1
+	end
+end
+
+function CAI_SniperTarget(weaponId, weaponPos, sideDevices)
+	local st = data.CAI
+	local cfg = Strategy.SniperSight or CAI_Defaults.SniperSight
+	local w = GetDeviceType(weaponId)
+	local hp = cfg.Hitpoints[w] or 0
+	local flags = RAY_EXCLUDE_CONSTRUCTION + RAY_ALLIED_BG_BLOCKS + RAY_EXCLUDE_DYNAMIC_TERRAIN   -- separate bits
+	local function hits(pos, through)
+		local hit = CastRayFromDevice(weaponId, pos, through, flags, 0)
+		return GetRayHitSideId() == enemyTeamId and (hit == RAY_HIT_WEAPON or hit == RAY_HIT_DEVICE)
+	end
+	local prio = data.CustomWeaponPriorities[w] or data.SmallArmsPrioritiesOverride or SmallArmsPriorities
+	for _, kind in ipairs(prio) do
+		for _, id in ipairs(sideDevices[kind] or {}) do
+			if not IsCloaked(id) then
+				local c = GetDeviceCentrePosition(id)
+				for _, up in ipairs(cfg.AimUp) do
+					local pos = Vec3()
+					pos.x, pos.y = c.x, c.y - up
+					if hits(pos, 0) then
+						st.sniperSight.seen = st.sniperSight.seen + 1
+						return pos
+					elseif hp > 0 and hits(pos, hp) then
+						st.sniperSight.pierced = st.sniperSight.pierced + 1
+						return pos
+					end
+				end
+			end
+		end
+	end
+	st.sniperSight.hold = st.sniperSight.hold + 1
+	return nil
 end
 
 -- own devices by type (game state, deterministic); builtOnly: only those fully built (a factory under construction does
@@ -2541,6 +2624,115 @@ function CAI_SocketOrder(s, list)
 		if not seen[l] then order[#order + 1] = l; seen[l] = true end
 	end
 	return order
+end
+
+-- An empty socket whose rebuild was given up gets a new try (CAI_Defaults.Socket: RefillAfter, RefillEvery).
+-- Logs SOCKET <name> refill <weapon> action=<k> tries=<n>.
+function CAI_SocketRefill(elapsed)
+	local st = data.CAI
+	if st == nil or st.sockets == nil or Fort == nil or data.Devices == nil or data.Rebuild == nil then return end
+	local cfg = Strategy.Socket or CAI_Defaults.Socket
+	local alive = {}
+	for id, k in pairs(data.Devices) do
+		local a = Fort[k]
+		if a and a.Socket and GetDeviceType(id) then alive[a.Socket] = true end
+	end
+	local queued, last = {}, {}
+	for k = 1, math.min(#Fort, (data.fortIndex or 1) - 1) do
+		local a = Fort[k]
+		if a.Socket and a.Type == CREATE_DEVICE then
+			last[a.Socket] = k
+			if data.Rebuild[k] then queued[a.Socket] = true end
+		end
+	end
+	local names = {}
+	for name, s in pairs(st.sockets) do
+		if s.upgrade then names[#names + 1] = name end
+	end
+	table.sort(names)
+	local m, e = CAI_NotePeaks(st)
+	local own
+	for _, name in ipairs(names) do
+		local s, k = st.sockets[name], last[name]
+		if alive[name] or queued[name] or s.selling or k == nil then
+			s.emptySince = nil
+		else
+			s.emptySince = s.emptySince or elapsed
+			if elapsed - s.emptySince >= (cfg.RefillAfter or 45) and elapsed - (s.refillAt or -1e9) >= (cfg.RefillEvery or 130) then
+				own = own or CAI_OwnDevices(true)
+				local list = {}
+				for _, w in ipairs(s.upgrade) do list[#list + 1] = w end
+				if s.default then list[#list + 1] = s.default end
+				local ready = {}
+				for _, w in ipairs(CAI_SocketOrder(s, list)) do
+					local need = s.needs[w]
+					local can, cm, ce = CAI_Affordable(st, w)
+					if (need == nil or (own[need] or 0) > 0) and can and m >= (cm or 0) * 0.8 and e >= (ce or 0) * 0.8 then
+						ready[#ready + 1] = w
+					end
+				end
+				if #ready > 0 then
+					s.refills = (s.refills or 0) + 1
+					s.refillAt = elapsed
+					local w = ready[(s.refills - 1) % #ready + 1]
+					Fort[k].DeviceSaveName = w
+					data.Rebuild[k] = true
+					if data.Frustration then data.Frustration[k] = nil end
+					if st.rebuilds then st.rebuilds[k] = nil end
+					CAI_Log("SOCKET " .. name .. " refill " .. w .. " action=" .. k .. " tries=" .. s.refills)
+				end
+			end
+		end
+	end
+end
+
+-- own hits, for the log (CAI_Defaults.CombatLog): by weapon on enemy devices and struts, and at which height
+function CAI_NoteDealt(what, weapon, target, pos)
+	local st = data.CAI
+	if st == nil or st.sockets == nil then return end
+	local cfg = Strategy.CombatLog or CAI_Defaults.CombatLog
+	st.dealt = st.dealt or { dev = {}, link = {}, band = {} }
+	local key = tostring(weapon) .. ">" .. tostring(target)
+	st.dealt[what][key] = (st.dealt[what][key] or 0) + 1
+	if type(pos) == "table" or type(pos) == "userdata" then
+		local band = pos.y < cfg.TopY and "top" or pos.y < cfg.LowY and "mid" or "low"
+		local b = tostring(weapon) .. ":" .. band
+		st.dealt.band[b] = (st.dealt.band[b] or 0) + 1
+	end
+end
+
+local function CAI_CountText(t)
+	local keys = {}
+	for k in pairs(t or {}) do keys[#keys + 1] = k end
+	table.sort(keys)
+	for i, k in ipairs(keys) do keys[i] = k .. ":" .. t[k] end
+	return table.concat(keys, ",")
+end
+
+function CAI_LogCombat(elapsed)
+	local st = data.CAI
+	if st == nil or st.sockets == nil then return end
+	local cfg = Strategy.CombatLog or CAI_Defaults.CombatLog
+	if elapsed < (st.nextCombatLog or cfg.Every) then return end
+	st.nextCombatLog = elapsed + cfg.Every
+	local function reactors(side)
+		local out = {}
+		for i = 0, GetDeviceCountSide(side) - 1 do
+			local id = GetDeviceIdSide(side, i)
+			if GetDeviceType(id) == "reactor" and type(GetDeviceHealth) == "function" then
+				out[#out + 1] = string.format("%.2f", GetDeviceHealth(id))
+			end
+		end
+		return table.concat(out, "/")
+	end
+	local ss = st.sniperSight or {}
+	CAI_Log("COMBAT t=" .. elapsed .. " reactor=" .. reactors(CAI_Side(teamId)) .. " enemy=" .. reactors(enemyTeamId)
+		.. " sniper=seen:" .. (ss.seen or 0) .. ",pierced:" .. (ss.pierced or 0) .. ",hold:" .. (ss.hold or 0)
+		.. " shots=" .. CAI_CountText(st.ownShots))
+	local d = st.dealt or {}
+	CAI_Log("DEALT t=" .. elapsed .. " dev=" .. CAI_CountText(d.dev))
+	CAI_Log("DEALT t=" .. elapsed .. " link=" .. CAI_CountText(d.link))
+	CAI_Log("DEALT t=" .. elapsed .. " band=" .. CAI_CountText(d.band))
 end
 
 -- Socket upgrade (Bastion): once the AI is rich, sell a socket's small weapon (a sniper) and rebuild the place with a
@@ -2881,6 +3073,9 @@ local CAI_BaseOnLinkHit = OnLinkHit
 function OnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, damage, pos, reflectedByEnemy)
 	if CAI_BaseOnLinkHit then
 		CAI_BaseOnLinkHit(nodeIdA, nodeIdB, objectId, objectTeamId, objectSaveName, damage, pos, reflectedByEnemy)
+	end
+	if objectTeamId == teamId and CAI_Side(NodeTeam(nodeIdA)) == enemyTeamId then
+		pcall(CAI_NoteDealt, "link", objectSaveName, GetLinkMaterialSaveName(nodeIdA, nodeIdB), pos)
 	end
 	if CAI_Plan.nodeZone and CAI_Side(objectTeamId) == enemyTeamId and NodeTeam(nodeIdA) == teamId then
 		local ok, err = pcall(CAI_ZoneDamage, nodeIdA, nodeIdB, tonumber(damage) or 0)
