@@ -87,12 +87,12 @@ check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end
 check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
-check "Bastion loads with sockets and zones"   "^246 7 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
-check "Sockets: listed with their loadouts"     "SOCKETS A0:machinegun A1:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
+check "Bastion loads with sockets and zones"   "^247 6 B2 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
+check "Sockets: listed with their loadouts"     "SOCKETS A1:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
 check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
 check "Sockets: no machine gun for a sniper"   "^after two losses: sniper rebuild=true$" "$LUA" t_sockets.lua
 check "Sockets: swap to a loadout whose tech stands" "^with munitions: cannon20mm$" "$LUA" t_sockets.lua
-check "Sockets: tech under construction does not count" "^factory building: sniper$" "$LUA" t_sockets.lua
+check "Sockets: tech under construction does not count" "^factory building: cannon20mm$" "$LUA" t_sockets.lua
 check "Sockets: the posture's preferred loadout" "^factory built: laser$" "$LUA" t_sockets.lua
 check "Sockets: machine gun under AntiAir"     "^anti-air: machinegun$" "$LUA" t_sockets.lua
 check "Sockets: an old loss is forgotten"       "^late loss: machinegun losses=1$" "$LUA" t_sockets.lua
@@ -176,6 +176,11 @@ check "Rockets fire after MaxHold without smoke" "released after hold:.true$"   
 check "Rockets fire without a smoke launcher"    "no smoke launcher:.21,23,24$"  "$LUA" t_smoke.lua
 check "Smoke cover shots are logged"            "SMOKETRY smokebomb 22 fired=1"  "$LUA" t_smoke.lua
 check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"     "$LUA" t_smoke.lua
+check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t_volley2.lua
+check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
+check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
+check "Socket: a heavy weapon keeps its place"     "^heavy lost twice: cannon20mm$" "$LUA" t_upgrade.lua
+check "Socket: Replace sells and takes over"       "^replaced: sold=true known=nil rebuild=nil socket=nil current=laser$" "$LUA" t_upgrade.lua
 check "Volley: firebeam waits for its partner"   "^partner reloading:.33$"       "$LUA" t_volley.lua
 check "Volley: built-in AI's shot held too"      "^base firebeam held:.true$"    "$LUA" t_volley.lua
 check "Volley: both fire as one group"           "^both ready:.31:31\+32,33$"    "$LUA" t_volley.lua

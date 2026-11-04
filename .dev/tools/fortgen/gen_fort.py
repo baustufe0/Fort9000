@@ -1448,7 +1448,7 @@ VANILLA_VARIANTS["bastion"] = {
             # 0.18 of the 148-wide cell the barrel ends at the front door
             "split_doors": True, "door_layers": 2, "door_brace_front": True,
             # the B doors cover every direct loadout and 9 degrees up (test 3: the snipers hit only the lower storeys)
-            "door_loadouts": True, "door_aim_up": 9,
+            "door_loadouts": True, "door_aim_up": 9, "door_split_skip": (-185,),
             # the second doors only after the economy (test 1, 03.11.2026: with them in the opening ~1120 metal went
             # into struts before the first sniper, which stood at 60 s), 50 in front (not on the prow node 58, 100
             # out: armour arms twice as long)
@@ -1497,7 +1497,8 @@ VANILLA_VARIANTS["bastion"] = {
         ("defence", ["sandbags", "sandbags"]),                      # 9
         ("eco", ["turbine"]),                                       # 10
         ("mark", ["door_layers"]),                                  # 11 the second doors from here on
-        ("defence", ["woodspam"]),                                  # 12
+        # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
+        ("defence", ["sell:machinegun", "woodspam"]),               # 12
         ("eco", ["turbine", "turbine"]),                            # 13
         ("tech", ["upgrade"]),                                      # 14
         ("eco", ["battery", "store"]),                              # 15
@@ -1509,7 +1510,7 @@ VANILLA_VARIANTS["bastion"] = {
     # the weapon places (the starting fort's machine gun A0 on its lower front strut) and the zones the AI watches
     # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
     # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
-    "sockets": [{"name": "A0", "kind": "direct", "cell": (-2996, 504), "default": "machinegun"},
+    "sockets": [
                 {"name": "A1", "kind": "antiair", "cell": (-3300, -185), "default": "machinegun"},
                 # upgrade: once the tech stands and the storage fills up, the AI sells the socket's sniper and builds
                 # the first of these that is ready (the posture's Prefer first); rank: B2 first, B1 later (two
@@ -1591,12 +1592,15 @@ VANILLA_VARIANTS["bastion"] = {
          "plan": [("eco", ["turbine"]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")]),
                   ("upgrades", ["turbine2"])]},
-        # the storey below, on its outer cell (the top storey has no more room; the nest's roof holds no turbine:
-        # protected turbines, A1's door)
+        # behind the others (the player, test 8: on the storey below there was not enough wind): one more cell at the back
+        # of the turbine storey, hung on the storey's end, in the background but for its floor
         {"name": "turbine5", "after": 21, "trigger": {"after": "turbine4", "heavy": 2, "afford": True},
-         "plan": [("struts", [((-3500, 75), (-3500, -55), "backbracing"), ((-3500, -55), (-3400, 75), "backbracing"),
-                              ((-3400, 75), (-3400, -55), "backbracing"), ((-3300, -55), (-3400, 75), "backbracing")]),
-                  ("device_on", [((-3500, 75), (-3400, 75), 0.35, "turbine"), ((-3500, 75), (-3400, 75), 0.35, "turbine2")])]},
+         "plan": [("build", [(-3500, -55)]),
+                  ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing"),
+                              ((-3500, -55), (-3590, -55), "bracing"),
+                              ((-3500, 75), (-3590, -55), "backbracing"), ((-3500, -185), (-3590, -185), "backbracing"),
+                              ((-3590, -55), (-3590, -185), "backbracing"), ((-3500, -55), (-3590, -185), "backbracing")]),
+                  ("device_on", [((-3590, -55), (-3500, -55), 0.4, "turbine"), ((-3590, -55), (-3500, -55), 0.4, "turbine2")])]},
         # batteries when the heavy weapons' shots together cost more than the storage holds (the player, test 7: two
         # lasers 10000 energy, three batteries 9000): they fire together, deep into one spot
         {"name": "battery4", "after": 21, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
@@ -1615,6 +1619,13 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
                               ((-2844.7, 309.73), (-2892.17, 411.07), "door")]),
                   ("weapons", ["laser"])]},
+        # a third heavy weapon in the front mortar's place, behind a second door (the player, test 8: 1500 s is too long;
+        # the storage stood full again): a 20mm where B2 has it, on the nest's front strut
+        {"name": "heavy4", "socket": "M2", "loadout": "cannon20mm", "after": 21, "replace": True,
+         "trigger": {"after": "heavyartillery", "heavy": 2, "afford": True},
+         "plan": [("struts", [((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
+                              ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
+                  ("device_on", [((-3100, -185), (-2945, -185), 0.18, "cannon20mm")])]},
         {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 16,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
@@ -3223,7 +3234,8 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "replace": m.get("replace"),
+                             "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
     def module_requires(self):
@@ -3408,7 +3420,11 @@ class Plan:
                 first.setdefault(pair, k)
                 final[pair] = re.search(r'MaterialSaveName = "(\w+)"', line).group(1)
         # the modules' weapons too (Vanilla-6's sniper: its door is in the core plan)
-        weapons = [(d, a, b, t) for d, a, b, t, c in self.placed + getattr(self, "module_placed", []) if d in DOOR_WEAPONS]
+        # door_split_skip [floor y]: a module's weapon on that floor leaves the plan's door alone (Vanilla-8's heavy4 in the
+        # mortar nest, which brings its own second door: the mortars keep their whole door until then)
+        skip_floors = self.cfg.get("door_split_skip", ())
+        weapons = [(d, a, b, t) for d, a, b, t, c in self.placed + getattr(self, "module_placed", []) if d in DOOR_WEAPONS
+                   and not any(abs((a[1] + b[1]) / 2 - y) < 8 for y in skip_floors)]
         # door_posts [(x, y_top, y_floor)]: front posts split like doors although they are not doors (e.g. background
         # bracing in a hidden storey); door_rest [((x, y_top, y_floor), material)]: the material of a split post's
         # pieces above and below its door (default armour; background bracing where turbines need the wind)

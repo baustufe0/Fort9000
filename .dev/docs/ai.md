@@ -186,6 +186,11 @@ action fields through its transform).
 - `SocketVolley` (plans with FortSockets, replaces `Fire.Volley`): firebeam, laser, 20mm and cannon wait for each other, `MaxHold`
   90 s, and fire at the leader's target. While the whole group is ready and only energy is missing, other offensive weapons but
   the sniper hold (`volleySaving`). At the timeout as many fire together as can be paid (`VOLLEY_PART ids=`).
+  `Classes` and `Gap`: beams (firebeam, laser) fire together, guns (20mm, cannon) fire together, and one class waits `Gap` (6) seconds
+  after the other fired (`OnWeaponFired`): a beam burns the shells in its way.
+- `Replace = true` on a module (`CAI_ModuleReplace`): its device takes over the socket; the old actions leave the socket and are
+  not rebuilt, the old weapon is sold (`SOCKET M2 replaced mortar2->cannon20mm result=-8`).
+- A heavy weapon lost twice is not swapped back to the socket's small default: it is rebuilt.
 - Module trigger keys: `Storage = true` (`CAI_StorageShort`: the standing heavy weapons' `EnergyShot` sum + `Margin` exceeds 3000 +
   2000 per battery), `Afford = true` (`CAI_ModuleAffordable`: waits for 80 % of its devices' cost, logs `MODULE_AFFORD`).
 - Module trigger key `Heavy = n` (`CAI_HeavyCount`): that many own heavy weapons stand (Vanilla-8's turbine4 and turbine5).

@@ -76,7 +76,10 @@ local CAI_Defaults =
 	-- together. While the group waits only for energy, other offensive weapons but the sniper hold fire (SaveEnergy).
 	-- EnergyShot: what a shot costs (laser 5000, 2 cost more than the 9000 of three batteries, test 7): a module with
 	-- Trigger Storage fires when the weapons' sum and Margin exceed the storage (3000 + Battery per battery)
+	-- Classes, Gap (the player, test 8): a beam burns the shells in its way, so beams fire together and guns fire together,
+	-- and one class waits Gap seconds after the other has fired
 	SocketVolley = { Enabled = true, Types = { firebeam = true, laser = true, cannon20mm = true, cannon = true }, MaxHold = 90,
+		Classes = { firebeam = "beam", laser = "beam", cannon20mm = "gun", cannon = "gun" }, Gap = 6,
 		SaveEnergy = true, EnergyShot = { firebeam = 1500, laser = 5000, cannon20mm = 2000, cannon = 2000 }, Margin = 1000,
 		BaseStorage = 3000, Battery = 2000 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
@@ -674,6 +677,17 @@ function CAI_Volley(id)
 	if not (v and v.Enabled and type(GetDeviceType) == "function" and v.Types[GetDeviceType(id)]) then return false end
 	if not CAI_Ready(id) then return false end          -- reloading or a door action pending: the built-in AI handles it
 	local all = CAI_VolleyMembers(v)
+	if v.Classes then
+		local class = v.Classes[GetDeviceType(id)]
+		if st.volleyClass and st.volleyClass ~= class and (st.fireClock or 0) - (st.volleyClassAt or -1e9) < (v.Gap or 6) then
+			return true        -- the other class has just fired: its shells or beams are still in the air
+		end
+		local same = {}
+		for _, w in ipairs(all) do
+			if v.Classes[GetDeviceType(w)] == class then same[#same + 1] = w end
+		end
+		all = same
+	end
 	if #all < 2 then return false end
 	local group = { id }
 	for _, w in ipairs(all) do
@@ -2022,6 +2036,39 @@ function CAI_SurplusReason(m, elapsed)
 	return "surplus:m=" .. CAI_Round(metal) .. ",e=" .. CAI_Round(energy)
 end
 
+-- Replace = true (Bastion): the module's device takes over its socket from another weapon at another point of the strut.
+-- The old actions leave the socket and are not rebuilt, the old weapon is sold (test 8: a heavy weapon for the front mortar).
+function CAI_ModuleReplace(m)
+	local name, w
+	for _, a in ipairs(m.actions) do
+		if a.Socket and a.Type == CREATE_DEVICE then name, w = a.Socket, a.DeviceSaveName end
+	end
+	local st = data.CAI
+	if name == nil or st == nil or st.sockets == nil or st.sockets[name] == nil then return end
+	local old = {}
+	for k, a in ipairs(Fort) do
+		if a.Socket == name then
+			a.Socket = nil
+			old[k] = true
+			data.Rebuild[k] = nil
+		end
+	end
+	local ids = {}
+	for id, k in pairs(data.Devices) do
+		if old[k] then ids[#ids + 1] = id end
+	end
+	table.sort(ids)
+	for _, id in ipairs(ids) do
+		data.Devices[id] = nil
+		local t = GetDeviceType(id)
+		if t then
+			local r = DestroyDeviceById(id)
+			CAI_Log("SOCKET " .. name .. " replaced " .. tostring(t) .. "->" .. tostring(w) .. " result=" .. tostring(r))
+		end
+	end
+	st.sockets[name].current = w
+end
+
 function CAI_ModuleAffordable(m)
 	if type(GetDeviceCost) ~= "function" then return true end
 	local res = GetTeamResources(teamId)
@@ -2135,6 +2182,7 @@ function CAI_UpdateModules()
 	for _, m in ipairs(ready) do
 		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions
 			.. ((m.done or 0) > 0 and (" repeat=" .. m.done) or ""))
+		if m.replace then pcall(CAI_ModuleReplace, m) end
 		-- copies: the same module may go in again (Repeat), and the built-in AI keeps state per action
 		for _, a in ipairs(m.actions) do
 			local c = CAI_CopyAction(a)
@@ -2409,6 +2457,10 @@ function OnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, proje
 		return
 	end
 	if weaponTeamId == teamId then
+		local v = st.volley
+		if v and v.Classes and v.Classes[saveName] then
+			st.volleyClass, st.volleyClassAt = v.Classes[saveName], st.fireClock or 0
+		end
 		st.ownShots = st.ownShots or {}
 		st.ownShots[saveName] = (st.ownShots[saveName] or 0) + 1
 		if type(projectileNodeId) == "number" and projectileNodeId > 0 then
@@ -2688,7 +2740,9 @@ function CAI_SocketLost(deviceId)
 		-- a weapon that never fires at the enemy fort (Fire.NoOffence: the machine gun) only replaces a weapon that
 		-- does while the AI holds AntiAir (test 2, 03.11.2026: B1's sniper became a machine gun and its offence was gone)
 		local passive = st.noOffence and st.noOffence[d] and not (st.noOffence[base]) and st.posture ~= "AntiAir"
-		if d ~= base and not passive and (need == nil or (own[need] or 0) > 0) and CAI_Affordable(st, d) then
+		-- a heavy weapon lost does not fall back to the small default (test 8: B1 cannon20mm->sniper): it is rebuilt
+		local downgrade = s.upgrade and CAI_ListHas(s.upgrade, base) and d == s.default
+		if d ~= base and not passive and not downgrade and (need == nil or (own[need] or 0) > 0) and CAI_Affordable(st, d) then
 			CAI_SocketSet(a.Socket, d)
 			s.losses = {}
 			s.swaps = s.swaps + 1

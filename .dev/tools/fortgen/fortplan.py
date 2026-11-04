@@ -86,6 +86,9 @@ def format_modules(mods):
         # Repeat / Cooldown (Bastion): the module may go in again, n more times, each s seconds after the last
         if m.get("repeat"):
             tag += ", Repeat = %d, Cooldown = %d" % (m["repeat"], m.get("cooldown", 60))
+        # Replace (Bastion): the module's device takes over its socket, the old weapon is sold
+        if m.get("replace"):
+            tag += ", Replace = true"
         out.append('{ Name = "%s", Trigger = { %s }, Requires = %d%s, Actions = {' % (m["name"], ", ".join(tr), m["requires"], tag))
         out.extend(m["lines"])
         out.append("} },")

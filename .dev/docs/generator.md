@@ -122,6 +122,8 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
 - Variant key `front_strip [((x, y), (x, y))]`: written as `FortStrip = { {x, y, x, y}, ... }` (plan positions) after the sockets
   ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)). Module cfg `prereq: {}`: a weapon whose tech comes from another
   module; a module's tech counts as built for the order check.
+- Step `device_on [(node A, node B, LinkT, device)]`: a device on an explicit strut. `door_split_skip [floor y]`: a module's weapon
+  on that floor leaves the plan's door alone. Module key `replace`: written as `Replace = true`.
 - Socket keys `upgrade` (weapons) and `rank`: written as `Upgrade = { ... }, Rank = n` in FortSockets, only weapons
   that passed the loadout check ([ai.md](ai.md#sockets-and-repeatable-modules-bastion)).
 - Module trigger key `postures`: written as `Postures = { ... }` ([ai.md](ai.md#posture)).

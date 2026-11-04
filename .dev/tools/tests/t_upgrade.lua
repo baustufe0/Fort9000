@@ -123,3 +123,15 @@ print("two lasers, 3 batteries short: " .. tostring(CAI_StorageShort()))
 own[106] = "battery"
 print("4 batteries short: " .. tostring(CAI_StorageShort()))
 print("heavy weapons: " .. CAI_HeavyCount())
+-- a heavy weapon lost twice is rebuilt, it does not fall back to the sniper
+CAI_SocketSet("B2", "cannon20mm")
+own = { [100] = "reactor" }
+data.Devices[701] = k2; QueueDeviceRebuild(701)
+data.Devices[702] = k2; QueueDeviceRebuild(702)
+print("heavy lost twice: " .. Fort[k2].DeviceSaveName)
+-- Replace: a module's weapon takes over the socket, the old one is sold and not rebuilt
+own[801] = "cannon20mm"; data.Devices[801] = k2
+data.Rebuild[k2] = nil
+CAI_ModuleReplace({ actions = { { Type = CREATE_DEVICE, Socket = "B2", DeviceSaveName = "laser" } } })
+print("replaced: sold=" .. tostring(own[801] == nil) .. " known=" .. tostring(data.Devices[801]) .. " rebuild=" .. tostring(data.Rebuild[k2])
+  .. " socket=" .. tostring(Fort[k2].Socket) .. " current=" .. data.CAI.sockets.B2.current)

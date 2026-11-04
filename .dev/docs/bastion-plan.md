@@ -339,6 +339,20 @@ the turbine storey's floor, its cell's outer post and diagonal in the background
 the storey below (floor 75, four struts to the background; the nest's roof the generator first chose holds A1's door and would be
 an open roof). New step `device_on`, trigger key `Heavy`. `rules.py`: turbine4 no wind warning; turbine5 clear on the left (100 %), blocked on the right (0 %), so it may give less than the others. `physics.py` max stress 0.69, without the modules: it checks the plan only. 247 checks pass.
 
+**Test 8 (04.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T102 won at 1527 s, no faster than test 7):**
+- Munitions plant 623 / 629 s, both sides now (`Afford` held it from 300 s to ~550 s), first 20mm 789 / 853 s (646 s in test 7).
+- Both sides had two heavy weapons; the sold sniper did not come back. T101 B1 fell back `cannon20mm->sniper` after two losses.
+- `VOLLEY` 11 and 26 times, one `VOLLEY_TIMEOUT`. Module heavy3 fired on T101 at ~1100 s, the laser stayed in the queue.
+- Energy 73-116 at 250 s, first turbines only at 349-359 s. T102 stood at 1500 metal and 9000 energy at the end.
+- The player: a beam destroys the shells of a 20mm or cannon fired with it; turbine 5 on the storey below had too little wind; still
+  too long; the starting machine gun has no line of fire once the woodspam stands in front of it.
+
+**After test 8:** `Classes` and `Gap` in `SocketVolley`. Module turbine5 one cell behind the turbine storey (x -3590..-3500, hung on the
+storey's end). Module heavy4: a 20mm in the front mortar's place, LinkT 0.18, behind a second door at x -2895, the mortar sold
+(`Replace`), once two heavy weapons stand. The starting machine gun is sold with the first woodspam (socket A0 gone). A heavy weapon
+is rebuilt after losses, not swapped to the sniper. `physics.py` with heavy3, heavy4 and both turbines: peak 0.82 at the arm of B2's
+door, no strut breaks. Open: first turbine still late, energy low around 250-375 s. 252 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
