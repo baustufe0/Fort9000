@@ -13,17 +13,22 @@ function GetTeamResources() return res end
 function GetDeviceCountSide(side) return 0 end
 function GetDeviceIdSide(side, i) return 0 end
 function GetDeviceType(id) return nil end
+-- starting fort nodes in the world; team 102 is mirrored
+local nodes = { 501, 502, 503, 504 }
+local where = { [501] = { x = 2894, y = 405 }, [502] = { x = 2943, y = 306 }, [503] = { x = 2845, y = 304 }, [504] = { x = 2844, y = 204 } }
+function NodeCount(team) return #nodes end
+function GetNodeId(team, i) return nodes[i + 1] end
+function NodePosition(id) return where[id] end
 local mats = {}
 local function key(a, b) if a > b then a, b = b, a end return a .. "-" .. b end
 function IsNodeLinkedTo(a, b) return mats[key(a, b)] ~= nil end
 function GetLinkMaterialSaveName(a, b) return mats[key(a, b)] end
-function CreateLink(team, mat, a, b) mats[key(a, b)] = mat; return -15 end
+function CreateLink(team, mat, a, b) mats[key(a, b)] = mat; res.metal = res.metal + (mat == "bracing" and 80 or -180); return -15 end
 function Load(g)
   for i = 1, 5 do table.insert(Fort, i, { Type = 3, MaterialSaveName = "bracing", ExistingFort = true }) end
   data.fortIndex = 6
   data.Rebuild = {}
   data.Devices = {}
-  data.OriginalToActual = { [50] = 50, [53] = 53, [57] = 57, [58] = 58 }
   enemyTeamId = 1
 end
 function OnWeaponFired() end
@@ -39,8 +44,8 @@ teamId = 102
 local E = FortPos
 MirrorFort(0, { x = 2900 + E.x, y = 700 - E.y })
 Load(true)
-mats[key(57, 50)] = "armour"; mats[key(58, 57)] = "armour"; mats[key(50, 53)] = "armour"
-local function state() return mats[key(57, 50)] .. " " .. mats[key(58, 57)] .. " " .. mats[key(50, 53)] end
+mats[key(503, 501)] = "armour"; mats[key(504, 503)] = "armour"; mats[key(501, 502)] = "armour"
+local function state() return mats[key(503, 501)] .. " " .. mats[key(504, 503)] .. " " .. mats[key(501, 502)] end
 data.fortIndex = #Fort + 1
 print("list: " .. #CAI_Plan.strip)
 res.metal = 500
@@ -48,15 +53,16 @@ CAI_FrontStrip(10)
 print("metal there: " .. state())
 res.metal = 50
 CAI_FrontStrip(15)
-print("one step: " .. state())
-CAI_FrontStrip(20); CAI_FrontStrip(25); CAI_FrontStrip(30)
+print("one step: " .. state() .. " m=" .. res.metal)
+res.metal = 20
+CAI_FrontStrip(20)
 print("short: " .. state())
 res.metal = 500
 CAI_FrontStrip(35)
 print("not yet back: " .. state())
-mats[key(58, 57)] = "door"                  -- a module made it a door meanwhile: it stays one
+mats[key(504, 503)] = "door"                -- a module made it a door meanwhile: it stays one
 res.metal = 900
-CAI_FrontStrip(40); CAI_FrontStrip(45); CAI_FrontStrip(50)
+CAI_FrontStrip(40); res.metal = 900; CAI_FrontStrip(45); res.metal = 900; CAI_FrontStrip(50)
 print("plenty: " .. state())
 res.metal = 50
 CAI_FrontStrip(55); CAI_FrontStrip(60)

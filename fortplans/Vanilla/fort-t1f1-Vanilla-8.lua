@@ -267,7 +267,7 @@ FortSockets =
 { Name = "M1", Kind = "lobbed", Cell = { x = -3200, y = -185 }, Default = "mortar", Loadouts = { "mortar", "machinegun" }, Needs = { mortar = "workshop" } },
 { Name = "M2", Kind = "lobbed", Cell = { x = -3100, y = -185 }, Default = "mortar", Loadouts = { "mortar" }, Needs = { mortar = "workshop" } },
 }
-FortStrip = { { 57, 50 }, { 58, 57 }, { 50, 53 } }
+FortStrip = { { -2844.70, 309.73, -2892.17, 411.07 }, { -2846.18, 203.99, -2844.70, 309.73 }, { -2892.17, 411.07, -2943.08, 312.08 } }
 FortZones =
 {
 { Name = "Z0", Box = { x0 = -2900, x1 = -2600, y0 = 205, y1 = 700 } },

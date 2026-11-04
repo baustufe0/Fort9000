@@ -1526,8 +1526,9 @@ VANILLA_VARIANTS["bastion"] = {
     # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
     # tag_sockets keeps those that pass rules.py in the socket
     # front strip: the starting fort's armour in front of the reactor, sold for wood while metal is short and put back
-    # when it is plentiful (the player, 04.11.2026; AI: CAI_FrontStrip). Node pairs in plan ids
-    "front_strip": [(57, 50), (58, 57), (50, 53)],
+    # when it is plentiful (the player, 04.11.2026; AI: CAI_FrontStrip). Plan positions: the game renumbers node ids
+    "front_strip": [((-2844.7, 309.73), (-2892.17, 411.07)), ((-2846.18, 203.99), (-2844.7, 309.73)),
+                    ((-2892.17, 411.07), (-2943.08, 312.08))],
     "loadouts": {"heavy": ["laser", "firebeam"],
                  "direct": ["sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun"],
                  "lobbed": ["mortar", "machinegun"]},
@@ -4311,7 +4312,7 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None, strip=None):
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"
     if strip:
-        out += "FortStrip = { %s }\n" % ", ".join("{ %d, %d }" % tuple(q) for q in strip)
+        out += "FortStrip = { %s }\n" % ", ".join("{ %.2f, %.2f, %.2f, %.2f }" % (a + b) for a, b in strip)
     if zones:
         out += "FortZones =\n{\n" + "".join(
             '{ Name = "%s", Box = { x0 = %d, x1 = %d, y0 = %d, y1 = %d } },\n' % ((z["name"],) + tuple(z["box"]))

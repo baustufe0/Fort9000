@@ -115,11 +115,12 @@ check "Sniper sight: not through two doors"      "^two doors: sniper hold ap hol
 check "Sniper sight: a door above the centre"    "^door over the centre: sniper y185$" "$LUA" t_sniper.lua
 check "Front strip: listed in the plan"           "^list: 3$" "$LUA" t_strip.lua
 check "Front strip: not while metal is there"     "^metal there: armour armour armour$" "$LUA" t_strip.lua
-check "Front strip: one strut per step"           "^one step: bracing armour armour$" "$LUA" t_strip.lua
+check "Front strip: as many as the metal needs"   "^one step: bracing bracing armour m=210$" "$LUA" t_strip.lua
 check "Front strip: all three while short"        "^short: bracing bracing bracing$" "$LUA" t_strip.lua
 check "Front strip: back only with plenty"        "^not yet back: bracing bracing bracing$" "$LUA" t_strip.lua
 check "Front strip: armour again, a door stays"   "^plenty: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: once per strut"               "^once per strut: armour door armour$" "$LUA" t_strip.lua
+check "Front strip: logged with the metal"        "STRIP -2844.7,309.73--2892.17,411.07 armour->bracing result=-15 m=50->130 t=15$" "$LUA" t_strip.lua
 check "Sniper sight: another device is no target" "^sandbags in the way: sniper hold$" "$LUA" t_sniper.lua
 check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=4$" "$LUA" t_sniper.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua

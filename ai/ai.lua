@@ -64,11 +64,11 @@ local CAI_Defaults =
 	-- a device's centre, since a weapon's door is often cut to its barrel height
 	-- Near: the ray must end this close to the point aimed at; any other device on the way (sandbags, test 6) is no target
 	SniperSight = { Enabled = true, Hitpoints = { sniper = 0, sniper2 = 600 }, AimUp = { 0, 15, 30 }, Near = 60 },
-	-- FrontStrip (plans with FortStrip, the player 04.11.2026): while metal is below Below in the first Until seconds, an
-	-- armour strut of the list becomes wood (one per think step; armour reclaims 0.9 per unit of length, wood costs 0.1);
+	-- FrontStrip (plans with FortStrip, the player 04.11.2026): while metal is below Below in the first Until seconds, the
+	-- armour struts of the list become wood (armour reclaims 0.9 per unit of length, wood costs 0.1);
 	-- once metal is at RestoreAbove after that, they become armour again, one per think step. Once per strut: a round
 	-- trip loses metal
-	FrontStrip = { Enabled = true, Below = 120, Until = 300, RestoreAbove = 800 },
+	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
 	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
 	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
@@ -2699,42 +2699,61 @@ function CAI_SocketRefill(elapsed)
 	end
 end
 
--- Front strip: see CAI_Defaults.FrontStrip. Logs STRIP <a>-<b> <old>-><new> result=<CreateLink> m=<before>-><after>:
--- what the swap really pays back is measured here, the game's own reference does not say.
+-- Front strip: see CAI_Defaults.FrontStrip. FortStrip holds plan positions, not node ids: the game renumbers only the
+-- ids in the plan's actions, and a starting-fort node is mapped only once an action has used it (first version, ids:
+-- nothing happened, 04.11.2026). The nodes are found by position, x mirrored for a mirrored fort. Logs
+-- STRIP <x>,<y>-<x>,<y> <old>-><new> result=<CreateLink> m=<before>-><after> t=<s>: what the swap really pays back, and
+-- STRIP_SKIP once per reason when a strut cannot be swapped.
+function CAI_StripNode(x, y)
+	local px = CAI_FortMirrored and -x or x
+	local best, bestD = nil, 25 * 25
+	for i = 0, NodeCount(teamId) - 1 do
+		local id = GetNodeId(teamId, i)
+		local q = NodePosition(id)
+		local d = (q.x - px) * (q.x - px) + (q.y - y) * (q.y - y)
+		if d < bestD then best, bestD = id, d end
+	end
+	return best
+end
+
 function CAI_FrontStrip(elapsed)
 	local st = data.CAI
 	local cfg = Strategy.FrontStrip or CAI_Defaults.FrontStrip
 	if st == nil or CAI_Plan.strip == nil or not (cfg and cfg.Enabled) or type(CreateLink) ~= "function" then return end
 	st.strip = st.strip or {}
-	local res = GetTeamResources(teamId)
-	if not (type(res) == "table" or type(res) == "userdata") then return end
-	local m = res.metal or 0
-	local function swap(pair, new)
-		local a, b = data.OriginalToActual and data.OriginalToActual[pair[1]], data.OriginalToActual and data.OriginalToActual[pair[2]]
-		if a == nil or b == nil or not IsNodeLinkedTo(a, b) then return false end
+	st.stripSkip = st.stripSkip or {}
+	local function metal()
+		local res = GetTeamResources(teamId)
+		return (type(res) == "table" or type(res) == "userdata") and res.metal or 0
+	end
+	local function skip(i, why)
+		if st.stripSkip[i .. why] then return end
+		st.stripSkip[i .. why] = true
+		CAI_Log("STRIP_SKIP " .. i .. " " .. why .. " t=" .. elapsed)
+	end
+	local function swap(i, new)
+		local q = CAI_Plan.strip[i]
+		local a, b = CAI_StripNode(q[1], q[2]), CAI_StripNode(q[3], q[4])
+		if a == nil or b == nil then skip(i, "no node"); return false end
+		if not IsNodeLinkedTo(a, b) then skip(i, "no link"); return false end
 		local old = GetLinkMaterialSaveName(a, b)
-		if old ~= (new == "armour" and "bracing" or "armour") then return false end
+		if old ~= (new == "armour" and "bracing" or "armour") then skip(i, "material " .. tostring(old)); return false end
+		local before = metal()
 		local r = CreateLink(teamId, new, a, b)
-		local after = GetTeamResources(teamId)
-		CAI_Log("STRIP " .. pair[1] .. "-" .. pair[2] .. " " .. tostring(old) .. "->" .. new .. " result=" .. tostring(r)
-			.. " m=" .. CAI_Round(m) .. "->" .. CAI_Round(after and after.metal or 0) .. " t=" .. elapsed)
+		CAI_Log("STRIP " .. q[1] .. "," .. q[2] .. "-" .. q[3] .. "," .. q[4] .. " " .. tostring(old) .. "->" .. new .. " result=" .. tostring(r)
+			.. " m=" .. CAI_Round(before) .. "->" .. CAI_Round(metal()) .. " t=" .. elapsed)
 		return true
 	end
-	if elapsed <= cfg.Until and m < cfg.Below then
-		for i, pair in ipairs(CAI_Plan.strip) do
-			if not st.strip[i] then
-				st.strip[i] = "tried"
-				if swap(pair, "bracing") then
-					st.strip[i] = "wood"
-					return
-				end
-			end
+	if elapsed <= cfg.Until and metal() < cfg.Below then
+		-- as many as it takes this step: the metal is needed now
+		for i = 1, #CAI_Plan.strip do
+			if st.strip[i] == nil and metal() < cfg.Below and swap(i, "bracing") then st.strip[i] = "wood" end
 		end
-	elseif m >= cfg.RestoreAbove then
-		for i, pair in ipairs(CAI_Plan.strip) do
+	elseif metal() >= cfg.RestoreAbove then
+		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == "wood" then
 				st.strip[i] = "done"
-				if swap(pair, "armour") then return end
+				if swap(i, "armour") then return end
 			end
 		end
 	end

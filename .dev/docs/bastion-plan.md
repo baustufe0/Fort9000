@@ -310,6 +310,11 @@ the log file also holds test 5, this match starts at its third PLAN pair):**
   the wood; whether `CreateLink` really pays that back is not known, the `STRIP` log line shows it. `physics.py` with
   the three as wood: 0.72. 240 checks pass.
 
+**First try of the front strip (04.11.2026, aborted match):** no `STRIP` line at all, though metal stood at 24 at 15 s. The
+list held node ids, `data.OriginalToActual` knows a node only after an action used it, the game renumbers ids anyway, and a
+failed swap was marked as tried without a word. Now by position, with `STRIP_SKIP` lines, retried, below 150 metal, as many
+per step as the metal needs.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
