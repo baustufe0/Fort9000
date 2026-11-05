@@ -20,6 +20,7 @@
 --                            Materials = { "bracing", "armour" }, MaxAngle = 20, Interval = 0.2, Hold = 0, Max = 3000,
 --                            Box = { x0, y0, x1, y1 } },   -- Box (world coordinates), Hold, Max optional;
 --                  MaxAngle: steeper struts are skipped (devices need roughly level struts: CS_INVALIDNODES)
+--                  AtOnly = true: starts at At even if the plan is done earlier
 -- EngineProbe:     engine probe (testing only, works in a normal match; never commit it switched on): logs
 --                  whether armour can go over an existing bracing strut, what reclaiming a device gives back and
 --                  whether OnLinkHit reaches the AI ([CAI] ... EPROBE, ai/ai.lua), e.g.

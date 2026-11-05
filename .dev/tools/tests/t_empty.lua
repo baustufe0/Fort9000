@@ -11,7 +11,7 @@ function ScheduleCall() end
 function ScheduledCallCountOfFunc() return 0 end
 local res = { metal = 900, energy = 9000 }
 function GetTeamResources() return res end
-local own = { [100] = "reactor" }
+local own = { [100] = "reactor", [110] = "store", [111] = "store", [112] = "battery", [113] = "battery", [114] = "battery" }
 local function ids() local t = {} for id in pairs(own) do t[#t + 1] = id end table.sort(t) return t end
 function IsDeviceFullyBuilt(id) return true end
 function GetDeviceCountSide(side) return side == 2 and #ids() or 0 end
@@ -96,3 +96,15 @@ print("refused 10 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))
 data.CAI.richFor = 100
 CAI_SocketUpgrade(4031)
 print("refused 31 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))
+-- the storage full: the sniper goes without waiting for anything, after CapSeconds
+own[501] = "sniper"; data.Devices[501] = k1
+CAI_SocketSet("B1", "sniper")
+data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100
+data.CAI.heavyRefused = nil; data.CAI.firstHeavyAt = 5000; data.CAI.capSince = nil
+res = { metal = 1200, energy = 9000 }
+sold = 0
+CAI_SocketUpgrade(5010)
+print("full, at once: sold=" .. sold)
+data.CAI.richFor = 100
+CAI_SocketUpgrade(5041)
+print("full for 31 s: sold=" .. sold)

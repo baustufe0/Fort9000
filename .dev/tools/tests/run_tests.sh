@@ -124,6 +124,8 @@ check "One sniper: not at once if the second is refused" "^refused, waiting: sol
 check "One sniper: sold after HeavyWait"           "^refused, waited: sold=1$" "$LUA" t_empty.lua
 check "One sniper: not 10 s after a refusal"        "^refused 10 s: sold=0 queued=true$" "$LUA" t_empty.lua
 check "One sniper: 30 s after, the refused is parked" "^refused 31 s: sold=1 queued=nil$" "$LUA" t_empty.lua
+check "Full storage: not at once"                  "^full, at once: sold=0$" "$LUA" t_empty.lua
+check "Full storage: the sniper goes after 30 s"   "^full for 31 s: sold=1$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua

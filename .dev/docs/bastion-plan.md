@@ -419,6 +419,31 @@ their own cells at action 171, the other from 900 metal / 6000 energy. Second st
 no surplus trigger for the centre. Centre on the rock (x -3200..-3100, y 700), retried after a `GAVE_UP` (`RETRY`). C1 refused for 30 s with one heavy weapon built: B1's
 sniper is sold for the second, C1's rebuild parked for 300 s (`SOCKET C1 parked`). The mix counts weapons under construction. Why C1 is refused is still open.
 
+**Test 12 (05.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T102 won at 697 s, the shortest match so far):**
+- Plant placed 401 s, built 491 s; cannon in B2 placed 495 s, built 605 s on both sides. T102's cannon fired at 609 s and hit T101's cannon (`cannon>cannon:1`): T101's cannon,
+  sniper, mortars, turbines, sandbags and machine gun fell within 4 s, 51 struts in that minute, starting at f=15225. One hit took down the storeys above and around B2.
+  T101's cannon had not fired yet. T101's reactor 0.56 at 660 s (`uraniumcannon>reactor:1`), gone at 697 s. T102 lost no strut.
+- From ~480 s both sat at 1500 metal / 9000 energy: plan finished at build=368, the cannon under construction, C1 refused, upgrade centre and B1 waiting for heavy weapons.
+- C1 refused again on both sides (20mm, `CS_UNSTABLE` 520 / 525 s, strain 0.937..1.038). Seven refusals of seven in three matches, 20mm and cannon, with and without the ties.
+- The new path worked: T102 at 610 s `SOCKET C1 parked`, B1's sniper sold for a 20mm, placed 625 s, built 695 s. It waited for the first cannon to be built (605 s), 85 s after the refusal.
+- Factory and upgrade centre did not come before the heavy weapons, as wanted; neither came in this match.
+- Mortars: 89 of 99 logged tries declined on own bracing, 29 and 32 shots by 660 s.
+
+**After test 12 (05.11.2026):** the tower's fall was no overload. `physics.py` with the first frame's struts cut: the tower stands (stress 0.65), armour posts or more diagonals
+change nothing (0.67-0.69). A destroyed weapon explodes, from the game's files:
+
+| Weapon | Hit points | Devices (radius 400) | Struts (radius 150) |
+|---|---|---|---|
+| cannon | 550 | 150 | 200 |
+| 20mm | 200 | 100 | 160 |
+| laser | 250 | - | - |
+| firebeam | 180 | - | - |
+| mortar | 70 | - | 60 |
+
+A cannon shell does 700 and passes armour and doors (`Penetrate = 4000`); background bracing has 100 hit points. B2 stands in the middle of the devices: mortars ~270-320, turbines from ~165.
+So the chain in test 12: cannon gone, then what it took with it. `Trigger.HeavyDone` and B1's sniper now also open on a full storage (`CAI_AtCap`, B1 after 30 s, the centre after 60 s).
+`Probe.AtOnly` for a probe of C1 at 520 s.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
