@@ -371,6 +371,34 @@ was ~160), then the other mines; sandbags stay later, so the turbine stands with
 there as well, `physics.py` 0.67 and 0.69 with the modules (plan alone 0.77 before). First tech branch by chance (`TECH first=`), both plants on
 their own cells at action 171, the other from 900 metal / 6000 energy. Second store from 420 s without either. heavy4 takes the weapon the tech allows. 257 checks pass.
 
+**Test 10 (05.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 guns against T102 beams, T101 won at 1034 s):**
+- First turbine 123 / 126 s (300-336 s in test 9). Energy stood at its 5000 cap around 300-400 s on T101, so energy no longer limits the
+  opening; metal does: mostly below 200 until ~600 s. Third mine 172 s (129 s).
+- Plants: modules fired 465 s (factory) and 525 s (munitions) because `Afford` waited for 640 metal; built 563 and 646 s.
+- Heavy weapons later than test 9 (603 s): laser 787 and 952 s, cannon 885 and 1000 s. A heavy weapon takes 110-120 s from placing to built
+  (cannon placed 775 s, built 885 s); T101 sold B2's sniper at 720 s, so that socket did not fire for 165 s.
+- T102's factory first worked (the draw gave one of each). 9 laser shots against 7 cannon shots, 3 `uraniumcannon`; T102 at 10400 energy
+  at 1000 s, so energy was not what held the lasers back.
+- T102 lost 74 struts from 1000 s on, its reactor read 1.00 at 1020 s and fell by 1034 s. T101's cannons hit low: 15 + 12 low, 7 mid. Whether the
+  fort's collapse killed the reactor is not measured.
+- Armour back at 580-630 s (T102) and 735-765 s (T101), about 580 metal each, while heavy weapons were waiting for metal.
+- Mine upgrades only at 670-685 s on T101, after the three turbine upgrades at 635-655 s, with energy to spare.
+- Mortar sold at 900 s (T101) and 975 s (T102), so `Replace` works. T101's 20mm in its place: refused to the end (`CS_UNSTABLE`, strain up to 1.048 on the
+  nest floor), at 1200 metal and 9000 energy. T102's laser had no time. The third weapon never fired.
+- Sag at 900 s (-14,25) / (-18,23), test 5 had (-60,76). T102's third turbine still refused for ~300 s (`CS_UNSTABLE`, floor at 0.893), the second
+  store given up on both sides.
+
+**After test 10, the player's changes (05.11.2026):**
+- One sniper (B1). B2 and the new socket C1 stand empty for the first two heavy weapons (modules `heavy1`, `heavy2`: `Trigger.Tech`, `Replace` picks
+  by tech, a kind not yet standing first); nothing is sold for them. B1's sniper goes only once two heavy weapons stand (`UpgradeHeavy`).
+- Front strip: only the two outer struts. Each of the two storeys keeps its inner armour strut (y 306-405, y 206-306), else a buzzsaw cuts through.
+  Back only with two heavy weapons standing and 800 metal (`RestoreHeavy`, was 480 s).
+- Mortars at the back of the top storey (x -3300..-3100), A1 behind them (x -3400..-3300), C1 in the front cell with its second door. No mortar is
+  sold. `heavy2` brings two more background ties for the post that was pulled forward in test 10; whether that ends the `CS_UNSTABLE` shows only in a match:
+  `physics.py` puts these struts below 0.2 and did not foresee that refusal.
+- Order: upgrade centre and mine upgrades after the second turbine, before the third turbine and the turbine upgrades.
+- Check in the next match: `SOCKET` / `MODULE heavy1`, `heavy2`, time of the first heavy weapon, `UNSTABLE`, mortars hitting, wind of the turbine at -3465.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

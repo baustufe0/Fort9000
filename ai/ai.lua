@@ -70,9 +70,10 @@ local CAI_Defaults =
 	-- armour struts of the list become wood (armour reclaims 0.9 per unit of length, wood costs 0.1);
 	-- once metal is at RestoreAbove after that, they become armour again, one per think step. Once per strut: a round
 	-- trip loses metal
-	-- RestoreAfter: not before (the metal goes to the tech first; test 7: restored at 285-385 s, 600 metal, while the
+	-- RestoreHeavy: not before that many heavy weapons stand (the metal goes to them first; test 10: restored at 580-765 s,
+	-- 580 metal, while they waited for metal; test 7: restored at 285-385 s, 600 metal, while the
 	-- munitions plant waited)
-	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800, RestoreAfter = 480 },
+	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800, RestoreHeavy = 2 },
 	-- SocketVolley (plans with FortSockets, instead of Fire.Volley; the player, test 7): the heavy weapons fire together at
 	-- one spot. MaxHold: seconds a ready weapon waits for the others and for the energy; then as many as can be paid fire
 	-- together. While the group waits only for energy, other offensive weapons but the sniper hold fire (SaveEnergy).
@@ -2040,21 +2041,33 @@ end
 
 -- Replace = true (Bastion): the module's device takes over its socket from another weapon at another point of the strut.
 -- The old actions leave the socket and are not rebuilt, the old weapon is sold (test 8: a heavy weapon for the front mortar).
-function CAI_ModuleReplace(m)
+-- a Replace module's socket and weapon: the first of the socket's list the tech standing allows and the storage can pay
+-- (the first tech branch is chance), a weapon no other heavy socket holds before one that is (a mix)
+function CAI_ModulePick(m)
 	local name, w
 	for _, a in ipairs(m.actions) do
 		if a.Socket and a.Type == CREATE_DEVICE then name, w = a.Socket, a.DeviceSaveName end
 	end
 	local st = data.CAI
-	if name == nil or st == nil or st.sockets == nil or st.sockets[name] == nil then return end
-	-- what the tech standing allows (the first tech branch is chance)
+	local s = name and st and st.sockets and st.sockets[name]
+	if not s then return nil, w end
 	local own = CAI_OwnDevices(true)
-	for _, c in ipairs({ { "cannon20mm", "munitions" }, { "laser", "factory" }, { "firebeam", "factory" } }) do
-		if (own[c[2]] or 0) > 0 and CAI_Affordable(st, c[1]) then
-			w = c[1]
-			break
+	local list = s.upgrade or { "cannon", "cannon20mm", "laser", "firebeam" }
+	for pass = 1, 2 do
+		for _, c in ipairs(CAI_SocketOrder(s, list)) do
+			local need = s.needs[c] or (c == "laser" or c == "firebeam") and "factory" or "munitions"
+			if (pass == 1) == ((own[c] or 0) == 0) and (own[need] or 0) > 0 and CAI_Affordable(st, c) then
+				return name, c
+			end
 		end
 	end
+	return name, w
+end
+
+function CAI_ModuleReplace(m)
+	local name, w = CAI_ModulePick(m)
+	local st = data.CAI
+	if name == nil or st == nil or st.sockets == nil or st.sockets[name] == nil then return end
 	local old = {}
 	for k, a in ipairs(Fort) do
 		if a.Socket == name then
@@ -2084,9 +2097,11 @@ function CAI_ModuleAffordable(m)
 	local res = GetTeamResources(teamId)
 	if not (type(res) == "table" or type(res) == "userdata") then return true end
 	local cm, ce = 0, 0
+	local pickName, pick
+	if m.replace then pickName, pick = CAI_ModulePick(m) end
 	for _, a in ipairs(m.actions) do
 		if a.DeviceSaveName then
-			local ok, c = pcall(GetDeviceCost, a.DeviceSaveName)
+			local ok, c = pcall(GetDeviceCost, a.Socket == pickName and pick or a.DeviceSaveName)
 			if ok and c then cm, ce = cm + (c.metal or 0), ce + (c.energy or 0) end
 		end
 	end
@@ -2165,6 +2180,8 @@ function CAI_UpdateModules()
 				why = "storage"
 			elseif tr.Heavy and CAI_HeavyCount() >= tr.Heavy then
 				why = "heavy:" .. tr.Heavy
+			elseif tr.Tech and (CAI_OwnDevices(true).munitions or CAI_OwnDevices(true).factory) then
+				why = "tech"
 			else
 				why = CAI_SurplusReason(m, elapsed)
 			end
@@ -2625,7 +2642,7 @@ function CAI_InitSockets()
 	local names = {}
 	for _, s in ipairs(list) do
 		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0,
-			upgrade = s.Upgrade, rank = s.Rank or 1, default = s.Default }
+			upgrade = s.Upgrade, rank = s.Rank or 1, default = s.Default, upgradeHeavy = s.UpgradeHeavy }
 		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
 	end
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
@@ -2764,7 +2781,7 @@ function CAI_SocketLost(deviceId)
 		-- does while the AI holds AntiAir (test 2, 03.11.2026: B1's sniper became a machine gun and its offence was gone)
 		local passive = st.noOffence and st.noOffence[d] and not (st.noOffence[base]) and st.posture ~= "AntiAir"
 		-- a heavy weapon lost does not fall back to the small default (test 8: B1 cannon20mm->sniper): it is rebuilt
-		local downgrade = s.upgrade and CAI_ListHas(s.upgrade, base) and d == s.default
+		local downgrade = s.upgrade and CAI_ListHas(s.upgrade, base) and (d == "sniper" or d == "sniper2")
 		if d ~= base and not passive and not downgrade and (need == nil or (own[need] or 0) > 0) and CAI_Affordable(st, d) then
 			CAI_SocketSet(a.Socket, d)
 			s.losses = {}
@@ -2936,7 +2953,7 @@ function CAI_FrontStrip(elapsed)
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == nil and metal() < cfg.Below and swap(i, "bracing") then st.strip[i] = "wood" end
 		end
-	elseif elapsed >= cfg.RestoreAfter and metal() >= cfg.RestoreAbove then
+	elseif metal() >= cfg.RestoreAbove and CAI_HeavyCount() >= cfg.RestoreHeavy then
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == "wood" then
 				-- refused (test 7: result -4, that strut stayed wood): again next step
@@ -3041,7 +3058,9 @@ function CAI_SocketUpgrade(elapsed)
 	local own = CAI_OwnDevices(true)
 	for _, name in ipairs(names) do
 		local s, d = st.sockets[name], dev[name]
-		if d and cfg.From and cfg.From[d.type] then
+		-- UpgradeHeavy: the socket's small weapon stays until that many heavy weapons stand (the one sniper is the only fire
+		-- before them; the player, 05.11.2026)
+		if d and cfg.From and cfg.From[d.type] and CAI_HeavyCount() >= (s.upgradeHeavy or 0) then
 			-- a mix: weapons no other socket holds first (B2 a laser, then B1 a 20mm or a firebeam)
 			local held, order = {}, {}
 			for other, od in pairs(dev) do

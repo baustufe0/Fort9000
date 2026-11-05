@@ -87,7 +87,7 @@ check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end
 check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
-check "Bastion loads with sockets and zones"   "^247 6 B2 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
+check "Bastion loads with sockets and zones"   "^[0-9]+ 7 B2 cannon20mm -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
 check "Sockets: listed with their loadouts"     "SOCKETS A1:machinegun B1:sniper/cannon20mm/laser/firebeam/cannon/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
 check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
 check "Sockets: no machine gun for a sniper"   "^after two losses: sniper rebuild=true$" "$LUA" t_sockets.lua
@@ -113,17 +113,24 @@ check "Heavy weapons counted"                     "^heavy weapons: 2$" "$LUA" t_
 check "Storage: 4 batteries with margin"          "^4 batteries short: false$" "$LUA" t_upgrade.lua
 check "Refill: not at once (a rebuild may be due)" "^short empty: rebuild=nil$" "$LUA" t_upgrade.lua
 check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=cannon20mm$" "$LUA" t_upgrade.lua
+check "One sniper: B2 and C1 empty in the plan"    "^plan: B1=sniper B2=- C1=-$" "$LUA" t_empty.lua
+check "One sniper: nothing without a plant"        "^no plant: B2=- sold=0$" "$LUA" t_empty.lua
+check "One sniper: heavy1 fills B2 as a cannon"    "MODULE heavy1 trigger=tech " "$LUA" t_empty.lua
+check "One sniper: nothing sold for B2"            "^plant: B2=cannon C1=- sold=0$" "$LUA" t_empty.lua
+check "One sniper: heavy2 takes another, sniper stays" "^one heavy: C1=cannon20mm B1 sold=0$" "$LUA" t_empty.lua
+check "One sniper: stays with one heavy weapon"     "^still one heavy: sold=0$" "$LUA" t_empty.lua
+check "One sniper: sold with two heavy weapons"    "^two heavy: sold=1 wanted=cannon" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: not through two doors"      "^two doors: sniper hold ap hold$" "$LUA" t_sniper.lua
 check "Sniper sight: a door above the centre"    "^door over the centre: sniper y185$" "$LUA" t_sniper.lua
-check "Front strip: listed in the plan"           "^list: 3$" "$LUA" t_strip.lua
+check "Front strip: listed in the plan"           "^list: 2$" "$LUA" t_strip.lua
 check "Front strip: not while metal is there"     "^metal there: armour armour armour$" "$LUA" t_strip.lua
 check "Front strip: as many as the metal needs"   "^one step: bracing bracing armour m=210$" "$LUA" t_strip.lua
-check "Front strip: all three while short"        "^short: bracing bracing bracing$" "$LUA" t_strip.lua
-check "Front strip: back only with plenty"        "^not yet back: bracing bracing bracing$" "$LUA" t_strip.lua
-check "Front strip: not before RestoreAfter"       "^too early: bracing door bracing$" "$LUA" t_strip.lua
+check "Front strip: the inner strut stays armour"   "^short: bracing bracing armour$" "$LUA" t_strip.lua
+check "Front strip: back only with plenty"        "^not yet back: bracing bracing armour$" "$LUA" t_strip.lua
+check "Front strip: not before two heavy weapons"  "^one heavy weapon: bracing door armour$" "$LUA" t_strip.lua
 check "Front strip: armour again, a door stays"   "^plenty: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: once per strut"               "^once per strut: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: logged with the metal"        "STRIP -2844.7,309.73--2892.17,411.07 armour->bracing result=-15 m=50->130 t=15$" "$LUA" t_strip.lua

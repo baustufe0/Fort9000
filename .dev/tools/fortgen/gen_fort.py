@@ -1438,7 +1438,7 @@ _V8_HUB3 = [((-3096.14, 502.53), _V8_HUB3_NODE, "backbracing")] + [
                                                 (-3094.27, 403.43), (-3200.0, 405.0))]
 VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
-    "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3300, -2945, -315, -185)),
+    "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3400, -2945, -315, -185)),
     # the factory (posture module: lasers and firebeams for the B sockets) on Vanilla-5's slot in the back block
     "tech_slots": dict(VANILLA_VARIANTS["artillerie"]["tech_slots"],
                        factory=[((-3500, 405), (-3400, 405), 0.5)]),
@@ -1459,18 +1459,18 @@ VANILLA_VARIANTS["bastion"] = {
             "hidden_box": (-3500, -2945, -185, -55),
             "turbine_floor_y": -55, "turbine_floor_t": 0.35,
             "split_cell": [(-3100, -185)], "sandbag_slots": [(0, "floor", 0.5), (0, "mid", 0.5)],
-            # the nest over two cells (x -3200..-2945): a mortar's body needs 50 to the metal posts on both sides,
-            # 130 between the two (MORTAR_SPACING 90)
-            "mortar_slots": [((-3200, -185), (-3100, -185), 0.5), ((-3100, -185), (-2945, -185), 0.52)],
-            # the nest's front post a door (the shells leave forward and up), and socket A1 behind the nest: a closed
-            # cell on the turbine storey with a door roof for an anti-air machine gun (test 2: no anti-air place, the
-            # player's mortars and heavy mortars took the fort down)
-            "lobbed_front_door": True,
-            "door_roof_cells": [(-3300, -185)],
+            # the mortars at the back of the storey, their shells leave through their own door roofs (range 6000: ~64
+            # degrees, 33 forward at the roof); the front cell stays free for a heavy weapon, no mortar has to be sold (the
+            # player, 05.11.2026). 100 apart (MORTAR_SPACING 90)
+            "mortar_slots": [((-3300, -185), (-3200, -185), 0.5), ((-3200, -185), (-3100, -185), 0.5)],
+            # socket A1 behind the mortars: a closed cell on the turbine storey with a door roof for an anti-air machine
+            # gun (test 2: no anti-air place, the player's mortars and heavy mortars took the fort down)
+            "door_roof_cells": [(-3400, -185)],
             # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
             "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
             # B1's cell is 148 wide, B2's 155: at 0.16 a cannon's body keeps clear of B1's door as well (the player, 05.11.2026)
-            "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "sniper", 0.18), (-3300, -185, "machinegun", 0.5)],
+            "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "cannon20mm", 0.18), (-3100, -185, "cannon20mm", 0.18),
+                             (-3400, -185, "machinegun", 0.5)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
@@ -1489,50 +1489,56 @@ VANILLA_VARIANTS["bastion"] = {
         ("struts", _V8_HUB3),                                       # the third hub on the workshop's back column
         # 3 mines with the two of the start, then wind first (the player, 05.11.2026; test 9: 123-570 energy at 250 s, first
         # turbine at 300-336 s), then the other mines
-        ("build", [(-3100, 75, "sniper")]),                         # 6 socket B2
+        # socket B2 stays empty until the first heavy weapon (module heavy1): one sniper saves its metal (the player, 05.11.2026)
+        ("build", [(-3100, 75, "cannon20mm")]),                     # 7 socket B2
         ("eco", ["turbine"]),
-        ("eco", ["mine", "mine"]),
-        ("weapons", ["sniper"]),                                    # 7
+        ("eco", ["mine", "mine"]),                                  # 9
         # sockets M1/M2: the back column x -3200..-3100 from the rock up (the nest stands on it; on the starting
         # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
-        # and the nest over it
+        # and the storey over it: the heavy weapon's cell in front, the mortars, A1 behind them
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
-                   (-3200, -185), (-3100, -185), (-3300, -185, "machinegun")]),  # 8 (and A1)
-        ("defence", ["sandbags", "sandbags"]),                      # 9
-        ("mark", ["door_layers"]),                                  # 11 the second doors from here on
+                   (-3100, -185, "cannon20mm"), (-3200, -185), (-3300, -185), (-3400, -185, "machinegun")]),  # 10
+        ("defence", ["sandbags", "sandbags"]),                      # 11
+        ("mark", ["door_layers"]),                                  # 12 the second doors from here on
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
-        ("defence", ["sell:machinegun", "woodspam"]),               # 12
-        ("eco", ["turbine", "turbine"]),                            # 13
-        ("tech", ["upgrade"]),                                      # 14
-        ("eco", ["battery", "store"]),                              # 15
-        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 16
-        ("eco", ["battery"]),                                       # 17
-        ("upgrades", ["mine2", "mine2"]),                           # 18
-        ("defence", ["woodspam"]),                                  # 19
+        ("defence", ["sell:machinegun", "woodspam"]),               # 13
+        ("eco", ["turbine"]),                                       # 14
+        # metal is what brakes (test 10: below 200 until 600 s, energy at its cap at 300-400 s, mine upgrades at 670 s): the
+        # upgrade centre and the mine upgrades before the third turbine and the turbine upgrades
+        ("tech", ["upgrade"]),                                      # 15
+        ("upgrades", ["mine2", "mine2"]),                           # 16
+        ("eco", ["turbine"]),                                       # 17
+        ("eco", ["battery", "store"]),                              # 18
+        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 19
+        ("eco", ["battery"]),                                       # 20
+        ("defence", ["woodspam"]),                                  # 21
     ],
     # the weapon places (the starting fort's machine gun A0 on its lower front strut) and the zones the AI watches
     # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
     # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
     "sockets": [
-                {"name": "A1", "kind": "antiair", "cell": (-3300, -185), "default": "machinegun"},
+                {"name": "A1", "kind": "antiair", "cell": (-3400, -185), "default": "machinegun"},
                 # upgrade: once the tech stands and the storage fills up, the AI sells the socket's sniper and builds
-                # the first of these that is ready (the posture's Prefer first); rank: B2 first, B1 later (two
-                # snipers pay only early in the match, the player 03.11.2026)
+                # the first of these that is ready (the posture's Prefer first). B2 and C1 stand empty for the first two
+                # heavy weapons (modules heavy1, heavy2), the one sniper is sold only once they stand (upgrade_heavy)
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
-                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 2},
-                {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper",
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3, "upgrade_heavy": 2},
+                {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "cannon20mm",
                  "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 1},
+                {"name": "C1", "kind": "direct", "cell": (-3100, -185), "default": "cannon20mm",
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 2},
                 {"name": "B3", "kind": "heavy", "cell": (-3100, 405), "default": "laser"},
-                {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
-                {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
+                {"name": "M1", "kind": "lobbed", "cell": (-3300, -185), "default": "mortar"},
+                {"name": "M2", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"}],
     # B3 (late, module heavy3): a third heavy weapon under the reactor, on the starting fort's strut y 404, firing through
     # the two slanted armour struts in front of it, made doors by the module
     # alternative weapons per socket kind, in the order the AI tries them when a socket keeps losing its weapon;
     # tag_sockets keeps those that pass rules.py in the socket
     # front strip: the starting fort's armour in front of the reactor, sold for wood while metal is short and put back
-    # when it is plentiful (the player, 04.11.2026; AI: CAI_FrontStrip). Plan positions: the game renumbers node ids
-    "front_strip": [((-2844.7, 309.73), (-2892.17, 411.07)), ((-2846.18, 203.99), (-2844.7, 309.73)),
-                    ((-2892.17, 411.07), (-2943.08, 312.08))],
+    # when it is plentiful (the player, 04.11.2026; AI: CAI_FrontStrip). Plan positions: the game renumbers node ids.
+    # Only the two outer struts: each of the two storeys keeps its inner armour strut (y 306-405 and y 206-306), else a
+    # buzzsaw cuts through the wood and the fort falls (the player, 05.11.2026)
+    "front_strip": [((-2844.7, 309.73), (-2892.17, 411.07)), ((-2846.18, 203.99), (-2844.7, 309.73))],
     "loadouts": {"heavy": ["laser", "firebeam"],
                  "direct": ["sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun"],
                  "lobbed": ["mortar", "machinegun"]},
@@ -1542,10 +1548,10 @@ VANILLA_VARIANTS["bastion"] = {
               {"name": "Z3", "box": (-3500, -3100, -55, 205)},
               {"name": "Z4", "box": (-3600, -2900, 205, 700)}],
     "modules": [
-        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 11,
+        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 10,
          "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
          "plan": [("weapons", ["mortar", "mortar"])]},
-        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 16,
+        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 15,
          "trigger": {"time": 330, "after": "artillery"},
          "plan": [("upgrades", ["mortar2", "mortar2"])]},
         # zone reinforcements (step 3): when the AI's hit map puts that much damage into the zone, a third woodspam
@@ -1567,7 +1573,7 @@ VANILLA_VARIANTS["bastion"] = {
         # its sniper is rebuilt with a laser or firebeam (Prefer)
         # anti-air in A1 against shells and missiles: when the posture turns AntiArtillery or AntiAir, or the
         # enemy builds mortars or missiles, at the latest at 240 s
-        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 11,
+        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 10,
          "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
@@ -1575,10 +1581,10 @@ VANILLA_VARIANTS["bastion"] = {
         # 05.11.2026). That branch's plant comes at 300 s or as soon as the storage fills up, on its own cells; the other one
         # only from a surplus of 900 metal / 6000 energy once the first is in (the player, test 9: both first, 1600 metal, is
         # why the heavy weapons came so late). Test 3: at 450 s it came too late
-        {"name": "munitions", "after": 12, "trigger": {"branch": "guns", "afford": True, "postures": ("Siege", "Punish"),
+        {"name": "munitions", "after": 11, "trigger": {"branch": "guns", "afford": True, "postures": ("Siege", "Punish"),
                                                        "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
-        {"name": "factory", "after": 12, "trigger": {"branch": "beams", "afford": True, "postures": ("Siege", "Punish"),
+        {"name": "factory", "after": 11, "trigger": {"branch": "beams", "afford": True, "postures": ("Siege", "Punish"),
                                                      "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3500, 700), (-3500, 602), (-3500, 503), (-3500, 405), (-3400, 503), (-3400, 405)]), ("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
@@ -1600,7 +1606,7 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-3500, -55), (-3590, -55), "bracing"),
                               ((-3500, 75), (-3590, -55), "backbracing"), ((-3500, -185), (-3590, -185), "backbracing"),
                               ((-3590, -55), (-3590, -185), "backbracing"), ((-3500, -55), (-3590, -185), "backbracing")]),
-                  ("device_on", [((-3590, -55), (-3500, -55), 0.4, "turbine"), ((-3590, -55), (-3500, -55), 0.4, "turbine2")])]},
+                  ("device_on", [((-3590, -55), (-3500, -55), 0.35, "turbine"), ((-3590, -55), (-3500, -55), 0.35, "turbine2")])]},
         # batteries when the heavy weapons' shots together cost more than the storage holds (the player, test 7: two
         # lasers 10000 energy, three batteries 9000): they fire together, deep into one spot
         {"name": "battery4", "after": 21, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
@@ -1619,14 +1625,21 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
                               ((-2844.7, 309.73), (-2892.17, 411.07), "door")]),
                   ("weapons", ["laser"])]},
-        # a third heavy weapon in the front mortar's place, behind a second door (the player, test 8: 1500 s is too long;
-        # the storage stood full again): a 20mm where B2 has it, on the nest's front strut
-        {"name": "heavy4", "socket": "M2", "loadout": "cannon20mm", "after": 21, "replace": True,
-         "trigger": {"after": "heavyartillery", "heavy": 2, "afford": True},
-         "plan": [("struts", [((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
+        # the first heavy weapon into the empty B2 as soon as a plant stands; replace: the AI takes what the tech allows
+        {"name": "heavy1", "socket": "B2", "loadout": "cannon20mm", "after": 21, "replace": True,
+         "trigger": {"tech": True, "afford": True}, "cfg": {"prereq": {}},
+         "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.18, "cannon20mm")])]},
+        # the second in the storey's front cell, behind a second door: free since the mortars stand behind it (the player,
+        # 05.11.2026; test 10: in a mortar's place it never fired)
+        {"name": "heavy2", "socket": "C1", "loadout": "cannon20mm", "after": 21, "replace": True,
+         "trigger": {"after": "heavy1", "heavy": 1, "afford": True}, "cfg": {"prereq": {}},
+         # test 10: refused (CS_UNSTABLE), the cell's front post pulled forward, floor and diagonal stretched by 5 %: two more
+         # ties back from the post, in the background
+         "plan": [("struts", [((-3100, -185), (-2945, -315), "backbracing"), ((-3100, -55), (-2945, -185), "backbracing"),
+                              ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
                   ("device_on", [((-3100, -185), (-2945, -185), 0.18, "cannon20mm")])]},
-        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 16,
+        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 15,
          "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
          "plan": [("upgrades", ["sniper2"])]},
     ],
@@ -3234,7 +3247,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -4357,7 +4370,8 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None, strip=None):
             up = [d for d in s.get("upgrade", []) if d in lo]
             return ', Loadouts = { %s }, Needs = { %s }%s' % (
                 ", ".join('"%s"' % d for d in lo), ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())),
-                ', Upgrade = { %s }, Rank = %d' % (", ".join('"%s"' % d for d in up), s.get("rank", 1)) if up else "")
+                ', Upgrade = { %s }, Rank = %d%s' % (", ".join('"%s"' % d for d in up), s.get("rank", 1),
+                                                    ", UpgradeHeavy = %d" % s["upgrade_heavy"] if s.get("upgrade_heavy") else "") if up else "")
         out += "FortSockets =\n{\n" + "".join(
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"
@@ -4443,6 +4457,7 @@ def main():
             trig += ["branch %s" % m["branch"]] if m.get("branch") else []
             trig += ["storage short"] if m.get("storage") else []
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
+            trig += ["a plant"] if m.get("tech") else []
             trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []
