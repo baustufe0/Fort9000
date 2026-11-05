@@ -54,7 +54,7 @@ local CAI_Defaults =
 	Socket = { SwapAfter = 2, Window = 180,
 		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
 		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300,
 			From = { sniper = true, sniper2 = true, machinegun = true, firebeam = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -2185,6 +2185,8 @@ function CAI_UpdateModules()
 			else
 				why = CAI_SurplusReason(m, elapsed)
 			end
+			-- Built (Bastion): not before that own device stands (the upgrade centre comes late, its upgrades must not overtake it)
+			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
 			-- Afford (Bastion): waits until 80 % of its devices' cost is there, so a dear device does not hold up the
 			-- plan behind it (test 7: the munitions plant stood first in line at 177 energy, turbines waited, skipped at last)
 			if why and tr.Afford and not CAI_ModuleAffordable(m) then
@@ -3023,6 +3025,8 @@ function CAI_SocketUpgrade(elapsed)
 	if st == nil or st.sockets == nil or Fort == nil or data.Devices == nil or type(DestroyDeviceById) ~= "function" then return end
 	local cfg = (Strategy.Socket or CAI_Defaults.Socket).Upgrade or CAI_Defaults.Socket.Upgrade
 	if not cfg then return end
+	local heavy = CAI_HeavyCount()
+	if heavy >= 1 then st.firstHeavyAt = st.firstHeavyAt or elapsed end
 	for name, s in pairs(st.sockets) do
 		if s.selling ~= nil then
 			if elapsed - (st.upgradeAt or 0) <= (cfg.Timeout or 60) then return end
@@ -3059,8 +3063,9 @@ function CAI_SocketUpgrade(elapsed)
 	for _, name in ipairs(names) do
 		local s, d = st.sockets[name], dev[name]
 		-- UpgradeHeavy: the socket's small weapon stays until that many heavy weapons stand (the one sniper is the only fire
-		-- before them; the player, 05.11.2026)
-		if d and cfg.From and cfg.From[d.type] and CAI_HeavyCount() >= (s.upgradeHeavy or 0) then
+		-- before them; the player, 05.11.2026), or HeavyWait seconds after the first: the second may be refused (test 10)
+		if d and cfg.From and cfg.From[d.type] and (heavy >= (s.upgradeHeavy or 0)
+				or (st.firstHeavyAt and elapsed - st.firstHeavyAt >= (cfg.HeavyWait or 300))) then
 			-- a mix: weapons no other socket holds first (B2 a laser, then B1 a 20mm or a firebeam)
 			local held, order = {}, {}
 			for other, od in pairs(dev) do

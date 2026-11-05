@@ -1502,16 +1502,11 @@ VANILLA_VARIANTS["bastion"] = {
         ("mark", ["door_layers"]),                                  # 12 the second doors from here on
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
         ("defence", ["sell:machinegun", "woodspam"]),               # 13
-        ("eco", ["turbine"]),                                       # 14
-        # metal is what brakes (test 10: below 200 until 600 s, energy at its cap at 300-400 s, mine upgrades at 670 s): the
-        # upgrade centre and the mine upgrades before the third turbine and the turbine upgrades
-        ("tech", ["upgrade"]),                                      # 15
-        ("upgrades", ["mine2", "mine2"]),                           # 16
-        ("eco", ["turbine"]),                                       # 17
-        ("eco", ["battery", "store"]),                              # 18
-        ("upgrades", ["turbine2", "turbine2", "turbine2"]),         # 19
-        ("eco", ["battery"]),                                       # 20
-        ("defence", ["woodspam"]),                                  # 21
+        # the upgrade centre and all its upgrades only after the plant and the heavy weapons (the player, 05.11.2026): module upgrade
+        ("eco", ["turbine", "turbine"]),                            # 14
+        ("eco", ["battery", "store"]),                              # 15
+        ("eco", ["battery"]),                                       # 16
+        ("defence", ["woodspam"]),                                  # 17
     ],
     # the weapon places (the starting fort's machine gun A0 on its lower front strut) and the zones the AI watches
     # (x0, x1, y0, y1): Z0 the crumple zone in front of the starting fort, Z1 the socket front, Z2 the turbine storey and
@@ -1551,19 +1546,19 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 10,
          "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
          "plan": [("weapons", ["mortar", "mortar"])]},
-        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 15,
-         "trigger": {"time": 330, "after": "artillery"},
+        {"name": "heavyartillery", "socket": "M1+M2", "loadout": "mortar2", "after": 17, "cfg": {"prereq": {}},
+         "trigger": {"time": 330, "after": "upgrades", "built": "upgrade"},
          "plan": [("upgrades", ["mortar2", "mortar2"])]},
         # zone reinforcements (step 3): when the AI's hit map puts that much damage into the zone, a third woodspam
         # layer in front of the starting fort's lower face (y 411..602, on the mine row's first layer) and one more
         # in front of the prow below the deck (in front of the reactor); again while the zone keeps being hit
-        {"name": "Z0face", "zone": "Z0", "after": 21, "repeat": 3, "cooldown": 60,
+        {"name": "Z0face", "zone": "Z0", "after": 17, "repeat": 3, "cooldown": 60,
          "trigger": {"zone": "Z0", "damage": 300},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2812, "layers": [-2772], "rows": [411, 505, 602], "base": [], "outside": "bracing",
               "pattern": "tri"}]},
          "plan": [("defence", ["woodspam:3"])]},
-        {"name": "Z0prow", "zone": "Z0", "after": 21, "repeat": 3, "cooldown": 60,
+        {"name": "Z0prow", "zone": "Z0", "after": 17, "repeat": 3, "cooldown": 60,
          "trigger": {"zone": "Z0", "damage": 500},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
              {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": [], "outside": "bracing"}]},
@@ -1589,18 +1584,21 @@ VANILLA_VARIANTS["bastion"] = {
          "plan": [("build", [(-3500, 700), (-3500, 602), (-3500, 503), (-3500, 405), (-3400, 503), (-3400, 405)]), ("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
-        {"name": "store2", "after": 21, "trigger": {"time": 420, "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+        {"name": "store2", "after": 17, "trigger": {"time": 420, "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
         # more wind for the heavy weapons (the player, 04.11.2026: storage alone gives no energy per second; test 7: 3 turbines,
         # 250-300 energy for minutes with two lasers): one more with the first heavy weapon, one with the second
-        {"name": "turbine4", "after": 21, "trigger": {"heavy": 1, "afford": True},
+        {"name": "turbine4", "after": 17, "trigger": {"heavy": 1, "afford": True},
          # its cell's outer post and diagonal in the background: the wind comes through, like the storey's others
          "plan": [("eco", ["turbine"]),
-                  ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")]),
-                  ("upgrades", ["turbine2"])]},
+                  ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")])]},
+        {"name": "turbine4up", "after": 17, "cfg": {"prereq": {}},
+         "trigger": {"after": "turbine4", "time": 1, "built": "upgrade", "afford": True},
+         "plan": [("device_on", [((-3300, -55), (-3200, -55), 0.35, "turbine2")])]},
         # behind the others (the player, test 8: on the storey below there was not enough wind): one more cell at the back
         # of the turbine storey, hung on the storey's end, in the background but for its floor
-        {"name": "turbine5", "after": 21, "trigger": {"after": "turbine4", "heavy": 2, "afford": True},
+        {"name": "turbine5", "after": 17, "cfg": {"prereq": {}},
+         "trigger": {"after": "turbine4", "heavy": 2, "built": "upgrade", "afford": True},
          "plan": [("build", [(-3500, -55)]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing"),
                               ((-3500, -55), (-3590, -55), "bracing"),
@@ -1609,15 +1607,15 @@ VANILLA_VARIANTS["bastion"] = {
                   ("device_on", [((-3590, -55), (-3500, -55), 0.35, "turbine"), ((-3590, -55), (-3500, -55), 0.35, "turbine2")])]},
         # batteries when the heavy weapons' shots together cost more than the storage holds (the player, test 7: two
         # lasers 10000 energy, three batteries 9000): they fire together, deep into one spot
-        {"name": "battery4", "after": 21, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
-        {"name": "battery5", "after": 21, "trigger": {"after": "battery4", "storage": True, "afford": True},
+        {"name": "battery4", "after": 17, "trigger": {"storage": True, "afford": True}, "plan": [("eco", ["battery"])]},
+        {"name": "battery5", "after": 17, "trigger": {"after": "battery4", "storage": True, "afford": True},
          "plan": [("eco", ["battery"])]},
-        {"name": "battery6", "after": 21, "trigger": {"after": "battery5", "storage": True, "afford": True},
+        {"name": "battery6", "after": 17, "trigger": {"after": "battery5", "storage": True, "afford": True},
          "plan": [("eco", ["battery"])]},
         # the third heavy weapon from a full storage (test 6: at the metal cap in 27 of the last 50 snapshots)
         # a laser: a 20mm's box (111 high, 90 wide) hits the plan's battery beside it and the door in front of it; the
         # laser is 101 high and fits under the reactor's floor. 1000 metal: only with the second store
-        {"name": "heavy3", "socket": "B3", "loadout": "laser", "after": 21,
+        {"name": "heavy3", "socket": "B3", "loadout": "laser", "after": 17,
          "trigger": {"after": "factory", "surplus": {"metal": 1000, "energy": 6000, "seconds": 20}},
          "cfg": {"weapon_struts": [((-3094.27, 403.43), (-2993.3, 407.38), 0.4, "laser")],
                  "prereq": {}},     # module factory builds its tech; the socket's Needs make the AI wait for it
@@ -1625,13 +1623,19 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
                               ((-2844.7, 309.73), (-2892.17, 411.07), "door")]),
                   ("weapons", ["laser"])]},
+        # the upgrade centre after the plant and two heavy weapons (the player, 05.11.2026), or from a surplus above a heavy weapon's
+        # price (the second may be refused, test 10); its upgrades once it stands
+        {"name": "upgrade", "after": 14, "trigger": {"heavy": 2, "afford": True, "surplus": {"metal": 850, "energy": 5000, "seconds": 20}},
+         "plan": [("tech", ["upgrade"])]},
+        {"name": "upgrades", "after": 14, "cfg": {"prereq": {}}, "trigger": {"after": "upgrade", "time": 1, "built": "upgrade"},
+         "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
         # the first heavy weapon into the empty B2 as soon as a plant stands; replace: the AI takes what the tech allows
-        {"name": "heavy1", "socket": "B2", "loadout": "cannon20mm", "after": 21, "replace": True,
+        {"name": "heavy1", "socket": "B2", "loadout": "cannon20mm", "after": 17, "replace": True,
          "trigger": {"tech": True, "afford": True}, "cfg": {"prereq": {}},
          "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.18, "cannon20mm")])]},
         # the second in the storey's front cell, behind a second door: free since the mortars stand behind it (the player,
         # 05.11.2026; test 10: in a mortar's place it never fired)
-        {"name": "heavy2", "socket": "C1", "loadout": "cannon20mm", "after": 21, "replace": True,
+        {"name": "heavy2", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
          "trigger": {"after": "heavy1", "heavy": 1, "afford": True}, "cfg": {"prereq": {}},
          # test 10: refused (CS_UNSTABLE), the cell's front post pulled forward, floor and diagonal stretched by 5 %: two more
          # ties back from the post, in the background
@@ -1639,8 +1643,8 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
                   ("device_on", [((-3100, -185), (-2945, -185), 0.18, "cannon20mm")])]},
-        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 15,
-         "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420},
+        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 17, "cfg": {"prereq": {}},
+         "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420, "after": "upgrades", "built": "upgrade"},
          "plan": [("upgrades", ["sniper2"])]},
     ],
 }
@@ -3247,7 +3251,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "built": tr.get("built"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -3267,6 +3271,11 @@ class Plan:
                         self.problems.append("module %s: %s needs %s, which the plan does not build" % (m["name"], a["DeviceSaveName"], need))
                     else:
                         req = max(req, k)
+                # an upgrade waits for its base device in the plan (Vanilla-8's late upgrades: the plant no longer holds them back)
+                base = UPGRADE_OF.get(a.get("DeviceSaveName", ""))
+                if base:
+                    same = lambda b: all(b.get(key) == a.get(key) for key in ("PosA", "PosB", "GroundPosition"))
+                    req = max([req] + [k for k, b in enumerate(plan, 1) if b.get("DeviceSaveName") == base and same(b)])
             # a plan strut in a module weapon's line of fire, built after the module, is not recessed by the game:
             # the module waits until it stands
             for _ in range(20):
@@ -4458,6 +4467,7 @@ def main():
             trig += ["storage short"] if m.get("storage") else []
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["a plant"] if m.get("tech") else []
+            trig += ["with %s built" % m["built"]] if m.get("built") else []
             trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []

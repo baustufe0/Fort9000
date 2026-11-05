@@ -81,6 +81,9 @@ def format_modules(mods):
         if m.get("tech"):
             # Tech (Bastion): a plant for heavy weapons stands
             tr.append("Tech = true")
+        if m.get("built"):
+            # Built (Bastion): nothing goes in before that device of the AI's stands
+            tr.append('Built = "%s"' % m["built"])
         if m.get("afford"):
             # Afford (Bastion): the module waits until 80 % of its devices' cost is there
             tr.append("Afford = true")

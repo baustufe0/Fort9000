@@ -72,3 +72,13 @@ print("still one heavy: sold=" .. sold)
 own[302] = "cannon20mm"
 think(14)
 print("two heavy: sold=" .. sold .. " wanted=" .. tostring(data.CAI.sockets.B1.current))
+-- the second heavy weapon refused: the sniper goes HeavyWait seconds after the first
+own[302] = nil
+own[401] = "sniper"; data.Devices[401] = k1
+CAI_SocketSet("B1", "sniper")
+data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100; data.CAI.firstHeavyAt = 0
+sold = 0
+CAI_SocketUpgrade(299)
+print("refused, waiting: sold=" .. sold)
+CAI_SocketUpgrade(301)
+print("refused, waited: sold=" .. sold)

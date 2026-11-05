@@ -396,7 +396,9 @@ their own cells at action 171, the other from 900 metal / 6000 energy. Second st
 - Mortars at the back of the top storey (x -3300..-3100), A1 behind them (x -3400..-3300), C1 in the front cell with its second door. No mortar is
   sold. `heavy2` brings two more background ties for the post that was pulled forward in test 10; whether that ends the `CS_UNSTABLE` shows only in a match:
   `physics.py` puts these struts below 0.2 and did not foresee that refusal.
-- Order: upgrade centre and mine upgrades after the second turbine, before the third turbine and the turbine upgrades.
+- Upgrade centre out of the plan (the player, same day): module `upgrade` after two heavy weapons, or from 850 metal / 5000 energy in case the second is
+  refused; mine and turbine upgrades (`upgrades`), heavy mortars, AP sniper and the fifth turbine only once it stands (`Trigger.Built`). The sniper goes at the
+  latest 300 s after the first heavy weapon (`HeavyWait`).
 - Check in the next match: `SOCKET` / `MODULE heavy1`, `heavy2`, time of the first heavy weapon, `UNSTABLE`, mortars hitting, wind of the turbine at -3465.
 
 ## Risks

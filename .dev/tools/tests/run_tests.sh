@@ -120,6 +120,8 @@ check "One sniper: nothing sold for B2"            "^plant: B2=cannon C1=- sold=
 check "One sniper: heavy2 takes another, sniper stays" "^one heavy: C1=cannon20mm B1 sold=0$" "$LUA" t_empty.lua
 check "One sniper: stays with one heavy weapon"     "^still one heavy: sold=0$" "$LUA" t_empty.lua
 check "One sniper: sold with two heavy weapons"    "^two heavy: sold=1 wanted=cannon" "$LUA" t_empty.lua
+check "One sniper: not at once if the second is refused" "^refused, waiting: sold=0$" "$LUA" t_empty.lua
+check "One sniper: sold after HeavyWait"           "^refused, waited: sold=1$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
