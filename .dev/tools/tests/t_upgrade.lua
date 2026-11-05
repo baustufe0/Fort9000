@@ -56,16 +56,14 @@ Load(true)
 local function Find(socket, dev)
   for k, a in ipairs(Fort) do if a.Socket == socket and a.DeviceSaveName == dev then return k end end
 end
--- the plan leaves B2 empty for module heavy1: here it holds a sniper, the upgrade path is what is tested; B1 without its wait for
--- two heavy weapons (t_empty.lua)
+-- the plan leaves B2 empty for module heavy2: here it holds a sniper, the upgrade path is what is tested
 local k1 = Find("B1", "sniper")
 local b2 = {}
 for key, v in pairs(Fort[k1]) do b2[key] = v end
 b2.Socket = "B2"
 Fort[#Fort + 1] = b2
 local k2 = #Fort
-data.CAI.sockets.B1.upgradeHeavy = nil
-for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy1" or m.name == "heavy2" then m.fired = true end end
+for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy2" or m.name == "heavy4" then m.fired = true end end
 data.fortIndex = #Fort + 1
 own[201] = "sniper"; data.Devices[201] = k1
 own[202] = "sniper"; data.Devices[202] = k2

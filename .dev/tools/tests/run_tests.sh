@@ -114,18 +114,17 @@ check "Storage: 4 batteries with margin"          "^4 batteries short: false$" "
 check "Refill: not at once (a rebuild may be due)" "^short empty: rebuild=nil$" "$LUA" t_upgrade.lua
 check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=cannon20mm$" "$LUA" t_upgrade.lua
 check "One sniper: B2 and C1 empty in the plan"    "^plan: B1=sniper B2=- C1=-$" "$LUA" t_empty.lua
-check "One sniper: nothing without a plant"        "^no plant: B2=- sold=0$" "$LUA" t_empty.lua
-check "One sniper: heavy1 fills B2 as a cannon"    "MODULE heavy1 trigger=tech " "$LUA" t_empty.lua
-check "One sniper: nothing sold for B2"            "^plant: B2=cannon C1=- sold=0$" "$LUA" t_empty.lua
-check "One sniper: heavy2 takes another, sniper stays" "^one heavy: C1=cannon20mm B1 sold=0$" "$LUA" t_empty.lua
-check "One sniper: stays with one heavy weapon"     "^still one heavy: sold=0$" "$LUA" t_empty.lua
-check "One sniper: sold with two heavy weapons"    "^two heavy: sold=1 wanted=cannon" "$LUA" t_empty.lua
-check "One sniper: not at once if the second is refused" "^refused, waiting: sold=0$" "$LUA" t_empty.lua
-check "One sniper: sold after HeavyWait"           "^refused, waited: sold=1$" "$LUA" t_empty.lua
-check "One sniper: not 10 s after a refusal"        "^refused 10 s: sold=0 queued=true$" "$LUA" t_empty.lua
-check "One sniper: 30 s after, the refused is parked" "^refused 31 s: sold=1 queued=nil$" "$LUA" t_empty.lua
-check "Full storage: not at once"                  "^full, at once: sold=0$" "$LUA" t_empty.lua
-check "Full storage: the sniper goes after 30 s"   "^full for 31 s: sold=1$" "$LUA" t_empty.lua
+check "One sniper: nothing without a plant"        "^no plant: B1=sniper B2=- sold=0$" "$LUA" t_empty.lua
+check "First heavy weapon: into B1, sniper sold"   "SOCKET B1 sell sniper->cannon action=[0-9]+ result=-8 " "$LUA" t_empty.lua
+check "First heavy weapon: nothing else yet"       "^plant: B2=- C1=- sold=1 held=nil$" "$LUA" t_empty.lua
+check "Second heavy weapon: B2, another kind"      "^one heavy: B2=cannon20mm C1=-$" "$LUA" t_empty.lua
+check "Centre and C1 wait for two heavy weapons"   "^still one heavy: C1=- upgrade=false$" "$LUA" t_empty.lua
+check "Third heavy weapon: C1, centre too"         "^two heavy: C1=cannon upgrade=true$" "$LUA" t_empty.lua
+check "Refused: not parked after 10 s"             "^refused 10 s: queued=true$" "$LUA" t_empty.lua
+check "Refused: parked after 30 s"                 "^refused 31 s: queued=nil$" "$LUA" t_empty.lua
+check "Refused: logged"                            "SOCKET C1 parked cannon t=4031$" "$LUA" t_empty.lua
+check "Full storage: not at once"                  "^full, at once: false$" "$LUA" t_empty.lua
+check "Full storage: after a minute"               "^full for 61 s: true$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
@@ -251,7 +250,7 @@ if [ -n "$PY" ]; then
   check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
   check "Tools read plan modules apart from the plan" "^217 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 18\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
-  check "Bastion and its modules pass the rules"  "module sniper2 \(1 actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
+  check "Bastion and its modules pass the rules"  "module heavy2 \(1 actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   check "Physics: Bastion stands in its build order" "fort-t1f1-Vanilla-8.lua: (STANDS|WEAK)" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
   ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"

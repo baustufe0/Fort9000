@@ -1516,10 +1516,10 @@ VANILLA_VARIANTS["bastion"] = {
     "sockets": [
                 {"name": "A1", "kind": "antiair", "cell": (-3400, -185), "default": "machinegun"},
                 # upgrade: once the tech stands and the storage fills up, the AI sells the socket's sniper and builds
-                # the first of these that is ready (the posture's Prefer first). B2 and C1 stand empty for the first two
-                # heavy weapons (modules heavy1, heavy2), the one sniper is sold only once they stand (upgrade_heavy)
+                # the first of these that is ready (the posture's Prefer first). The first heavy weapon takes the sniper's
+                # place in B1 this way, the second the empty B2 (module heavy2), the third the empty C1 (heavy4)
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
-                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3, "upgrade_heavy": 2},
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "cannon20mm",
                  "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 1},
                 {"name": "C1", "kind": "direct", "cell": (-3100, -185), "default": "cannon20mm",
@@ -1631,23 +1631,22 @@ VANILLA_VARIANTS["bastion"] = {
          "plan": [("tech", ["upgrade"])]},
         {"name": "upgrades", "after": 14, "cfg": {"prereq": {}}, "trigger": {"after": "upgrade", "time": 1, "built": "upgrade"},
          "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
-        # the first heavy weapon into the empty B2 as soon as a plant stands; replace: the AI takes what the tech allows
-        {"name": "heavy1", "socket": "B2", "loadout": "cannon20mm", "after": 17, "replace": True,
-         "trigger": {"tech": True, "afford": True}, "cfg": {"prereq": {}},
+        # the first heavy weapon takes the sniper's place: socket B1's upgrade (CAI_SocketUpgrade, as soon as a plant stands). B1, not
+        # B2: a destroyed cannon's blast reaches devices within 400 (test 12: from B2 it took the tower's mortars and turbines with it;
+        # from B1 the mortars are ~390-430 away; the player, 05.11.2026). The second into the empty B2, what the tech allows
+        {"name": "heavy2", "socket": "B2", "loadout": "cannon20mm", "after": 17, "replace": True,
+         "trigger": {"heavy": 1, "afford": True}, "cfg": {"prereq": {}},
          "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.18, "cannon20mm")])]},
-        # the second in the storey's front cell, behind a second door: free since the mortars stand behind it (the player,
-        # 05.11.2026; test 10: in a mortar's place it never fired)
-        {"name": "heavy2", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
-         "trigger": {"after": "heavy1", "heavy": 1, "afford": True}, "cfg": {"prereq": {}},
+        # the third in the storey's front cell, behind a second door: free since the mortars stand behind it (the player,
+        # 05.11.2026; refused in tests 10-12: a refusal is parked, CAI_ParkRefused, and holds nothing up)
+        {"name": "heavy4", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
+         "trigger": {"after": "heavy2", "heavy": 2, "afford": True}, "cfg": {"prereq": {}},
          # test 10: refused (CS_UNSTABLE), the cell's front post pulled forward, floor and diagonal stretched by 5 %: two more
          # ties back from the post, in the background
          "plan": [("struts", [((-3100, -185), (-2945, -315), "backbracing"), ((-3100, -55), (-2945, -185), "backbracing"),
                               ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
                   ("device_on", [((-3100, -185), (-2945, -185), 0.18, "cannon20mm")])]},
-        {"name": "sniper2", "socket": "B1", "loadout": "sniper2", "after": 17, "cfg": {"prereq": {}},
-         "trigger": {"types": ("sniper2", "laser", "firebeam"), "count": 1, "time": 420, "after": "upgrades", "built": "upgrade"},
-         "plan": [("upgrades", ["sniper2"])]},
     ],
 }
 
@@ -3253,7 +3252,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "built": tr.get("built"), "heavy_done": tr.get("heavy_done"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "heavy_done": tr.get("heavy_done"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -4381,8 +4380,7 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None, strip=None):
             up = [d for d in s.get("upgrade", []) if d in lo]
             return ', Loadouts = { %s }, Needs = { %s }%s' % (
                 ", ".join('"%s"' % d for d in lo), ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())),
-                ', Upgrade = { %s }, Rank = %d%s' % (", ".join('"%s"' % d for d in up), s.get("rank", 1),
-                                                    ", UpgradeHeavy = %d" % s["upgrade_heavy"] if s.get("upgrade_heavy") else "") if up else "")
+                ', Upgrade = { %s }, Rank = %d' % (", ".join('"%s"' % d for d in up), s.get("rank", 1)) if up else "")
         out += "FortSockets =\n{\n" + "".join(
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"
@@ -4468,7 +4466,6 @@ def main():
             trig += ["branch %s" % m["branch"]] if m.get("branch") else []
             trig += ["storage short"] if m.get("storage") else []
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
-            trig += ["a plant"] if m.get("tech") else []
             trig += ["with %s built" % m["built"]] if m.get("built") else []
             trig += ["after the heavy weapons"] if m.get("heavy_done") else []
             trig += ["(affordable)"] if m.get("afford") else []

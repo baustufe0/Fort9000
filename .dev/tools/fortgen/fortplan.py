@@ -78,9 +78,6 @@ def format_modules(mods):
         if m.get("heavy"):
             # Heavy (Bastion): that many of the AI's own heavy weapons stand
             tr.append("Heavy = %d" % m["heavy"])
-        if m.get("tech"):
-            # Tech (Bastion): a plant for heavy weapons stands
-            tr.append("Tech = true")
         if m.get("heavy_done"):
             # HeavyDone (Bastion): two heavy weapons stand, or the first for HeavyWait seconds
             tr.append("HeavyDone = true")

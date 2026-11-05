@@ -1,6 +1,6 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
--- Bastion after test 10: one sniper. Sockets B2 and C1 stand empty for the first two heavy weapons (modules heavy1, heavy2:
--- what the tech allows, nothing sold); the one sniper in B1 is sold only once two heavy weapons stand. Vanilla-8, team 102.
+-- Bastion after test 12: one sniper in B1, sold for the first heavy weapon (socket upgrade); B2 and C1 stand empty for the second and third
+-- (heavy2, heavy4). What the tech allows, a kind not yet there first. Vanilla-8, team 102.
 MAX_SIDES = 100
 DD_SUCCESS = -8
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
@@ -58,53 +58,34 @@ own[201] = "sniper"; data.Devices[201] = k1
 local function think(n)
   for i = 1, n do data.Rebuild = {}; CAI_Think(); data.fortIndex = #Fort + 1 end
 end
+local function fired(name)
+  for _, m in ipairs(data.CAIModules.list) do if m.name == name then return tostring(m.fired == true) end end
+end
 data.fortIndex = #Fort + 1
 think(3)
-print("no plant: B2=" .. dev("B2") .. " sold=" .. sold)
+print("no plant: B1=" .. dev("B1") .. " B2=" .. dev("B2") .. " sold=" .. sold)
 own[300] = "munitions"
 think(3)
-print("plant: B2=" .. dev("B2") .. " C1=" .. dev("C1") .. " sold=" .. sold)
+print("plant: B2=" .. dev("B2") .. " C1=" .. dev("C1") .. " sold=" .. sold .. " held=" .. tostring(own[201]))
 own[301] = "cannon"
 think(1)
-print("one heavy: C1=" .. dev("C1") .. " B1 sold=" .. sold)
+print("one heavy: B2=" .. dev("B2") .. " C1=" .. dev("C1"))
 think(13)
-print("still one heavy: sold=" .. sold)
+print("still one heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
 own[302] = "cannon20mm"
-think(14)
-print("two heavy: sold=" .. sold .. " wanted=" .. tostring(data.CAI.sockets.B1.current))
--- the second heavy weapon refused: the sniper goes HeavyWait seconds after the first
-own[302] = nil
-own[401] = "sniper"; data.Devices[401] = k1
-CAI_SocketSet("B1", "sniper")
-data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100; data.CAI.firstHeavyAt = 0
-sold = 0
-CAI_SocketUpgrade(299)
-print("refused, waiting: sold=" .. sold)
-CAI_SocketUpgrade(301)
-print("refused, waited: sold=" .. sold)
--- refused: the sniper goes after RefusedWait seconds, the refused weapon's rebuild is parked
-own[401] = "sniper"; data.Devices[401] = k1
-CAI_SocketSet("B1", "sniper")
-data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100; data.CAI.firstHeavyAt = 4000
+think(1)
+print("two heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
+-- refused: the rebuild is parked after RefusedWait seconds
 local kc
 for k, a in ipairs(Fort) do if a.Socket == "C1" and a.Type == CREATE_DEVICE then kc = k end end
 data.Rebuild = { [kc] = true }
 data.CAI.heavyRefused = 4000
-sold = 0
-CAI_SocketUpgrade(4010)
-print("refused 10 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))
-data.CAI.richFor = 100
-CAI_SocketUpgrade(4031)
-print("refused 31 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))
--- the storage full: the sniper goes without waiting for anything, after CapSeconds
-own[501] = "sniper"; data.Devices[501] = k1
-CAI_SocketSet("B1", "sniper")
-data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100
-data.CAI.heavyRefused = nil; data.CAI.firstHeavyAt = 5000; data.CAI.capSince = nil
+CAI_ParkRefused(4010)
+print("refused 10 s: queued=" .. tostring(data.Rebuild[kc]))
+CAI_ParkRefused(4031)
+print("refused 31 s: queued=" .. tostring(data.Rebuild[kc]))
+-- the storage full for a minute
 res = { metal = 1200, energy = 9000 }
-sold = 0
-CAI_SocketUpgrade(5010)
-print("full, at once: sold=" .. sold)
-data.CAI.richFor = 100
-CAI_SocketUpgrade(5041)
-print("full for 31 s: sold=" .. sold)
+data.CAI.capSince = nil
+print("full, at once: " .. tostring(CAI_AtCap(5000, 60)))
+print("full for 61 s: " .. tostring(CAI_AtCap(5061, 60)))

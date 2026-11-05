@@ -258,7 +258,7 @@ Fort =
 FortSockets =
 {
 { Name = "A1", Kind = "antiair", Cell = { x = -3400, y = -185 }, Default = "machinegun", Loadouts = { "machinegun" }, Needs = {  } },
-{ Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 3, UpgradeHeavy = 2 },
+{ Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 3 },
 { Name = "B2", Kind = "direct", Cell = { x = -3100, y = 75 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 1 },
 { Name = "C1", Kind = "direct", Cell = { x = -3100, y = -185 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 2 },
 { Name = "B3", Kind = "heavy", Cell = { x = -3100, y = 405 }, Default = "laser", Loadouts = { "laser" }, Needs = { laser = "factory" } },
@@ -359,10 +359,10 @@ FortModules =
 { Type = CREATE_DEVICE, OriginalNodeAId = 10050, PosA = { x = -3400.00, y = -55.00 }, OriginalNodeBId = 10051, PosB = { x = -3300.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10052, PosA = { x = -3500.00, y = -55.00 }, OriginalNodeBId = 10050, PosB = { x = -3400.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine2" },
 } },
-{ Name = "heavy1", Trigger = { Tech = true, Afford = true }, Requires = 12, Socket = "B2", Loadout = "cannon20mm", Replace = true, Actions = {
+{ Name = "heavy2", Trigger = { Heavy = 1, Afford = true }, Requires = 12, Socket = "B2", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 75.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 75.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "B2" },
 } },
-{ Name = "heavy2", Trigger = { After = "heavy1", Heavy = 1, Afford = true }, Requires = 87, Socket = "C1", Loadout = "cannon20mm", Replace = true, Actions = {
+{ Name = "heavy4", Trigger = { After = "heavy2", Heavy = 2, Afford = true }, Requires = 87, Socket = "C1", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3100.00, y = -185.00 }, OriginalNodeBId = 10023, PosB = { x = -2945.00, y = -315.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10008, PosA = {x = -3100.00, y = -55.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10019, PosA = { x = -2945.00, y = -185.00 }, OriginalNodeBId = 38000, NewNodePos = { x = -2895.00, y = -185.00 }, MaterialSaveName = "armour" },
@@ -370,8 +370,5 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 38001, PosA = {x = -2895.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -2945.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "C1" },
-} },
-{ Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 1, Time = 420, After = "upgrades", Built = "upgrade" }, Requires = 14, Socket = "B1", Loadout = "sniper2", Actions = {
-{ Type = CREATE_DEVICE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, LinkT = 0.16, DeviceSaveName = "sniper2", Socket = "B1" },
 } },
 }

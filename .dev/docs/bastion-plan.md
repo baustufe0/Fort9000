@@ -444,6 +444,10 @@ A cannon shell does 700 and passes armour and doors (`Penetrate = 4000`); backgr
 So the chain in test 12: cannon gone, then what it took with it. `Trigger.HeavyDone` and B1's sniper now also open on a full storage (`CAI_AtCap`, B1 after 30 s, the centre after 60 s).
 `Probe.AtOnly` for a probe of C1 at 520 s.
 
+**After test 12, the player's choice (05.11.2026):** first heavy weapon in B1, away from the tower (socket upgrade: sells the sniper once a plant stands, 450 metal / 3000 energy for 15 s and 80 % of the price; B1 is silent
+while it is built). Second in B2 (`heavy2`), third in C1 (`heavy4`). No AP sniper any more (module `sniper2` gone). B1's waiting rules (`UpgradeHeavy`) gone. A refused heavy weapon's rebuild is parked
+after 30 s for 300 s (`CAI_ParkRefused`). The centre opens at two heavy weapons built, the first for 300 s, or a full storage for 60 s. Check: reactor damage from a cannon lost in B1 (estimated ~200 away, not measured).
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
