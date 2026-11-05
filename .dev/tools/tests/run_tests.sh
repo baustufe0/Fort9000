@@ -88,12 +88,12 @@ check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
 check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Bastion loads with sockets and zones"   "^247 6 B2 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
-check "Sockets: listed with their loadouts"     "SOCKETS A1:machinegun B1:sniper/cannon20mm/laser/firebeam/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
+check "Sockets: listed with their loadouts"     "SOCKETS A1:machinegun B1:sniper/cannon20mm/laser/firebeam/cannon/machinegun B2:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
 check "Sockets: one loss keeps the weapon"      "SOCKET B1 lost sniper losses=1$" "$LUA" t_sockets.lua
 check "Sockets: no machine gun for a sniper"   "^after two losses: sniper rebuild=true$" "$LUA" t_sockets.lua
-check "Sockets: swap to a loadout whose tech stands" "^with munitions: cannon20mm$" "$LUA" t_sockets.lua
+check "Sockets: swap to a loadout whose tech stands" "^with munitions: cannon$" "$LUA" t_sockets.lua
 check "Sockets: tech under construction does not count" "^factory building: cannon20mm$" "$LUA" t_sockets.lua
-check "Sockets: the posture's preferred loadout" "^factory built: laser$" "$LUA" t_sockets.lua
+check "Sockets: the posture's preferred loadout" "^factory built: cannon$" "$LUA" t_sockets.lua
 check "Sockets: machine gun under AntiAir"     "^anti-air: machinegun$" "$LUA" t_sockets.lua
 check "Sockets: an old loss is forgotten"       "^late loss: machinegun losses=1$" "$LUA" t_sockets.lua
 check "Modules: Repeat and Cooldown"            "^again inserted 3 times$" "$LUA" t_sockets.lua
@@ -103,7 +103,7 @@ check "Upgrade: B2 first, sold and rebuilt as a laser" "^factory: B2=laser rebui
 check "Upgrade: the sale is logged"              "SOCKET B2 sell sniper->laser action=[0-9]+ result=-8 " "$LUA" t_upgrade.lua
 check "Upgrade: not while poor"                  "^poor: B1=sniper$" "$LUA" t_upgrade.lua
 check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser sold=2$" "$LUA" t_upgrade.lua
-check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon20mm$" "$LUA" t_upgrade.lua
+check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon$" "$LUA" t_upgrade.lua
 check "Upgrade: nothing dearer than the storage"   "^storage 900: B2=cannon20mm B1=sniper$" "$LUA" t_upgrade.lua
 check "Upgrade: a firebeam is replaced later"     "^firebeam replaced: B1=cannon20mm$" "$LUA" t_upgrade.lua
 check "Socket: all its actions follow the weapon" "^all actions: cannon20mm cannon20mm$" "$LUA" t_upgrade.lua
@@ -179,6 +179,9 @@ check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"    
 check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t_volley2.lua
 check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
 check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
+check "Tech: the drawn branch comes first"         "^at 310 s: factory=true munitions=false$" "$LUA" t_branch.lua
+check "Tech: the other from a surplus"             "^with a surplus: factory=true munitions=true$" "$LUA" t_branch.lua
+check "Tech: first branch drawn"                   "TECH first=guns$" "$LUA" t_upgrade.lua
 check "Worth: saves for the cannon first"          "^saving: sniper for=cannon$" "$LUA" t_upgrade.lua
 check "Worth: then buys the cannon"                "^paid: cannon$" "$LUA" t_upgrade.lua
 check "Socket: a heavy weapon keeps its place"     "^heavy lost twice: cannon20mm$" "$LUA" t_upgrade.lua

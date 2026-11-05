@@ -72,6 +72,9 @@ def format_modules(mods):
         if m.get("storage"):
             # Storage (Bastion): the heavy weapons' shots together cost more than the energy storage holds
             tr.append("Storage = true")
+        if m.get("branch"):
+            # Branch (Bastion): the first tech branch of the match, drawn by the AI; the other only from Surplus
+            tr.append('Branch = "%s"' % m["branch"])
         if m.get("heavy"):
             # Heavy (Bastion): that many of the AI's own heavy weapons stand
             tr.append("Heavy = %d" % m["heavy"])

@@ -366,6 +366,11 @@ after it. The socket's `Upgrade` order is its order of worth (cannon, 20mm, lase
 the body), used on swaps as well, and the AI saves up to 120 s for its first choice. Second store from 420 s, for the cannon's 900.
 Not done: the howitzer, from the packed DLC, whose size and costs are not readable here. 254 checks pass.
 
+**After test 9, the player's changes (05.11.2026):** turbine earlier: 3 mines with the start's two, then B2's cell and a turbine (plan action 63,
+was ~160), then the other mines; sandbags stay later, so the turbine stands without them for a while. B1's weapon at LinkT 0.16: the cannon fits
+there as well, `physics.py` 0.67 and 0.69 with the modules (plan alone 0.77 before). First tech branch by chance (`TECH first=`), both plants on
+their own cells at action 171, the other from 900 metal / 6000 energy. Second store from 420 s without either. heavy4 takes the weapon the tech allows. 257 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

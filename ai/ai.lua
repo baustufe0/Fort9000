@@ -2047,6 +2047,14 @@ function CAI_ModuleReplace(m)
 	end
 	local st = data.CAI
 	if name == nil or st == nil or st.sockets == nil or st.sockets[name] == nil then return end
+	-- what the tech standing allows (the first tech branch is chance)
+	local own = CAI_OwnDevices(true)
+	for _, c in ipairs({ { "cannon20mm", "munitions" }, { "laser", "factory" }, { "firebeam", "factory" } }) do
+		if (own[c[2]] or 0) > 0 and CAI_Affordable(st, c[1]) then
+			w = c[1]
+			break
+		end
+	end
 	local old = {}
 	for k, a in ipairs(Fort) do
 		if a.Socket == name then
@@ -2134,8 +2142,16 @@ function CAI_UpdateModules()
 				end
 			end
 			local why
+			-- Branch: the module of the other branch only from a surplus, once the first branch's is in
+			local otherBranch = tr.Branch and data.CAI and data.CAI.techBranch and tr.Branch ~= data.CAI.techBranch
 			local zoneSum = tr.Zone and data.CAI and data.CAI.zoneTotal and data.CAI.zoneTotal[tr.Zone] or 0
-			if #hits > 0 and total >= (tr.Count or 1) then
+			if otherBranch then
+				local first = false
+				for _, o in ipairs(mods.list) do
+					if o.trigger.Branch == data.CAI.techBranch and o.fired then first = true end
+				end
+				why = first and CAI_SurplusReason(m, elapsed) or nil
+			elseif #hits > 0 and total >= (tr.Count or 1) then
 				why = table.concat(hits, ",")
 			elseif tr.Postures and data.CAI and data.CAI.posture and CAI_ListHas(tr.Postures, data.CAI.posture) then
 				-- Postures = { ... } (Bastion): while the AI holds one of them
@@ -2613,6 +2629,9 @@ function CAI_InitSockets()
 		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
 	end
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
+	-- the match's first tech branch: chance (the player, 05.11.2026). Guns: munitions plant, 20mm and cannon. Beams: factory
+	st.techBranch = GetRandomInteger(1, 2, "CAI techBranch") == 1 and "guns" or "beams"
+	CAI_Log("TECH first=" .. st.techBranch)
 	CAI_InitSniperSight()
 end
 

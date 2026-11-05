@@ -1469,7 +1469,8 @@ VANILLA_VARIANTS["bastion"] = {
             "door_roof_cells": [(-3300, -185)],
             # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
             "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
-            "weapon_cells": [(-3100, 205, "sniper", 0.18), (-3100, 75, "sniper", 0.18), (-3300, -185, "machinegun", 0.5)],
+            # B1's cell is 148 wide, B2's 155: at 0.16 a cannon's body keeps clear of B1's door as well (the player, 05.11.2026)
+            "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "sniper", 0.18), (-3300, -185, "machinegun", 0.5)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
@@ -1486,8 +1487,11 @@ VANILLA_VARIANTS["bastion"] = {
         ("eco", ["mine"]),                                          # the first mine before the workshop (the player)
         ("tech", ["workshop"]),                                     # 4 (60 s: the mortars wait for it)
         ("struts", _V8_HUB3),                                       # the third hub on the workshop's back column
-        ("eco", ["mine", "mine"]),                                  # 5 metal first
+        # 3 mines with the two of the start, then wind first (the player, 05.11.2026; test 9: 123-570 energy at 250 s, first
+        # turbine at 300-336 s), then the other mines
         ("build", [(-3100, 75, "sniper")]),                         # 6 socket B2
+        ("eco", ["turbine"]),
+        ("eco", ["mine", "mine"]),
         ("weapons", ["sniper"]),                                    # 7
         # sockets M1/M2: the back column x -3200..-3100 from the rock up (the nest stands on it; on the starting
         # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
@@ -1495,7 +1499,6 @@ VANILLA_VARIANTS["bastion"] = {
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
                    (-3200, -185), (-3100, -185), (-3300, -185, "machinegun")]),  # 8 (and A1)
         ("defence", ["sandbags", "sandbags"]),                      # 9
-        ("eco", ["turbine"]),                                       # 10
         ("mark", ["door_layers"]),                                  # 11 the second doors from here on
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
         ("defence", ["sell:machinegun", "woodspam"]),               # 12
@@ -1568,24 +1571,19 @@ VANILLA_VARIANTS["bastion"] = {
          "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
-        # tech for heavy weapons: the munitions plant first (20mm and cannon; test 5, 04.11.2026: with the factory first
-        # the sockets had their firebeams long before it stood), at 330 s or as soon as the storage fills up, the factory
-        # after it. Test 3: at 450 s it came too late, the plan ran out at ~565 s at 900 metal / 9000 energy. The AI then
-        # sells B2's and later B1's sniper for a heavy weapon (socket upgrade)
-        # on its own cells (test 6: stood at 661-700 s, 240 s after its module could start): as soon as the turbine storey
-        # is on, before the upgrade centre
-        {"name": "munitions", "after": 12, "trigger": {"afford": True, "postures": ("Siege", "Punish"), "time": 300,
-                                                       "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+        # tech for heavy weapons: chance decides the branch (Branch: the AI draws guns or beams at the start; the player,
+        # 05.11.2026). That branch's plant comes at 300 s or as soon as the storage fills up, on its own cells; the other one
+        # only from a surplus of 900 metal / 6000 energy once the first is in (the player, test 9: both first, 1600 metal, is
+        # why the heavy weapons came so late). Test 3: at 450 s it came too late
+        {"name": "munitions", "after": 12, "trigger": {"branch": "guns", "afford": True, "postures": ("Siege", "Punish"),
+                                                       "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
-        # one branch first (the player, test 9: both plants before any heavy weapon, 1600 metal, is why they came so late):
-        # the guns, 20mm and cannon, which won test 9 at 993 s; a laser shot costs 5000 energy. The factory only from a surplus
-        {"name": "factory", "after": 16, "trigger": {"afford": True, "after": "munitions",
-                                                     "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
-         "plan": [("tech", ["factory"])]},
+        {"name": "factory", "after": 12, "trigger": {"branch": "beams", "afford": True, "postures": ("Siege", "Punish"),
+                                                     "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
+         "plan": [("build", [(-3500, 700), (-3500, 602), (-3500, 503), (-3500, 405), (-3400, 503), (-3400, 405)]), ("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
-        {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 420,
-                                                    "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+        {"name": "store2", "after": 21, "trigger": {"time": 420, "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
         # more wind for the heavy weapons (the player, 04.11.2026: storage alone gives no energy per second; test 7: 3 turbines,
         # 250-300 energy for minutes with two lasers): one more with the first heavy weapon, one with the second
@@ -3236,7 +3234,8 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "replace": m.get("replace"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
 
@@ -4441,6 +4440,7 @@ def main():
             trig += ["time %d s" % m["time"]] if m.get("time") is not None else []
             trig += ["zone %s damage %d" % (m["zone"], m.get("damage") or 300)] if m.get("zone") else []
             trig += ["posture %s" % "/".join(m["postures"])] if m.get("postures") else []
+            trig += ["branch %s" % m["branch"]] if m.get("branch") else []
             trig += ["storage short"] if m.get("storage") else []
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["(affordable)"] if m.get("afford") else []

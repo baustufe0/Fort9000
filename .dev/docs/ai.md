@@ -193,6 +193,8 @@ action fields through its transform).
 - The socket's `Upgrade` order is its order of worth, also on a swap after losses. A first choice whose tech stands and that the
   storage can hold but that is not yet paid for is saved for, up to `Upgrade.WantWait` (120) seconds (`SOCKET B2 saving for cannon`),
   instead of buying the next one. `CAI_Affordable` takes the storage from the stores and batteries standing, or the most seen.
+- First tech branch: `CAI_InitSockets` draws guns or beams (`TECH first=guns`). A module with `Trigger.Branch` of the drawn branch fires
+  as usual; the other branch's only from its `Surplus`, once the drawn one's is in. `CAI_ModuleReplace` takes the weapon the tech allows.
 - A heavy weapon lost twice is not swapped back to the socket's small default: it is rebuilt.
 - Module trigger keys: `Storage = true` (`CAI_StorageShort`: the standing heavy weapons' `EnergyShot` sum + `Margin` exceeds 3000 +
   2000 per battery), `Afford = true` (`CAI_ModuleAffordable`: waits for 80 % of its devices' cost, logs `MODULE_AFFORD`).
