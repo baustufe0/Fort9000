@@ -179,6 +179,8 @@ check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"    
 check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t_volley2.lua
 check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
 check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
+check "Worth: saves for the cannon first"          "^saving: sniper for=cannon$" "$LUA" t_upgrade.lua
+check "Worth: then buys the cannon"                "^paid: cannon$" "$LUA" t_upgrade.lua
 check "Socket: a heavy weapon keeps its place"     "^heavy lost twice: cannon20mm$" "$LUA" t_upgrade.lua
 check "Socket: Replace sells and takes over"       "^replaced: sold=true known=nil rebuild=nil socket=nil current=laser$" "$LUA" t_upgrade.lua
 check "Volley: firebeam waits for its partner"   "^partner reloading:.33$"       "$LUA" t_volley.lua

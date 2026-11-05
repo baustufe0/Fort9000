@@ -135,3 +135,20 @@ data.Rebuild[k2] = nil
 CAI_ModuleReplace({ actions = { { Type = CREATE_DEVICE, Socket = "B2", DeviceSaveName = "laser" } } })
 print("replaced: sold=" .. tostring(own[801] == nil) .. " known=" .. tostring(data.Devices[801]) .. " rebuild=" .. tostring(data.Rebuild[k2])
   .. " socket=" .. tostring(Fort[k2].Socket) .. " current=" .. data.CAI.sockets.B2.current)
+-- worth over price: B2 saves for the cannon while it is not yet paid for, then buys it
+data.CAI.sockets.B1.upgrade = nil
+Fort[k2].Socket = "B2"; CAI_SocketSet("B2", "sniper"); data.CAI.sockets.B2.current = nil
+data.CAI.sockets.B2.selling = nil
+data.CAI.sockets.B2.upgrade = { "cannon", "cannon20mm", "firebeam" }
+for id in pairs(data.Devices) do data.Devices[id] = nil end
+own = { [100] = "reactor", [901] = "sniper", [902] = "munitions", [903] = "store", [904] = "store" }
+data.Devices[901] = k2
+Fort[k2].Socket = "B2"
+data.CAI.upgradeAt = -1000; data.CAI.richFor = 100
+res = { metal = 500, energy = 5000 }
+CAI_SocketUpgrade(5000)
+print("saving: " .. Fort[k2].DeviceSaveName .. " for=" .. tostring(data.CAI.sockets.B2.wantFor))
+res = { metal = 750, energy = 5000 }
+data.CAI.richFor = 100
+CAI_SocketUpgrade(5010)
+print("paid: " .. Fort[k2].DeviceSaveName)

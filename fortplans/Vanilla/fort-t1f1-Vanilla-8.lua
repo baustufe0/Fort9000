@@ -262,7 +262,7 @@ FortSockets =
 {
 { Name = "A1", Kind = "antiair", Cell = { x = -3300, y = -185 }, Default = "machinegun", Loadouts = { "machinegun" }, Needs = {  } },
 { Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "machinegun" }, Needs = { cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon20mm", "laser", "firebeam" }, Rank = 2 },
-{ Name = "B2", Kind = "direct", Cell = { x = -3100, y = 75 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon20mm", "cannon", "laser", "firebeam" }, Rank = 1 },
+{ Name = "B2", Kind = "direct", Cell = { x = -3100, y = 75 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 1 },
 { Name = "B3", Kind = "heavy", Cell = { x = -3100, y = 405 }, Default = "laser", Loadouts = { "laser" }, Needs = { laser = "factory" } },
 { Name = "M1", Kind = "lobbed", Cell = { x = -3200, y = -185 }, Default = "mortar", Loadouts = { "mortar", "machinegun" }, Needs = { mortar = "workshop" } },
 { Name = "M2", Kind = "lobbed", Cell = { x = -3100, y = -185 }, Default = "mortar", Loadouts = { "mortar" }, Needs = { mortar = "workshop" } },
@@ -309,10 +309,10 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10011, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10026, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10011, PosB = { x = -3300.00, y = 602.00 }, LinkT = 0.49, DeviceSaveName = "munitions" },
 } },
-{ Name = "factory", Trigger = { Time = 480, After = "munitions", Afford = true, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 230, Actions = {
+{ Name = "factory", Trigger = { After = "munitions", Afford = true, Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 230, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10034, PosA = { x = -3500.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3400.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "factory" },
 } },
-{ Name = "store2", Trigger = { Time = 480, After = "munitions", Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 98, Actions = {
+{ Name = "store2", Trigger = { Time = 420, After = "munitions", Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 98, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10028, PosA = { x = -3500.00, y = 602.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 602.00 }, LinkT = 0.50, DeviceSaveName = "store" },
 } },
 { Name = "turbine4", Trigger = { Heavy = 1, Afford = true }, Requires = 230, Actions = {
@@ -344,7 +344,7 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 10013, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10040, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10040, PosA = { x = -3300.00, y = 405.00 }, OriginalNodeBId = 10005, PosB = { x = -3200.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
 } },
-{ Name = "heavy3", Trigger = { After = "store2", Surplus = { Metal = 1000, Energy = 6000, Seconds = 20 } }, Requires = 0, Socket = "B3", Loadout = "laser", Actions = {
+{ Name = "heavy3", Trigger = { After = "factory", Surplus = { Metal = 1000, Energy = 6000, Seconds = 20 } }, Requires = 0, Socket = "B3", Loadout = "laser", Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 51, PosA = {x = -2993.30, y = 407.38 }, OriginalNodeBId = 53, PosB = { x = -2943.08, y = 312.08 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 50, PosA = {x = -2892.17, y = 411.07 }, OriginalNodeBId = 53, PosB = { x = -2943.08, y = 312.08 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 57, PosA = {x = -2844.70, y = 309.73 }, OriginalNodeBId = 50, PosB = { x = -2892.17, y = 411.07 }, MaterialSaveName = "door" },

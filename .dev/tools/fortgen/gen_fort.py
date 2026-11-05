@@ -1516,9 +1516,9 @@ VANILLA_VARIANTS["bastion"] = {
                 # the first of these that is ready (the posture's Prefer first); rank: B2 first, B1 later (two
                 # snipers pay only early in the match, the player 03.11.2026)
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
-                 "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 2},
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 2},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "sniper",
-                 "upgrade": ["cannon20mm", "cannon", "laser", "firebeam"], "rank": 1},
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 1},
                 {"name": "B3", "kind": "heavy", "cell": (-3100, 405), "default": "laser"},
                 {"name": "M1", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3100, -185), "default": "mortar"}],
@@ -1577,12 +1577,14 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "munitions", "after": 12, "trigger": {"afford": True, "postures": ("Siege", "Punish"), "time": 300,
                                                        "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
-        {"name": "factory", "after": 16, "trigger": {"afford": True, "after": "munitions", "time": 480,
-                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+        # one branch first (the player, test 9: both plants before any heavy weapon, 1600 metal, is why they came so late):
+        # the guns, 20mm and cannon, which won test 9 at 993 s; a laser shot costs 5000 energy. The factory only from a surplus
+        {"name": "factory", "after": 16, "trigger": {"afford": True, "after": "munitions",
+                                                     "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
-        {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 480,
+        {"name": "store2", "after": 21, "trigger": {"after": "munitions", "time": 420,
                                                     "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
         # more wind for the heavy weapons (the player, 04.11.2026: storage alone gives no energy per second; test 7: 3 turbines,
@@ -1612,7 +1614,7 @@ VANILLA_VARIANTS["bastion"] = {
         # a laser: a 20mm's box (111 high, 90 wide) hits the plan's battery beside it and the door in front of it; the
         # laser is 101 high and fits under the reactor's floor. 1000 metal: only with the second store
         {"name": "heavy3", "socket": "B3", "loadout": "laser", "after": 21,
-         "trigger": {"after": "store2", "surplus": {"metal": 1000, "energy": 6000, "seconds": 20}},
+         "trigger": {"after": "factory", "surplus": {"metal": 1000, "energy": 6000, "seconds": 20}},
          "cfg": {"weapon_struts": [((-3094.27, 403.43), (-2993.3, 407.38), 0.4, "laser")],
                  "prereq": {}},     # module factory builds its tech; the socket's Needs make the AI wait for it
          "plan": [("struts", [((-2993.3, 407.38), (-2943.08, 312.08), "backbracing"),

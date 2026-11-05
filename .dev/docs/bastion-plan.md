@@ -353,6 +353,19 @@ storey's end). Module heavy4: a 20mm in the front mortar's place, LinkT 0.18, be
 is rebuilt after losses, not swapped to the sniper. `physics.py` with heavy3, heavy4 and both turbines: peak 0.82 at the arm of B2's
 door, no strut breaks. Open: first turbine still late, energy low around 250-375 s. 252 checks pass.
 
+**Test 9 (05.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 won at 993 s, the fastest so far: 1527 s in test 8):**
+- 20mm T101 603 and 685 s, T102 ~600 and ~700 s, T102 lost one at 785 s and its fort from about 850 s. `VOLLEY` 27 times on T101.
+- Both plants before any heavy weapon: munitions 509 / 651 s, factory 952 / 573 s (T102 built its factory first, 80 s before its
+  plant). 800 metal each.
+- Never a cannon: the swap after losses took the loadout order (sniper, then 20mm), the upgrade took whatever was at hand.
+- heavy4 fired on T101 at ~855 s but the mortar was neither sold nor replaced: `CAI_ExtractModules` dropped `Replace`, so the 20mm's
+  action found the strut occupied and passed. My bug. The mortar was rebuilt there later.
+
+**After test 9:** `Replace` reaches the AI. One branch first: the guns; factory only from a surplus of 900 metal / 6000 energy, heavy3
+after it. The socket's `Upgrade` order is its order of worth (cannon, 20mm, laser, firebeam; B1 has no cannon, its door reaches into
+the body), used on swaps as well, and the AI saves up to 120 s for its first choice. Second store from 420 s, for the cannon's 900.
+Not done: the howitzer, from the packed DLC, whose size and costs are not readable here. 254 checks pass.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

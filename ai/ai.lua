@@ -52,7 +52,9 @@ local CAI_Defaults =
 	-- Seconds; one socket at a time (Rank order), Hold seconds apart (Vanilla-8 test 3, 03.11.2026: the plan ran out
 	-- at ~565 s, both sides sat at 900 metal / 9000 energy behind two snipers each and no laser came)
 	Socket = { SwapAfter = 2, Window = 180,
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8,
+		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
+		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120,
 			From = { sniper = true, sniper2 = true, machinegun = true, firebeam = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -81,7 +83,7 @@ local CAI_Defaults =
 	SocketVolley = { Enabled = true, Types = { firebeam = true, laser = true, cannon20mm = true, cannon = true }, MaxHold = 90,
 		Classes = { firebeam = "beam", laser = "beam", cannon20mm = "gun", cannon = "gun" }, Gap = 6,
 		SaveEnergy = true, EnergyShot = { firebeam = 1500, laser = 5000, cannon20mm = 2000, cannon = 2000 }, Margin = 1000,
-		BaseStorage = 3000, Battery = 2000 },
+		BaseStorage = 3000, Battery = 2000, BaseMetal = 600, Store = 300 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
 	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
 	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
@@ -115,8 +117,8 @@ local CAI_Defaults =
 		Prefer = {
 			AntiAir = { direct = { "machinegun" } },
 			AntiSniper = { direct = { "sniper" } },
-			Siege = { direct = { "laser", "cannon20mm", "firebeam" } },
-			Punish = { direct = { "laser", "cannon20mm", "firebeam" } },
+			Siege = { direct = { "cannon", "laser", "cannon20mm", "firebeam" } },
+			Punish = { direct = { "cannon", "laser", "cannon20mm", "firebeam" } },
 		} },
 	-- NoOffence: weapon types that never fire at the enemy fort (machine guns do little damage there; they stay
 	-- anti-air), their turns in the fire control go to the other weapons (snipers)
@@ -1925,7 +1927,7 @@ function CAI_ExtractModules()
 	local mods = { list = {} }
 	for i, m in ipairs(defs) do
 		mods.list[i] = { name = tostring(m.Name or i), trigger = m.Trigger or {}, requires = m.Requires or 0, actions = {},
-			repeats = tonumber(m.Repeat) or 0, cooldown = tonumber(m.Cooldown) or 60, socket = m.Socket }
+			repeats = tonumber(m.Repeat) or 0, cooldown = tonumber(m.Cooldown) or 60, socket = m.Socket, replace = m.Replace }
 	end
 	local kept = {}
 	for _, a in ipairs(Fort) do
@@ -2734,6 +2736,8 @@ function CAI_SocketLost(deviceId)
 			if l == d then order[#order + 1] = d end
 		end
 	end
+	-- a socket with Upgrade: its order of worth first (test 9: the loadout order made every swap a 20mm)
+	for _, d in ipairs(s.upgrade or {}) do order[#order + 1] = d end
 	for j = 1, n - 1 do order[#order + 1] = s.loadouts[(at + j - 1) % n + 1] end
 	for _, d in ipairs(order) do
 		local need = s.needs[d]
@@ -2765,7 +2769,13 @@ function CAI_Affordable(st, w)
 	local ok, c = pcall(GetDeviceCost, w)
 	if not ok or c == nil then return true end
 	local cm, ce = c.metal or 0, c.energy or 0
-	return cm <= (st.metalPeak or 0) - 20 and ce <= (st.energyPeak or 0) - 100, cm, ce
+	-- the storage: what stands, or the most seen (a second store holds 1200 long before the metal gets there: a cannon,
+	-- 900 metal, would stay out of reach)
+	local own = CAI_OwnDevices(true)
+	local v = CAI_Defaults.SocketVolley
+	local capM = math.max(st.metalPeak or 0, v.BaseMetal + v.Store * (own.store or 0))
+	local capE = math.max(st.energyPeak or 0, v.BaseStorage + v.Battery * (own.battery or 0))
+	return cm <= capM - 20 and ce <= capE - 100, cm, ce
 end
 
 -- highest metal and energy seen this match: the storage the AI can save up to
@@ -3027,8 +3037,20 @@ function CAI_SocketUpgrade(elapsed)
 				local need = s.needs[w]
 				-- payable at all (storage), and nearly at hand now (the sale refunds half the old weapon)
 				local can, cm, ce = CAI_Affordable(st, w)
-				if w ~= d.type and (need == nil or (own[need] or 0) > 0) and can
-						and m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8) then
+				local athand = m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8)
+				if w ~= d.type and (need == nil or (own[need] or 0) > 0) and can and not athand then
+					-- worth more than the next one: save for it, for a while
+					s.wantSince = s.wantSince or elapsed
+					if elapsed - s.wantSince < (cfg.WantWait or 120) then
+						if s.wantFor ~= w then
+							s.wantFor = w
+							CAI_Log("SOCKET " .. name .. " saving for " .. w .. " m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e))
+						end
+						return
+					end
+				end
+				if w ~= d.type and (need == nil or (own[need] or 0) > 0) and can and athand then
+					s.wantSince, s.wantFor = nil, nil
 					local a = Fort[d.k]
 					local old = a.DeviceSaveName
 					local before = s.current
