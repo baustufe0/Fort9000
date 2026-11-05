@@ -1440,8 +1440,10 @@ VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
     "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3400, -2945, -315, -185)),
     # the factory (posture module: lasers and firebeams for the B sockets) on Vanilla-5's slot in the back block
+    # the upgrade centre on the rock (test 11: on the back column at y 602, which carries the nest, refused from the munitions
+    # plant on)
     "tech_slots": dict(VANILLA_VARIANTS["artillerie"]["tech_slots"],
-                       factory=[((-3500, 405), (-3400, 405), 0.5)]),
+                       factory=[((-3500, 405), (-3400, 405), 0.5)], upgrade=[((-3200, 700), (-3100, 700), 0.5)]),
     "cfg": {"small_low_first": True, "weapon_pick_best": True,
             "rows": _V8_ROWS,
             # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
@@ -1623,9 +1625,9 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
                               ((-2844.7, 309.73), (-2892.17, 411.07), "door")]),
                   ("weapons", ["laser"])]},
-        # the upgrade centre after the plant and two heavy weapons (the player, 05.11.2026), or from a surplus above a heavy weapon's
-        # price (the second may be refused, test 10); its upgrades once it stands
-        {"name": "upgrade", "after": 14, "trigger": {"heavy": 2, "afford": True, "surplus": {"metal": 850, "energy": 5000, "seconds": 20}},
+        # the upgrade centre after the plant and the heavy weapons (the player, 05.11.2026): two stand, or the first for HeavyWait
+        # seconds (test 11: a surplus trigger fired before the first, at 1370 metal); its upgrades once it stands
+        {"name": "upgrade", "after": 14, "trigger": {"time": 1, "heavy_done": True, "afford": True},
          "plan": [("tech", ["upgrade"])]},
         {"name": "upgrades", "after": 14, "cfg": {"prereq": {}}, "trigger": {"after": "upgrade", "time": 1, "built": "upgrade"},
          "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
@@ -3251,7 +3253,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "built": tr.get("built"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "tech": tr.get("tech"), "built": tr.get("built"), "heavy_done": tr.get("heavy_done"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -4468,6 +4470,7 @@ def main():
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["a plant"] if m.get("tech") else []
             trig += ["with %s built" % m["built"]] if m.get("built") else []
+            trig += ["after the heavy weapons"] if m.get("heavy_done") else []
             trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []

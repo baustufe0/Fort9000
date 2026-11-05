@@ -401,6 +401,24 @@ their own cells at action 171, the other from 900 metal / 6000 energy. Second st
   latest 300 s after the first heavy weapon (`HeavyWait`).
 - Check in the next match: `SOCKET` / `MODULE heavy1`, `heavy2`, time of the first heavy weapon, `UNSTABLE`, mortars hitting, wind of the turbine at -3465.
 
+**Test 11 (05.11.2026, Vanilla, the player against T102, guns drawn, `RESULT w=2` at 648 s):**
+- T102 lost no device; 22 struts in the whole match. The player's fort lost 71 struts from 630 s on, the reactor at 648 s. Whether T102's fire did that or the player
+  ended the match is not in the log: its one cannon was built at 614 s, the player's three turbines fell at 618 s, `FIRETRY cannon fired=1` is logged once.
+- First heavy weapon much earlier: munitions placed 409 s, built 499 s; cannon in the empty B2 placed 504 s, built 614 s (test 10: 787 s, 885 s). Nothing sold for it.
+- Against the player's wish: at ~460 s, with 1370 metal, `factory` and `upgrade` fired from their surplus, before the first heavy weapon (munitions still under
+  construction, nothing else to spend on). Factory built 565 s, unused.
+- Upgrade centre refused: `CS_UNSTABLE` at 475 s (strain 0.897..1.005), `CS_OCCUPIED`, `GAVE_UP` at ~640 s. So no mine or turbine upgrade in the whole match.
+- C1 refused again: cannon `CS_OCCUPIED` 535 s, `CS_UNSTABLE` from 565 s to the end (strain 0.925..1.034, sag 29/30). The two extra ties did not cure it.
+  `heavy2` also took a second cannon: `CAI_ModulePick` counts built devices only, B2's stood under construction.
+- From 600 s T102 sat on 1360-1500 metal and 9000 energy with one heavy weapon: B1's sniper waits for two heavy weapons or `HeavyWait` (300 s).
+- Metal: below 200 until ~360 s, strip at 15 s (+90, +80). Armour not back, as intended (one heavy weapon).
+- Mortars: of 50 logged tries 42 declined (`RAY_HIT_STRUCTURE` on own bracing, y ~-159); test 10: 33 of 48 and 23 of 37. The storey's floor, already before the move;
+  28 shots by 600 s, 3 struts hit.
+
+**After test 11 (05.11.2026):** second plant and upgrade centre only after the heavy weapons (`Trigger.HeavyDone`, `CAI_HeavyDone`: two built, or the first built for 300 s),
+no surplus trigger for the centre. Centre on the rock (x -3200..-3100, y 700), retried after a `GAVE_UP` (`RETRY`). C1 refused for 30 s with one heavy weapon built: B1's
+sniper is sold for the second, C1's rebuild parked for 300 s (`SOCKET C1 parked`). The mix counts weapons under construction. Why C1 is refused is still open.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

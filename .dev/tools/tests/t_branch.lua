@@ -10,9 +10,10 @@ function ScheduleCall() end
 function ScheduledCallCountOfFunc() return 0 end
 local res = { metal = 100, energy = 100 }
 function GetTeamResources() return res end
-function GetDeviceCountSide(side) return 0 end
-function GetDeviceIdSide(side, i) return 0 end
-function GetDeviceType(id) return nil end
+local heavy = 0
+function GetDeviceCountSide(side) return side == 2 and heavy or 0 end
+function GetDeviceIdSide(side, i) return 1000 + i end
+function GetDeviceType(id) return "laser" end
 function Load(g)
   for i = 1, 5 do table.insert(Fort, i, { Type = 3, MaterialSaveName = "bracing", ExistingFort = true }) end
   data.fortIndex = 6
@@ -40,5 +41,8 @@ end
 for i = 1, 62 do CAI_Think(); data.fortIndex = #Fort + 1 end
 print("at 310 s: factory=" .. fired("factory") .. " munitions=" .. fired("munitions"))
 res = { metal = 1000, energy = 7000 }
+for i = 1, 8 do data.Rebuild = {}; CAI_Think(); data.fortIndex = #Fort + 1 end
+print("surplus, no heavy weapon: factory=" .. fired("factory") .. " munitions=" .. fired("munitions") .. " upgrade=" .. fired("upgrade"))
+heavy = 2
 for i = 1, 8 do data.Rebuild = {}; CAI_Think(); data.fortIndex = #Fort + 1 end
 print("with a surplus: factory=" .. fired("factory") .. " munitions=" .. fired("munitions"))

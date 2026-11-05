@@ -196,7 +196,8 @@ action fields through its transform).
 - First tech branch: `CAI_InitSockets` draws guns or beams (`TECH first=guns`). A module with `Trigger.Branch` of the drawn branch fires
   as usual; the other branch's only from its `Surplus`, once the drawn one's is in. `CAI_ModuleReplace` takes the weapon the tech allows.
 - Empty sockets: a socket with no device in the plan is filled by a `Replace` module (`Trigger.Tech`: a plant stands; `CAI_ModulePick`). `UpgradeHeavy` on a
-  socket keeps its small weapon until that many heavy weapons stand, at most `HeavyWait` seconds after the first. `Trigger.Built`: a module waits for that own device.
+  socket keeps its small weapon until that many heavy weapons stand, at most `HeavyWait` seconds after the first. `Trigger.Built`: a module waits for that own device. `Trigger.HeavyDone`: two heavy weapons built, or the first for `HeavyWait` seconds; also the gate for the other tech
+  branch's surplus. A heavy weapon refused (`CS_UNSTABLE`) for `RefusedWait` seconds releases `UpgradeHeavy`, the refused rebuild is parked for `ParkFor` seconds.
 - A heavy weapon lost twice is not swapped back to the socket's small default: it is rebuilt.
 - Module trigger keys: `Storage = true` (`CAI_StorageShort`: the standing heavy weapons' `EnergyShot` sum + `Margin` exceeds 3000 +
   2000 per battery), `Afford = true` (`CAI_ModuleAffordable`: waits for 80 % of its devices' cost, logs `MODULE_AFFORD`).

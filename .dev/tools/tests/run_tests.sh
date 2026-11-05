@@ -122,6 +122,8 @@ check "One sniper: stays with one heavy weapon"     "^still one heavy: sold=0$" 
 check "One sniper: sold with two heavy weapons"    "^two heavy: sold=1 wanted=cannon" "$LUA" t_empty.lua
 check "One sniper: not at once if the second is refused" "^refused, waiting: sold=0$" "$LUA" t_empty.lua
 check "One sniper: sold after HeavyWait"           "^refused, waited: sold=1$" "$LUA" t_empty.lua
+check "One sniper: not 10 s after a refusal"        "^refused 10 s: sold=0 queued=true$" "$LUA" t_empty.lua
+check "One sniper: 30 s after, the refused is parked" "^refused 31 s: sold=1 queued=nil$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua
@@ -189,6 +191,7 @@ check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t
 check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
 check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
 check "Tech: the drawn branch comes first"         "^at 310 s: factory=true munitions=false$" "$LUA" t_branch.lua
+check "Tech: nothing more before the heavy weapons" "^surplus, no heavy weapon: factory=true munitions=false upgrade=false$" "$LUA" t_branch.lua
 check "Tech: the other from a surplus"             "^with a surplus: factory=true munitions=true$" "$LUA" t_branch.lua
 check "Tech: first branch drawn"                   "TECH first=guns$" "$LUA" t_upgrade.lua
 check "Worth: saves for the cannon first"          "^saving: sniper for=cannon$" "$LUA" t_upgrade.lua

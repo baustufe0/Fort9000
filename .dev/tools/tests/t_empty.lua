@@ -82,3 +82,17 @@ CAI_SocketUpgrade(299)
 print("refused, waiting: sold=" .. sold)
 CAI_SocketUpgrade(301)
 print("refused, waited: sold=" .. sold)
+-- refused: the sniper goes after RefusedWait seconds, the refused weapon's rebuild is parked
+own[401] = "sniper"; data.Devices[401] = k1
+CAI_SocketSet("B1", "sniper")
+data.CAI.sockets.B1.selling = nil; data.CAI.upgradeAt = -1000; data.CAI.richFor = 100; data.CAI.firstHeavyAt = 4000
+local kc
+for k, a in ipairs(Fort) do if a.Socket == "C1" and a.Type == CREATE_DEVICE then kc = k end end
+data.Rebuild = { [kc] = true }
+data.CAI.heavyRefused = 4000
+sold = 0
+CAI_SocketUpgrade(4010)
+print("refused 10 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))
+data.CAI.richFor = 100
+CAI_SocketUpgrade(4031)
+print("refused 31 s: sold=" .. sold .. " queued=" .. tostring(data.Rebuild[kc]))

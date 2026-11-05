@@ -54,7 +54,7 @@ local CAI_Defaults =
 	Socket = { SwapAfter = 2, Window = 180,
 		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
 		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300,
 			From = { sniper = true, sniper2 = true, machinegun = true, firebeam = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -1453,6 +1453,11 @@ function CAI_InstallBuildLogging()
 			if type(r) == "number" and r < 0 and r ~= CS_INSUFFICIENTRESOURCES then
 				pcall(CAI_NoteBuildError, "device", saveName, nodeA, nodeB, r)
 				if r == CS_UNSTABLE then
+					-- a heavy weapon refused: the socket's small weapon need not wait for it (CAI_SocketUpgrade)
+					local st = data.CAI
+					if st and CAI_Defaults.SocketVolley.EnergyShot[saveName] then
+						st.heavyRefused = st.heavyRefused or st.ticks * Strategy.ThinkInterval
+					end
 					local ok, err = pcall(CAI_NoteUnstable, saveName, nodeA, nodeB)
 					if not ok then CAI_Log("ERROR unstable diagnostics: " .. tostring(err)) end
 				end
@@ -2051,12 +2056,13 @@ function CAI_ModulePick(m)
 	local st = data.CAI
 	local s = name and st and st.sockets and st.sockets[name]
 	if not s then return nil, w end
-	local own = CAI_OwnDevices(true)
+	local own, placed = CAI_OwnDevices(true), CAI_OwnDevices()
 	local list = s.upgrade or { "cannon", "cannon20mm", "laser", "firebeam" }
 	for pass = 1, 2 do
 		for _, c in ipairs(CAI_SocketOrder(s, list)) do
 			local need = s.needs[c] or (c == "laser" or c == "firebeam") and "factory" or "munitions"
-			if (pass == 1) == ((own[c] or 0) == 0) and (own[need] or 0) > 0 and CAI_Affordable(st, c) then
+			-- a mix counts what is still under construction too (test 11: two cannons, the first not yet built)
+			if (pass == 1) == ((placed[c] or 0) == 0) and (own[need] or 0) > 0 and CAI_Affordable(st, c) then
 				return name, c
 			end
 		end
@@ -2108,14 +2114,27 @@ function CAI_ModuleAffordable(m)
 	return (res.metal or 0) >= 0.8 * cm and (res.energy or 0) >= 0.8 * ce
 end
 
--- own heavy weapons standing (SocketVolley.EnergyShot's types)
-function CAI_HeavyCount()
+-- own heavy weapons standing (SocketVolley.EnergyShot's types); builtOnly: fully built
+function CAI_HeavyCount(builtOnly)
 	if type(GetDeviceCountSide) ~= "function" then return 0 end
 	local side, n = CAI_Side(teamId), 0
 	for i = 0, GetDeviceCountSide(side) - 1 do
-		if CAI_Defaults.SocketVolley.EnergyShot[GetDeviceType(GetDeviceIdSide(side, i))] then n = n + 1 end
+		local id = GetDeviceIdSide(side, i)
+		if CAI_Defaults.SocketVolley.EnergyShot[GetDeviceType(id)]
+			and (not builtOnly or type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) then
+			n = n + 1
+		end
 	end
 	return n
+end
+
+-- the first heavy weapons are done: what waits for them may come. Two built, or the first built for HeavyWait seconds
+function CAI_HeavyDone(elapsed)
+	local st = data.CAI
+	local cfg = (Strategy.Socket or CAI_Defaults.Socket).Upgrade or CAI_Defaults.Socket.Upgrade
+	local built = CAI_HeavyCount(true)
+	if built >= 1 then st.firstHeavyAt = st.firstHeavyAt or elapsed end
+	return built >= 2 or (st.firstHeavyAt ~= nil and elapsed - st.firstHeavyAt >= (cfg.HeavyWait or 300))
 end
 
 -- the heavy weapons' shots together cost more than the storage holds
@@ -2165,7 +2184,8 @@ function CAI_UpdateModules()
 				for _, o in ipairs(mods.list) do
 					if o.trigger.Branch == data.CAI.techBranch and o.fired then first = true end
 				end
-				why = first and CAI_SurplusReason(m, elapsed) or nil
+				-- and only after the first heavy weapons (test 11: at 460 s, with the first plant still under construction)
+				why = first and CAI_HeavyDone(elapsed) and CAI_SurplusReason(m, elapsed) or nil
 			elseif #hits > 0 and total >= (tr.Count or 1) then
 				why = table.concat(hits, ",")
 			elseif tr.Postures and data.CAI and data.CAI.posture and CAI_ListHas(tr.Postures, data.CAI.posture) then
@@ -2187,6 +2207,7 @@ function CAI_UpdateModules()
 			end
 			-- Built (Bastion): not before that own device stands (the upgrade centre comes late, its upgrades must not overtake it)
 			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
+			if why and tr.HeavyDone and not CAI_HeavyDone(elapsed) then why = nil end
 			-- Afford (Bastion): waits until 80 % of its devices' cost is there, so a dear device does not hold up the
 			-- plan behind it (test 7: the munitions plant stood first in line at 177 energy, turbines waited, skipped at last)
 			if why and tr.Afford and not CAI_ModuleAffordable(m) then
@@ -2313,12 +2334,21 @@ function CAI_Think()
 				data.Rebuild[k] = nil
 				st.rebuildSince[k] = nil
 				local a = Fort and Fort[k]
+				-- the upgrade centre holds all upgrades back: it gets a new try later (test 11: given up, none in the whole match)
+				if a and a.DeviceSaveName == "upgrade" then st.techRetry = { k = k, at = elapsed + (Strategy.TechRetrySeconds or 60) } end
 				CAI_Log("GAVE_UP action " .. tostring(k) .. " type=" .. tostring(a and a.Type)
 					.. " " .. tostring(a and (a.DeviceSaveName or a.MaterialSaveName)) .. " after " .. Strategy.RebuildGiveUpSeconds .. "s")
 			end
 		end
 		for k in pairs(st.rebuildSince) do
 			if not data.Rebuild[k] then st.rebuildSince[k] = nil end
+		end
+		if st.techRetry and elapsed >= st.techRetry.at and rebuildCount == 0 then
+			if not CAI_OwnDevices().upgrade then
+				data.Rebuild[st.techRetry.k] = true
+				CAI_Log("RETRY action " .. st.techRetry.k .. " upgrade t=" .. elapsed)
+			end
+			st.techRetry = nil
 		end
 	end
 
@@ -2955,7 +2985,7 @@ function CAI_FrontStrip(elapsed)
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == nil and metal() < cfg.Below and swap(i, "bracing") then st.strip[i] = "wood" end
 		end
-	elseif metal() >= cfg.RestoreAbove and CAI_HeavyCount() >= cfg.RestoreHeavy then
+	elseif metal() >= cfg.RestoreAbove and CAI_HeavyCount(true) >= cfg.RestoreHeavy then
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == "wood" then
 				-- refused (test 7: result -4, that strut stayed wood): again next step
@@ -3025,8 +3055,10 @@ function CAI_SocketUpgrade(elapsed)
 	if st == nil or st.sockets == nil or Fort == nil or data.Devices == nil or type(DestroyDeviceById) ~= "function" then return end
 	local cfg = (Strategy.Socket or CAI_Defaults.Socket).Upgrade or CAI_Defaults.Socket.Upgrade
 	if not cfg then return end
-	local heavy = CAI_HeavyCount()
-	if heavy >= 1 then st.firstHeavyAt = st.firstHeavyAt or elapsed end
+	local heavy = CAI_HeavyCount(true)
+	local heavyDone = CAI_HeavyDone(elapsed)
+	-- a heavy weapon refused for RefusedWait seconds with one built: no use waiting for it (test 11: C1 refused to the end)
+	local refused = heavy >= 1 and st.heavyRefused ~= nil and elapsed - st.heavyRefused >= (cfg.RefusedWait or 30)
 	for name, s in pairs(st.sockets) do
 		if s.selling ~= nil then
 			if elapsed - (st.upgradeAt or 0) <= (cfg.Timeout or 60) then return end
@@ -3064,8 +3096,7 @@ function CAI_SocketUpgrade(elapsed)
 		local s, d = st.sockets[name], dev[name]
 		-- UpgradeHeavy: the socket's small weapon stays until that many heavy weapons stand (the one sniper is the only fire
 		-- before them; the player, 05.11.2026), or HeavyWait seconds after the first: the second may be refused (test 10)
-		if d and cfg.From and cfg.From[d.type] and (heavy >= (s.upgradeHeavy or 0)
-				or (st.firstHeavyAt and elapsed - st.firstHeavyAt >= (cfg.HeavyWait or 300))) then
+		if d and cfg.From and cfg.From[d.type] and (heavy >= (s.upgradeHeavy or 0) or heavyDone or refused) then
 			-- a mix: weapons no other socket holds first (B2 a laser, then B1 a 20mm or a firebeam)
 			local held, order = {}, {}
 			for other, od in pairs(dev) do
@@ -3111,6 +3142,18 @@ function CAI_SocketUpgrade(elapsed)
 						data.DeviceDeleteToRebuild[d.id] = nil
 					else
 						s.swaps = s.swaps + 1
+						-- the refused weapon's queued rebuild must not hold this one up: it comes back after ParkFor seconds
+						if refused then
+							for k in pairs(data.Rebuild or {}) do
+								local q = Fort[k]
+								local qs = q and q.Socket and q.Socket ~= name and st.sockets[q.Socket]
+								if qs and qs.upgrade and CAI_Defaults.SocketVolley.EnergyShot[q.DeviceSaveName] then
+									data.Rebuild[k] = nil
+									qs.refillAt = elapsed + (cfg.ParkFor or 300) - ((Strategy.Socket or CAI_Defaults.Socket).RefillEvery or 130)
+									CAI_Log("SOCKET " .. q.Socket .. " parked " .. tostring(q.DeviceSaveName) .. " t=" .. elapsed)
+								end
+							end
+						end
 					end
 					CAI_Log("SOCKET " .. name .. " sell " .. tostring(d.type) .. "->" .. w .. " action=" .. d.k .. " result="
 						.. tostring(r) .. " m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e) .. " posture=" .. tostring(st.posture))
