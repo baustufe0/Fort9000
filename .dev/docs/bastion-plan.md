@@ -527,6 +527,15 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 **After test 19, the player's idea (06.11.2026):** heavy weapons up, away from the reactor. B1 keeps the sniper for good. C1 first (no sale), B2 second (no cannon: 240 from the reactor), then D1 on a new storey over C1 (y -315..-438, x -3200..-2945, second door at -2895); once it is placed the mortars are sold (`mortars_off`, `Retire`), so a refusal does not cost them. `physics.py` 0.84 with it on the armour above B2's door (0.77 without D1's second door).
 `heavyartillery`, the first-heavy rules gone. To check in a match: D1 accepted, what the taller tower does to the sag, blast from C1 and D1 over each other.
 
+**Test 20 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 guns against T102 beams, T102 won at 871 s; beams 3 of 3 against guns):**
+- The move up works for the reactor: T101's 20mm in B2 lost 735 s, cannon in C1 737 s, with mortar, batteries, turbines, workshop. Reactor 1.00 at 720 s, 0.43 at 780 s, gone only at 871 s. So 57 damage (estimate ~40 from B2); it did not die with its guns.
+- Order: T101 cannon in C1 placed 476 s, built 586 s, 20mm in B2 579 s. T102 laser in C1 placed 523 s (waits for its 6000 energy), built 643 s, firebeam in B2 615 s. Sniper in B1 stayed and kept firing (103 and 93 shots), lost and rebuilt 5 times each.
+- D1 and mortars: T102 `heavy5` 730 s, laser placed 854 s without `CS_UNSTABLE`, not built; mortars retired 855 s. T101 `heavy5` 645 s, weapon never placed. T102 waited for 6000 energy with 1500 metal from ~750 s.
+- What decided it: T101 had T102's reactor at 0.56 by 660 s with 3 cannon and 18 20mm shots. T102's beams took T101's four turbines at 646 s, and again at 675 s and 705 s, 9 turbines rebuilt by 727 s. After ~650 s T101 fired no heavy shot: `VOLLEY_HOLD energy=0`. At the same moment `turbine5`, `upgrades` and `turbine4up` went in at 655 s, e 6152 at 640 s, 2360 at 670 s. T102 lost 13 struts, T101 109.
+- Upgrade centre: T101 built 650 s, T102 735 s; T102 5 turbine and 2 mine upgrades by 826 s, T101 none finished.
+
+**After test 20, the player's idea (06.11.2026):** module `shield1`: an energy shield at x -3100, y -185..-55, between the sandbags and the first turbine, when the enemy has a laser or firebeam. To check: is it placed over the background post, do beams reflect, does the first turbine keep its wind, 26 energy/s.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

@@ -1659,6 +1659,11 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2945, -315), (-2895, -315), "armour"), ((-2945, -438), (-2895, -438), "armour"),
                               ((-2895, -438), (-2895, -315), "door"), ((-2945, -438), (-2895, -315), "backbracing")]),
                   ("device_on", [((-3100, -315), (-2945, -315), 0.18, "cannon20mm")])]},
+        # an energy shield behind the sandbags, in front of the first turbine, as soon as the enemy has beams (the player, 06.11.2026; test 20: beams took the four
+        # turbines in a row three times). It reflects beams (ReflectsBeams), cannon shells pass it. Length 130 (MinLength 90: the post's halves are too short),
+        # 260 metal, 325 energy, 26 energy/s to run
+        {"name": "shield1", "after": 17, "trigger": {"types": ("laser", "firebeam"), "count": 1},
+         "plan": [("struts", [((-3100, -185), (-3100, -55), "shield")])]},
         {"name": "mortars_off", "after": 17, "retire": ("M1", "M2"), "trigger": {"after": "heavy5", "heavy": 3}, "plan": []},
     ],
 }

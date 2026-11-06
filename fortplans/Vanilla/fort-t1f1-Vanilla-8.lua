@@ -392,6 +392,9 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 39001, PosA = {x = -2945.00, y = -438.00 }, OriginalNodeBId = 39003, PosB = { x = -2895.00, y = -315.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10022, PosA = { x = -3100.00, y = -315.00 }, OriginalNodeBId = 10023, PosB = { x = -2945.00, y = -315.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "D1" },
 } },
+{ Name = "shield1", Trigger = { Types = { "laser", "firebeam" }, Count = 1 }, Requires = 59, Actions = {
+{ Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3100.00, y = -185.00 }, OriginalNodeBId = 10008, PosB = { x = -3100.00, y = -55.00 }, MaterialSaveName = "shield" },
+} },
 { Name = "mortars_off", Trigger = { After = "heavy5", Heavy = 3 }, Requires = 0, Retire = { "M1", "M2" }, Actions = {
 } },
 }
