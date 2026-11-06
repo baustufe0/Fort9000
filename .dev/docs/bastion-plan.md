@@ -536,6 +536,12 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 
 **After test 20, the player's idea (06.11.2026):** module `shield1`: an energy shield at x -3100, y -185..-55, between the sandbags and the first turbine, when the enemy has a laser or firebeam. To check: is it placed over the background post, do beams reflect, does the first turbine keep its wind, 26 energy/s.
 
+**Test 21 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T101 won at 1587 s; no beams, so the shield did not come):**
+- Reactor safe from the blasts: T102 lost C1's cannon at 729 s (mortars with it) and 20mm, D1's cannon, turbines and mortars at 989-995 s, and its reactor stood until 1587 s. T101's stood at 0.86 at the end.
+- D1 works with guns on T101: `heavy5` 600 s, cannon placed 849 s, no `CS_UNSTABLE`, built 959 s; mortars retired 850 s. T102 never got `heavy5` in (`MODULE_AFFORD` only); its cannon placed 852 s, built 962 s, was C1's rebuild, lost again 994 s. T101 fired cannon 45, 20mm 207 shots by 1560 s.
+- Order: cannon in C1 placed 486 / 496 s, built 596 / 606 s, 20mm in B2 586 / 607 s. Upgrade centre 666 / 684 s.
+- T102 did not recover: from 1000 s `rebuild=37-128`, heavy weapons queued for 590 s and never placed, cannon 3 shots in the whole match, while its mortars were rebuilt and shot away again and again (1154-1324 s, 82 mortar shots). The hanging queue held everything else back. Struts lost 23 / 494.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
