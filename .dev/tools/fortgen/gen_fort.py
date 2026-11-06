@@ -1471,7 +1471,7 @@ VANILLA_VARIANTS["bastion"] = {
             # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
             "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
             # B1's cell is 148 wide, B2's 155: at 0.16 a cannon's body keeps clear of B1's door as well (the player, 05.11.2026)
-            "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "cannon20mm", 0.18), (-3100, -185, "cannon20mm", 0.28),
+            "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "cannon20mm", 0.18), (-3100, -185, "laser", 0.4),
                              (-3400, -185, "machinegun", 0.5)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
@@ -1499,7 +1499,7 @@ VANILLA_VARIANTS["bastion"] = {
         # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
         # and the storey over it: the heavy weapon's cell in front, the mortars, A1 behind them
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
-                   (-3100, -185, "cannon20mm"), (-3200, -185), (-3300, -185), (-3400, -185, "machinegun")]),  # 10
+                   (-3100, -185, "laser"), (-3200, -185), (-3300, -185), (-3400, -185, "machinegun")]),  # 10
         ("defence", ["sandbags", "sandbags"]),                      # 11
         ("mark", ["door_layers"]),                                  # 12 the second doors from here on
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
@@ -1522,8 +1522,9 @@ VANILLA_VARIANTS["bastion"] = {
                  "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "cannon20mm",
                  "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 1},
-                {"name": "C1", "kind": "direct", "cell": (-3100, -185), "default": "cannon20mm",
-                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 2},
+                # beams only: see module heavy4
+                {"name": "C1", "kind": "heavy", "cell": (-3100, -185), "default": "laser",
+                 "upgrade": ["laser", "firebeam"], "rank": 2},
                 {"name": "B3", "kind": "heavy", "cell": (-3100, 405), "default": "laser"},
                 {"name": "M1", "kind": "lobbed", "cell": (-3300, -185), "default": "mortar"},
                 {"name": "M2", "kind": "lobbed", "cell": (-3200, -185), "default": "mortar"}],
@@ -1638,16 +1639,17 @@ VANILLA_VARIANTS["bastion"] = {
          "trigger": {"heavy": 1, "afford": True}, "cfg": {"prereq": {}},
          "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.18, "cannon20mm")])]},
         # the third in the storey's front cell, behind a second door: free since the mortars stand behind it (the player,
-        # 05.11.2026). At LinkT 0.28: refused at 0.18 in tests 10-12; test 13's probe, laser on this strut: 0.10 and 0.18 refused, 0.30 and
-        # 0.50 placed, 0.70 refused. A refusal is parked (CAI_ParkRefused) and holds nothing up
-        {"name": "heavy4", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
-         "trigger": {"after": "heavy2", "heavy": 2, "afford": True}, "cfg": {"prereq": {}},
+        # 05.11.2026). A beam at LinkT 0.4: test 13's probe, laser on this strut: 0.10 and 0.18 refused, 0.30 and 0.50 placed, 0.70 refused.
+        # 20mm and cannon were refused at 0.18 in tests 10-12 and from 0.24 / 0.22 their barrels reach the door (rules). Beams have no
+        # blast either, among the mortars and over the turbines. So it waits for the factory. A refusal is parked (CAI_ParkRefused)
+        {"name": "heavy4", "socket": "C1", "loadout": "laser", "after": 17, "replace": True,
+         "trigger": {"after": "heavy2", "heavy": 2, "built": "factory", "afford": True}, "cfg": {"prereq": {}},
          # test 10: refused (CS_UNSTABLE), the cell's front post pulled forward, floor and diagonal stretched by 5 %: two more
          # ties back from the post, in the background
          "plan": [("struts", [((-3100, -185), (-2945, -315), "backbracing"), ((-3100, -55), (-2945, -185), "backbracing"),
                               ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
-                  ("device_on", [((-3100, -185), (-2945, -185), 0.28, "cannon20mm")])]},
+                  ("device_on", [((-3100, -185), (-2945, -185), 0.4, "laser")])]},
     ],
 }
 

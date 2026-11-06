@@ -260,7 +260,7 @@ FortSockets =
 { Name = "A1", Kind = "antiair", Cell = { x = -3400, y = -185 }, Default = "machinegun", Loadouts = { "machinegun" }, Needs = {  } },
 { Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 3 },
 { Name = "B2", Kind = "direct", Cell = { x = -3100, y = 75 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 1 },
-{ Name = "C1", Kind = "direct", Cell = { x = -3100, y = -185 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 2 },
+{ Name = "C1", Kind = "heavy", Cell = { x = -3100, y = -185 }, Default = "laser", Loadouts = { "laser", "firebeam" }, Needs = { firebeam = "factory", laser = "factory" }, Upgrade = { "laser", "firebeam" }, Rank = 2 },
 { Name = "B3", Kind = "heavy", Cell = { x = -3100, y = 405 }, Default = "laser", Loadouts = { "laser" }, Needs = { laser = "factory" } },
 { Name = "M1", Kind = "lobbed", Cell = { x = -3300, y = -185 }, Default = "mortar", Loadouts = { "mortar", "machinegun" }, Needs = { mortar = "workshop" } },
 { Name = "M2", Kind = "lobbed", Cell = { x = -3200, y = -185 }, Default = "mortar", Loadouts = { "mortar" }, Needs = { mortar = "workshop" } },
@@ -362,13 +362,13 @@ FortModules =
 { Name = "heavy2", Trigger = { Heavy = 1, Afford = true }, Requires = 12, Socket = "B2", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 75.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 75.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "B2" },
 } },
-{ Name = "heavy4", Trigger = { After = "heavy2", Heavy = 2, Afford = true }, Requires = 87, Socket = "C1", Loadout = "cannon20mm", Replace = true, Actions = {
+{ Name = "heavy4", Trigger = { After = "heavy2", Heavy = 2, Built = "factory", Afford = true }, Requires = 87, Socket = "C1", Loadout = "laser", Replace = true, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3100.00, y = -185.00 }, OriginalNodeBId = 10023, PosB = { x = -2945.00, y = -315.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10008, PosA = {x = -3100.00, y = -55.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10019, PosA = { x = -2945.00, y = -185.00 }, OriginalNodeBId = 38000, NewNodePos = { x = -2895.00, y = -185.00 }, MaterialSaveName = "armour" },
 { Type = CREATE_NODE, OriginalNodeAId = 10023, PosA = { x = -2945.00, y = -315.00 }, OriginalNodeBId = 38001, NewNodePos = { x = -2895.00, y = -315.00 }, MaterialSaveName = "armour" },
 { Type = CREATE_LINK, OriginalNodeAId = 38001, PosA = {x = -2895.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -2945.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.28, DeviceSaveName = "cannon20mm", Socket = "C1" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.40, DeviceSaveName = "laser", Socket = "C1" },
 } },
 }

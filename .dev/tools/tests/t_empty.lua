@@ -75,6 +75,9 @@ print("still one heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
 own[302] = "cannon20mm"
 think(1)
 print("two heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
+own[303] = "factory"
+think(1)
+print("with the factory: C1=" .. dev("C1"))
 -- refused: the rebuild is parked after RefusedWait seconds
 local kc
 for k, a in ipairs(Fort) do if a.Socket == "C1" and a.Type == CREATE_DEVICE then kc = k end end

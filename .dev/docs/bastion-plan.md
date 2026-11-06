@@ -450,8 +450,8 @@ after 30 s for 300 s (`CAI_ParkRefused`). The centre opens at two heavy weapons 
 
 **Test 13 (06.11.2026, Vanilla, AI vs AI, probe at 520 s, both drew beams):** factory built ~495 s, laser in B1 placed ~510 s. Probe, laser only (no plant for guns, ended before the firebeam), T101, LinkT
 from the back node: C1's floor 0.10 and 0.18 refused, 0.30 and 0.50 placed, 0.70 refused. B2's floor: 0.10-0.50 placed, 0.70 refused. T102 shows the same with LinkT counted from the front node.
-So C1 is no question of stability of the storey but of the place on the strut: 0.18 was what tests 10-12 used. Why is not measured; the second mortar's body, ending at ~-3110, and a weapon's body reaching to ~-3117 at 0.18 overlap.
-C1 now at 0.28. Guns at this place are still unmeasured.
+So C1 is no question of the storey's stability but of the place on the strut: 0.18 was what tests 10-12 used. Why is not known; `rules.py` passes a laser at 0.18. 20mm and cannon reach the door from 0.24 / 0.22, so they have no measured
+place there. C1 now takes beams only, at 0.40 (`heavy4`, waits for the factory, so with guns drawn it comes after the surplus plant). Beams have no blast either. In this match `heavy3` (B3, laser) came first, at ~510 s, from the surplus.
 
 ## Risks
 
