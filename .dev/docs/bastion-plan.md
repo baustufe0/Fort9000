@@ -453,6 +453,13 @@ from the back node: C1's floor 0.10 and 0.18 refused, 0.30 and 0.50 placed, 0.70
 So C1 is no question of the storey's stability but of the place on the strut: 0.18 was what tests 10-12 used. Why is not known; `rules.py` passes a laser at 0.18. 20mm and cannon reach the door from 0.24 / 0.22, so they have no measured
 place there. C1 now takes beams only, at 0.40 (`heavy4`, waits for the factory, so with guns drawn it comes after the surplus plant). Beams have no blast either. In this match `heavy3` (B3, laser) came first, at ~510 s, from the surplus.
 
+**Test 14 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T102 won at 984 s):** munitions built 517 / 520 s. Cannon in B1 placed 534 / 536 s, built 644 / 646 s; 20mm in B2 placed 546 / 550 s, built 616 / 620 s:
+two heavy weapons within ~125 s of the plant, nothing idle at the cap for long. T102's 20mm lost at 788 s, rebuilt by 875 s, no fall of the tower this time (T101 lost 137 struts over the match, T102 76). C1 stayed empty (beams only in that version).
+Upgrade centre refused on the rock as well: `CS_UNSTABLE` at 650 / 660 s, sag 0, strain 0.96..1.00, `GAVE_UP`, `RETRY`, `GAVE_UP`. So no upgrade in the match, third match without. Not a matter of load, cause unknown.
+
+**After test 14, the player's finding (06.11.2026):** the screenshot shows a cannon's body reaching ~60 behind its post, so C1 had no room with a mortar in the next cell; `rules.py`'s body sizes are too small at the back (laser: 38-57 by the probe). Mortars one cell further back
+(x -3400..-3200), A1 behind them (x -3500..-3400), cell x -3200..-3100 empty. C1 again for every heavy weapon at 0.18. Not yet played.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

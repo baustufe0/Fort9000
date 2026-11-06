@@ -119,11 +119,10 @@ check "First heavy weapon: into B1, sniper sold"   "SOCKET B1 sell sniper->canno
 check "First heavy weapon: nothing else yet"       "^plant: B2=- C1=- sold=1 held=nil$" "$LUA" t_empty.lua
 check "Second heavy weapon: B2, another kind"      "^one heavy: B2=cannon20mm C1=-$" "$LUA" t_empty.lua
 check "Centre and C1 wait for two heavy weapons"   "^still one heavy: C1=- upgrade=false$" "$LUA" t_empty.lua
-check "Two heavy weapons: the centre, C1 not yet"  "^two heavy: C1=- upgrade=true$" "$LUA" t_empty.lua
-check "Third heavy weapon: a beam in C1"           "^with the factory: C1=laser$" "$LUA" t_empty.lua
+check "Third heavy weapon: C1, centre too"         "^two heavy: C1=cannon upgrade=true$" "$LUA" t_empty.lua
 check "Refused: not parked after 10 s"             "^refused 10 s: queued=true$" "$LUA" t_empty.lua
 check "Refused: parked after 30 s"                 "^refused 31 s: queued=nil$" "$LUA" t_empty.lua
-check "Refused: logged"                            "SOCKET C1 parked laser t=4031$" "$LUA" t_empty.lua
+check "Refused: logged"                            "SOCKET C1 parked cannon t=4031$" "$LUA" t_empty.lua
 check "Full storage: not at once"                  "^full, at once: false$" "$LUA" t_empty.lua
 check "Full storage: after a minute"               "^full for 61 s: true$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
@@ -252,7 +251,7 @@ if [ -n "$PY" ]; then
   check "Tools read plan modules apart from the plan" "^217 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 18\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Bastion and its modules pass the rules"  "module heavy2 \(1 actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
-  check "Bastion: C1's beam passes the rules"     "module heavy4 \([0-9]+ actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
+  check "Bastion: C1's weapon passes the rules"     "module heavy4 \([0-9]+ actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   check "Physics: Bastion stands in its build order" "fort-t1f1-Vanilla-8.lua: (STANDS|WEAK)" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
   ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"
