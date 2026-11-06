@@ -96,7 +96,7 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
   the door is split anyway and its outermost door layer is braced with background diagonals to the post's ends
   (needs `door_layers` 2+). Not needed by Vanilla-8 in the end (its snipers at LinkT 0.18 leave the braces clear).
 - Variant keys `sockets [{name, kind, cell, default}]` and `zones [{name, box (x0, x1, y0, y1)}]`: written after the
-  `Fort` table as `FortSockets` / `FortZones` (plan coordinates, team 1; `mid_to_long.py` copies them unconverted).
+  `Fort` table as `FortSockets` / `FortZones` (plan coordinates, team 1; `mid_to_long.py` converts them, with `FortStrip`, into the long plan's frame).
 - `door_layers_late` with plan step `("mark", ["door_layers"])`: the door layers (and their ties) are built no
   earlier than the mark (Bastion: after the first turbine; in the opening they cost ~600 metal before the first
   sniper). `door_layer_reach` (default 105): how far in front an existing node may serve as a layer's end (Bastion 60,

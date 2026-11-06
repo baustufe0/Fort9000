@@ -1,5 +1,5 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
--- Surplus modules: hand-written modules on the Vanilla-2 plan (team 102) that go in once the plan is built, no rebuild
+-- Surplus modules: hand-written modules on the Vanilla-3 plan (team 102) that go in once the plan is built, no rebuild
 -- is queued and metal and energy stay at their thresholds for Seconds; a second one only after the first (After).
 MAX_SIDES = 100
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
@@ -7,7 +7,7 @@ HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-3.lua" then return i end end end
   end
   return 2
 end
@@ -32,7 +32,7 @@ end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
 dofile("mods/fort9000dev/ai/ai.lua")
 FortPlanConfig.Force = nil
-local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-2.lua"]
+local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-3.lua"]
 plan.FortModules = {
   { Name = "firebeam", Trigger = { Surplus = { Metal = 500, Energy = 3500, Seconds = 20 } }, Requires = 0, Actions = {
     { Type = 5, OriginalNodeAId = 55, PosA = { x = -2945.11, y = 206.49 }, OriginalNodeBId = 58, PosB = { x = -2846.18, y = 203.99 }, LinkT = 0.5, DeviceSaveName = "firebeam" } } },

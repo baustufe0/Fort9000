@@ -136,7 +136,7 @@ checks in the game, and the fort-building rules are what most failures came from
 that already exists (module and plan sharing a strut); what a module costs against a starved economy; whether a
 restart (key frame restore) keeps `Fort` and `data.CAIModules` consistent.
 
-Test: `.dev/tools/tests/t_modules.lua` (hand-written module on Vanilla-2, team 102, mirrored).
+Test: `.dev/tools/tests/t_modules.lua` (hand-written module on Vanilla-3, team 102, mirrored).
 
 ## Sockets and repeatable modules (Bastion)
 

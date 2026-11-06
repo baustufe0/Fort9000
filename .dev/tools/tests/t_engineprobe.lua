@@ -1,6 +1,6 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
 -- Engine probe (FortPlanConfig.EngineProbe, Bastion step 0): material over an existing strut, reclaim refund by frame,
--- strut hits by projectile type. Vanilla-2 plan, team 102, mirrored; the game is mocked.
+-- strut hits by projectile type. Vanilla-3 plan, team 102, mirrored; the game is mocked.
 MAX_SIDES = 100
 CREATE_LINK = 3; DD_SUCCESS = 0; CS_SUCCESS = 0; CS = { [0] = "CS_SUCCESS", [7] = "CS_OBSTRUCTION" }
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
@@ -8,7 +8,7 @@ HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-3.lua" then return i end end end
   end
   return 2
 end

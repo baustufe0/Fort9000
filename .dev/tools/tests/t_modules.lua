@@ -1,14 +1,14 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
--- Reactive build modules: a hand-written module on the Vanilla-2 plan (team 102, mirrored by the game).
+-- Reactive build modules: a hand-written module on the Vanilla-3 plan (team 102, mirrored by the game).
 -- Loaded with the plan, moved by the transform, cut out after Load, inserted once the enemy builds its trigger.
 MAX_SIDES = 100
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
 HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
--- the plan pick returns the index of fort-t1f1-Vanilla-2.lua in its plan list (the list order may change), all else 2
+-- the plan pick returns the index of fort-t1f1-Vanilla-3.lua in its plan list (the list order may change), all else 2
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-3.lua" then return i end end end
   end
   return 2
 end
@@ -34,7 +34,7 @@ end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
 dofile("mods/fort9000dev/ai/ai.lua")
 FortPlanConfig.Force = nil
-local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-2.lua"]
+local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-3.lua"]
 local nPlan = #plan.Fort
 plan.FortModules = {
   { Name = "counterbattery", Trigger = { Types = { "mortar", "mortar2" }, Count = 2 }, Requires = 50, Actions = {

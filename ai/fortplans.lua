@@ -54,7 +54,7 @@ FortPlanConfig =
 			Originals = { "fort-t1f1-Template-1.lua", "fort-t1f1-Template-2.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGAF1.lua",
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGWM2.lua" },
-			Plans = { "fort-t1f1-Vanilla-2.lua", "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua",
+			Plans = { "fort-t1f1-Vanilla-3.lua", "fort-t1f1-Vanilla-5.lua", "fort-t1f1-Vanilla-6.lua",
 				"fort-t1f1-Vanilla-8.lua" },
 			-- wide, flat map (forts ~6000 units apart, no cover): slower start,
 			-- economy and long-range weapons (mortar/sniper) matter more
@@ -75,7 +75,7 @@ FortPlanConfig =
 		{
 			OriginalsDir = "ai/forts/vanilla/long/",
 			Originals = { "fort-t2f1-Template-1.lua" },
-			Plans = { "fort-t2f3-VanillaLong-2.lua", "fort-t2f3-VanillaLong-3.lua", "fort-t2f3-VanillaLong-5.lua", "fort-t2f3-VanillaLong-6.lua" },
+			Plans = { "fort-t2f3-VanillaLong-3.lua", "fort-t2f3-VanillaLong-5.lua", "fort-t2f3-VanillaLong-6.lua", "fort-t2f3-VanillaLong-8.lua" },
 			Strategy =
 			{
 				EarlySeconds = 150,
@@ -98,7 +98,7 @@ FortPlanConfig =
 				"mods/weapon_pack/ai/forts/vanilla/mid/fort-t1f1-Template-ToGWM2.lua" },
 			FortPositions = { { x = 2900, y = 1100 }, { x = 3800, y = 100 }, { x = 4700, y = -900 }, { x = 5600, y = -1900 },
 				{ x = 6500, y = -3000 }, { x = 7400, y = -4000 }, { x = -3800, y = -300 }, { x = -4800, y = -1600 } },
-			Plans = { "fort-t1f1-Vanilla2v6-1.lua", "fort-t1f1-Vanilla2v6-2.lua", "fort-t1f1-Vanilla2v6-3.lua", "fort-t1f1-Vanilla2v6-4.lua" },
+			Plans = { "fort-t1f1-Vanilla2v6-2.lua", "fort-t1f1-Vanilla2v6-3.lua", "fort-t1f1-Vanilla2v6-4.lua", "fort-t1f1-Vanilla2v6-5.lua" },
 			-- 7000-12500 to the enemy forts: snipers matter most; mortars reach only downhill (the lower AI forts are in reach)
 			Strategy =
 			{
@@ -118,7 +118,7 @@ FortPlanConfig =
 			Originals = { "fort-t2f1-Template-1.lua" },
 			FortPositions = { { x = 2900, y = 1100 }, { x = 3800, y = 100 }, { x = 4700, y = -900 }, { x = 5600, y = -1900 },
 				{ x = 6500, y = -3000 }, { x = 7400, y = -4000 }, { x = -3800, y = -300 }, { x = -4800, y = -1600 } },
-			Plans = { "fort-t2f3-Vanilla2v6Long-1.lua", "fort-t2f3-Vanilla2v6Long-2.lua", "fort-t2f3-Vanilla2v6Long-3.lua", "fort-t2f3-Vanilla2v6Long-4.lua" },
+			Plans = { "fort-t2f3-Vanilla2v6Long-2.lua", "fort-t2f3-Vanilla2v6Long-3.lua", "fort-t2f3-Vanilla2v6Long-4.lua", "fort-t2f3-Vanilla2v6Long-5.lua" },
 			Strategy =
 			{
 				EarlySeconds = 150,

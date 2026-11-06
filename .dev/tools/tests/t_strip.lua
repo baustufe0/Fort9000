@@ -40,10 +40,13 @@ function MirrorFort(pivot, offset)
 end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
 dofile("mods/fort9000dev/ai/ai.lua")
-FortPlanConfig.Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }
+FortPlanConfig.Force = { Vanilla = "fort-t1f1-Vanilla-8.lua", Vanilla2v6 = "fort-t1f1-Vanilla2v6-5.lua" }
 teamId = 102
 local E = FortPos
-MirrorFort(0, { x = 2900 + E.x, y = 700 - E.y })
+-- optional arguments: where the fort stands (2v6: the plan is not where it was recorded), its nodes move with it
+local FX, FY = tonumber(arg and arg[1]) or 2900, tonumber(arg and arg[2]) or 700
+for _, p in pairs(where) do p.x = p.x + FX - 2900; p.y = p.y + FY - 700 end
+MirrorFort(0, { x = FX + E.x, y = FY - E.y })
 Load(true)
 -- the inner strut of the storey (501-502) is not in the list: it stays armour, a buzzsaw must not cut through
 mats[key(503, 501)] = "armour"; mats[key(504, 503)] = "armour"; mats[key(501, 502)] = "armour"

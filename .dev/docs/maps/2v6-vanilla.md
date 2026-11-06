@@ -49,6 +49,8 @@ tested in a match.
 
 ## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches; plans 1 and 3 narrowed at the top after the sixth, not yet played in that form)
 
+06.11.2026: Vanilla2v6-1 and Vanilla2v6Long-1 removed (the 2v6 version of Vanilla-2, the player); the sections below still describe them. New: Vanilla2v6-5 and Vanilla2v6Long-5, Bastion on this map (`_v26_bastion`). What the map does not allow is left out: socket A1 (nodes at x -3500 above y -55 are 93-147 from the next fort up, clear 160; A2 takes its triggers, so only one anti-air machine gun), modules turbine4 and turbine4up (x -3465: 0 % / 45 % wind with the terrain), turbine5 (x -3590: 10 from the rock), socket D1 with heavy5 and mortars_off (nodes at y -438, ceiling -400). So three turbines (right 54-72 %, left 0 %) and three heavy weapons at most. `physics.py` with Vanilla's terrain: max stress 0.72, WEAK; not played yet.
+
 03.11.2026: regenerated with the metal-in-body rule (`fit_weapon_bodies`): only LinkT changed, out of the doors in
 the weapons' bodies. Plans 1, 2, 4: sniper/sniper2 0.28 -> 0.22; plan 3: EMP rocket/rocket 0.70 -> 0.67; plan 4:
 machine gun/minigun 0.70 -> 0.67. Vanilla2v6Long converted again. Not played yet.

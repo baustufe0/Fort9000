@@ -1,14 +1,14 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
 -- Bastion step 0.4: many module inserts in a row, some at the same build index, keep every index-keyed table
 -- (data.Rebuild, data.Frustration, data.Devices, st.rebuildSince) pointing at the same plan actions.
--- Five time-triggered modules on the Vanilla-2 plan (team 102, mirrored), one per think step.
+-- Five time-triggered modules on the Vanilla-3 plan (team 102, mirrored), one per think step.
 MAX_SIDES = 100
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
 HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-3.lua" then return i end end end
   end
   return 2
 end
@@ -32,7 +32,7 @@ end
 dofile("ai/forts/vanilla/mid/fort-t1f1-Template-1.lua")
 dofile("mods/fort9000dev/ai/ai.lua")
 FortPlanConfig.Force = nil
-local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-2.lua"]
+local plan = CAI_Plan.maps.Vanilla.plans["fort-t1f1-Vanilla-3.lua"]
 local function Dev(name, t)
   return { Type = 5, OriginalNodeAId = 55, PosA = { x = -2945.11, y = 206.49 }, OriginalNodeBId = 58,
     PosB = { x = -2846.18, y = 203.99 }, LinkT = t, DeviceSaveName = name }

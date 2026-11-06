@@ -5,10 +5,10 @@ MAX_SIDES = 100
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
 HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
--- the plan pick returns the index of fort-t2f3-VanillaLong-2.lua in its plan list (the list order may change), all else 2
+-- the plan pick returns the index of fort-t2f3-VanillaLong-3.lua in its plan list (the list order may change), all else 2
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t2f3-VanillaLong-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t2f3-VanillaLong-3.lua" then return i end end end
   end
   return 2
 end

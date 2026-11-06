@@ -12,7 +12,6 @@ the doors that reached into their bodies; VanillaLong-3 converted again. Vanilla
 
 | Plan | Main weapon | Opening | Tested |
 |---|---|---|---|
-| Vanilla-2 | two mortars, a sniper | sniper and mortar rush in a low hidden nest | 15 matches: won 2 (+1 vs. idle player), lost 3; current version (mines after the mortars) not yet |
 | Vanilla-3 | two 20mm cannons and a sniper, each behind two short doors in a row (28.10.2026) | 20mm rush (first 20mm placed ~155 s) | once vs. a player: aborted at 680 s, 126 20mm shots, AI standing |
 | Vanilla-5 | two EMP rockets (later rockets) behind short doors (the lower one two in a row since 28.10.2026), smoke, flak | rocket rush: armoury on the munitions slot, EMP rockets at plan actions 32/38 one above the other, smoke at 39 | four times, all lost: 394 s (no armoury), 486 s (energy starved), 373 s (front stack fell to heavy mortars), 587 s (flak sniped above its low shield; the AI destroyed nothing) |
 | Vanilla-6 | modules: sniper, two mortars, anti-air, then heavy mortars, AP sniper, miniguns | Vanilla-2's low fort as a core; the weapons go in when the player builds what they answer, at the latest by time | twice, both lost: 896 s (mortars and machine guns; the AI's longest Vanilla match, 33 devices destroyed), 615 s with the late modules (rockets and flak; probably collapsed 6 s after the front layer was finished) |
@@ -74,7 +73,9 @@ Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
 - **Late block:** every plan ends with more anti-air, weapons, upgrades and storage, so the AI does not sit idle at the
   storage cap.
 
-## Vanilla-2 – sniper and mortar rush
+## Vanilla-2 – sniper and mortar rush (removed 06.11.2026)
+
+Removed from the draw by the player, with its VanillaLong and 2v6 versions. Its generator entry stays: Vanilla-5, -6 and -8 are built from it.
 
 **Layout.** No tall tower: two storeys over the starting fort's roof and the back block (x -3500..-2845, rows 205,
 105, -25), the first solid, the second hidden (`hidden_box` x -3500..-2845, y -25..105, 130 high: a 155-wide cell may

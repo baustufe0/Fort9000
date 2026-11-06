@@ -409,6 +409,8 @@ function CAI_TrySwapPlan(where, realOf)
 	CAI_Plan.retire = type(ours.FortRetire) == "table" and ours.FortRetire or nil
 	CAI_Plan.sockets = type(ours.FortSockets) == "table" and ours.FortSockets or nil
 	CAI_Plan.strip = type(ours.FortStrip) == "table" and ours.FortStrip or nil
+	-- where the strip's plan positions really stand (2v6: the fort is not where its plan was recorded); nil at Load: unmoved
+	CAI_Plan.stripFrame = real and { plan = { x = ours.FortPos.x, y = ours.FortPos.y }, real = real, mirrored = where == "MirrorFort" } or nil
 	CAI_Plan.zones = type(ours.FortZones) == "table" and ours.FortZones or nil
 	CAI_SetPlanGlobals({
 		Fort = ours.Fort,
@@ -3079,6 +3081,11 @@ end
 -- STRIP_SKIP once per reason when a strut cannot be swapped.
 function CAI_StripNode(x, y)
 	local px = CAI_FortMirrored and -x or x
+	local f = CAI_Plan.stripFrame
+	if f then
+		px = f.real.x + (f.mirrored and -1 or 1) * (x - f.plan.x)
+		y = f.real.y + y - f.plan.y
+	end
 	local best, bestD = nil, 25 * 25
 	for i = 0, NodeCount(teamId) - 1 do
 		local id = GetNodeId(teamId, i)

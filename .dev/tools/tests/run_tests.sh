@@ -34,10 +34,10 @@ done
 # 2v6 Vanilla: the same game plans, told apart by where the fort stands (FortPositions); the hub comes first
 MID=ai/forts/vanilla/mid/fort-t1f1-Template-1.lua; LONG=ai/forts/vanilla/long/fort-t2f1-Template-1.lua
 for o in before after; do
-  check "2v6 $o: mid plan at (4700,-900) team 102" "PLAN map=Vanilla2v6 file=fort-t1f1-Vanilla2v6-1.lua .* fort=4700,-900" "$LUA" t_vanilla2v6.lua $o $MID 102 4700 -900
+  check "2v6 $o: mid plan at (4700,-900) team 102" "PLAN map=Vanilla2v6 file=fort-t1f1-Vanilla2v6-2.lua .* fort=4700,-900" "$LUA" t_vanilla2v6.lua $o $MID 102 4700 -900
   check "2v6 $o: mid plan, first action in place"  "first action rel = 4.[56], -194.6"  "$LUA" t_vanilla2v6.lua $o $MID 102 7400 -4000
   check "2v6 $o: mid plan at (-3800,-300) team 1"  "PLAN map=Vanilla2v6 file=.* fort=-3800,-300" "$LUA" t_vanilla2v6.lua $o $MID 1 -3800 -300
-  check "2v6 $o: long plan at (3800,100) team 102" "PLAN map=Vanilla2v6Long file=fort-t2f3-Vanilla2v6Long-1.lua" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 100
+  check "2v6 $o: long plan at (3800,100) team 102" "PLAN map=Vanilla2v6Long file=fort-t2f3-Vanilla2v6Long-2.lua" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 100
   check "2v6 $o: long plan, first action in place" "first action rel = 4.[56], -194.6"  "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 100
   check "2v6 $o: Vanilla's own fort stays Vanilla" "PLAN map=Vanilla file=.* fort=2900,700" "$LUA" t_vanilla2v6.lua $o $MID 102 2900 700
   check "2v6 $o: Vanilla 2v2 upper fort stays VanillaLong" "PLAN map=VanillaLong file=" "$LUA" t_vanilla2v6.lua $o $LONG 102 3800 -250
@@ -56,14 +56,14 @@ if [ -d "$WP" ]; then for o in before after; do for e in ToGA1 ToGHngA1 ToGW1; d
   check "Stalactites $o: weapon_pack $e team 102"  "PLAN map=Stalactites .* fort=2500,-1350" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 102 2500 -1350
   check "Stalactites $o: weapon_pack $e in place"   "first action rel = -1.9, 151.4" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 1 -4100 -150
 done; done; fi
-check "Modules load and are cut out after Load" "^after load: actions=232 expected=232 tagged=0$" "$LUA" t_modules.lua
+check "Modules load and are cut out after Load" "^after load: actions=313 expected=313 tagged=0$" "$LUA" t_modules.lua
 check "Modules are moved by the transform"     "^module mirrored: 3000.0, 400.0$" "$LUA" t_modules.lua
 check "Module waits for its Requires"          "MODULE_WAIT counterbattery trigger=mortar:1,mortar2:1 requires=50 now=9$" "$LUA" t_modules.lua
 check "Module wait is logged once"             "^1$" bash -c "\"$LUA\" t_modules.lua | grep -c MODULE_WAIT"
 check "Module is inserted at the build index"  "MODULE counterbattery trigger=mortar:1,mortar2:1 at=65 actions=3$" "$LUA" t_modules.lua
 check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
 check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
-check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=237$" "$LUA" t_modules.lua
+check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=318$" "$LUA" t_modules.lua
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
 check "Plan file with modules loads in Lua"     "^217 sniper 1 18 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
@@ -72,7 +72,7 @@ check "Surplus: not while the plan is built"    "^building: nil,nil$" "$LUA" t_s
 check "Surplus: not while a rebuild is queued"  "^rebuilding: nil,nil$" "$LUA" t_surplus.lua
 check "Surplus: not below the thresholds"       "^short of energy: nil,nil$" "$LUA" t_surplus.lua
 check "Surplus: not before Seconds"             "^after 15 s: nil,nil$" "$LUA" t_surplus.lua
-check "Surplus module fires"                    "MODULE firebeam trigger=surplus:m=1200,e=9000 at=233 actions=1$" "$LUA" t_surplus.lua
+check "Surplus module fires"                    "MODULE firebeam trigger=surplus:m=1200,e=9000 at=314 actions=1$" "$LUA" t_surplus.lua
 check "Surplus: After module waits for the build" "^firebeam building: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: a dip restarts the clock"       "^after the dip: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: second module fires"            "^laser: true,true laser$" "$LUA" t_surplus.lua
@@ -154,6 +154,10 @@ check "Front strip: not before two heavy weapons"  "^one heavy weapon: bracing d
 check "Front strip: armour again, a door stays"   "^plenty: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: once per strut"               "^once per strut: armour door armour$" "$LUA" t_strip.lua
 check "Front strip: logged with the metal"        "STRIP -2844.7,309.73--2892.17,411.07 armour->bracing result=-15 m=50->130 t=15$" "$LUA" t_strip.lua
+check "Front strip finds its struts on 2v6"       "^plenty: armour door armour$" "$LUA" t_strip.lua 4700 -900
+check "Front strip: 2v6 plays the 2v6 Bastion"    "PLAN map=Vanilla2v6 file=fort-t1f1-Vanilla2v6-5.lua" "$LUA" t_strip.lua 4700 -900
+check "Long Bastion keeps sockets, zones, strip"  "^9[[:space:]]+5[[:space:]]+2[[:space:]]+8[[:space:]]+3580[[:space:]]+4300[[:space:]]+3644.7[[:space:]]+Tech[[:space:]]+M1$" "$LUA" -e 'CREATE_NODE,DESTROY_NODE,CREATE_LINK,DESTROY_LINK,CREATE_DEVICE,DESTROY_DEVICE = 1,2,3,4,5,6 dofile("mods/fort9000dev/fortplans/VanillaLong/fort-t2f3-VanillaLong-8.lua") local n, tech, sock = 0 for _, m in ipairs(FortModules) do if m.Name == "heavy1" and m.Trigger.Tech then tech = "Tech" end if m.Name == "artillery" then sock = m.Actions[1].Socket end for _, a in ipairs(m.Actions) do if a.Socket then n = n + 1 end end end for _, a in ipairs(Fort) do if a.Socket then n = n + 1 end end print(#FortSockets, #FortZones, #FortStrip, n, FortZones[3].Box.x0, FortZones[3].Box.x1, FortStrip[1][1], tech, sock)'
+check "2v6 Bastion: no sockets over the ceiling"  "^7[[:space:]]+nil[[:space:]]+nil[[:space:]]+nil$" "$LUA" -e 'CREATE_NODE,DESTROY_NODE,CREATE_LINK,DESTROY_LINK,CREATE_DEVICE,DESTROY_DEVICE = 1,2,3,4,5,6 dofile("mods/fort9000dev/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua") local s, m = {}, {} for _, x in ipairs(FortSockets) do s[x.Name] = true end for _, x in ipairs(FortModules) do m[x.Name] = true end print(#FortSockets, s.A1, s.D1, m.heavy5)'
 check "Sniper sight: another device is no target" "^sandbags in the way: sniper hold$" "$LUA" t_sniper.lua
 check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=4$" "$LUA" t_sniper.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
@@ -283,7 +287,7 @@ if [ -n "$PY" ]; then
     ln -s "$ROOT/pub/fort9000" "$ROOT/mods/$ID"
     check "Published AI looks in the Workshop folder first" "^local CAI_ModDirs = \{ \"mods/$ID/\", \"mods/fort9000/\" \}$" grep "^local CAI_ModDirs" "$ROOT/pub/fort9000/ai/ai.lua"
     # the maps come in pairs() order: one check per map
-    for m in "Abyss:3/2" "Vanilla:5/[24]" "VanillaLong:4/1" "Vanilla2v6:4/[24]" "Vanilla2v6Long:4/1"; do
+    for m in "Abyss:3/2" "Vanilla:4/[24]" "VanillaLong:4/1" "Vanilla2v6:4/[24]" "Vanilla2v6Long:4/1"; do
       check "Subscriber's copy loads plans and strategy ($m)" "PLAN-PRELOAD (.* )?$m( |$)" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
     done
     check "Subscriber's copy swaps the plan"       "first action = -2095.5, -94.4" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1

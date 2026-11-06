@@ -158,8 +158,8 @@ could learn them later).
 - `ai/fortplans.lua` on this branch: `Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }` so every DEV match tests it.
 - Matches against mortar, sniper/laser, missile and turtle styles; evaluate with `train.py` and the log
   (`POSTURE`, `SOCKET`, `ZONE`, first-shot time).
-- Afterwards: Vanilla-8 in the normal draw with the other plans, convert to VanillaLong (`mid_to_long.py`),
-  then other maps.
+- Afterwards: Vanilla-8 in the normal draw with the other plans, then other maps. Done 06.11.2026 (not played): VanillaLong-8, Vanilla2v6-5 and Vanilla2v6Long-5 ([2v6-vanilla.md](maps/2v6-vanilla.md)); `Force` still sends every Vanilla match to Vanilla-8 on this branch, the other maps draw at random.
+- Vanilla 2v2, not checked by the generator: Vanilla-8's back nodes come 98 from the upper fort's (plan), 65 with module turbine5; on 2v6 the game refused nodes 92-138 from another team's. Vanilla-5 is at 132, Vanilla-3 at 193, Vanilla-6 at 243.
 
 **Test 1 (03.11.2026, Vanilla 1v1 vs the player, difficulty 1, ~395 s, aborted; EngineProbe still on):**
 - The fort stood, every socket was filled; refusals only at first tries (sniper, workshop, mines, mortars, sandbags

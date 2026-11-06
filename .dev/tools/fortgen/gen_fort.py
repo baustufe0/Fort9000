@@ -1906,6 +1906,39 @@ VANILLA2V6_VARIANTS = {
     },
 }
 
+# 2v6-5: Bastion (Vanilla-8) on the 2v6 map (the player, 06.11.2026). What the map does not allow is left out or moved:
+#  - x -3500 above y -55: (-3500,-185) stands 147 and (-3500,-315) 93 from the next fort up (neighbour clear 160). So no
+#    socket A1 behind the mortars, A2 in front of them takes its triggers too;
+#  - modules turbine4, turbine4up: at x -3465 the cliff leaves no wind (0 % / 45 %, rules.wind_rays with the map's terrain);
+#    the plan's three stay at 0 % / 54-72 %, as in the other 2v6 plans;
+#  - module turbine5: its nodes at x -3590 are 10 from the rock (rock_clear 15);
+#  - socket D1 with modules heavy5 and mortars_off: its storey needs nodes at y -438, over the ceiling -400.
+def _v26_bastion():
+    v = dict(VANILLA_VARIANTS["bastion"])
+    v["title"] = "Bastion on the 2v6 map: sockets at the front doors, turbine storey, mortar nest on top, one anti-air socket"
+    v["shape"] = _union(_V_BACK, _box(-3500, -2945, -55, 205), _box(-3400, -2945, -315, -55))
+    v["cfg"] = dict(v["cfg"], hidden_box=(-3400, -2945, -185, -55), bg_roof_cells=[(-3200, -185)],
+                    weapon_cells=[w for w in v["cfg"]["weapon_cells"] if w[0] != -3500])
+    v["plan"] = [(step, [i for i in items if i != (-3500, -185, "machinegun")]) if step == "build" else (step, items)
+                 for step, items in v["plan"]]
+    v["sockets"] = [s for s in v["sockets"] if s["name"] not in ("A1", "D1")]
+    aa = next(m for m in v["modules"] if m["name"] == "antiair")
+    mods = []
+    for m in v["modules"]:
+        if m["name"] in ("antiair", "turbine4", "turbine4up", "turbine5", "heavy5", "mortars_off"):
+            continue
+        if m["name"] == "antiair_front":
+            m = dict(m, trigger=aa["trigger"])
+        mods.append(m)
+    v["modules"] = mods
+    return v
+VANILLA2V6_VARIANTS["bastion"] = _v26_bastion()
+
+# Removed 06.11.2026 (the player): Vanilla-2 and its 2v6 version. Their definitions stay, the others are built from them;
+# None keeps the numbers and seeds of the plans after them
+VANILLA_VARIANTS["artillerie"] = None
+VANILLA2V6_VARIANTS["snipers"] = None
+
 
 # ----------------------------------------------------------------------------- Generator
 

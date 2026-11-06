@@ -5,10 +5,10 @@ MAX_SIDES = 100
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
 HeavyArmsPriorities = { "cannon" }; SmallArmsPriorities = { "sniper" }
 function Log(s) print(s) end
--- the plan pick returns the index of fort-t1f1-Vanilla-2.lua in its plan list (the list order may change), all else 2
+-- the plan pick returns the index of fort-t1f1-Vanilla-3.lua in its plan list (the list order may change), all else 2
 function GetRandomInteger(a, b, desc)
   if string.find(tostring(desc), "CAI plan", 1, true) then
-    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-2.lua" then return i end end end
+    for _, m in pairs(CAI_Plan.maps) do for i, f in ipairs(m.list) do if f == "fort-t1f1-Vanilla-3.lua" then return i end end end
   end
   return 2
 end
@@ -33,7 +33,7 @@ end
 local engineFile = string.find(ENGINE, "/", 1, true) and ENGINE or ("ai/forts/vanilla/mid/" .. ENGINE)
 if ORDER == "before" then dofile(engineFile) end
 dofile("mods/fort9000dev/ai/ai.lua")
-FortPlanConfig.Force = nil   -- the test picks Vanilla-2; a testing Force in fortplans.lua must not change that
+FortPlanConfig.Force = nil   -- the test picks Vanilla-3; a testing Force in fortplans.lua must not change that
 if ORDER == "after" then dofile(engineFile) end
 teamId = TEAM
 -- Game: real fort of team 1 at x=-1995, team 2 mirrored at +1995
