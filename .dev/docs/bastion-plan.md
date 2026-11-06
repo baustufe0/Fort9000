@@ -496,6 +496,17 @@ something better (`Upgrade.From`): the mix stays. Probe for the upgrade centre n
 **After test 17 (06.11.2026):** upgrade centre on the place of the plant not drawn (`upgrade` x -3500..-3400 y 405 with guns, `upgrade_b` x -3400..-3300 y 602 with beams, `Trigger.Drawn`); so no second plant any more, no mix of guns and beams. Refused: out of the queue after 30 s, again after 300 s (`PARKED`, `RETRY`). B1 sells
 its sniper from 70 % of the first weapon's price (`FirstShare`). Mortars: `RAY_HIT_STRUCTURE` in `FIRETRY` is a hint in the log, a straight line to the reactor, no cause: `fired=0` is mostly the fire chance, nothing changed (~60 shots in ~770 s against ~170 possible at 9 s reload).
 
+**Test 18 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 beams against T102 guns, T101 won at 621 s, the shortest match so far):**
+- Upgrade centre accepted for the first time on both new places: placed 605 s (`upgrade_b`) and 595 s (`upgrade`). Not built when the match ended, so no upgrade yet.
+- Plant built 390 / 393 s, but B1 sold only 460 / 465 s at 876 / 674 metal: while it waits for 70 % the plan goes on spending (m=31-112 at 390 s). Placed 481 / 483 s, built 601 / 593 s: 20-25 s later than test 17 (568 / 581 s, sold at 137-288 metal, the plan held behind the rebuild). B1 silent ~135 s (test 17: 163-176 s).
+- T101's first beam volley (laser + firebeam, `fired=2`) ~617 s: T102's front door and armour gone 618.6-619.2 s, cannon in B1 619.5 s, 20mm, reactor and most of the fort 621 s. Reactor 1.00 at 600 s. Whether beam or the cannon's blast killed the reactor is not measured.
+- Beams beat guns in both matches where they met (tests 16, 18); two matches, the first volley decided both.
+- `heavy3` (B3 laser) refused again (`CS_UNSTABLE`, 565 s), also in test 16.
+- T102's C1 cannon `CS_OCCUPIED` at 600 s, no time. Mortars 29 and 27 shots by 600 s.
+
+**After test 18 (06.11.2026):** `FirstShare` 0.4 (70 % cost 20-25 s, the plan spent on while it waited). `FirstShot`: a heavy weapon that has not fired does not wait for the volley (`VOLLEY_FIRST`); test 18: T102's cannon built 593 s, `VOLLEY_HOLD ready=1/2`
+behind the 20mm's reload, no shot logged until destroyed at 619.5 s. The gap between beams and guns stays.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

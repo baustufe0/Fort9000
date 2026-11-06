@@ -193,6 +193,8 @@ check "Smoke cover shots are logged"            "SMOKETRY smokebomb 22 fired=1" 
 check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"     "$LUA" t_smoke.lua
 check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t_volley2.lua
 check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
+check "FirstShot: does not wait for a reloading one" "^first shot:.43$" "$LUA" t_volley2.lua
+check "FirstShot: the next shot waits"             "^second shot waits:.0$" "$LUA" t_volley2.lua
 check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
 check "Tech: not before the store"                 "^no store: factory=false$" "$LUA" t_branch.lua
 check "Tech: the drawn branch comes first"         "^at 315 s: factory=true munitions=false$" "$LUA" t_branch.lua

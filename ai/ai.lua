@@ -54,7 +54,7 @@ local CAI_Defaults =
 	Socket = { SwapAfter = 2, Window = 180,
 		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
 		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95, FirstShare = 0.7,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95, FirstShare = 0.4,
 			From = { sniper = true, sniper2 = true, machinegun = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -81,7 +81,7 @@ local CAI_Defaults =
 	-- Trigger Storage fires when the weapons' sum and Margin exceed the storage (3000 + Battery per battery)
 	-- Classes, Gap (the player, test 8): a beam burns the shells in its way, so beams fire together and guns fire together,
 	-- and one class waits Gap seconds after the other has fired
-	SocketVolley = { Enabled = true, Types = { firebeam = true, laser = true, cannon20mm = true, cannon = true }, MaxHold = 90,
+	SocketVolley = { Enabled = true, FirstShot = true, Types = { firebeam = true, laser = true, cannon20mm = true, cannon = true }, MaxHold = 90,
 		Classes = { firebeam = "beam", laser = "beam", cannon20mm = "gun", cannon = "gun" }, Gap = 6,
 		SaveEnergy = true, EnergyShot = { firebeam = 1500, laser = 5000, cannon20mm = 2000, cannon = 2000 }, Margin = 1000,
 		BaseStorage = 3000, Battery = 2000, BaseMetal = 600, Store = 300 },
@@ -709,6 +709,12 @@ function CAI_Volley(id)
 		end
 		CAI_Log("VOLLEY " .. #members .. " leader=" .. id .. " ids=" .. ids .. " fired=" .. fired)
 		return true
+	end
+	-- FirstShot: a weapon that has not fired yet does not wait for one that is reloading: the first shot decides a duel (tests 12, 15, 18; test 18: a built
+	-- cannon silent for 26 s behind the 20mm's reload, then destroyed)
+	if v.FirstShot and not (st.volleyFired and st.volleyFired[id]) and CAI_CanAffordGroup({ id }) then
+		CAI_Log("VOLLEY_FIRST " .. GetDeviceType(id) .. " " .. id .. " ready=" .. #group .. "/" .. #all)
+		return false
 	end
 	if st.volleyHoldSince == nil then st.volleyHoldSince = now end
 	if now - st.volleyHoldSince >= (v.MaxHold or 20) then
@@ -2552,6 +2558,8 @@ function OnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, proje
 		local v = st.volley
 		if v and v.Classes and v.Classes[saveName] then
 			st.volleyClass, st.volleyClassAt = v.Classes[saveName], st.fireClock or 0
+			st.volleyFired = st.volleyFired or {}
+			st.volleyFired[weaponId] = true
 		end
 		st.ownShots = st.ownShots or {}
 		st.ownShots[saveName] = (st.ownShots[saveName] or 0) + 1

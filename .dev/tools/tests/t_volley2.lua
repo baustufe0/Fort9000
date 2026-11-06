@@ -47,3 +47,17 @@ print("guns right after:", #fired)
 data.CAI.fireClock = 107
 TryFireGun(43)
 print("guns after the gap:", table.concat(fired,","))
+-- FirstShot: a weapon that has not fired does not wait for one that is reloading; once it has fired it waits
+data.CAI.volley.FirstShot = true
+data.CAI.volleyFired = { [44] = true }
+data.CAI.volleyClass = nil
+ready[43] = true; ready[44] = false
+fired = {}
+TryFireGun(43)
+print("first shot:", table.concat(fired, ","))
+OnWeaponFired(102, "cannon20mm", 43, 1, 0)
+ready[43] = true; ready[44] = false
+fired = {}
+data.CAI.fireClock = 120
+TryFireGun(43)
+print("second shot waits:", #fired)
