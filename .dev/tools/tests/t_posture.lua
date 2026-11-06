@@ -48,7 +48,8 @@ print("at 10 s: " .. data.CAI.posture)
 for i = 1, 5 do OnWeaponFired(1, "mortar", 310 + i, 0, 0); CAI_Think() end
 print("at 35 s: " .. data.CAI.posture .. " boost mortar=" .. tostring(data.CAI.postureBoost and data.CAI.postureBoost.mortar))
 print("heavy targets: " .. table.concat(data.HeavyArmsPrioritiesOverride, ","))
--- the socket zone takes heavy damage: Siege after the hold, the factory module goes in
+-- the socket zone takes heavy damage: Siege after the hold, a module with Postures goes in (Vanilla-8 plants no longer use them)
+for _, m in ipairs(data.CAIModules.list) do if m.name == "munitions" then m.trigger = { Branch = m.trigger.Branch, Postures = { "Siege" } } end end
 data.CAI.zoneDmg = { Z1 = 3000 }; data.CAI.zoneTotal = { Z1 = 3000 }
 for i = 1, 7 do data.CAI.zoneDmg.Z1 = 3000; CAI_Think() end
 print("under siege: " .. data.CAI.posture)

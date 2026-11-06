@@ -78,6 +78,12 @@ def format_modules(mods):
         if m.get("heavy"):
             # Heavy (Bastion): that many of the AI's own heavy weapons stand
             tr.append("Heavy = %d" % m["heavy"])
+        if m.get("heavy_built"):
+            # HeavyBuilt (Bastion): that many of the AI's heavy weapons are fully built
+            tr.append("HeavyBuilt = %d" % m["heavy_built"])
+        if m.get("reserve"):
+            # Reserve (Bastion): the module waits for its whole price plus this much metal
+            tr.append("Reserve = %d" % m["reserve"])
         if m.get("heavy_done"):
             # HeavyDone (Bastion): two heavy weapons stand, or the first for HeavyWait seconds
             tr.append("HeavyDone = true")

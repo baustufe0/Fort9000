@@ -1506,8 +1506,9 @@ VANILLA_VARIANTS["bastion"] = {
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
         ("defence", ["sell:machinegun", "woodspam"]),               # 13
         # the upgrade centre and all its upgrades only after the plant and the heavy weapons (the player, 05.11.2026): module upgrade
-        ("eco", ["turbine", "turbine"]),                            # 14
-        ("eco", ["battery", "store"]),                              # 15
+        # the storage a plant needs (800 metal, 5000 energy; 600 and 3000 without) before the other turbines: the plant goes in as soon as the store stands
+        ("eco", ["battery", "store"]),                              # 14
+        ("eco", ["turbine", "turbine"]),                            # 15
         ("eco", ["battery"]),                                       # 16
         ("defence", ["woodspam"]),                                  # 17
     ],
@@ -1576,14 +1577,15 @@ VANILLA_VARIANTS["bastion"] = {
                      "time": 240},
          "plan": [("aa", ["machinegun"])]},
         # tech for heavy weapons: chance decides the branch (Branch: the AI draws guns or beams at the start; the player,
-        # 05.11.2026). That branch's plant comes at 300 s or as soon as the storage fills up, on its own cells; the other one
+        # 05.11.2026). That branch's plant comes as soon as the first store stands, first in line, the plan waits behind it for the metal (test 15: waiting for
+        # 640 metal behind the plan it was placed at 405 s, then 1500 metal idle at 500 s), on its own cells; the other one
         # only from a surplus of 900 metal / 6000 energy once the first is in (the player, test 9: both first, 1600 metal, is
         # why the heavy weapons came so late). Test 3: at 450 s it came too late
-        {"name": "munitions", "after": 11, "trigger": {"branch": "guns", "afford": True, "postures": ("Siege", "Punish"),
-                                                       "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
+        {"name": "munitions", "after": 11, "trigger": {"branch": "guns", "built": "store",
+                                                       "time": 1, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]), ("tech", ["munitions"])]},
-        {"name": "factory", "after": 11, "trigger": {"branch": "beams", "afford": True, "postures": ("Siege", "Punish"),
-                                                     "time": 300, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
+        {"name": "factory", "after": 11, "trigger": {"branch": "beams", "built": "store",
+                                                     "time": 1, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3500, 700), (-3500, 602), (-3500, 503), (-3500, 405), (-3400, 503), (-3400, 405)]), ("tech", ["factory"])]},
         # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
@@ -1628,9 +1630,9 @@ VANILLA_VARIANTS["bastion"] = {
                   ("weapons", ["laser"])]},
         # the upgrade centre after the plant and the heavy weapons (the player, 05.11.2026): two stand, or the first for HeavyWait
         # seconds (test 11: a surplus trigger fired before the first, at 1370 metal); its upgrades once it stands
-        {"name": "upgrade", "after": 14, "trigger": {"time": 1, "heavy_done": True, "afford": True},
+        {"name": "upgrade", "after": 15, "trigger": {"time": 1, "heavy_done": True, "afford": True},
          "plan": [("tech", ["upgrade"])]},
-        {"name": "upgrades", "after": 14, "cfg": {"prereq": {}}, "trigger": {"after": "upgrade", "time": 1, "built": "upgrade"},
+        {"name": "upgrades", "after": 15, "cfg": {"prereq": {}}, "trigger": {"after": "upgrade", "time": 1, "built": "upgrade"},
          "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
         # the first heavy weapon takes the sniper's place: socket B1's upgrade (CAI_SocketUpgrade, as soon as a plant stands). B1, not
         # B2: a destroyed cannon's blast reaches devices within 400 (test 12: from B2 it took the tower's mortars and turbines with it;
@@ -1642,7 +1644,8 @@ VANILLA_VARIANTS["bastion"] = {
         # behind (test 13's probe, laser: 0.18 refused, 0.30 placed); the mortars now stand a cell further back. A refusal is parked
         # (CAI_ParkRefused) and holds nothing up
         {"name": "heavy4", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
-         "trigger": {"after": "heavy2", "heavy": 2, "afford": True}, "cfg": {"prereq": {}},
+         # after the two are built and with its whole price plus metal for their shots (test 15: 45 metal, 9000 energy, two weapons ready and silent while it was built)
+         "trigger": {"after": "heavy2", "heavy_built": 2, "afford": True, "reserve": 300}, "cfg": {"prereq": {}},
          "plan": [("struts", [((-3100, -185), (-2945, -315), "backbracing"), ((-3100, -55), (-2945, -185), "backbracing"),
                               ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
@@ -3252,7 +3255,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "heavy_done": tr.get("heavy_done"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "heavy_done": tr.get("heavy_done"), "heavy_built": tr.get("heavy_built"), "reserve": tr.get("reserve"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -4468,6 +4471,8 @@ def main():
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["with %s built" % m["built"]] if m.get("built") else []
             trig += ["after the heavy weapons"] if m.get("heavy_done") else []
+            trig += ["%d heavy weapons built" % m["heavy_built"]] if m.get("heavy_built") else []
+            trig += ["%d metal over" % m["reserve"]] if m.get("reserve") else []
             trig += ["(affordable)"] if m.get("afford") else []
             trig += ["surplus %d m / %d e for %d s" % (m["surplus"]["metal"], m["surplus"]["energy"],
                                                        m["surplus"].get("seconds", 20))] if m.get("surplus") else []

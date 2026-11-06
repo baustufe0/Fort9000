@@ -73,6 +73,10 @@ print("one heavy: B2=" .. dev("B2") .. " C1=" .. dev("C1"))
 think(13)
 print("still one heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
 own[302] = "cannon20mm"
+res.metal = 700
+think(1)
+print("two heavy, no metal over: C1=" .. dev("C1"))
+res.metal = 900
 think(1)
 print("two heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
 -- refused: the rebuild is parked after RefusedWait seconds

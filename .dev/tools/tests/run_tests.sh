@@ -119,6 +119,7 @@ check "First heavy weapon: into B1, sniper sold"   "SOCKET B1 sell sniper->canno
 check "First heavy weapon: nothing else yet"       "^plant: B2=- C1=- sold=1 held=nil$" "$LUA" t_empty.lua
 check "Second heavy weapon: B2, another kind"      "^one heavy: B2=cannon20mm C1=-$" "$LUA" t_empty.lua
 check "Centre and C1 wait for two heavy weapons"   "^still one heavy: C1=- upgrade=false$" "$LUA" t_empty.lua
+check "Third heavy weapon: metal for the shots first" "^two heavy, no metal over: C1=-$" "$LUA" t_empty.lua
 check "Third heavy weapon: C1, centre too"         "^two heavy: C1=cannon upgrade=true$" "$LUA" t_empty.lua
 check "Refused: not parked after 10 s"             "^refused 10 s: queued=true$" "$LUA" t_empty.lua
 check "Refused: parked after 30 s"                 "^refused 31 s: queued=nil$" "$LUA" t_empty.lua
@@ -191,7 +192,8 @@ check "Held rockets are logged"                 "FIREHOLD rocket 21 fired=0"    
 check "SocketVolley: beams fire together"          "^beams:.41:41\+42$" "$LUA" t_volley2.lua
 check "SocketVolley: guns wait after a beam"       "^guns right after:.0$" "$LUA" t_volley2.lua
 check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+44$" "$LUA" t_volley2.lua
-check "Tech: the drawn branch comes first"         "^at 310 s: factory=true munitions=false$" "$LUA" t_branch.lua
+check "Tech: not before the store"                 "^no store: factory=false$" "$LUA" t_branch.lua
+check "Tech: the drawn branch comes first"         "^at 315 s: factory=true munitions=false$" "$LUA" t_branch.lua
 check "Tech: nothing more before the heavy weapons" "^surplus, no heavy weapon: factory=true munitions=false upgrade=false$" "$LUA" t_branch.lua
 check "Tech: the other from a surplus"             "^with a surplus: factory=true munitions=true$" "$LUA" t_branch.lua
 check "Tech: first branch drawn"                   "TECH first=guns$" "$LUA" t_upgrade.lua

@@ -460,6 +460,18 @@ Upgrade centre refused on the rock as well: `CS_UNSTABLE` at 650 / 660 s, sag 0,
 **After test 14, the player's finding (06.11.2026):** the screenshot shows a cannon's body reaching ~60 behind its post, so C1 had no room with a mortar in the next cell; `rules.py`'s body sizes are too small at the back (laser: 38-57 by the probe). Mortars one cell further back
 (x -3400..-3200), A1 behind them (x -3500..-3400), cell x -3200..-3100 empty. C1 again for every heavy weapon at 0.18. Not yet played.
 
+**Test 15 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T101 won at 651 s, the shortest match so far):**
+- C1 accepted for the first time, on both sides: cannon placed 588 / 598 s, no `CS_UNSTABLE`. Not built when the match ended, so it never fired.
+- Munitions built 495 / 505 s, 20mm in B2 605 / 616 s, cannon in B1 632 / 630 s. No refused heavy weapon at all.
+- T101's first volley (cannon + 20mm, `fired=2`) ~643 s; T102's reactor gone at 651.7 s, 1.00 at 600 s. The last `COMBAT` line is from 600 s, so what hit the reactor is not in the log. T102's armour struts 68-75 and 68-71 broke at 642.7-643.0 s.
+- T102 did not answer: `VOLLEY_HOLD ready=2/2 energy=0` at ~648 s with 9000 energy and 45 metal (a shot costs 40-50 metal), the third cannon under construction and 3 rebuilds queued. T101 held 322-454 metal.
+- Metal again at 1500 at 500 s, the plant under construction since 405 s (module waited for 640 metal from 300 s to 390 s).
+- Mortars from further back: 28 and 29 shots by 600 s, hits mid and top, as before. Of 105 logged tries 90 declined on own bracing, as before.
+- No cannon was destroyed, so the blast from B1 is not tested. Upgrade centre: `MODULE_AFFORD` at 635 s, not placed in this match.
+
+**After test 15 (06.11.2026):** third heavy weapon only with the first two built and its whole price plus 300 metal (`Trigger.HeavyBuilt`, `Trigger.Reserve`). Battery and store before turbines 2 and 3; the drawn plant goes in as soon as the store stands (`Built`, no `Afford`):
+first in line, the plan waits behind it for the metal. A plant does not fit before the store: 800 metal / 5000 energy against 600 / 3000. Rebuilds are not held back for shots.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

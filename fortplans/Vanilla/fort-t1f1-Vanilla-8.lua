@@ -241,12 +241,12 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10072, PosA = {x = -2732.00, y = 602.00 }, OriginalNodeBId = 10074, PosB = { x = -2772.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10073, PosA = {x = -2692.00, y = 602.00 }, OriginalNodeBId = 10076, PosB = { x = -2692.00, y = 700.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10072, PosA = {x = -2732.00, y = 602.00 }, OriginalNodeBId = 10076, PosB = { x = -2692.00, y = 700.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 10050, PosA = { x = -3400.00, y = -55.00 }, OriginalNodeBId = 10051, PosB = { x = -3300.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 10052, PosA = { x = -3500.00, y = -55.00 }, OriginalNodeBId = 10050, PosB = { x = -3400.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10005, PosA = { x = -3200.00, y = 405.00 }, OriginalNodeBId = 52, PosB = { x = -3094.27, y = 403.43 }, LinkT = 0.48, DeviceSaveName = "battery" },
 { Type = CREATE_LINK, OriginalNodeAId = 10039, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10006, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10040, PosA = {x = -3300.00, y = 405.00 }, OriginalNodeBId = 10006, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10039, PosA = { x = -3300.00, y = 503.00 }, OriginalNodeBId = 10006, PosB = { x = -3200.00, y = 503.00 }, LinkT = 0.46, DeviceSaveName = "store" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10050, PosA = { x = -3400.00, y = -55.00 }, OriginalNodeBId = 10051, PosB = { x = -3300.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10052, PosA = { x = -3500.00, y = -55.00 }, OriginalNodeBId = 10050, PosB = { x = -3400.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10025, PosA = { x = -3600.00, y = 602.00 }, OriginalNodeBId = 10028, PosB = { x = -3500.00, y = 602.00 }, LinkT = 0.50, DeviceSaveName = "battery" },
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10017, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10010, PosA = {x = -3200.00, y = 308.00 }, OriginalNodeBId = 10040, PosB = { x = -3300.00, y = 405.00 }, MaterialSaveName = "bracing" },
@@ -305,12 +305,12 @@ FortModules =
 { Name = "antiair", Trigger = { Types = { "mortar", "mortar2", "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Time = 240, Postures = { "AntiArtillery", "AntiAir" } }, Requires = 171, Socket = "A1", Loadout = "machinegun", Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10056, PosA = { x = -3500.00, y = -185.00 }, OriginalNodeBId = 10053, PosB = { x = -3400.00, y = -185.00 }, LinkT = 0.50, DeviceSaveName = "machinegun", Socket = "A1" },
 } },
-{ Name = "munitions", Trigger = { Time = 300, Postures = { "Siege", "Punish" }, Branch = "guns", Afford = true, Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 180, Actions = {
+{ Name = "munitions", Trigger = { Time = 1, Branch = "guns", Built = "store", Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 180, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10039, PosA = {x = -3300.00, y = 503.00 }, OriginalNodeBId = 10006, PosB = { x = -3200.00, y = 503.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10017, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10026, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10017, PosB = { x = -3300.00, y = 602.00 }, LinkT = 0.49, DeviceSaveName = "munitions" },
 } },
-{ Name = "factory", Trigger = { Time = 300, Postures = { "Siege", "Punish" }, Branch = "beams", Afford = true, Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 180, Actions = {
+{ Name = "factory", Trigger = { Time = 1, Branch = "beams", Built = "store", Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 180, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10034, PosA = { x = -3500.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3400.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "factory" },
 } },
 { Name = "store2", Trigger = { Time = 420, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 99, Actions = {
@@ -352,10 +352,10 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 57, PosA = {x = -2844.70, y = 309.73 }, OriginalNodeBId = 50, PosB = { x = -2892.17, y = 411.07 }, MaterialSaveName = "door" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 52, PosA = { x = -3094.27, y = 403.43 }, OriginalNodeBId = 51, PosB = { x = -2993.30, y = 407.38 }, LinkT = 0.40, DeviceSaveName = "laser" },
 } },
-{ Name = "upgrade", Trigger = { Time = 1, HeavyDone = true, Afford = true }, Requires = 234, Actions = {
+{ Name = "upgrade", Trigger = { Time = 1, HeavyDone = true, Afford = true }, Requires = 238, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 49, PosA = { x = -3200.00, y = 700.00 }, OriginalNodeBId = 44, PosB = { x = -3100.00, y = 700.00 }, LinkT = 0.50, DeviceSaveName = "upgrade" },
 } },
-{ Name = "upgrades", Trigger = { Time = 1, After = "upgrade", Built = "upgrade" }, Requires = 234, Actions = {
+{ Name = "upgrades", Trigger = { Time = 1, After = "upgrade", Built = "upgrade" }, Requires = 238, Actions = {
 { Type = CREATE_DEVICE, GroundPosition = { x = -3029.41, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_DEVICE, GroundPosition = { x = -3412.21, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10013, PosA = { x = -3200.00, y = -55.00 }, OriginalNodeBId = 10008, PosB = { x = -3100.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine2" },
@@ -365,7 +365,7 @@ FortModules =
 { Name = "heavy2", Trigger = { Heavy = 1, Afford = true }, Requires = 12, Socket = "B2", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 75.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 75.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "B2" },
 } },
-{ Name = "heavy4", Trigger = { After = "heavy2", Heavy = 2, Afford = true }, Requires = 87, Socket = "C1", Loadout = "cannon20mm", Replace = true, Actions = {
+{ Name = "heavy4", Trigger = { After = "heavy2", HeavyBuilt = 2, Reserve = 300, Afford = true }, Requires = 87, Socket = "C1", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10015, PosA = {x = -3100.00, y = -185.00 }, OriginalNodeBId = 10023, PosB = { x = -2945.00, y = -315.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10008, PosA = {x = -3100.00, y = -55.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10019, PosA = { x = -2945.00, y = -185.00 }, OriginalNodeBId = 38000, NewNodePos = { x = -2895.00, y = -185.00 }, MaterialSaveName = "armour" },

@@ -2111,6 +2111,9 @@ function CAI_ModuleAffordable(m)
 			if ok and c then cm, ce = cm + (c.metal or 0), ce + (c.energy or 0) end
 		end
 	end
+	-- Reserve: its whole price and this much metal over, for the shots of what stands
+	local reserve = m.trigger and m.trigger.Reserve
+	if reserve then return (res.metal or 0) >= cm + reserve and (res.energy or 0) >= ce end
 	return (res.metal or 0) >= 0.8 * cm and (res.energy or 0) >= 0.8 * ce
 end
 
@@ -2215,6 +2218,8 @@ function CAI_UpdateModules()
 				why = "storage"
 			elseif tr.Heavy and CAI_HeavyCount() >= tr.Heavy then
 				why = "heavy:" .. tr.Heavy
+			elseif tr.HeavyBuilt and CAI_HeavyCount(true) >= tr.HeavyBuilt then
+				why = "heavybuilt:" .. tr.HeavyBuilt
 			else
 				why = CAI_SurplusReason(m, elapsed)
 			end
