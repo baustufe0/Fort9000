@@ -116,7 +116,7 @@ check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=canno
 check "One sniper: B2 and C1 empty in the plan"    "^plan: B1=sniper B2=- C1=-$" "$LUA" t_empty.lua
 check "One sniper: nothing without a plant"        "^no plant: B1=sniper B2=- sold=0$" "$LUA" t_empty.lua
 check "First heavy weapon: into B1, sniper sold"   "SOCKET B1 sell sniper->cannon action=[0-9]+ result=-8 " "$LUA" t_empty.lua
-check "First heavy weapon: sold at once, poor too" "^plant, poor: sold=1 for=cannon$" "$LUA" t_empty.lua
+check "First heavy weapon: not below 70 % of its price" "^plant, poor: sold=0 for=sniper$" "$LUA" t_empty.lua
 check "First heavy weapon: nothing else yet"       "^plant: B2=- C1=- sold=1 held=nil$" "$LUA" t_empty.lua
 check "Second heavy weapon: B2, another kind"      "^one heavy: B2=cannon20mm C1=-$" "$LUA" t_empty.lua
 check "Centre and C1 wait for two heavy weapons"   "^still one heavy: C1=- upgrade=false$" "$LUA" t_empty.lua
@@ -125,6 +125,7 @@ check "Third heavy weapon: C1, centre too"         "^two heavy: C1=cannon upgrad
 check "Refused: not parked after 10 s"             "^refused 10 s: queued=true$" "$LUA" t_empty.lua
 check "Refused: parked after 30 s"                 "^refused 31 s: queued=nil$" "$LUA" t_empty.lua
 check "Refused: logged"                            "SOCKET C1 parked cannon t=4031$" "$LUA" t_empty.lua
+check "Refused centre: out of the queue, tried later" "^centre refused: queued=nil retry=4331$" "$LUA" t_empty.lua
 check "Full storage: not at once"                  "^full, at once: false$" "$LUA" t_empty.lua
 check "Full storage: after a minute"               "^full for 61 s: true$" "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
@@ -196,7 +197,7 @@ check "SocketVolley: guns together after the gap"  "^guns after the gap:.43:43\+
 check "Tech: not before the store"                 "^no store: factory=false$" "$LUA" t_branch.lua
 check "Tech: the drawn branch comes first"         "^at 315 s: factory=true munitions=false$" "$LUA" t_branch.lua
 check "Tech: nothing more before the heavy weapons" "^surplus, no heavy weapon: factory=true munitions=false upgrade=false$" "$LUA" t_branch.lua
-check "Tech: the other from a surplus"             "^with a surplus: factory=true munitions=true$" "$LUA" t_branch.lua
+check "Tech: no second plant, the centre takes its place" "^with a surplus: factory=true munitions=false centre: drawn=true other=false$" "$LUA" t_branch.lua
 check "Tech: first branch drawn"                   "TECH first=guns$" "$LUA" t_upgrade.lua
 check "Worth: saves for the cannon first"          "^saving: sniper for=cannon$" "$LUA" t_upgrade.lua
 check "Worth: then buys the cannon"                "^paid: cannon$" "$LUA" t_upgrade.lua

@@ -54,7 +54,7 @@ local CAI_Defaults =
 	Socket = { SwapAfter = 2, Window = 180,
 		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
 		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95, FirstShare = 0.7,
 			From = { sniper = true, sniper2 = true, machinegun = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -956,7 +956,8 @@ end
 --   FIRETRY <type> <id> fired=<0|1> code=<FIREFAIL name|-> [ray=<hit>:<side>:<material>@<x>,<y>] m=<metal> e=<energy>
 --     after TryFireGun: fired = no longer ready (reloading); fired=0: the built-in AI declined
 --     (no target, chance, cost); ray = what the targeting ray towards the enemy reactor hits first, with the
---     flags of the built-in TargetObstructed (own background bracing blocks it)
+--     flags of the built-in TargetObstructed (own background bracing blocks it). A hint only: it does not say why the
+--     weapon declined, and a lobbed weapon's shell does not fly that line (mortars: mostly the fire chance)
 CAI_FIREWAIT_EVERY = 30
 
 local function CAI_FireCode()
@@ -1455,7 +1456,7 @@ function CAI_InstallBuildLogging()
 				if r == CS_UNSTABLE then
 					-- a heavy weapon refused: the socket's small weapon need not wait for it (CAI_SocketUpgrade)
 					local st = data.CAI
-					if st and CAI_Defaults.SocketVolley.EnergyShot[saveName] then
+					if st and (CAI_Defaults.SocketVolley.EnergyShot[saveName] or saveName == "upgrade") then
 						st.heavyRefused = st.heavyRefused or st.ticks * Strategy.ThinkInterval
 					end
 					local ok, err = pcall(CAI_NoteUnstable, saveName, nodeA, nodeB)
@@ -2225,6 +2226,7 @@ function CAI_UpdateModules()
 			end
 			-- Built (Bastion): not before that own device stands (the upgrade centre comes late, its upgrades must not overtake it)
 			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
+			if why and tr.Drawn and not (data.CAI and data.CAI.techBranch == tr.Drawn) then why = nil end
 			-- a full storage opens it too: nothing is short
 			if why and tr.HeavyDone and not CAI_HeavyDone(elapsed) then
 				local capCfg = (Strategy.Socket or CAI_Defaults.Socket).Upgrade or CAI_Defaults.Socket.Upgrade
@@ -2970,6 +2972,11 @@ function CAI_ParkRefused(elapsed)
 			data.Rebuild[k] = nil
 			qs.refillAt = elapsed + (cfg.ParkFor or 300) - ((Strategy.Socket or CAI_Defaults.Socket).RefillEvery or 130)
 			CAI_Log("SOCKET " .. q.Socket .. " parked " .. tostring(q.DeviceSaveName) .. " t=" .. elapsed)
+		elseif q and q.DeviceSaveName == "upgrade" then
+			-- test 17: refused, it hung in the queue for 300 s and held new building back
+			data.Rebuild[k] = nil
+			st.techRetry = { k = k, at = elapsed + (cfg.ParkFor or 300) }
+			CAI_Log("PARKED action " .. k .. " upgrade t=" .. elapsed)
 		end
 	end
 end
@@ -3152,7 +3159,9 @@ function CAI_SocketUpgrade(elapsed)
 				local need = s.needs[w]
 				-- payable at all (storage), and nearly at hand now (the sale refunds half the old weapon)
 				local can, cm, ce = CAI_Affordable(st, w)
-				local athand = first or (m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8))
+				-- the first one: from FirstShare of its price on (test 17: sold at 137 metal, the socket silent 50-65 s longer than need be)
+				local share = first and (cfg.FirstShare or 0.7) or (cfg.AtHand or 0.8)
+				local athand = m >= (cm or 0) * share and e >= (ce or 0) * share
 				-- the first one is worth waiting for until the storage can hold its price (the second store is on its way), not a cheaper one for good
 				if first and w ~= d.type and (need == nil or (own[need] or 0) > 0) and not can then
 					s.wantSince = s.wantSince or elapsed

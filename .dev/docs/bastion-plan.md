@@ -485,6 +485,17 @@ first in line, the plan waits behind it for the metal. A plant does not fit befo
 **After test 16 (06.11.2026):** with no heavy weapon yet, B1 (`FirstHeavy`) sells its sniper as soon as a plant stands, without the rich rule; if the storage cannot hold the first choice it waits for it up to 120 s. Second store at 380 s (420 s). A firebeam is no longer sold for
 something better (`Upgrade.From`): the mix stays. Probe for the upgrade centre not wanted for now (the player).
 
+**Test 17 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T102 won at 1063 s):**
+- First match with all three heavy weapons: cannon in B1 568 / 581 s, 20mm in B2 576 / 586 s, cannon in C1 placed 646 / 630 s, built 756 / 740 s, `VOLLEY 3` fired. C1's second door and the mortars one cell back work.
+- Plant built 409 / 403 s, sniper sold ~405 s at once. But cannon placed 458 / 471 s: at the sale 137 / 288 metal, so 50-65 s without placing anything; B1 silent 163 / 176 s; the weapon 15 s earlier than test 16.
+- Shots by 1020 s: T101 cannon 17, 20mm 108; T102 cannon 11, 20mm 99. Struts lost 144 / 205. Reactor 0.75 / 0.55 at 1020 s, T101's gone at 1063 s.
+- Blast from C1: T102's cannon in C1 destroyed at 1051 s with both mortars and the machine gun in the same second, 20mm in B2 at 1054 s. T102 still won with what stood. The tower survived hits in between: T102 lost 4 turbines at 973 s, T101 none of its weapons.
+- Upgrade centre refused on the rock on both sides (`CS_UNSTABLE` 580 / 590 s, sag 0), `GAVE_UP` only at 910 / 900 s, `RETRY` 980 / 965 s. In between `rebuild=[upgrade]` and build stuck at 429/428 on T102: the hanging centre probably held new building back for 300 s. No upgrade in 1063 s.
+- Mortars: 186 of 217 logged tries declined on own bracing, 62 and 61 shots by 1020 s; hits mid and top.
+
+**After test 17 (06.11.2026):** upgrade centre on the place of the plant not drawn (`upgrade` x -3500..-3400 y 405 with guns, `upgrade_b` x -3400..-3300 y 602 with beams, `Trigger.Drawn`); so no second plant any more, no mix of guns and beams. Refused: out of the queue after 30 s, again after 300 s (`PARKED`, `RETRY`). B1 sells
+its sniper from 70 % of the first weapon's price (`FirstShare`). Mortars: `RAY_HIT_STRUCTURE` in `FIRETRY` is a hint in the log, a straight line to the reactor, no cause: `fired=0` is mostly the fire chance, nothing changed (~60 shots in ~770 s against ~170 possible at 9 s reload).
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

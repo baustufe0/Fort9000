@@ -78,6 +78,9 @@ def format_modules(mods):
         if m.get("heavy"):
             # Heavy (Bastion): that many of the AI's own heavy weapons stand
             tr.append("Heavy = %d" % m["heavy"])
+        if m.get("drawn"):
+            # Drawn (Bastion): only if the match drew this tech branch
+            tr.append('Drawn = "%s"' % m["drawn"])
         if m.get("heavy_built"):
             # HeavyBuilt (Bastion): that many of the AI's heavy weapons are fully built
             tr.append("HeavyBuilt = %d" % m["heavy_built"])

@@ -46,7 +46,7 @@ CAI_Think(); data.fortIndex = #Fort + 1
 print("at 315 s: factory=" .. fired("factory") .. " munitions=" .. fired("munitions"))
 res = { metal = 1000, energy = 7000 }
 for i = 1, 8 do data.Rebuild = {}; CAI_Think(); data.fortIndex = #Fort + 1 end
-print("surplus, no heavy weapon: factory=" .. fired("factory") .. " munitions=" .. fired("munitions") .. " upgrade=" .. fired("upgrade"))
+print("surplus, no heavy weapon: factory=" .. fired("factory") .. " munitions=" .. fired("munitions") .. " upgrade=" .. fired("upgrade_b"))
 heavy = 2
 for i = 1, 8 do data.Rebuild = {}; CAI_Think(); data.fortIndex = #Fort + 1 end
-print("with a surplus: factory=" .. fired("factory") .. " munitions=" .. fired("munitions"))
+print("with a surplus: factory=" .. fired("factory") .. " munitions=" .. fired("munitions") .. " centre: drawn=" .. fired("upgrade_b") .. " other=" .. fired("upgrade"))

@@ -95,5 +95,11 @@ print("refused 31 s: queued=" .. tostring(data.Rebuild[kc]))
 -- the storage full for a minute
 res = { metal = 1200, energy = 9000 }
 data.CAI.capSince = nil
+local ku
+for k, a in ipairs(Fort) do if a.DeviceSaveName == "upgrade" then ku = k end end
+data.Rebuild = { [ku] = true }
+data.CAI.heavyRefused = 4000
+CAI_ParkRefused(4031)
+print("centre refused: queued=" .. tostring(data.Rebuild[ku]) .. " retry=" .. tostring(data.CAI.techRetry and data.CAI.techRetry.at))
 print("full, at once: " .. tostring(CAI_AtCap(5000, 60)))
 print("full for 61 s: " .. tostring(CAI_AtCap(5061, 60)))
