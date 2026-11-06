@@ -2258,6 +2258,11 @@ function CAI_UpdateModules()
 				why = (own.munitions or own.factory) and (why or "tech") or nil
 			end
 			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
+			-- EnergyAbove: what can wait leaves the energy to the heavy weapons' shots (tests 20, 22: guns silent at 500-850 energy)
+			if why and tr.EnergyAbove then
+				local res = GetTeamResources(teamId)
+				if not ((type(res) == "table" or type(res) == "userdata") and (res.energy or 0) >= tr.EnergyAbove) then why = nil end
+			end
 			if why and tr.Drawn and not (data.CAI and data.CAI.techBranch == tr.Drawn) then why = nil end
 			-- a full storage opens it too: nothing is short
 			if why and tr.HeavyDone and not CAI_HeavyDone(elapsed) then

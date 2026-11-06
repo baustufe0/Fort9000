@@ -81,6 +81,9 @@ def format_modules(mods):
         if m.get("tech"):
             # Tech (Bastion): a plant for heavy weapons stands
             tr.append("Tech = true")
+        if m.get("energy_above"):
+            # EnergyAbove (Bastion): not below this much energy, the heavy weapons' shots first
+            tr.append("EnergyAbove = %d" % m["energy_above"])
         if m.get("drawn"):
             # Drawn (Bastion): only if the match drew this tech branch
             tr.append('Drawn = "%s"' % m["drawn"])

@@ -83,7 +83,10 @@ own[302] = "cannon20mm"
 res.metal = 700
 think(1)
 print("two heavy, no metal over: D1=" .. dev("D1") .. " sold=" .. sold)
-res.metal = 900
+res.metal = 900; res.energy = 5000
+think(1)
+print("two heavy, little energy: D1=" .. dev("D1"))
+res.energy = 9000
 think(1)
 print("two heavy: D1=" .. dev("D1") .. " sold=" .. sold .. " upgrade=" .. fired("upgrade"))
 own[303] = "cannon"

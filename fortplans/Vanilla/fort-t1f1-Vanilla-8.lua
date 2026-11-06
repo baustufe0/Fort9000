@@ -320,10 +320,10 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 10052, PosA = {x = -3500.00, y = -55.00 }, OriginalNodeBId = 10056, PosB = { x = -3500.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10053, PosA = {x = -3400.00, y = -185.00 }, OriginalNodeBId = 10052, PosB = { x = -3500.00, y = -55.00 }, MaterialSaveName = "backbracing" },
 } },
-{ Name = "turbine4up", Trigger = { Time = 1, After = "turbine4", Built = "upgrade", Afford = true }, Requires = 245, Actions = {
+{ Name = "turbine4up", Trigger = { Time = 1, After = "turbine4", EnergyAbove = 6000, Built = "upgrade", Afford = true }, Requires = 245, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10051, PosA = { x = -3300.00, y = -55.00 }, OriginalNodeBId = 10013, PosB = { x = -3200.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine2" },
 } },
-{ Name = "turbine5", Trigger = { After = "turbine4", Heavy = 2, Built = "upgrade", Afford = true }, Requires = 170, Actions = {
+{ Name = "turbine5", Trigger = { After = "turbine4", Heavy = 2, EnergyAbove = 6000, Built = "upgrade", Afford = true }, Requires = 170, Actions = {
 { Type = CREATE_LINK, OriginalNodeAId = 10052, PosA = {x = -3500.00, y = -55.00 }, OriginalNodeBId = 10056, PosB = { x = -3500.00, y = -185.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10053, PosA = {x = -3400.00, y = -185.00 }, OriginalNodeBId = 10052, PosB = { x = -3500.00, y = -55.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10052, PosA = { x = -3500.00, y = -55.00 }, OriginalNodeBId = 32000, NewNodePos = { x = -3590.00, y = -55.00 }, MaterialSaveName = "bracing" },
@@ -357,7 +357,7 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 10006, PosA = {x = -3200.00, y = 503.00 }, OriginalNodeBId = 10017, PosB = { x = -3300.00, y = 602.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10026, PosA = { x = -3400.00, y = 602.00 }, OriginalNodeBId = 10017, PosB = { x = -3300.00, y = 602.00 }, LinkT = 0.49, DeviceSaveName = "upgrade" },
 } },
-{ Name = "upgrades", Trigger = { Time = 1, Built = "upgrade" }, Requires = 238, Actions = {
+{ Name = "upgrades", Trigger = { Time = 1, EnergyAbove = 6000, Built = "upgrade" }, Requires = 238, Actions = {
 { Type = CREATE_DEVICE, GroundPosition = { x = -3029.41, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_DEVICE, GroundPosition = { x = -3412.21, y = 700.00 }, LinkT = 1.57, DeviceSaveName = "mine2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10013, PosA = { x = -3200.00, y = -55.00 }, OriginalNodeBId = 10008, PosB = { x = -3100.00, y = -55.00 }, LinkT = 0.35, DeviceSaveName = "turbine2" },
@@ -376,7 +376,7 @@ FortModules =
 { Name = "heavy2", Trigger = { Heavy = 1, Afford = true }, Requires = 12, Socket = "B2", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10001, PosA = { x = -3100.00, y = 75.00 }, OriginalNodeBId = 10002, PosB = { x = -2945.00, y = 75.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "B2" },
 } },
-{ Name = "heavy5", Trigger = { After = "heavy2", HeavyBuilt = 2, Reserve = 300, Afford = true }, Requires = 90, Socket = "D1", Loadout = "cannon20mm", Replace = true, Actions = {
+{ Name = "heavy5", Trigger = { After = "heavy2", EnergyAbove = 6000, HeavyBuilt = 2, Reserve = 300, Afford = true }, Requires = 90, Socket = "D1", Loadout = "cannon20mm", Replace = true, Actions = {
 { Type = CREATE_NODE, OriginalNodeAId = 10022, PosA = { x = -3100.00, y = -315.00 }, OriginalNodeBId = 39000, NewNodePos = { x = -3100.00, y = -438.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10023, PosA = { x = -2945.00, y = -315.00 }, OriginalNodeBId = 39001, NewNodePos = { x = -2945.00, y = -438.00 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 39000, PosA = {x = -3100.00, y = -438.00 }, OriginalNodeBId = 39001, PosB = { x = -2945.00, y = -438.00 }, MaterialSaveName = "bracing" },

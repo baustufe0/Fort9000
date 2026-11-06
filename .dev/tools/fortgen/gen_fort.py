@@ -1595,12 +1595,12 @@ VANILLA_VARIANTS["bastion"] = {
          "plan": [("eco", ["turbine"]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")])]},
         {"name": "turbine4up", "after": 17, "cfg": {"prereq": {}},
-         "trigger": {"after": "turbine4", "time": 1, "built": "upgrade", "afford": True},
+         "trigger": {"after": "turbine4", "time": 1, "built": "upgrade", "afford": True, "energy_above": 6000},
          "plan": [("device_on", [((-3300, -55), (-3200, -55), 0.35, "turbine2")])]},
         # behind the others (the player, test 8: on the storey below there was not enough wind): one more cell at the back
         # of the turbine storey, hung on the storey's end, in the background but for its floor
         {"name": "turbine5", "after": 17, "cfg": {"prereq": {}},
-         "trigger": {"after": "turbine4", "heavy": 2, "built": "upgrade", "afford": True},
+         "trigger": {"after": "turbine4", "heavy": 2, "built": "upgrade", "afford": True, "energy_above": 6000},
          "plan": [("build", [(-3500, -55)]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing"),
                               ((-3500, -55), (-3590, -55), "bracing"),
@@ -1634,7 +1634,7 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "upgrade_b", "after": 15, "trigger": {"drawn": "beams", "time": 1, "heavy_done": True, "afford": True},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]),
                   ("device_on", [((-3400, 602), (-3300, 602), 0.49, "upgrade")])]},
-        {"name": "upgrades", "after": 15, "cfg": {"prereq": {}}, "trigger": {"time": 1, "built": "upgrade"},
+        {"name": "upgrades", "after": 15, "cfg": {"prereq": {}}, "trigger": {"time": 1, "built": "upgrade", "energy_above": 6000},
          "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
         # the first heavy weapon in C1, as soon as a plant stands, with its second door; nothing is sold. The ties back from the door post stay from test 11
         {"name": "heavy1", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
@@ -1649,7 +1649,7 @@ VANILLA_VARIANTS["bastion"] = {
         # the third on a new storey over C1, its rear over the empty cell behind, with both others built and its price plus metal for their shots (the player, 06.11.2026).
         # The mortars go once it is placed (their shells cannot pass the storey), module mortars_off: physics.py 0.84 with it, if the game refuses it they stay
         {"name": "heavy5", "socket": "D1", "loadout": "cannon20mm", "after": 17, "replace": True,
-         "trigger": {"after": "heavy2", "heavy_built": 2, "afford": True, "reserve": 300}, "cfg": {"prereq": {}},
+         "trigger": {"after": "heavy2", "heavy_built": 2, "afford": True, "reserve": 300, "energy_above": 6000}, "cfg": {"prereq": {}},
          # y -438, not the grid's -445: a struts step takes a grid point for a cell's node and refuses it unbuilt; 123 high is room for every heavy weapon's box
          "plan": [("struts", [((-3100, -315), (-3100, -438), "backbracing"), ((-2945, -315), (-2945, -438), "door"),
                               ((-3100, -438), (-2945, -438), "bracing"), ((-3100, -438), (-2945, -315), "backbracing"),
@@ -3271,7 +3271,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "tech": tr.get("tech"), "drawn": tr.get("drawn"), "heavy_done": tr.get("heavy_done"), "heavy_built": tr.get("heavy_built"), "reserve": tr.get("reserve"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "energy_above": tr.get("energy_above"), "tech": tr.get("tech"), "drawn": tr.get("drawn"), "heavy_done": tr.get("heavy_done"), "heavy_built": tr.get("heavy_built"), "reserve": tr.get("reserve"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"), "retire": m.get("retire"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -4486,6 +4486,7 @@ def main():
             trig += ["storage short"] if m.get("storage") else []
             trig += ["%d heavy weapons" % m["heavy"]] if m.get("heavy") else []
             trig += ["with %s built" % m["built"]] if m.get("built") else []
+            trig += ["from %d energy" % m["energy_above"]] if m.get("energy_above") else []
             trig += ["if %s drawn" % m["drawn"]] if m.get("drawn") else []
             trig += ["after the heavy weapons"] if m.get("heavy_done") else []
             trig += ["%d heavy weapons built" % m["heavy_built"]] if m.get("heavy_built") else []

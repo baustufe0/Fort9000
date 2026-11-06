@@ -121,6 +121,7 @@ check "First heavy weapon: C1, nothing sold"       "^plant: C1=cannon B2=- sold=
 check "Second heavy weapon: B2, a 20mm"            "^one heavy: B2=cannon20mm D1=-$" "$LUA" t_empty.lua
 check "Third and centre wait for two"              "^still one heavy: D1=- upgrade=false$" "$LUA" t_empty.lua
 check "Third heavy weapon: metal for the shots first" "^two heavy, no metal over: D1=- sold=0$" "$LUA" t_empty.lua
+check "Third heavy weapon: energy for the shots first" "^two heavy, little energy: D1=-$" "$LUA" t_empty.lua
 check "Third heavy weapon: D1, mortars still there" "^two heavy: D1=cannon sold=0 upgrade=true$" "$LUA" t_empty.lua
 check "D1 placed: mortars sold, sniper stays"      "^D1 placed: sold=2 mortars=- sniper=sniper$" "$LUA" t_empty.lua
 check "Mortars retired"                            "SOCKET M1 retired mortar result=-8$" "$LUA" t_empty.lua

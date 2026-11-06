@@ -542,6 +542,13 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 - Order: cannon in C1 placed 486 / 496 s, built 596 / 606 s, 20mm in B2 586 / 607 s. Upgrade centre 666 / 684 s.
 - T102 did not recover: from 1000 s `rebuild=37-128`, heavy weapons queued for 590 s and never placed, cannon 3 shots in the whole match, while its mortars were rebuilt and shot away again and again (1154-1324 s, 82 mortar shots). The hanging queue held everything else back. Struts lost 23 / 494.
 
+**Test 22 (06.11.2026, Vanilla, AI vs AI, sides fixed for the test: T101 guns, T102 beams, aborted by the player at ~815 s, reactors 1.00 and 0.98 at 780 s):**
+- Shield works: `MODULE shield1` at 485 s, placed at once (485 s) over the background post, seen by the player. It held until 809 s, 324 s, with 6 laser and 6 firebeam shots by 780 s. T101 lost no turbine until 809 s (one, with shield, cannon and mortar); test 20: four at 646 s and again at 675 and 705 s.
+- Energy still short on T101: 8663 at 610 s, 5568 at 650 s, 849 at 690 s, 479-854 until the end, `VOLLEY_HOLD ready=2/2 energy=0`. T102 too at 1211 at 815 s. Turbine upgrades placed 707-741 s, 26 energy/s for the shield; what takes how much is not measured.
+- Whether the first turbine keeps its wind is not measured either.
+
+**After test 22 (06.11.2026):** `Trigger.EnergyAbove` 6000 on `upgrades`, `turbine4up`, `turbine5` and `heavy5`: they leave the energy to the shots. Rebuilds are not held back.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
