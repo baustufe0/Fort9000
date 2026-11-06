@@ -54,7 +54,7 @@ local CAI_Defaults =
 	Socket = { SwapAfter = 2, Window = 180,
 		-- WantWait: the first weapon of the socket's order is ready but not yet paid for: up to so many seconds it waits for
 		-- the money instead of buying a cheaper one (the player, test 9: always the 20mm, never a cannon)
-		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95, FirstShare = 0.4,
+		Upgrade = { Metal = 450, Energy = 3000, Seconds = 15, Hold = 60, Timeout = 60, AtHand = 0.8, WantWait = 120, HeavyWait = 300, RefusedWait = 30, ParkFor = 300, CapSeconds = 60, CapShare = 0.95,
 			From = { sniper = true, sniper2 = true, machinegun = true } },
 		-- Refill: a socket with Upgrade loadouts empty for RefillAfter seconds with no rebuild queued (the built-in AI
 		-- gave up, Vanilla-8 test 5: B2 empty for 450 s at 1200 metal) is queued again, RefillEvery seconds apart,
@@ -1940,7 +1940,7 @@ function CAI_ExtractModules()
 	local mods = { list = {} }
 	for i, m in ipairs(defs) do
 		mods.list[i] = { name = tostring(m.Name or i), trigger = m.Trigger or {}, requires = m.Requires or 0, actions = {},
-			repeats = tonumber(m.Repeat) or 0, cooldown = tonumber(m.Cooldown) or 60, socket = m.Socket, replace = m.Replace }
+			repeats = tonumber(m.Repeat) or 0, cooldown = tonumber(m.Cooldown) or 60, socket = m.Socket, retire = m.Retire, replace = m.Replace }
 	end
 	local kept = {}
 	for _, a in ipairs(Fort) do
@@ -2075,6 +2075,28 @@ function CAI_ModulePick(m)
 		end
 	end
 	return name, w
+end
+
+-- a socket given up: its weapon is sold and neither rebuilt nor refilled (Vanilla-8's mortars, for the storey over C1)
+function CAI_SocketRetire(name)
+	local old = {}
+	for k, a in ipairs(Fort) do
+		if a.Socket == name then
+			a.Socket = nil
+			old[k] = true
+			data.Rebuild[k] = nil
+		end
+	end
+	local ids = {}
+	for id, k in pairs(data.Devices) do
+		if old[k] then ids[#ids + 1] = id end
+	end
+	table.sort(ids)
+	for _, id in ipairs(ids) do
+		data.Devices[id] = nil
+		local t = GetDeviceType(id)
+		if t then CAI_Log("SOCKET " .. name .. " retired " .. tostring(t) .. " result=" .. tostring(DestroyDeviceById(id))) end
+	end
 end
 
 function CAI_ModuleReplace(m)
@@ -2231,6 +2253,10 @@ function CAI_UpdateModules()
 				why = CAI_SurplusReason(m, elapsed)
 			end
 			-- Built (Bastion): not before that own device stands (the upgrade centre comes late, its upgrades must not overtake it)
+			if tr.Tech then
+				local own = CAI_OwnDevices(true)
+				why = (own.munitions or own.factory) and (why or "tech") or nil
+			end
 			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
 			if why and tr.Drawn and not (data.CAI and data.CAI.techBranch == tr.Drawn) then why = nil end
 			-- a full storage opens it too: nothing is short
@@ -2270,6 +2296,7 @@ function CAI_UpdateModules()
 	for _, m in ipairs(ready) do
 		CAI_Log("MODULE " .. m.name .. " trigger=" .. m.why .. " at=" .. (fi + #all) .. " actions=" .. #m.actions
 			.. ((m.done or 0) > 0 and (" repeat=" .. m.done) or ""))
+		for _, name in ipairs(m.retire or {}) do pcall(CAI_SocketRetire, name) end
 		if m.replace then pcall(CAI_ModuleReplace, m) end
 		-- copies: the same module may go in again (Repeat), and the built-in AI keeps state per action
 		for _, a in ipairs(m.actions) do
@@ -2707,7 +2734,7 @@ function CAI_InitSockets()
 	local names = {}
 	for _, s in ipairs(list) do
 		st.sockets[s.Name] = { kind = s.Kind, loadouts = s.Loadouts or { s.Default }, needs = s.Needs or {}, losses = {}, swaps = 0,
-			upgrade = s.Upgrade, rank = s.Rank or 1, default = s.Default, firstHeavy = s.FirstHeavy }
+			upgrade = s.Upgrade, rank = s.Rank or 1, default = s.Default }
 		names[#names + 1] = s.Name .. ":" .. table.concat(s.Loadouts or { tostring(s.Default) }, "/")
 	end
 	CAI_Log("SOCKETS " .. table.concat(names, " "))
@@ -3125,11 +3152,7 @@ function CAI_SocketUpgrade(elapsed)
 	else
 		st.richFor = 0
 	end
-	local notRich = st.richFor < (cfg.Seconds or 15) or elapsed - (st.upgradeAt or -1e9) < (cfg.Hold or 60)
-	-- no heavy weapon yet: a socket with FirstHeavy need not be rich, the plan waits behind its rebuild for the metal (test 16: plant built 400 s,
-	-- sniper sold 455 s)
-	local noHeavy = CAI_HeavyCount() == 0
-	if notRich and not noHeavy then return end
+	if st.richFor < (cfg.Seconds or 15) or elapsed - (st.upgradeAt or -1e9) < (cfg.Hold or 60) then return end
 	-- the living device of each socket (the highest id if the plan lists more than one)
 	local dev = {}
 	for id, k in pairs(data.Devices) do
@@ -3151,8 +3174,7 @@ function CAI_SocketUpgrade(elapsed)
 	local own = CAI_OwnDevices(true)
 	for _, name in ipairs(names) do
 		local s, d = st.sockets[name], dev[name]
-		local first = noHeavy and s.firstHeavy
-		if d and cfg.From and cfg.From[d.type] and (first or not notRich) then
+		if d and cfg.From and cfg.From[d.type] then
 			-- a mix: weapons no other socket holds first (B2 a laser, then B1 a 20mm or a firebeam)
 			local held, order = {}, {}
 			for other, od in pairs(dev) do
@@ -3167,20 +3189,7 @@ function CAI_SocketUpgrade(elapsed)
 				local need = s.needs[w]
 				-- payable at all (storage), and nearly at hand now (the sale refunds half the old weapon)
 				local can, cm, ce = CAI_Affordable(st, w)
-				-- the first one: from FirstShare of its price on (test 17: sold at 137 metal, the socket silent 50-65 s longer than need be)
-				local share = first and (cfg.FirstShare or 0.7) or (cfg.AtHand or 0.8)
-				local athand = m >= (cm or 0) * share and e >= (ce or 0) * share
-				-- the first one is worth waiting for until the storage can hold its price (the second store is on its way), not a cheaper one for good
-				if first and w ~= d.type and (need == nil or (own[need] or 0) > 0) and not can then
-					s.wantSince = s.wantSince or elapsed
-					if elapsed - s.wantSince < (cfg.WantWait or 120) then
-						if s.wantFor ~= w then
-							s.wantFor = w
-							CAI_Log("SOCKET " .. name .. " saving for " .. w .. " storage m=" .. CAI_Round(m) .. " e=" .. CAI_Round(e))
-						end
-						return
-					end
-				end
+				local athand = m >= (cm or 0) * (cfg.AtHand or 0.8) and e >= (ce or 0) * (cfg.AtHand or 0.8)
 				if w ~= d.type and (need == nil or (own[need] or 0) > 0) and can and not athand then
 					-- worth more than the next one: save for it, for a while
 					s.wantSince = s.wantSince or elapsed

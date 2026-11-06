@@ -1,6 +1,6 @@
 rawget = nil; rawset = nil; setmetatable = nil; getmetatable = nil
--- Bastion after test 12: one sniper in B1, sold for the first heavy weapon (socket upgrade); B2 and C1 stand empty for the second and third
--- (heavy2, heavy4). What the tech allows, a kind not yet there first. Vanilla-8, team 102.
+-- Bastion after test 19: the sniper stays in B1; C1, B2 and D1 fill in turn (heavy1, heavy2, heavy5), the mortars sold for D1. What the tech
+-- allows, a kind not yet there first. Vanilla-8, team 102.
 MAX_SIDES = 100
 DD_SUCCESS = -8
 data = { OffensiveFireProbability = { cannon = 0.8 }, AntiAirFireProbability = { machinegun = 0.7 } }
@@ -51,7 +51,7 @@ local function dev(socket)
   for _, a in ipairs(Fort) do if a.Socket == socket and a.Type == CREATE_DEVICE then d[#d + 1] = a.DeviceSaveName end end
   return #d > 0 and table.concat(d, ",") or "-"
 end
-print("plan: B1=" .. dev("B1") .. " B2=" .. dev("B2") .. " C1=" .. dev("C1"))
+print("plan: B1=" .. dev("B1") .. " B2=" .. dev("B2") .. " C1=" .. dev("C1") .. " D1=" .. dev("D1"))
 local k1
 for k, a in ipairs(Fort) do if a.Socket == "B1" and a.DeviceSaveName == "sniper" then k1 = k end end
 own[201] = "sniper"; data.Devices[201] = k1
@@ -67,22 +67,28 @@ print("no plant: B1=" .. dev("B1") .. " B2=" .. dev("B2") .. " sold=" .. sold)
 own[300] = "munitions"
 res.metal = 100; res.energy = 500
 think(1)
-print("plant, poor: sold=" .. sold .. " for=" .. dev("B1"))
+print("plant, poor: C1=" .. dev("C1"))
 res.metal = 900; res.energy = 9000
-think(2)
-print("plant: B2=" .. dev("B2") .. " C1=" .. dev("C1") .. " sold=" .. sold .. " held=" .. tostring(own[201]))
+think(1)
+print("plant: C1=" .. dev("C1") .. " B2=" .. dev("B2") .. " sold=" .. sold)
 own[301] = "cannon"
 think(1)
-print("one heavy: B2=" .. dev("B2") .. " C1=" .. dev("C1"))
+print("one heavy: B2=" .. dev("B2") .. " D1=" .. dev("D1"))
 think(13)
-print("still one heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
+print("still one heavy: D1=" .. dev("D1") .. " upgrade=" .. fired("upgrade"))
+local kM = {}
+for k, a in ipairs(Fort) do if a.Socket == "M1" or a.Socket == "M2" then kM[#kM + 1] = k end end
+own[401] = "mortar"; data.Devices[401] = kM[1]; own[402] = "mortar"; data.Devices[402] = kM[2]
 own[302] = "cannon20mm"
 res.metal = 700
 think(1)
-print("two heavy, no metal over: C1=" .. dev("C1"))
+print("two heavy, no metal over: D1=" .. dev("D1") .. " sold=" .. sold)
 res.metal = 900
 think(1)
-print("two heavy: C1=" .. dev("C1") .. " upgrade=" .. fired("upgrade"))
+print("two heavy: D1=" .. dev("D1") .. " sold=" .. sold .. " upgrade=" .. fired("upgrade"))
+own[303] = "cannon"
+think(1)
+print("D1 placed: sold=" .. sold .. " mortars=" .. dev("M1") .. " sniper=" .. tostring(own[201]))
 -- refused: the rebuild is parked after RefusedWait seconds
 local kc
 for k, a in ipairs(Fort) do if a.Socket == "C1" and a.Type == CREATE_DEVICE then kc = k end end

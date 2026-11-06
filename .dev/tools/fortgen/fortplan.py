@@ -78,6 +78,9 @@ def format_modules(mods):
         if m.get("heavy"):
             # Heavy (Bastion): that many of the AI's own heavy weapons stand
             tr.append("Heavy = %d" % m["heavy"])
+        if m.get("tech"):
+            # Tech (Bastion): a plant for heavy weapons stands
+            tr.append("Tech = true")
         if m.get("drawn"):
             # Drawn (Bastion): only if the match drew this tech branch
             tr.append('Drawn = "%s"' % m["drawn"])
@@ -107,6 +110,9 @@ def format_modules(mods):
         # Replace (Bastion): the module's device takes over its socket, the old weapon is sold
         if m.get("replace"):
             tag += ", Replace = true"
+        # Retire (Bastion): these sockets' weapons are sold and not rebuilt when the module goes in
+        if m.get("retire"):
+            tag += ", Retire = { %s }" % ", ".join('"%s"' % r for r in m["retire"])
         out.append('{ Name = "%s", Trigger = { %s }, Requires = %d%s, Actions = {' % (m["name"], ", ".join(tr), m["requires"], tag))
         out.extend(m["lines"])
         out.append("} },")

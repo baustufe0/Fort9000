@@ -507,6 +507,26 @@ its sniper from 70 % of the first weapon's price (`FirstShare`). Mortars: `RAY_H
 **After test 18 (06.11.2026):** `FirstShare` 0.4 (70 % cost 20-25 s, the plan spent on while it waited). `FirstShot`: a heavy weapon that has not fired does not wait for the volley (`VOLLEY_FIRST`); test 18: T102's cannon built 593 s, `VOLLEY_HOLD ready=1/2`
 behind the 20mm's reload, no shot logged until destroyed at 619.5 s. The gap between beams and guns stays.
 
+**Test 19 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, both drew guns, T102 won at 775 s):**
+- Upgrade centre built 638 / 635 s, the first upgrades since the plan changed: 5 turbine upgrades by 703 s, 2 mine upgrades 692-693 s, heavy mortars 670-671 s.
+- Sniper sold 435 / 440 s at 371 / 401 metal (40 %), cannon placed 459 / 464 s, built 569 / 574 s; 20mm 568 / 558 s. As test 17; B1 silent ~135 s. `VOLLEY_FIRST` seen on both.
+- C1 not placed: T102 `heavy4` at 575 s, `CS_OCCUPIED` (metal) to the end, the upgrades went in front of it; T101 `MODULE_AFFORD` only.
+- T101: reactor 1.00 at 720 s; 20mm lost 774.6 s, cannon in B1 774.8 s, reactor and most of the fort 775 s.
+
+**The reactor dies of its own cannon's blast (found 06.11.2026):** the reactor stands at (-3002,305), 100 hit points (`devices/reactor.lua`; itself 400 to devices, 240 to struts when it goes). From B1 (-3069,205) it is 120 away, from B2 240, from C1 495. A cannon's blast does 150 to devices within 400. With a falloff by distance, not measured,
+that is ~105 from B1 and ~60 from B2. The tests agree:
+| Test | Lost | Reactor |
+|---|---|---|
+| 14 | cannon and 20mm in B1/B2, 983 s | gone 984 s |
+| 18 | cannon in B1 619.5 s, 20mm 621 s | gone 621 s |
+| 19 | 20mm and cannon in B1 774.6-774.8 s | gone 775 s |
+| 12 | cannon in B2 609 s | 0.56 at 660 s, gone 697 s |
+| 17 | cannon in C1 1051 s, 20mm 1054 s (T102) | stood, won |
+Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as well. So B1 was the wrong answer to test 12: it saved the tower and cost the reactor. A single 20mm round (90) nearly kills a reactor directly too.
+
+**After test 19, the player's idea (06.11.2026):** heavy weapons up, away from the reactor. B1 keeps the sniper for good. C1 first (no sale), B2 second (no cannon: 240 from the reactor), then D1 on a new storey over C1 (y -315..-438, x -3200..-2945, second door at -2895); once it is placed the mortars are sold (`mortars_off`, `Retire`), so a refusal does not cost them. `physics.py` 0.84 with it on the armour above B2's door (0.77 without D1's second door).
+`heavyartillery`, the first-heavy rules gone. To check in a match: D1 accepted, what the taller tower does to the sag, blast from C1 and D1 over each other.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

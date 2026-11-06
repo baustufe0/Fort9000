@@ -47,6 +47,11 @@ Load(true)
 local function Find(socket, dev)
   for k, a in ipairs(Fort) do if a.Socket == socket and a.DeviceSaveName == dev then return k end end
 end
+-- the plan's B1 keeps its sniper; the swap and upgrade path is tested on it with C1's lists
+local sC, sB2 = data.CAI.sockets.C1, data.CAI.sockets.B2
+for _, q in ipairs({ data.CAI.sockets.B1, sB2 }) do q.kind, q.loadouts, q.needs, q.upgrade = sC.kind, sC.loadouts, sC.needs, sC.upgrade end
+data.CAI.sockets.B1.rank = 2; sB2.rank = 1
+for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy1" or m.name == "heavy2" or m.name == "heavy5" then m.fired = true end end
 local k = Find("B1", "sniper")
 data.fortIndex = #Fort + 1                    -- the plan is built: modules go in at its end, k stays
 print("B1 action: " .. tostring(k ~= nil))

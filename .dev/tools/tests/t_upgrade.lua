@@ -62,9 +62,12 @@ local b2 = {}
 for key, v in pairs(Fort[k1]) do b2[key] = v end
 b2.Socket = "B2"
 Fort[#Fort + 1] = b2
-data.CAI.sockets.B1.firstHeavy = nil                 -- t_empty.lua
+-- the plan's B1 keeps its sniper; the swap and upgrade path is tested on it with C1's lists
+local sC, sB2 = data.CAI.sockets.C1, data.CAI.sockets.B2
+for _, q in ipairs({ data.CAI.sockets.B1, sB2 }) do q.kind, q.loadouts, q.needs, q.upgrade = sC.kind, sC.loadouts, sC.needs, sC.upgrade end
+data.CAI.sockets.B1.rank = 2; sB2.rank = 1
+for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy1" or m.name == "heavy2" or m.name == "heavy5" then m.fired = true end end
 local k2 = #Fort
-for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy2" or m.name == "heavy4" then m.fired = true end end
 data.fortIndex = #Fort + 1
 own[201] = "sniper"; data.Devices[201] = k1
 own[202] = "sniper"; data.Devices[202] = k2
