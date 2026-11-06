@@ -62,6 +62,7 @@ local b2 = {}
 for key, v in pairs(Fort[k1]) do b2[key] = v end
 b2.Socket = "B2"
 Fort[#Fort + 1] = b2
+data.CAI.sockets.B1.firstHeavy = nil                 -- t_empty.lua
 local k2 = #Fort
 for _, m in ipairs(data.CAIModules.list) do if m.name == "heavy2" or m.name == "heavy4" then m.fired = true end end
 data.fortIndex = #Fort + 1
@@ -100,12 +101,12 @@ own[201] = "sniper"; data.Devices[201] = k1
 own[203] = "sniper"; data.Devices[203] = k2
 for i = 1, 16 do CAI_Think() end
 print("storage 900: B2=" .. Fort[k2].DeviceSaveName .. " B1=" .. Fort[k1].DeviceSaveName)
--- a firebeam is replaced once better tech stands; an empty socket nobody rebuilds gets a new try
+-- a firebeam stays (test 16: built, sold at once for a laser, the socket silent); an empty socket nobody rebuilds gets a new try
 Fort[k1].DeviceSaveName = "firebeam"; Fort[k2].DeviceSaveName = "laser"
 own[201] = nil; own[203] = nil; own[210] = "firebeam"; data.Devices[210] = k1; own[211] = "laser"; data.Devices[211] = k2
 data.Rebuild = {}; data.DeviceDeleteToRebuild = {}; data.CAI.sockets.B1.selling = nil; data.CAI.sockets.B2.selling = nil
 for i = 1, 16 do CAI_Think() end
-print("firebeam replaced: B1=" .. Fort[k1].DeviceSaveName)
+print("firebeam stays: B1=" .. Fort[k1].DeviceSaveName)
 own[210] = nil; data.Devices[210] = nil; own[211] = nil; data.Devices[211] = nil
 for id, k in pairs(data.Devices) do if k == k1 or k == k2 then data.Devices[id] = nil; own[id] = nil end end
 data.Rebuild = {}; data.CAI.sockets.B1.selling = nil

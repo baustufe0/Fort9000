@@ -65,7 +65,11 @@ data.fortIndex = #Fort + 1
 think(3)
 print("no plant: B1=" .. dev("B1") .. " B2=" .. dev("B2") .. " sold=" .. sold)
 own[300] = "munitions"
-think(3)
+res.metal = 100; res.energy = 500
+think(1)
+print("plant, poor: sold=" .. sold .. " for=" .. dev("B1"))
+res.metal = 900; res.energy = 9000
+think(2)
 print("plant: B2=" .. dev("B2") .. " C1=" .. dev("C1") .. " sold=" .. sold .. " held=" .. tostring(own[201]))
 own[301] = "cannon"
 think(1)

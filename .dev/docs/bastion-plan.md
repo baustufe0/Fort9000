@@ -472,6 +472,19 @@ Upgrade centre refused on the rock as well: `CS_UNSTABLE` at 650 / 660 s, sag 0,
 **After test 15 (06.11.2026):** third heavy weapon only with the first two built and its whole price plus 300 metal (`Trigger.HeavyBuilt`, `Trigger.Reserve`). Battery and store before turbines 2 and 3; the drawn plant goes in as soon as the store stands (`Built`, no `Afford`):
 first in line, the plan waits behind it for the metal. A plant does not fit before the store: 800 metal / 5000 energy against 600 / 3000. Rebuilds are not held back for shots.
 
+**Test 16 (06.11.2026, Vanilla, AI vs AI, both on Vanilla-8, T101 guns against T102 beams, T102 won at 681 s):**
+- Plant placed 307 / 310 s (405-415 s in test 15), built 397 / 400 s, no `SKIPPED`. First heavy weapon only placed 466 / 473 s, built 586 / 583 s (630 s): B1 is sold at 445 / 455 s, after the rich rule; T102 at 106 metal, 2901 energy at 400 s.
+- T102's one laser decided it. Built 586 s. T101 lost its two mortars and the machine gun at 589-590 s, all four turbines and sandbags at 619-620 s, reactor at 681.2 s (armour 49-56 at 680.8 s, 1.00 at 660 s). Laser shots 3 by 660 s. That timing fits one beam per
+  row of devices, not measured per shot. T101 restored its armour at 585-590 s, so the strip was not the cause.
+- T101's guns: 1 cannon and 18 20mm shots by 660 s, `VOLLEY_HOLD energy=0` after the turbines fell.
+- T102 wasted B2: `heavy2` chose a firebeam (mix, laser already placed), built 552 s; `SOCKET B2 sell firebeam->laser` at 550 s; the laser placed 575 s was not built at 681 s. B2 never fired.
+- C1: T101 `heavy4` at 585 s, `CS_OCCUPIED` at 595 s, no `CS_UNSTABLE`, not built. T102 never (B2 not built). `heavy3` (B3 laser) `CS_UNSTABLE` at 560 s, strain 0.947..1.017.
+- Upgrade centre on the rock refused again (T101, 585 s, sag 0, strain 0.962..1.000).
+- Mortars: 90 of 99 logged tries declined on own bracing, 25 and 33 shots by 660 s.
+
+**After test 16 (06.11.2026):** with no heavy weapon yet, B1 (`FirstHeavy`) sells its sniper as soon as a plant stands, without the rich rule; if the storage cannot hold the first choice it waits for it up to 120 s. Second store at 380 s (420 s). A firebeam is no longer sold for
+something better (`Upgrade.From`): the mix stays. Probe for the upgrade centre not wanted for now (the player).
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

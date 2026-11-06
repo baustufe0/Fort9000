@@ -105,7 +105,7 @@ check "Upgrade: not while poor"                  "^poor: B1=sniper$" "$LUA" t_up
 check "Upgrade: B1 later, another weapon"        "^later: B1=firebeam B2=laser sold=2$" "$LUA" t_upgrade.lua
 check "Upgrade: a mix with the munitions plant"  "^mix: B1=cannon$" "$LUA" t_upgrade.lua
 check "Upgrade: nothing dearer than the storage"   "^storage 900: B2=cannon20mm B1=sniper$" "$LUA" t_upgrade.lua
-check "Upgrade: a firebeam is replaced later"     "^firebeam replaced: B1=cannon20mm$" "$LUA" t_upgrade.lua
+check "Upgrade: a firebeam stays"                 "^firebeam stays: B1=firebeam$" "$LUA" t_upgrade.lua
 check "Socket: all its actions follow the weapon" "^all actions: cannon20mm cannon20mm$" "$LUA" t_upgrade.lua
 check "Socket: a late module follows it too"      "^late module: cannon20mm$" "$LUA" t_upgrade.lua
 check "Storage: two lasers need more than 3 batteries" "^two lasers, 3 batteries short: true$" "$LUA" t_upgrade.lua
@@ -116,6 +116,7 @@ check "Refill: an empty socket gets a new try"   "^refill: rebuild=true B2=canno
 check "One sniper: B2 and C1 empty in the plan"    "^plan: B1=sniper B2=- C1=-$" "$LUA" t_empty.lua
 check "One sniper: nothing without a plant"        "^no plant: B1=sniper B2=- sold=0$" "$LUA" t_empty.lua
 check "First heavy weapon: into B1, sniper sold"   "SOCKET B1 sell sniper->cannon action=[0-9]+ result=-8 " "$LUA" t_empty.lua
+check "First heavy weapon: sold at once, poor too" "^plant, poor: sold=1 for=cannon$" "$LUA" t_empty.lua
 check "First heavy weapon: nothing else yet"       "^plant: B2=- C1=- sold=1 held=nil$" "$LUA" t_empty.lua
 check "Second heavy weapon: B2, another kind"      "^one heavy: B2=cannon20mm C1=-$" "$LUA" t_empty.lua
 check "Centre and C1 wait for two heavy weapons"   "^still one heavy: C1=- upgrade=false$" "$LUA" t_empty.lua

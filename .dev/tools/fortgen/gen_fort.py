@@ -1521,7 +1521,7 @@ VANILLA_VARIANTS["bastion"] = {
                 # the first of these that is ready (the posture's Prefer first). The first heavy weapon takes the sniper's
                 # place in B1 this way, the second the empty B2 (module heavy2), the third the empty C1 (heavy4)
                 {"name": "B1", "kind": "direct", "cell": (-3100, 205), "default": "sniper",
-                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3},
+                 "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 3, "first_heavy": True},
                 {"name": "B2", "kind": "direct", "cell": (-3100, 75), "default": "cannon20mm",
                  "upgrade": ["cannon", "cannon20mm", "laser", "firebeam"], "rank": 1},
                 {"name": "C1", "kind": "direct", "cell": (-3100, -185), "default": "cannon20mm",
@@ -1587,9 +1587,10 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "factory", "after": 11, "trigger": {"branch": "beams", "built": "store",
                                                      "time": 1, "surplus": {"metal": 900, "energy": 6000, "seconds": 20}},
          "plan": [("build", [(-3500, 700), (-3500, 602), (-3500, 503), (-3500, 405), (-3400, 503), (-3400, 405)]), ("tech", ["factory"])]},
-        # a second metal store (+300): a laser costs 1000 metal, the storage held ~900 (test 4: never built). On the
+        # a second metal store (+300): a laser costs 1000 metal, a cannon 900, the storage held ~900 (test 4: never built). At 380 s, built when
+        # the plant is, so the first heavy weapon can be the dear one (plant built ~400 s, test 16). On the
         # whole plan (after 19): it must not take an eco slot the plan fills later
-        {"name": "store2", "after": 17, "trigger": {"time": 420, "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
+        {"name": "store2", "after": 17, "trigger": {"time": 380, "surplus": {"metal": 500, "energy": 3500, "seconds": 15}},
          "plan": [("eco", ["store"])]},
         # more wind for the heavy weapons (the player, 04.11.2026: storage alone gives no energy per second; test 7: 3 turbines,
         # 250-300 energy for minutes with two lasers): one more with the first heavy weapon, one with the second
@@ -4383,7 +4384,8 @@ def format_sockets(sockets, zones, loadouts=None, prereq=None, strip=None):
             up = [d for d in s.get("upgrade", []) if d in lo]
             return ', Loadouts = { %s }, Needs = { %s }%s' % (
                 ", ".join('"%s"' % d for d in lo), ", ".join('%s = "%s"' % kv for kv in sorted(needs.items())),
-                ', Upgrade = { %s }, Rank = %d' % (", ".join('"%s"' % d for d in up), s.get("rank", 1)) if up else "")
+                ', Upgrade = { %s }, Rank = %d%s' % (", ".join('"%s"' % d for d in up), s.get("rank", 1),
+                                                    ", FirstHeavy = true" if s.get("first_heavy") else "") if up else "")
         out += "FortSockets =\n{\n" + "".join(
             '{ Name = "%s", Kind = "%s", Cell = { x = %d, y = %d }, Default = "%s"%s },\n'
             % (s["name"], s["kind"], s["cell"][0], s["cell"][1], s.get("default", ""), extra(s)) for s in sockets) + "}\n"

@@ -261,7 +261,7 @@ Fort =
 FortSockets =
 {
 { Name = "A1", Kind = "antiair", Cell = { x = -3500, y = -185 }, Default = "machinegun", Loadouts = { "machinegun" }, Needs = {  } },
-{ Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 3 },
+{ Name = "B1", Kind = "direct", Cell = { x = -3100, y = 205 }, Default = "sniper", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 3, FirstHeavy = true },
 { Name = "B2", Kind = "direct", Cell = { x = -3100, y = 75 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 1 },
 { Name = "C1", Kind = "direct", Cell = { x = -3100, y = -185 }, Default = "cannon20mm", Loadouts = { "sniper", "cannon20mm", "laser", "firebeam", "cannon", "machinegun" }, Needs = { cannon = "munitions", cannon20mm = "munitions", firebeam = "factory", laser = "factory" }, Upgrade = { "cannon", "cannon20mm", "laser", "firebeam" }, Rank = 2 },
 { Name = "B3", Kind = "heavy", Cell = { x = -3100, y = 405 }, Default = "laser", Loadouts = { "laser" }, Needs = { laser = "factory" } },
@@ -313,7 +313,7 @@ FortModules =
 { Name = "factory", Trigger = { Time = 1, Branch = "beams", Built = "store", Surplus = { Metal = 900, Energy = 6000, Seconds = 20 } }, Requires = 180, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10034, PosA = { x = -3500.00, y = 405.00 }, OriginalNodeBId = 10036, PosB = { x = -3400.00, y = 405.00 }, LinkT = 0.50, DeviceSaveName = "factory" },
 } },
-{ Name = "store2", Trigger = { Time = 420, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 99, Actions = {
+{ Name = "store2", Trigger = { Time = 380, Surplus = { Metal = 500, Energy = 3500, Seconds = 15 } }, Requires = 99, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10028, PosA = { x = -3500.00, y = 602.00 }, OriginalNodeBId = 10026, PosB = { x = -3400.00, y = 602.00 }, LinkT = 0.50, DeviceSaveName = "store" },
 } },
 { Name = "turbine4", Trigger = { Heavy = 1, Afford = true }, Requires = 170, Actions = {
