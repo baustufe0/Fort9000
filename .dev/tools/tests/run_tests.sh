@@ -131,6 +131,15 @@ check "Refused: logged"                            "SOCKET C1 parked cannon t=40
 check "Refused centre: out of the queue, tried later" "^centre refused: queued=nil retry=4331$" "$LUA" t_empty.lua
 check "Full storage: not at once"                  "^full, at once: false$" "$LUA" t_empty.lua
 check "Full storage: after a minute"               "^full for 61 s: true$" "$LUA" t_empty.lua
+check "Rebuild hold: not without a heavy weapon"   "^no heavy queued: mortar=true,nil$" "$LUA" t_empty.lua
+check "Rebuild hold: mortar waits, turbine and store do not" "^heavy queued: mortar=false,true turbine=true,nil store=true,nil$" "$LUA" t_empty.lua
+check "Rebuild hold: clocks stop while short of metal" "^clock, short of metal: mortar=true cannon=true$" "$LUA" t_empty.lua
+check "Rebuild hold: heavy that could be paid may give up" "^clock, paid for: mortar=true cannon=false$" "$LUA" t_empty.lua
+check "Rebuild hold: free after 180 s"             "^after 180 s: mortar=true,nil$" "$LUA" t_empty.lua
+check "Rebuild hold: free for 45 s"                "^44 s free: mortar=true,nil$" "$LUA" t_empty.lua
+check "Rebuild hold: again after that"             "^46 s free: mortar=false,true$" "$LUA" t_empty.lua
+check "Rebuild hold: ends with the weapon placed"  "^heavy placed: mortar=true,nil$" "$LUA" t_empty.lua
+check "Rebuild hold: logged"                       "REBUILD_HOLD on t=6005 " "$LUA" t_empty.lua
 check "Sniper sight: no fire through structure"  "^blocked by structure: true true ap hitpoints=600 chance=1$" "$LUA" t_sniper.lua
 check "Sniper sight: a free line"                "^open: sniper y200 ap y200$" "$LUA" t_sniper.lua
 check "Sniper sight: AP through one door only"   "^one door: sniper hold ap y200$" "$LUA" t_sniper.lua

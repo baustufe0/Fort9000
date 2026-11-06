@@ -549,6 +549,10 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 
 **After test 22 (06.11.2026):** `Trigger.EnergyAbove` 6000 on `upgrades`, `turbine4up`, `turbine5` and `heavy5`: they leave the energy to the shots. Rebuilds are not held back.
 
+**Test 21 again, why T102 never recovered (06.11.2026):** not refusals (cannon and 20mm: one `CS_OCCUPIED`, one `CS_INVALIDNODES` each) but metal: 1134 at 1000 s, 54 at 1050 s, at most 457 until 1587 s, never the cannon's 900. The built-in queue spends in plan order on whatever it can pay. From 1000 s: 10 mortars, 8 turbines, 7 turbine upgrades, 5 snipers, 3 machine guns (about 5700 metal) and 456 struts, among them 20 armour and 14 doors.
+
+**After test 21, rebuild hold (06.11.2026):** `CAI_Defaults.RebuildHold`: while a lost heavy weapon is queued, mortars, snipers, machine guns, turbine and mine upgrades and the upgrade centre wait (about 4100 metal in test 21). Struts, turbines, mines, stores, batteries and plants go on, since the weapon needs them. After 180 s the waiting ones get 45 s, in case the metal never comes. Logged as `REBUILD_HOLD on/free/off`. Armour and doors are not held: if the struts still eat the metal, they are next.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

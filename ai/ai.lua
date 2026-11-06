@@ -85,6 +85,12 @@ local CAI_Defaults =
 		Classes = { firebeam = "beam", laser = "beam", cannon20mm = "gun", cannon = "gun" }, Gap = 6,
 		SaveEnergy = true, EnergyShot = { firebeam = 1500, laser = 5000, cannon20mm = 2000, cannon = 2000 }, Margin = 1000,
 		BaseStorage = 3000, Battery = 2000, BaseMetal = 600, Store = 300 },
+	-- RebuildHold (plans with FortSockets): while a lost heavy weapon is queued, these wait, so the metal adds up to its price
+	-- (test 21: 1134 metal at 1000 s, 54 at 1050 s, never 900 again in 590 s, while 10 mortars, 7 turbine upgrades and 5 snipers went up).
+	-- Struts, turbines, mines, stores, batteries and the plants go on: the weapon needs them. After MaxSeconds they get FreeSeconds,
+	-- in case the metal never comes.
+	RebuildHold = { Types = { mortar = true, mortar2 = true, sniper = true, sniper2 = true, machinegun = true, minigun = true,
+		turbine2 = true, mine2 = true, upgrade = true }, MaxSeconds = 180, FreeSeconds = 45 },
 	-- CombatLog (plans with FortSockets): every Every seconds COMBAT (reactors, sniper sight counts, shots) and DEALT
 	-- (own hits by weapon on devices and struts, and at which height of the enemy fort)
 	CombatLog = { Every = 60, TopY = 75, LowY = 300 },
@@ -796,6 +802,8 @@ end
 --   CONNECT action=<k> <A>-<B> to <destA>-<destB> ok=<result> dest=<A-B's destination> back=<destA-B's destination>
 local CAI_BaseExecuteFortAction = ExecuteFortAction
 function ExecuteFortAction(action, index)
+	-- RebuildHold: skipped like an action short of resources, without frustration
+	if data.CAI and data.CAI.rebuildHold and CAI_Defaults.RebuildHold.Types[action.DeviceSaveName] then return false, true end
 	local r, skip = CAI_BaseExecuteFortAction(action, index)
 	if action.Type == CONNECT then
 		CAI_Log("CONNECT action=" .. tostring(index) .. " ok=" .. tostring(r))
@@ -2384,11 +2392,13 @@ function CAI_Think()
 	st.lastMetal = metalNow
 	local capped = st.metalFlatTicks >= (Strategy.StarvedFlatTicks or 4)
 	local starved = (data.ResourceStarved and not capped) or metalNow < Strategy.BuildSkipMinMetal
+	local okH, errH = pcall(CAI_UpdateRebuildHold, elapsed)
+	if not okH then CAI_Log("ERROR rebuild hold: " .. tostring(errH)) end
 	if type(data.Rebuild) == "table" then
 		for k in pairs(data.Rebuild) do
 			rebuildCount = rebuildCount + 1
 			local since = st.rebuildSince[k]
-			if since ~= nil and starved then
+			if since ~= nil and (starved or CAI_RebuildClockStopped(Fort and Fort[k], resNow)) then
 				st.rebuildSince[k] = since + Strategy.ThinkInterval
 			elseif since == nil then
 				st.rebuildSince[k] = elapsed
@@ -2996,6 +3006,47 @@ function CAI_SocketRefill(elapsed)
 			end
 		end
 	end
+end
+
+-- RebuildHold: see CAI_Defaults.RebuildHold. st.rebuildHold is the second the hold began; logs REBUILD_HOLD on, free, off.
+function CAI_UpdateRebuildHold(elapsed)
+	local st = data.CAI
+	if st == nil or Fort == nil or not CAI_Plan.sockets then return end
+	local waiting
+	for k in pairs(data.Rebuild or {}) do
+		local a = Fort[k]
+		if a and a.Socket and CAI_Defaults.SocketVolley.EnergyShot[a.DeviceSaveName] then waiting = a.DeviceSaveName; break end
+	end
+	local cfg = CAI_Defaults.RebuildHold
+	local function note(what)
+		local res = GetTeamResources(teamId)
+		CAI_Log("REBUILD_HOLD " .. what .. " t=" .. elapsed .. " m=" .. math.floor(res.metal or 0) .. " e=" .. math.floor(res.energy or 0)
+			.. " for=" .. tostring(waiting))
+	end
+	if not waiting then
+		if st.rebuildHold then st.rebuildHold = nil; note("off") end
+		st.rebuildHoldFree = nil
+	elseif st.rebuildHold then
+		if elapsed - st.rebuildHold >= cfg.MaxSeconds then
+			st.rebuildHold = nil
+			st.rebuildHoldFree = elapsed + cfg.FreeSeconds
+			note("free")
+		end
+	elseif not st.rebuildHoldFree or elapsed >= st.rebuildHoldFree then
+		st.rebuildHold = elapsed
+		st.rebuildHoldFree = nil
+		note("on")
+	end
+end
+
+-- During a hold no give-up clock runs for what waits by order, nor for a heavy weapon short of resources; one that could be paid for
+-- and is not placed hangs for another reason, its clock runs
+function CAI_RebuildClockStopped(a, res)
+	if a == nil or not data.CAI.rebuildHold then return false end
+	if CAI_Defaults.RebuildHold.Types[a.DeviceSaveName] then return true end
+	if not (a.Socket and CAI_Defaults.SocketVolley.EnergyShot[a.DeviceSaveName]) or type(GetDeviceCost) ~= "function" or not res then return false end
+	local ok, c = pcall(GetDeviceCost, a.DeviceSaveName)
+	return ok and c and ((res.metal or 0) < (c.metal or 0) or (res.energy or 0) < (c.energy or 0)) or false
 end
 
 -- A heavy weapon refused (CS_UNSTABLE) for RefusedWait seconds: its queued rebuild is taken out, the built-in AI builds nothing new

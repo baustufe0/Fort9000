@@ -27,6 +27,7 @@ function Load(g)
   enemyTeamId = 1
 end
 function OnWeaponFired() end
+function ExecuteFortAction(a, i) return true end
 function OnDeviceDestroyed() end
 local sold = 0
 function DestroyDeviceById(id)
@@ -112,3 +113,30 @@ CAI_ParkRefused(4031)
 print("centre refused: queued=" .. tostring(data.Rebuild[ku]) .. " retry=" .. tostring(data.CAI.techRetry and data.CAI.techRetry.at))
 print("full, at once: " .. tostring(CAI_AtCap(5000, 60)))
 print("full for 61 s: " .. tostring(CAI_AtCap(5061, 60)))
+-- a lost heavy weapon queued: what can wait waits, so the metal adds up to its price
+local function held(name)
+  for k, a in ipairs(Fort) do
+    if a.DeviceSaveName == name then local r, skip = ExecuteFortAction(a, k); return tostring(r) .. "," .. tostring(skip) end
+  end
+end
+data.Rebuild = { [kM[1]] = true }
+data.CAI.rebuildHold = nil; data.CAI.rebuildHoldFree = nil
+CAI_UpdateRebuildHold(6000)
+print("no heavy queued: mortar=" .. held("mortar"))
+data.Rebuild = { [kM[1]] = true, [kc] = true }
+CAI_UpdateRebuildHold(6005)
+print("heavy queued: mortar=" .. held("mortar") .. " turbine=" .. held("turbine") .. " store=" .. held("store"))
+res = { metal = 100, energy = 9000 }
+GetDeviceCost = function(w) return { metal = 900, energy = 5000 } end
+print("clock, short of metal: mortar=" .. tostring(CAI_RebuildClockStopped(Fort[kM[1]], res)) .. " cannon=" .. tostring(CAI_RebuildClockStopped(Fort[kc], res)))
+res = { metal = 1000, energy = 9000 }
+print("clock, paid for: mortar=" .. tostring(CAI_RebuildClockStopped(Fort[kM[1]], res)) .. " cannon=" .. tostring(CAI_RebuildClockStopped(Fort[kc], res)))
+CAI_UpdateRebuildHold(6185)
+print("after 180 s: mortar=" .. held("mortar"))
+CAI_UpdateRebuildHold(6229)
+print("44 s free: mortar=" .. held("mortar"))
+CAI_UpdateRebuildHold(6231)
+print("46 s free: mortar=" .. held("mortar"))
+data.Rebuild = { [kM[1]] = true }
+CAI_UpdateRebuildHold(6236)
+print("heavy placed: mortar=" .. held("mortar"))
