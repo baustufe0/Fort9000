@@ -10,7 +10,7 @@ Idea:
   * A variant (archetype) chooses which cells are built (shape), which weapons,
     economy and tech go where, and in which order.
   * The front (facing the enemy) is armoured, doors go in front of direct-fire weapons,
-    door roofs over mortars. Diagonals in device cells are background braces.
+    background roofs over mortars. Diagonals in device cells are background braces.
   * Checks: nodes not in rock, links not through rock and not too long,
     build order (every node is created from an already built node),
     tech prerequisites (workshop before mortar, etc.).
@@ -1420,7 +1420,7 @@ VANILLA_VARIANTS["recorded"] = None
 # layers; no prow storeys and no lane cells (weapons forward). Storey I (75..205) on the starting fort's roof beam:
 # socket B1, the first sniper, built first (early pressure). Storey II (-55..75): socket B2. Storey III (-185..-55):
 # the turbines in their own hidden storey (no weapon in it), two stacked sandbags in its front cell. On top, over the
-# front column only (-315..-185): the mortar nest, sockets M1/M2 on the split floor, a door roof and a door in front;
+# front column only (-315..-185): the mortar nest, sockets M1/M2 on the floor, a background roof and a door in front;
 # nothing above it, so the arcs are open. The starting fort's machine gun is socket A0. The woodspam regions in front
 # (prow, lower face, mine row) are the crumple zone Z0; the AI rebuilds what is shot away. Which weapon goes into a
 # socket is decided by modules (later the posture engine); the plan builds the empty sockets, the economy and the tech.
@@ -1460,19 +1460,21 @@ VANILLA_VARIANTS["bastion"] = {
             "hidden_box": (-3500, -2945, -185, -55),
             "turbine_floor_y": -55, "turbine_floor_t": 0.35,
             "split_cell": [(-3100, -185)], "sandbag_slots": [(0, "floor", 0.5), (0, "mid", 0.5)],
-            # the mortars at the back of the storey, their shells leave through their own door roofs (range 6000: ~64
+            # the mortars at the back of the storey, their shells leave through a background roof, a door roof is a waste
+            # of metal (the player, 06.11.2026); the storey's front door stops the snipers (range 6000: ~64
             # degrees, 33 forward at the roof). The two front cells stay free for a heavy weapon: its body reaches well behind its
             # strut point, a mortar in the next cell took its place (the player, 06.11.2026; tests 10-13), no mortar has to be sold.
-            # 100 apart (MORTAR_SPACING 90)
-            "mortar_slots": [((-3400, -185), (-3300, -185), 0.5), ((-3300, -185), (-3200, -185), 0.5)],
-            # socket A1 behind the mortars: a closed cell on the turbine storey with a door roof for an anti-air machine
-            # gun (test 2: no anti-air place, the player's mortars and heavy mortars took the fort down)
-            "door_roof_cells": [(-3500, -185)],
+            # 95 apart (MORTAR_SPACING 90), slid back to leave room for socket A2 in front of them
+            "mortar_slots": [((-3400, -185), (-3300, -185), 0.3), ((-3300, -185), (-3200, -185), 0.25)],
+            # sockets A1 behind and A2 in front of the mortars: anti-air machine guns against the enemy's shells (the player,
+            # 06.11.2026; test 2: no anti-air place, the player's mortars and heavy mortars took the fort down). They fire up
+            # through a background roof. A2 at 0.1: 85 from M2, its box clear of a cannon in C1
+            "bg_roof_cells": [(-3500, -185), (-3200, -185)],
             # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
             "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
             # B1's cell is 148 wide, B2's 155: at 0.16 a cannon's body keeps clear of B1's door as well (the player, 05.11.2026)
             "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "cannon20mm", 0.18), (-3100, -185, "cannon20mm", 0.18),
-                             (-3500, -185, "machinegun", 0.5)],
+                             (-3500, -185, "machinegun", 0.5), (-3200, -185, "machinegun", 0.1)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
@@ -1493,14 +1495,15 @@ VANILLA_VARIANTS["bastion"] = {
         # turbine at 300-336 s), then the other mines
         # socket B2 stays empty until the first heavy weapon (module heavy1): one sniper saves its metal (the player, 05.11.2026)
         ("build", [(-3100, 75, "cannon20mm")]),                     # 7 socket B2
+        # the sandbags before the first turbine, else a player snipes it (the player, 06.11.2026; test 23: turbine 112 s, sandbags 268 s)
+        ("defence", ["sandbags", "sandbags"]),
         ("eco", ["turbine"]),
         ("eco", ["mine", "mine"]),                                  # 9
         # sockets M1/M2: the back column x -3200..-3100 from the rock up (the nest stands on it; on the starting
         # fort's back post alone it fell in physics.py), the turbine storey's front cell (split for the sandbags)
         # and the storey over it: the heavy weapon's cell in front, the mortars, A1 behind them
         ("build", [(-3200, 700), (-3200, 602), (-3200, 503), (-3200, 405), (-3200, 308),
-                   (-3100, -185, "cannon20mm"), (-3200, -185), (-3300, -185), (-3400, -185), (-3500, -185, "machinegun")]),  # 10
-        ("defence", ["sandbags", "sandbags"]),                      # 11
+                   (-3100, -185, "cannon20mm"), (-3200, -185, "machinegun"), (-3300, -185), (-3400, -185), (-3500, -185, "machinegun")]),  # 11
         ("mark", ["door_layers"]),                                  # 12 the second doors from here on
         # the first woodspam stands in the starting machine gun's line: no more use (the player, test 8)
         ("defence", ["sell:machinegun", "woodspam"]),               # 13
@@ -1516,6 +1519,7 @@ VANILLA_VARIANTS["bastion"] = {
     # the nest, Z3 the back of the socket storeys, Z4 the core (back block and starting fort)
     "sockets": [
                 {"name": "A1", "kind": "antiair", "cell": (-3500, -185), "default": "machinegun"},
+                {"name": "A2", "kind": "antiair", "cell": (-3200, -185), "default": "machinegun"},
                 # the heavy weapons as far from the reactor (-3002,305) as they go: a destroyed cannon does 150 to devices within 400, the reactor has 100 hit
                 # points (tests 14, 18, 19: cannon lost in B1, 120 away, reactor gone within 2 s). B1 keeps the sniper. C1 (495 away) first, then B2 (240 away,
                 # no cannon), then D1 over C1 in the place of the mortars (the player, 06.11.2026). upgrade: what a socket's module picks from, what it sells for
@@ -1547,7 +1551,7 @@ VANILLA_VARIANTS["bastion"] = {
               {"name": "Z3", "box": (-3500, -3100, -55, 205)},
               {"name": "Z4", "box": (-3600, -2900, 205, 700)}],
     "modules": [
-        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 10,
+        {"name": "artillery", "socket": "M1+M2", "loadout": "mortar", "after": 11,
          "trigger": {"types": ("mortar", "mortar2"), "count": 1, "time": 75},
          "plan": [("weapons", ["mortar", "mortar"])]},
         # zone reinforcements (step 3): when the AI's hit map puts that much damage into the zone, a third woodspam
@@ -1568,10 +1572,13 @@ VANILLA_VARIANTS["bastion"] = {
         # enemy builds economy or the AI piles up metal), at the latest at 450 s; then a B socket that keeps losing
         # its sniper is rebuilt with a laser or firebeam (Prefer)
         # anti-air in A1 against shells and missiles: when the posture turns AntiArtillery or AntiAir, or the
-        # enemy builds mortars or missiles, at the latest at 240 s
-        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 10,
-         "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir"),
-                     "time": 240},
+        # enemy builds mortars or missiles. No time limit: without them the machine gun is wasted metal (the player, 06.11.2026)
+        {"name": "antiair", "socket": "A1", "loadout": "machinegun", "after": 11,
+         "trigger": {"types": ("mortar", "mortar2") + _V6_MISSILES, "count": 1, "postures": ("AntiArtillery", "AntiAir")},
+         "plan": [("aa", ["machinegun"])]},
+        # the second one, in front of the mortars, only against the enemy's mortars (the player, 06.11.2026)
+        {"name": "antiair_front", "socket": "A2", "loadout": "machinegun", "after": 11,
+         "trigger": {"types": ("mortar", "mortar2"), "count": 1},
          "plan": [("aa", ["machinegun"])]},
         # tech for heavy weapons: chance decides the branch (Branch: the AI draws guns or beams at the start; the player,
         # 05.11.2026). That branch's plant comes as soon as the first store stands, first in line, the plan waits behind it for the metal (test 15: waiting for
@@ -1741,7 +1748,7 @@ VANILLA2V6_VARIANTS = {
                     weapon_cells=[(-3100, 205, "sniper", 0.7), (-3100, 80, "machinegun", 0.7),
                                   (-3100, -45, "sniper", 0.28)],
                     roof_weapon_cells=[],
-                    # 100 apart, each with a door roof (light_roof)
+                    # 100 apart, each with a background roof (light_roof)
                     mortar_slots=[((-3300, -305), (-3200, -305), 0.5), ((-3200, -305), (-3100, -305), 0.5)]),
         "plan": [
             ("weapons", ["sniper"]),
@@ -1827,8 +1834,9 @@ VANILLA2V6_VARIANTS = {
             # rocket, a turbine and two mines, so the rockets came late or never), the turbine while it builds
             ("tech", ["upgrade"]),
             ("eco", ["turbine"]),
-            ("upgrades", ["rocket", "rocket"]),
+            # the sandbags right after the first turbine, else a player snipes it (the player, 06.11.2026)
             ("defence", ["sandbags", "sandbags"]),
+            ("upgrades", ["rocket", "rocket"]),
             ("eco", ["mine", "mine"]),
             ("weapons", ["rocketemp"]),
             ("upgrades", ["rocket"]),
@@ -2407,9 +2415,12 @@ class Plan:
             return "door" if dev in DIRECT_WEAPONS or dev == "lane" else "armour"
         if edge == "top" and c in self.door_roof_cells():
             return "door"
+        if edge == "top" and c in self.door_roof_cells("bg_roof_cells"):
+            return "backbracing"
         if edge == "top" and self.is_top(c) and self.cfg.get("light_roof"):
-            # no metal roof (heavy, guide "How to be a PRO at Vanilla Forts"): doors only over mortars
-            return "door" if dev in LOBBED_WEAPONS else "bracing"
+            # no metal roof (heavy, guide "How to be a PRO at Vanilla Forts"). Over mortars background bracing: a door
+            # roof is a waste of metal, the shells pass (the player, 06.11.2026); a door only over the smoke launcher
+            return "backbracing" if dev in ("mortar", "mortar2") else "door" if dev in LOBBED_WEAPONS else "bracing"
         if edge == "top" and self.is_top(c) and self.variant.get("armour_roof"):
             if dev in LOBBED_WEAPONS:
                 return "door"
@@ -2443,11 +2454,12 @@ class Plan:
         rows = self.cfg["rows"]
         return any(abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == y0 for x0, y0 in self.cfg.get("bg_diag_cells", []))
 
-    def door_roof_cells(self):
-        """door_roof_cells [(left x, floor y)]: cells whose roof is a door (an anti-air machine gun fires up through it)."""
+    def door_roof_cells(self, key="door_roof_cells"):
+        """door_roof_cells [(left x, floor y)]: cells whose roof is a door (an anti-air machine gun fires up through it);
+        bg_roof_cells: the same with background bracing."""
         rows = self.cfg["rows"]
         out = set()
-        for x0, y0 in self.cfg.get("door_roof_cells", []):
+        for x0, y0 in self.cfg.get(key, []):
             out |= {c for c in self.all_cells if abs(self.cell_x(c)[0] - x0) < 2 and rows[c[1] + 1] == y0}
         return out
 

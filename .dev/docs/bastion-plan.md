@@ -553,6 +553,10 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 
 **After test 21, rebuild hold (06.11.2026):** `CAI_Defaults.RebuildHold`: while a lost heavy weapon is queued, mortars, snipers, machine guns, turbine and mine upgrades and the upgrade centre wait (about 4100 metal in test 21). Struts, turbines, mines, stores, batteries and plants go on, since the weapon needs them. After 180 s the waiting ones get 45 s, in case the metal never comes. Logged as `REBUILD_HOLD on/free/off`. Armour and doors are not held: if the struts still eat the metal, they are next.
 
+**Mortar nest without doors above (the player, 06.11.2026, not played yet):** the roofs over M1, M2, A1 and the cell in front of M2 are background bracing, three doors fewer; the storey's front door stops the snipers. New socket A2 in front of the mortars, a machine gun at x -3190 (LinkT 0.1), module `antiair_front`: only when the enemy has mortars. A1 (`antiair`) loses its 240 s limit: enemy mortars or missiles, or the posture. To make room the mortars slid back on their struts: M1 -3370, M2 -3275 (95 apart). To watch: A2 stands before the heavy weapon in C1 (modelled 136 from a 20mm's centre, 6 more than it needs): `CS_OCCUPIED` on heavy1 means it stands too close; do mortar shells land on the mortars now?
+
+**Sandbags before the first turbine (the player, 06.11.2026, not played yet):** in the aborted test at ~1084 s the first turbine stood at 112 s, the sandbags only at 268 s; a player could snipe it in between. Now the sandbags come at plan actions 54-55, the turbine at 73 (was 61), the turbine storey's split front cell comes earlier with them. `physics.py`: max stress 0.82 (0.83 before these changes), still WEAK. Modules artillery, antiair and antiair_front stay behind the back column (`after` 11). 2v6-3 has them right after its first turbine (135, then 151-152).
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.

@@ -224,10 +224,10 @@ forward and squeezed its cells ([history/vanilla-3-5.md](history/vanilla-3-5.md)
    floor that carries the weapons (one hit dropped the whole upper block).
 6. **Weapons:** direct-fire weapons at the front behind a door; struts in their line of fire background bracing (or
    built before the weapon within its recession box); heavy weapons in solid X-braced storeys on strong posts, never in
-   the top storey, in storeys high enough for their box; mortars with a door roof or open arc, or in a low hidden nest
+   the top storey, in storeys high enough for their box; mortars under a background roof (no door roof: a waste of metal, the player, 06.11.2026) or open arc, or in a low hidden nest
    with sandbags. **No weapon in the open:** its first shot shows the player where it is, so every weapon stands in a
-   closed cell with a door wherever it fires through (a lobbed one, e.g. the smoke launcher, a door roof and a door in
-   front; Abyss-5, 28.10.2026). **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
+   closed cell with a door wherever it fires through (a smoke launcher: a door roof and a door in front, Abyss-5, 28.10.2026; a mortar: only the door in
+   front). **A weapon blocks the line of fire of every weapon behind it in the same row** (rows closer than 50
    in height count as one): each weapon stands alone in its row or at its front, miniguns too (the player, 30.10.2026:
    a minigun must have a line of fire to the enemy fort; two side by side on one storey do not work). Plain machine guns
    may stand anywhere on a roof as anti-air (two or three against mortar shells, which is all they help against); place

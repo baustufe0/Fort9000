@@ -53,6 +53,8 @@ tested in a match.
 the weapons' bodies. Plans 1, 2, 4: sniper/sniper2 0.28 -> 0.22; plan 3: EMP rocket/rocket 0.70 -> 0.67; plan 4:
 machine gun/minigun 0.70 -> 0.67. Vanilla2v6Long converted again. Not played yet.
 
+06.11.2026: plan 1's mortars have a background roof instead of door roofs (the player: a waste of metal); the door at x -3100 stays in front. Its machine guns are unchanged: this plan has no module for them. Not played yet.
+
 `gen_fort.py --map Vanilla2v6` (`VANILLA2V6_VARIANTS`): the Vanilla base plan and starting fort, the map's terrain of all
 eight spots laid over each other in the plan frame (`fwe_dir`, `fwe_frame.anchors`, `rock_clear` 15), and a `ceiling`:
 no node above y -400, no device box above -450. The next fort up stands on rock at y -300, all of it behind x -3592; its
