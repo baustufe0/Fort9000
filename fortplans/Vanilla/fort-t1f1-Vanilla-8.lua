@@ -369,6 +369,6 @@ FortModules =
 { Type = CREATE_NODE, OriginalNodeAId = 10023, PosA = { x = -2945.00, y = -315.00 }, OriginalNodeBId = 38001, NewNodePos = { x = -2895.00, y = -315.00 }, MaterialSaveName = "armour" },
 { Type = CREATE_LINK, OriginalNodeAId = 38001, PosA = {x = -2895.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "door" },
 { Type = CREATE_LINK, OriginalNodeAId = 10023, PosA = {x = -2945.00, y = -315.00 }, OriginalNodeBId = 38000, PosB = { x = -2895.00, y = -185.00 }, MaterialSaveName = "backbracing" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.18, DeviceSaveName = "cannon20mm", Socket = "C1" },
+{ Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -185.00 }, OriginalNodeBId = 10019, PosB = { x = -2945.00, y = -185.00 }, LinkT = 0.28, DeviceSaveName = "cannon20mm", Socket = "C1" },
 } },
 }

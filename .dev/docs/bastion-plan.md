@@ -448,6 +448,11 @@ So the chain in test 12: cannon gone, then what it took with it. `Trigger.HeavyD
 while it is built). Second in B2 (`heavy2`), third in C1 (`heavy4`). No AP sniper any more (module `sniper2` gone). B1's waiting rules (`UpgradeHeavy`) gone. A refused heavy weapon's rebuild is parked
 after 30 s for 300 s (`CAI_ParkRefused`). The centre opens at two heavy weapons built, the first for 300 s, or a full storage for 60 s. Check: reactor damage from a cannon lost in B1 (estimated ~200 away, not measured).
 
+**Test 13 (06.11.2026, Vanilla, AI vs AI, probe at 520 s, both drew beams):** factory built ~495 s, laser in B1 placed ~510 s. Probe, laser only (no plant for guns, ended before the firebeam), T101, LinkT
+from the back node: C1's floor 0.10 and 0.18 refused, 0.30 and 0.50 placed, 0.70 refused. B2's floor: 0.10-0.50 placed, 0.70 refused. T102 shows the same with LinkT counted from the front node.
+So C1 is no question of stability of the storey but of the place on the strut: 0.18 was what tests 10-12 used. Why is not measured; the second mortar's body, ending at ~-3110, and a weapon's body reaching to ~-3117 at 0.18 overlap.
+C1 now at 0.28. Guns at this place are still unmeasured.
+
 ## Risks
 
 - Up-front metal for the skeleton slows the first shot → only B1/B2 skeleton first, rest as modules.
