@@ -91,7 +91,7 @@ sketch above, forced by the rules and the physics:
 Order: B1 sniper (action 21), workshop 28, three mines 29-31, B2 sniper 43, nest + back column, sandbags 90-91, first
 turbine 92, woodspam, turbines, upgrade centre, eco. Modules: artillery (M1+M2, enemy mortars or 75 s), heavy
 artillery (330 s), AP sniper in B1 (enemy AP sniper/laser/firebeam or 420 s). On this branch `ai/fortplans.lua`
-forces Vanilla-8 on Vanilla (`Force`, remove before merge; publish.py refuses to publish with it).
+forced Vanilla-8 on Vanilla until 06.11.2026 (`Force`, now empty).
 
 ## Step 2: AI – repeatable modules
 
@@ -155,10 +155,10 @@ could learn them later).
 
 ## Step 5: test matches and tuning
 
-- `ai/fortplans.lua` on this branch: `Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }` so every DEV match tests it.
+- `ai/fortplans.lua`: `Force` is empty since 06.11.2026, so Vanilla-8 is drawn at random like the other plans; to test it alone, set `Force = { Vanilla = "fort-t1f1-Vanilla-8.lua" }` again (publish.py refuses that).
 - Matches against mortar, sniper/laser, missile and turtle styles; evaluate with `train.py` and the log
   (`POSTURE`, `SOCKET`, `ZONE`, first-shot time).
-- Afterwards: Vanilla-8 in the normal draw with the other plans, then other maps. Done 06.11.2026 (not played): VanillaLong-8, Vanilla2v6-5 and Vanilla2v6Long-5 ([2v6-vanilla.md](maps/2v6-vanilla.md)); `Force` still sends every Vanilla match to Vanilla-8 on this branch, the other maps draw at random.
+- Afterwards: Vanilla-8 in the normal draw with the other plans, then other maps. Done 06.11.2026 (not played): VanillaLong-8, Vanilla2v6-5 and Vanilla2v6Long-5 ([2v6-vanilla.md](maps/2v6-vanilla.md)).
 - Vanilla 2v2, not checked by the generator: Vanilla-8's back nodes come 98 from the upper fort's (plan), 65 with module turbine5; on 2v6 the game refused nodes 92-138 from another team's. Vanilla-5 is at 132, Vanilla-3 at 193, Vanilla-6 at 243.
 
 **Test 1 (03.11.2026, Vanilla 1v1 vs the player, difficulty 1, ~395 s, aborted; EngineProbe still on):**

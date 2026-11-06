@@ -161,7 +161,5 @@ FortPlanConfig =
 	},
 	Force =
 	{
-		-- branch bastion: every DEV match on Vanilla plays Bastion, remove before merge
-		Vanilla = "fort-t1f1-Vanilla-8.lua",
 	},
 }
