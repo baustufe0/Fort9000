@@ -28,6 +28,8 @@ not start with `.` into `fort9000`, after emptying it, and:
 - replaces the `--[[WORKSHOP]] ` marker in `ai/ai.lua` with `"mods/<PublishedFileId>/", ` (warns and drops it
   while there is no id yet; subscribers then miss the plans and the strategy);
 - removes ` DEV` from the names in `displayname.lua` (UTF-16 LE with BOM, as the game writes it);
+- switches logging off by default: `--[[LOGGING]] true` becomes `false` in `ai/ai.lua` and `script.lua` (it refuses to
+  publish if a marker is missing; see [the recorder](recorder-training.md#logging-switch));
 - keeps `fort9000/publishedfileid.lua`, the Workshop item id the game writes after the first upload, and stores a
   copy in `.dev/publishedfileid.lua` (tracked in git); if `fort9000` has none, it restores it from there.
 

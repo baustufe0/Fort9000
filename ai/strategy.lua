@@ -73,7 +73,6 @@ Strategy =
 		mortar2 = true,
 	},
 	LateSeconds = 480,
-	LogDecisions = true,
 	PoorEnergy = 300,
 	PoorFactor = 0.75,
 	PoorMetal = 150,

@@ -49,6 +49,50 @@ tested in a match.
 
 ## Plans (`fortplans/Vanilla2v6/`, redesigned 30.10.2026 after three matches; plans 1 and 3 narrowed at the top after the sixth, not yet played in that form)
 
+07.11.2026, doors before the forward weapons (plans 2, 4, 5 regenerated, not played yet). Match 13:18: 0 of 348 sniper attempts stopped by the own fort on plans 2 and 5, but T202 placed its sniper 7 times in 141 s: its door came 207 actions after it (plan 2 164, plan 4 73), the prow's cell holds the door and was built late. Now the cell comes before the sniper; `rules.door_gap` warns above 10 actions. The tie between the outer doors is gone on plans 2 and 5 (`door_layer_tie`): 38.8 long, under the game's minimum with the sag.
+
+07.11.2026, match 13:18, plan 3 stalled at build 188 of 342 on all three rocket forts, the player saw it: with a line of fire the EMP rockets shot for the first time (41 shots in 300 s, 0 the match before, 800 energy each), so the upgrade centre's 3000 energy never came together, with no turbine before it in the plan and metal at its cap. Now two turbines and the sandbags before the centre, the long brace gone, and `CAI_Defaults.BuildEnergyHold` in the AI (`BUILD_HOLD` lines). Not played yet.
+
+07.11.2026, aim of the other weapons (`rules.aim_window`, degrees down/up; plans 2, 4, 5 regenerated, not played yet): the lower weapons stand in the cell behind the prow, their doors on its front, as the rockets do.
+
+| Plan | Weapon | Before | Now |
+|---|---|---|---|
+| 2 | sniper | 8/11 | 19/18 |
+| 2 | 20mm | 6/13 | 45/20 |
+| 2 | cannon | 16/28 | 16/28 (C1's place, door at x -2945, its body keeps it there) |
+| 4 | sniper (row above the laser, machine gun now in the third storey) | 12/12 | 30/45 |
+| 4 | laser | 22/20 | 22/45 |
+| 4 | firebeam | 14/32 | 24/32 |
+| 5 | sniper | 5/19 | 19/18 |
+
+What it took: under the doors, under the outer doors and between them background bracing (`door_rest`, `door_layer_floor`), the prow's floors in the background, its woodspam on plans 2 and 5 too. So a shot aimed down crosses nothing solid, but the prow takes less. On plan 5 C1's 20mm stays 14/28, B2's module weapon is at LinkT 0.85. Not known: whether the game takes a sniper at floor 75 or 80, LinkT 0.7: the old refusals there came with a door in its body, which the door on the prow removes.
+
+07.11.2026, after the fourth AI-vs-AI match (12:42; plan 3 regenerated, not played yet): rockets forward, the lower two in the prow cells right behind their doors, one each (the lowest on the starting fort's front beam): aim 13/45, 33/45, 33/45 down/up, before 8/14, 0/0, 28/45. The prow's diagonal and roof in the background. Each still has one door; on plan 2 the snipers on the high steps stop on their own armour (T402 39 of 52 attempts, T602 42 of 51; `aim_window` 8 down), around the outer door at x -2895.
+
+07.11.2026, after the third AI-vs-AI match (11:59; all plans regenerated, not played yet):
+- Plan 5: back block to x -3500 as on the other plans. T202 was refused the node (-3600,602) (`CS_OBSTRUCTION`, the rock behind (5900,-1900)) and stood at build 219-226 of 363 for 470 s.
+- Plans 2 and 5: sniper in the row over the starting fort's roof row (floor 75), 20mm in the roof row (B1 and B2 changed rows, plan 2 likewise). The prow stopped the sniper's shots aimed down: T202 fired 0 of 86 attempts, rays ending at x -2860, also with the front beam in the background. Not known: whether the game refuses a sniper at floor 75, LinkT 0.16 (at 0.7 it did, before the metal-in-body rule).
+- All plans: Bastion's opening (below). The machine gun explanation in the entry below fell short: T602's M2 was refused before A2 stood, its cannon in C1 with A2 9 clear. The cause of these refusals is not known.
+
+06.11.2026, after the second AI-vs-AI match (21:50; the laser, cannon and mortar changes below held: cannon placed on both forts, 6 shots, no
+ray ended on the own fort for lasers, cannons or mortars). Plans 2 and 5 and Vanilla-8 regenerated, not played yet:
+- `CAI_OwnDevices`, `CAI_HeavyCount` and `CAI_StorageShort` counted the allies' devices: T502 took T302's munitions plant for its own and never got a heavy weapon.
+- Device clearance (`rules.DEVICE_CLEARANCE`): machine gun A2 stood 4 clear of a cannon and 5 of M2, and whichever came second was refused. Plan 2: gun one cell back (x -3250). Bastion: M1 0.25, M2 0.15, A2 0.03, A1 0.3, laser B3 0.45.
+- Plans 2 and 5: the starting fort's front beam (x -2945..-2846) and the floors under the outer doors are background; it stopped the B1 sniper's shots aimed down (T602 76 of 83 rays, T201 37 of 44).
+
+06.11.2026, after an AI-vs-AI match (the player; plans 2, 4 and 5 and their long versions regenerated, not played yet). This
+staircase needs direct weapons to aim from about 18 degrees up (T2-1, at the upper left fort) to 18 degrees down (T2-6, at the lower
+left fort). A weapon behind a lane has about 5 down: the floor runs on to its door. The match: 7 shots from 5 lasers, on T2-4, T2-5 and
+T2-6 the ray ended on the fort's own floor, nearer the weapon the higher the fort.
+- Plan 4: laser on the starting fort's front beam (x -2913, about 15 down, 20 up), second door at x -2795 with a background tie
+  below it, no woodspam in its row. No blast, so the reactor below it is safe. Plain T2-6 shots at the lower fort stay just out of reach.
+- Plan 2: rebuilt on Bastion's rows. Cannon on top (C1's place, LinkT 0.20, 520 from the reactor, it stood at 194), second door at
+  x -2895 with a background tie below; a 20mm instead of the second cannon, in B2's place, about 240 from the reactor: no other row clears
+  the blast's 400; the sniper in B1's place; the machine gun under cover behind the cannon, not on the roof; turbine storey -55..-185.
+  Open: T302 was refused a cannon on this strut in the same match (`CS_UNSTABLE`), Vanilla-8 built one there in tests.
+- Plan 5: the mortar storey's posts are background as on Vanilla-8. The post at x -3300 stood right in front of M1 and took its shots
+  (14 of 48 rays, T302).
+
 06.11.2026: Vanilla2v6-1 and Vanilla2v6Long-1 removed (the 2v6 version of Vanilla-2, the player); the sections below still describe them. New: Vanilla2v6-5 and Vanilla2v6Long-5, Bastion on this map (`_v26_bastion`). What the map does not allow is left out: socket A1 (nodes at x -3500 above y -55 are 93-147 from the next fort up, clear 160; A2 takes its triggers, so only one anti-air machine gun), modules turbine4 and turbine4up (x -3465: 0 % / 45 % wind with the terrain), turbine5 (x -3590: 10 from the rock), socket D1 with heavy5 and mortars_off (nodes at y -438, ceiling -400). So three turbines (right 54-72 %, left 0 %) and three heavy weapons at most. `physics.py` with Vanilla's terrain: max stress 0.72, WEAK; not played yet.
 
 03.11.2026: regenerated with the metal-in-body rule (`fit_weapon_bodies`): only LinkT changed, out of the doors in

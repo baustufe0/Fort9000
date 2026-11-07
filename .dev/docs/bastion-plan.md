@@ -563,3 +563,7 @@ Test 12's 0.56, which I put down to `uraniumcannon>reactor:1`, fits the blast as
 - Many repeated inserts shift indices often → step 0.4 and the repeat tests.
 - Posture flapping → hysteresis, logged.
 - Determinism: only game state and `GetRandomInteger`, no wall-clock or `math.random` (replays, multiplayer).
+
+**Human match (06.11.2026, 22:18, Vanilla, T102 on Vanilla-8, drew beams, lost at 911 s, the player's reactor 0.98):** energy deadlock. `upgrades` waited for 6000 energy (after test 22); the upgrade centre stood at 660 s, 60 s after energy was last that high, and it stayed under 2200 to the end, with 3 plain turbines and metal at the 1500 cap. 8 laser and 7 firebeam shots, 13 `VOLLEY_HOLD`. The player had 4 upgraded turbines by 600 s and up to ~12000 energy. `turbine4` refused (`CS_UNSTABLE`), given up after 120 s. B1's sniper lost at 730 s, its rebuild refused (`CS_UNSTABLE`, sag 43). M1 and M2 both placed at the new spacing; A2 never triggered.
+
+**After that match:** turbine upgrades in three modules of their own (`turbine2a..c`), one at a time, from 1500 energy with `Afford`; so are `turbine4up` and `turbine5`. `upgrades` keeps 6000 and now holds only the two mines. A turbine upgrade costs 200 metal and 1000 energy and gives 22.5 energy/s, back in 44 s. To check: whether the upgrades now cut into the shots, the reason for the limit in test 22.

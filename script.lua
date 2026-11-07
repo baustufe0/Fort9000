@@ -31,8 +31,12 @@ local recLastSnap = -100000
 local recShots = { [1] = {}, [2] = {} }
 local recEnded = false
 
+-- On in the dev mod, off in the published mod (publish.py flips the LOGGING marker); Ctrl+Shift+L in a match switches it
+local recLogging = --[[LOGGING]] true
+local recStartLogged = false      -- the match's START line has been written
+
 local function RecLog(msg)
-	Log("[CREC] f=" .. tostring(recFrame) .. " " .. msg)
+	if recLogging then Log("[CREC] f=" .. tostring(recFrame) .. " " .. msg) end
 end
 
 local function RecSide(id)
@@ -72,6 +76,10 @@ local function RecBuildSide(teamId)
 end
 
 local function RecSnapshot()
+	if not recLogging then
+		recShots = { [1] = {}, [2] = {} }
+		return
+	end
 	for side = 1, 2 do
 		local devices = {}
 		local count = GetDeviceCountSide(side) or 0
@@ -114,7 +122,35 @@ end
 local function RecStart(restart)
 	if recStarted then return end
 	recStarted = true
+	recStartLogged = recLogging
 	RecLog("START v=" .. REC_VERSION .. (restart and " restart=1" or ""))
+end
+
+-- Sent through SendScriptEvent because only the event reaches the AI's scripts too; each game instance acts only on its
+-- own player's key press, so one player's logging never slows the others. Nothing here touches the game state.
+function Fort9000SetLogging(on, clientIndex)
+	if clientIndex ~= nil and clientIndex ~= GetLocalClientIndex() then return end
+	recLogging = on
+	if on and recStarted and not recStartLogged then
+		recStartLogged = true
+		RecLog("START v=" .. REC_VERSION)
+	end
+	Notice("FORT 9000 logging " .. (on and "on" or "off"))
+end
+
+local recCtrl, recShift = false, false
+local recPrevOnKey = OnKey
+function OnKey(key, down, fromReplay)
+	local handled = false
+	if recPrevOnKey then handled = recPrevOnKey(key, down, fromReplay) end
+	if key == "left control" or key == "right control" then
+		recCtrl = down
+	elseif key == "left shift" or key == "right shift" then
+		recShift = down
+	elseif key == "l" and down and recCtrl and recShift and not fromReplay and not IsConsoleActive() then
+		SendScriptEvent("Fort9000SetLogging", tostring(not recLogging) .. ", " .. GetLocalClientIndex(), "", false)
+	end
+	return handled
 end
 
 -- A restart ("RevertMap" in the log) rewinds the game to frame 2 without reloading this script: the frame jumps back
@@ -178,7 +214,7 @@ end
 local recPrevOnNodeCreated = OnNodeCreated
 function OnNodeCreated(nodeId, nodeTeamId, pos, isFoundation, selectable, extrusion)
 	if recPrevOnNodeCreated then recPrevOnNodeCreated(nodeId, nodeTeamId, pos, isFoundation, selectable, extrusion) end
-	if selectable == false or not RecBuildSide(nodeTeamId) then return end
+	if not recLogging or selectable == false or not RecBuildSide(nodeTeamId) then return end
 	local ok, err = pcall(function()
 		RecLog("NODE s=" .. RecSide(nodeTeamId) .. " t=" .. tostring(nodeTeamId) .. " n=" .. tostring(nodeId)
 			.. " p=" .. RecPos(pos) .. " g=" .. (isFoundation and "1" or "0"))
@@ -189,14 +225,14 @@ end
 local recPrevOnNodeDestroyed = OnNodeDestroyed
 function OnNodeDestroyed(nodeId, selectable)
 	if recPrevOnNodeDestroyed then recPrevOnNodeDestroyed(nodeId, selectable) end
-	if selectable == false then return end
+	if not recLogging or selectable == false then return end
 	RecLog("UNNODE n=" .. tostring(nodeId))
 end
 
 local recPrevOnLinkCreated = OnLinkCreated
 function OnLinkCreated(teamId, saveName, nodeA, nodeB, pos1, pos2, extrusion)
 	if recPrevOnLinkCreated then recPrevOnLinkCreated(teamId, saveName, nodeA, nodeB, pos1, pos2, extrusion) end
-	if not RecBuildSide(teamId) then return end
+	if not recLogging or not RecBuildSide(teamId) then return end
 	local ok, err = pcall(function()
 		RecLog("LINK s=" .. RecSide(teamId) .. " t=" .. tostring(teamId) .. " a=" .. tostring(nodeA) .. " b=" .. tostring(nodeB)
 			.. " m=" .. tostring(saveName) .. " pa=" .. RecPos(pos1) .. " pb=" .. RecPos(pos2))
@@ -207,7 +243,7 @@ end
 local recPrevOnLinkDestroyed = OnLinkDestroyed
 function OnLinkDestroyed(teamId, saveName, nodeA, nodeB, breakType)
 	if recPrevOnLinkDestroyed then recPrevOnLinkDestroyed(teamId, saveName, nodeA, nodeB, breakType) end
-	if not RecBuildSide(teamId) then return end
+	if not recLogging or not RecBuildSide(teamId) then return end
 	RecLog("UNLINK s=" .. RecSide(teamId) .. " t=" .. tostring(teamId) .. " a=" .. tostring(nodeA) .. " b=" .. tostring(nodeB)
 		.. " m=" .. tostring(saveName))
 end
@@ -215,7 +251,7 @@ end
 local recPrevOnDeviceCreated = OnDeviceCreated
 function OnDeviceCreated(teamId, deviceId, saveName, nodeA, nodeB, t, upgradedId)
 	if recPrevOnDeviceCreated then recPrevOnDeviceCreated(teamId, deviceId, saveName, nodeA, nodeB, t, upgradedId) end
-	if not RecBuildSide(teamId) then return end
+	if not recLogging or not RecBuildSide(teamId) then return end
 	local ok, err = pcall(function()
 		local lt = (type(t) == "number") and string.format("%.2f", t) or "-"
 		RecLog("DEV s=" .. RecSide(teamId) .. " t=" .. tostring(teamId) .. " i=" .. tostring(deviceId) .. " d=" .. tostring(saveName)
@@ -228,7 +264,7 @@ end
 local recPrevOnGroundDeviceCreated = OnGroundDeviceCreated
 function OnGroundDeviceCreated(teamId, deviceId, saveName, pos, upgrade)
 	if recPrevOnGroundDeviceCreated then recPrevOnGroundDeviceCreated(teamId, deviceId, saveName, pos, upgrade) end
-	if not RecBuildSide(teamId) then return end
+	if not recLogging or not RecBuildSide(teamId) then return end
 	local ok, err = pcall(function()
 		RecLog("GDEV s=" .. RecSide(teamId) .. " t=" .. tostring(teamId) .. " i=" .. tostring(deviceId) .. " d=" .. tostring(saveName)
 			.. " p=" .. RecPos(pos))
@@ -239,7 +275,7 @@ end
 local recPrevOnDeviceDeleted = OnDeviceDeleted
 function OnDeviceDeleted(teamId, deviceId, saveName, nodeA, nodeB, t)
 	if recPrevOnDeviceDeleted then recPrevOnDeviceDeleted(teamId, deviceId, saveName, nodeA, nodeB, t) end
-	if not RecBuildSide(teamId) then return end
+	if not recLogging or not RecBuildSide(teamId) then return end
 	RecLog("DEL s=" .. RecSide(teamId) .. " i=" .. tostring(deviceId) .. " d=" .. tostring(saveName)
 		.. " a=" .. tostring(nodeA) .. " b=" .. tostring(nodeB) .. " pa=" .. RecNodePos(nodeA) .. " pb=" .. RecNodePos(nodeB))
 end

@@ -12,6 +12,15 @@
 --------------------------------------------------------------------------------
 -- Load strategy (dofile is only allowed here, during initialisation)
 
+-- Logging: on in the dev mod, off in the published mod (publish.py flips the LOGGING marker). Ctrl+Shift+L in a match
+-- switches it (OnKey in script.lua sends the event below). Only the local log depends on it, never the game state, so
+-- players may differ without a desync. Keep calls to CAI_Log as they are: some arguments do real work.
+CAI_Logging = --[[LOGGING]] true
+
+function Fort9000SetLogging(on, clientIndex)
+	if clientIndex == nil or clientIndex == GetLocalClientIndex() then CAI_Logging = on end
+end
+
 -- The mod's own folder: the first of these that holds ai/strategy.lua. A Workshop subscriber has the mod only
 -- as mods/<PublishedFileId>/, so publish.py puts that folder in front at the WORKSHOP marker. Every player must
 -- load the same files, otherwise the AI state differs and multiplayer desyncs (Vanilla 2v2, 28.10.2026: the host
@@ -31,7 +40,7 @@ end
 
 local CAI_Defaults =
 {
-	Version = 0, TrainedGames = 0, LogDecisions = true, ThinkInterval = 5,
+	Version = 0, TrainedGames = 0, ThinkInterval = 5,
 	ThreatWeight = 30, ThreatHalf = 10, ThreatDecay = 0.85, ThreatPerShot = 1, ThreatPerHit = 3, ThreatPerReactorHit = 6,
 	EarlySeconds = 120, LateSeconds = 480,
 	Aggression = { Early = 0.85, Mid = 1.0, Late = 1.2 },
@@ -74,6 +83,10 @@ local CAI_Defaults =
 	-- 580 metal, while they waited for metal; test 7: restored at 285-385 s, 600 metal, while the
 	-- munitions plant waited)
 	FrontStrip = { Enabled = true, Below = 150, Until = 300, RestoreAbove = 800, RestoreHeavy = 2 },
+	-- BuildEnergyHold: these weapons hold fire while the plan's next device is short of energy only, so shots cannot starve the
+	-- fort's building (2v6-3, match 07.11.2026: EMP rockets at 800 a shot, the upgrade centre's 3000 never saved up, no turbine
+	-- planned before it: build stood at 188 of 342 for 340 s with metal at its cap). MaxHold, then Free seconds of fire
+	BuildEnergyHold = { Enabled = true, Types = { rocket = true, rocketemp = true }, MaxHold = 90, Free = 30 },
 	-- SocketVolley (plans with FortSockets, instead of Fire.Volley; the player, test 7): the heavy weapons fire together at
 	-- one spot. MaxHold: seconds a ready weapon waits for the others and for the energy; then as many as can be paid fire
 	-- together. While the group waits only for energy, other offensive weapons but the sniper hold fire (SaveEnergy).
@@ -177,7 +190,7 @@ if Strategy.TargetValue.Small == nil then Strategy.TargetValue.Small = {} end
 CAI_Plan = { maps = {}, done = false, notes = {} }
 
 local function CAI_PlanNote(msg)
-	Log("[CAI] T" .. tostring(teamId) .. " " .. msg)
+	if CAI_Logging then Log("[CAI] T" .. tostring(teamId) .. " " .. msg) end
 end
 
 -- Direct access to the plan variables (rawget/rawset do not exist in Forts)
@@ -244,7 +257,7 @@ local function CAI_PreloadPlans()
 		CAI_Plan.maps[mapName] = entry
 		table.insert(summary, mapName .. ":" .. count .. "/" .. #entry.sigs)
 	end
-	Log("[CAI] PLAN-PRELOAD " .. table.concat(summary, " ") .. " (custom/original)")
+	if CAI_Logging then Log("[CAI] PLAN-PRELOAD " .. table.concat(summary, " ") .. " (custom/original)") end
 end
 
 local okPre, errPre = pcall(CAI_PreloadPlans)
@@ -458,7 +471,7 @@ end
 -- Helper functions
 
 function CAI_Log(msg)
-	if Strategy.LogDecisions then
+	if CAI_Logging then
 		Log("[CAI] T" .. tostring(teamId) .. " " .. tostring(msg))
 	end
 end
@@ -786,6 +799,12 @@ function TryFireGun(id, useGroup)
 		end
 	end
 	if hold then return end
+	local okB, resB = pcall(CAI_BuildHoldsFire, id)
+	if not okB then
+		CAI_Log("ERROR build hold: " .. tostring(resB))
+	elseif resB then
+		return
+	end
 	local res = CAI_BaseTryFireGun(id, useGroup)
 	local ok, err = pcall(CAI_RetireShot, id)
 	if not ok then CAI_Log("ERROR retire: " .. tostring(err)) end
@@ -1242,7 +1261,7 @@ local function CAI_DestroyOnPlatform(team, a, b)
 end
 
 local function CAI_NoteBuildError(kind, what, a, b, r)
-	if data.CAI == nil or data.HumanAssist then return end
+	if not CAI_Logging or data.CAI == nil or data.HumanAssist then return end
 	local key = kind .. ":" .. tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b) .. ":" .. tostring(r)
 	if CAI_BuildErrSeen[key] or CAI_BuildErrCount >= 200 then return end
 	CAI_BuildErrSeen[key] = true
@@ -1308,7 +1327,7 @@ CAI_SHAPE_PER_LINE = 25
 CAI_ShapeCount = 0
 
 function CAI_LogShape(why)
-	if data.CAI == nil or data.HumanAssist or CAI_ShapeCount >= CAI_SHAPE_MAX then return end
+	if not CAI_Logging or data.CAI == nil or data.HumanAssist or CAI_ShapeCount >= CAI_SHAPE_MAX then return end
 	if CAI_PlanPos == nil then CAI_BuildPlanIndex() end
 	local items = {}
 	for orig, act in pairs(data.OriginalToActual or {}) do
@@ -1357,7 +1376,7 @@ function CAI_EnumStress(nodeA, nodeB, saveName, relativeHealth, stress, segments
 end
 
 function CAI_LogStress(what, a, b)
-	if type(EnumerateLinks) ~= "function" or CAI_StressCount >= CAI_STRESS_MAX then return end
+	if not CAI_Logging or type(EnumerateLinks) ~= "function" or CAI_StressCount >= CAI_STRESS_MAX then return end
 	CAI_StressCount = CAI_StressCount + 1
 	local toOrig = {}
 	for orig, act in pairs(data.OriginalToActual or {}) do toOrig[act] = orig end
@@ -1388,7 +1407,7 @@ function CAI_LogStress(what, a, b)
 end
 
 local function CAI_NoteUnstable(what, a, b)
-	if data.CAI == nil or data.HumanAssist then return end
+	if not CAI_Logging or data.CAI == nil or data.HumanAssist then return end
 	local key = tostring(what) .. ":" .. tostring(a) .. ":" .. tostring(b)
 	local n = (CAI_UnstableCount[key] or 0) + 1
 	if n > 3 then return end                 -- three samples per device and place are enough
@@ -2162,7 +2181,7 @@ function CAI_HeavyCount(builtOnly)
 	local side, n = CAI_Side(teamId), 0
 	for i = 0, GetDeviceCountSide(side) - 1 do
 		local id = GetDeviceIdSide(side, i)
-		if CAI_Defaults.SocketVolley.EnergyShot[GetDeviceType(id)]
+		if CAI_Defaults.SocketVolley.EnergyShot[GetDeviceType(id)] and CAI_IsOwnDevice(id)
 			and (not builtOnly or type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) then
 			n = n + 1
 		end
@@ -2201,9 +2220,12 @@ function CAI_StorageShort()
 	local side = CAI_Side(teamId)
 	local need, batteries = 0, 0
 	for i = 0, GetDeviceCountSide(side) - 1 do
-		local t = GetDeviceType(GetDeviceIdSide(side, i))
-		need = need + (v.EnergyShot[t] or 0)
-		if t == "battery" then batteries = batteries + 1 end
+		local id = GetDeviceIdSide(side, i)
+		if CAI_IsOwnDevice(id) then
+			local t = GetDeviceType(id)
+			need = need + (v.EnergyShot[t] or 0)
+			if t == "battery" then batteries = batteries + 1 end
+		end
 	end
 	return need > 0 and need + v.Margin > v.BaseStorage + v.Battery * batteries
 end
@@ -2542,7 +2564,7 @@ function Load(gameStart)
 	if not okX then Log("[CAI] ERROR modules: " .. tostring(errX)) end
 	-- Assist AI on the side of a human player (e.g. anti-air assistant): do not touch
 	if data.HumanAssist then
-		Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT 9000 AI inactive (assist AI of a player)")
+		CAI_PlanNote("ASSIST FORT 9000 AI inactive (assist AI of a player)")
 		return
 	end
 	local ok, err = pcall(CAI_Init)
@@ -2581,7 +2603,7 @@ function EnableHumanAssist()
 	data.HeavyArmsPrioritiesOverride = nil
 	data.SmallArmsPrioritiesOverride = nil
 	if CAI_BaseEnableHumanAssist then CAI_BaseEnableHumanAssist() end
-	Log("[CAI] T" .. tostring(teamId) .. " ASSIST FORT 9000 AI inactive (assist AI of a player)")
+	CAI_PlanNote("ASSIST FORT 9000 AI inactive (assist AI of a player)")
 end
 
 local CAI_BaseOnWeaponFired = OnWeaponFired
@@ -2815,6 +2837,13 @@ function CAI_SniperTarget(weaponId, weaponPos, sideDevices)
 	return nil
 end
 
+-- A device of this AI's own team, not an ally's: the side's list holds all its teams, and the game asks each team for its own
+-- plant (2v6, 06.11.2026: T502 drew beams, took T302's munitions plant for its own, was refused the cannon and the 20mm with
+-- CS_PREQUISITENOTMET and never got a heavy weapon)
+function CAI_IsOwnDevice(id)
+	return type(GetDeviceTeamIdActual) ~= "function" or GetDeviceTeamIdActual(id) == teamId
+end
+
 -- own devices by type (game state, deterministic); builtOnly: only those fully built (a factory under construction does
 -- not allow a laser yet: the rebuild would wait for it with the socket empty)
 function CAI_OwnDevices(builtOnly)
@@ -2822,7 +2851,7 @@ function CAI_OwnDevices(builtOnly)
 	for i = 0, GetDeviceCountSide(side) - 1 do
 		local id = GetDeviceIdSide(side, i)
 		local t = GetDeviceType(id)
-		if t and (not builtOnly or type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) then
+		if t and CAI_IsOwnDevice(id) and (not builtOnly or type(IsDeviceFullyBuilt) ~= "function" or IsDeviceFullyBuilt(id)) then
 			count[t] = (count[t] or 0) + 1
 		end
 	end
@@ -3096,6 +3125,48 @@ function CAI_StripNode(x, y)
 	return best
 end
 
+-- See CAI_Defaults.BuildEnergyHold. Log: BUILD_HOLD on/off
+function CAI_BuildHoldsFire(id)
+	local st, cfg = data.CAI, Strategy.BuildEnergyHold or CAI_Defaults.BuildEnergyHold
+	if st == nil or not (cfg and cfg.Enabled) or not cfg.Types[GetDeviceType(id)] or type(GetDeviceCost) ~= "function" then return false end
+	local a = Fort and type(data.fortIndex) == "number" and Fort[data.fortIndex]
+	local res = GetTeamResources(teamId)
+	local short = false
+	if a and a.DeviceSaveName and (type(res) == "table" or type(res) == "userdata") then
+		local ok, c = pcall(GetDeviceCost, a.DeviceSaveName)
+		short = ok and c and (res.energy or 0) < (c.energy or 0) and (res.metal or 0) >= 0.8 * (c.metal or 0)
+	end
+	local now = st.fireClock or 0
+	if not short then
+		if st.buildHoldSince then CAI_Log("BUILD_HOLD off") end
+		st.buildHoldSince = nil
+		return false
+	end
+	if st.buildHoldSince == nil then
+		st.buildHoldSince = now
+		CAI_Log("BUILD_HOLD on for=" .. tostring(a.DeviceSaveName) .. " m=" .. CAI_Round(res.metal or 0) .. " e=" .. CAI_Round(res.energy or 0))
+	end
+	local held = now - st.buildHoldSince
+	if held >= cfg.MaxHold + cfg.Free then
+		st.buildHoldSince = now
+		held = 0
+	end
+	return held < cfg.MaxHold
+end
+
+-- RestoreHeavy, but no more heavy weapons than a plan without sockets ever builds: a rocket plan would stay wood for good
+function CAI_StripRestoreHeavy(st, cfg)
+	if st.sockets ~= nil then return cfg.RestoreHeavy end
+	if st.stripHeavy == nil then
+		local n = 0
+		for _, a in ipairs(Fort or {}) do
+			if CAI_Defaults.SocketVolley.EnergyShot[a.DeviceSaveName] then n = n + 1 end
+		end
+		st.stripHeavy = math.min(cfg.RestoreHeavy, n)
+	end
+	return st.stripHeavy
+end
+
 function CAI_FrontStrip(elapsed)
 	local st = data.CAI
 	local cfg = Strategy.FrontStrip or CAI_Defaults.FrontStrip
@@ -3131,7 +3202,7 @@ function CAI_FrontStrip(elapsed)
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == nil and metal() < cfg.Below and swap(i, "bracing") then st.strip[i] = "wood" end
 		end
-	elseif metal() >= cfg.RestoreAbove and CAI_HeavyCount(true) >= cfg.RestoreHeavy then
+	elseif metal() >= cfg.RestoreAbove and CAI_HeavyCount(true) >= CAI_StripRestoreHeavy(st, cfg) then
 		for i = 1, #CAI_Plan.strip do
 			if st.strip[i] == "wood" then
 				-- refused (test 7: result -4, that strut stayed wood): again next step
@@ -3168,7 +3239,7 @@ end
 
 function CAI_LogCombat(elapsed)
 	local st = data.CAI
-	if st == nil or st.sockets == nil then return end
+	if not CAI_Logging or st == nil or st.sockets == nil then return end
 	local cfg = Strategy.CombatLog or CAI_Defaults.CombatLog
 	if elapsed < (st.nextCombatLog or cfg.Every) then return end
 	st.nextCombatLog = elapsed + cfg.Every

@@ -275,6 +275,8 @@ MAPS["Vanilla2v6"] = dict(MAPS["Vanilla"], **{
     # holds a weapon, its starting machine gun fires at y ~-535 (the player, 30.10.2026): no node above -400, no device
     # box above -450 (first -250 / -300, below the next fort's rock)
     "ceiling": {"nodes": -400, "devices": -450},
+    # degrees down and up a direct weapon must be able to aim on this staircase (.dev/docs/maps/2v6-vanilla.md); rules.check_plan warns
+    "aim": (18, 18),
     # nodes (not foundations) at least this far from the rock of every spot (the game refused one 2 from it)
     "rock_clear": 15,
     # the next fort up, in this fort's plan frame: shifted 900 back and 1000 up (shift), any plan on any spot. The game
@@ -1436,6 +1438,10 @@ _V8_HUB3_NODE = (-3149, 532)
 _V8_HUB3 = [((-3096.14, 502.53), _V8_HUB3_NODE, "backbracing")] + [
     (_V8_HUB3_NODE, q, "backbracing") for q in ((-3200.0, 503.0), (-3100.0, 700.0), (-3200.0, 700.0),
                                                 (-3094.27, 403.43), (-3200.0, 405.0))]
+# What the fort's wind may start from. 6000 (after test 22, to leave the energy to the shots) locked it out: in the human match of
+# 06.11.2026 the upgrade centre stood at 660 s, energy stayed under 2200 from then to the end, with 3 plain turbines and metal at its
+# 1500 cap. A turbine upgrade costs 200 metal and 1000 energy and gives 22.5 energy/s, back in 44 s; a new turbine 800 and 45/s.
+_V8_WIND_ENERGY = 1500
 VANILLA_VARIANTS["bastion"] = {
     "title": "Bastion: one direct-fire socket per storey at the front door, turbine storey, mortar nest on top",
     "shape": _union(_V_BACK, _box(-3500, -2945, -185, 205), _box(-3500, -2945, -315, -185)),
@@ -1464,17 +1470,18 @@ VANILLA_VARIANTS["bastion"] = {
             # of metal (the player, 06.11.2026); the storey's front door stops the snipers (range 6000: ~64
             # degrees, 33 forward at the roof). The two front cells stay free for a heavy weapon: its body reaches well behind its
             # strut point, a mortar in the next cell took its place (the player, 06.11.2026; tests 10-13), no mortar has to be sold.
-            # 95 apart (MORTAR_SPACING 90), slid back to leave room for socket A2 in front of them
-            "mortar_slots": [((-3400, -185), (-3300, -185), 0.3), ((-3300, -185), (-3200, -185), 0.25)],
+            # 90 apart (MORTAR_SPACING), slid back to leave room for socket A2 in front of them (rules.DEVICE_CLEARANCE: at
+            # 85 from M2 and 4 clear of C1's cannon the second of them was refused, 5 of 5, matches 06.11.2026)
+            "mortar_slots": [((-3400, -185), (-3300, -185), 0.25), ((-3300, -185), (-3200, -185), 0.15)],
             # sockets A1 behind and A2 in front of the mortars: anti-air machine guns against the enemy's shells (the player,
             # 06.11.2026; test 2: no anti-air place, the player's mortars and heavy mortars took the fort down). They fire up
-            # through a background roof. A2 at 0.1: 85 from M2, its box clear of a cannon in C1
+            # through a background roof. A2 at 0.03: 88 from M2, 9 clear of a cannon in C1
             "bg_roof_cells": [(-3500, -185), (-3200, -185)],
             # the munitions plant's box (module munitions, floor 602, 170 high) reaches into the cell above
             "bg_diag_cells": [(-3400, 503)], "bg_struts": [((-3400, 503), (-3300, 503))],
             # B1's cell is 148 wide, B2's 155: at 0.16 a cannon's body keeps clear of B1's door as well (the player, 05.11.2026)
             "weapon_cells": [(-3100, 205, "sniper", 0.16), (-3100, 75, "cannon20mm", 0.18), (-3100, -185, "cannon20mm", 0.18),
-                             (-3500, -185, "machinegun", 0.5), (-3200, -185, "machinegun", 0.1)],
+                             (-3500, -185, "machinegun", 0.3), (-3200, -185, "machinegun", 0.03)],
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
@@ -1602,12 +1609,12 @@ VANILLA_VARIANTS["bastion"] = {
          "plan": [("eco", ["turbine"]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing")])]},
         {"name": "turbine4up", "after": 17, "cfg": {"prereq": {}},
-         "trigger": {"after": "turbine4", "time": 1, "built": "upgrade", "afford": True, "energy_above": 6000},
+         "trigger": {"after": "turbine4", "time": 1, "built": "upgrade", "afford": True, "energy_above": _V8_WIND_ENERGY},
          "plan": [("device_on", [((-3300, -55), (-3200, -55), 0.35, "turbine2")])]},
         # behind the others (the player, test 8: on the storey below there was not enough wind): one more cell at the back
         # of the turbine storey, hung on the storey's end, in the background but for its floor
         {"name": "turbine5", "after": 17, "cfg": {"prereq": {}},
-         "trigger": {"after": "turbine4", "heavy": 2, "built": "upgrade", "afford": True, "energy_above": 6000},
+         "trigger": {"after": "turbine4", "heavy": 2, "built": "upgrade", "afford": True, "energy_above": _V8_WIND_ENERGY},
          "plan": [("build", [(-3500, -55)]),
                   ("struts", [((-3500, -55), (-3500, -185), "backbracing"), ((-3400, -185), (-3500, -55), "backbracing"),
                               ((-3500, -55), (-3590, -55), "bracing"),
@@ -1626,7 +1633,7 @@ VANILLA_VARIANTS["bastion"] = {
         # laser is 101 high and fits under the reactor's floor. 1000 metal: only with the second store
         {"name": "heavy3", "socket": "B3", "loadout": "laser", "after": 17,
          "trigger": {"after": "factory", "surplus": {"metal": 1000, "energy": 6000, "seconds": 20}},
-         "cfg": {"weapon_struts": [((-3094.27, 403.43), (-2993.3, 407.38), 0.4, "laser")],
+         "cfg": {"weapon_struts": [((-3094.27, 403.43), (-2993.3, 407.38), 0.45, "laser")],
                  "prereq": {}},     # module factory builds its tech; the socket's Needs make the AI wait for it
          "plan": [("struts", [((-2993.3, 407.38), (-2943.08, 312.08), "backbracing"),
                               ((-2892.17, 411.07), (-2943.08, 312.08), "door"),
@@ -1641,8 +1648,19 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "upgrade_b", "after": 15, "trigger": {"drawn": "beams", "time": 1, "heavy_done": True, "afford": True},
          "plan": [("build", [(-3400, 700), (-3400, 602), (-3300, 700), (-3300, 602)]),
                   ("device_on", [((-3400, 602), (-3300, 602), 0.49, "upgrade")])]},
+        # The turbines one at a time, before the mines: more wind is what lets the fort reach any energy limit at all. Each names
+        # its strut: an "upgrades" step knows only its own module, so all three would pick the first turbine
+        {"name": "turbine2a", "after": 15, "cfg": {"prereq": {}},
+         "trigger": {"time": 1, "built": "upgrade", "afford": True, "energy_above": _V8_WIND_ENERGY},
+         "plan": [("device_on", [((-3200, -55), (-3100, -55), 0.35, "turbine2")])]},
+        {"name": "turbine2b", "after": 15, "cfg": {"prereq": {}},
+         "trigger": {"after": "turbine2a", "time": 1, "built": "upgrade", "afford": True, "energy_above": _V8_WIND_ENERGY},
+         "plan": [("device_on", [((-3400, -55), (-3300, -55), 0.35, "turbine2")])]},
+        {"name": "turbine2c", "after": 15, "cfg": {"prereq": {}},
+         "trigger": {"after": "turbine2b", "time": 1, "built": "upgrade", "afford": True, "energy_above": _V8_WIND_ENERGY},
+         "plan": [("device_on", [((-3500, -55), (-3400, -55), 0.35, "turbine2")])]},
         {"name": "upgrades", "after": 15, "cfg": {"prereq": {}}, "trigger": {"time": 1, "built": "upgrade", "energy_above": 6000},
-         "plan": [("upgrades", ["mine2", "mine2", "turbine2", "turbine2", "turbine2"])]},
+         "plan": [("upgrades", ["mine2", "mine2"])]},
         # the first heavy weapon in C1, as soon as a plant stands, with its second door; nothing is sold. The ties back from the door post stay from test 11
         {"name": "heavy1", "socket": "C1", "loadout": "cannon20mm", "after": 17, "replace": True,
          "trigger": {"tech": True, "afford": True}, "cfg": {"prereq": {}},
@@ -1726,6 +1744,9 @@ _V26_LONG_BRACE = ("struts", [((-2996, 504), (-2900, 700), "backbracing")])
 # starting fort's front post (floor 80 here, 105 on Vanilla: snipers refused there in every match), which takes a
 # machine gun instead.
 _V26_BLOCK = _union(_box(-3400, -2945, -305, 205), _V26_BACK)
+# The starting fort's front beam under a sniper in the block's lowest front cell, background: solid, it stopped the shots aimed
+# down (match 06.11.2026: 76 of 83 rays on T602, 37 of 44 on T201). The sniper cannot go forward, its barrel would reach the door.
+_V26_OPEN_BEAM = ("struts", [((-2945.11, 206.49), (-2846.18, 203.99), "backbracing")])
 _V26_BLOCK_CFG = dict(_V_HIGH_CFG, **_V26_WIND_CFG)
 _V26_BLOCK_CFG.update(rows=_V26_ROWS, large_top_min=-45, large_top_max=80,
                       hidden_box=[(-3400, -2945, -305, -175)], roof_weapon_cells=[(-3100, -305)],
@@ -1778,13 +1799,38 @@ VANILLA2V6_VARIANTS = {
             ("defence", ["woodspam"]),
         ],
     },
-    # 2v6-2: two cannons one above the other behind their lanes, the sniper (-> AP sniper) in the third front cell
+    # 2v6-2: the cannon on top in Bastion's C1 (LinkT 0.18, second door at x -2895), 520 from the reactor: a lost cannon took
+    # the reactor from 194 and 295 (the player, 06.11.2026), Bastion's reactor outlived C1's cannon. Only that row clears the
+    # blast's 400, so the second heavy weapon is a 20mm in Bastion's B2. Every weapon in a front cell: behind a lane the
+    # floor stopped the shots (match 06.11.2026: 0 cannon shots, the map needs about 18 degrees up and down). The anti-air
+    # gun under cover one cell behind the cannon, at Bastion's A2 place it was refused (CS_UNSTABLE, 2 of 2 forts, match
+    # 06.11.2026), the turbine storey below the cannon's, no door at its height.
     "cannons": {
-        "title": "Sniper -> AP sniper over two cannons in a low block, turbines in a fortified storey (2v6)",
-        "shape": _V26_BLOCK,
-        "roof_weapons": {"machinegun"},
-        "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5), (-3200, 80, 0.5)],
-                    weapon_cells=[(-3100, -45, "sniper", 0.28)]),
+        "title": "Sniper -> AP sniper and 20mm in the front cells, cannon on top away from the reactor, turbines in a fortified storey (2v6)",
+        # The two lower weapons in the cell behind the prow, their doors on its front: rules.aim_window 8/11 and 6/13 at the block's
+        # front (the floor runs on past them, T402 and T602 stopped on armour 39 of 52, 42 of 51 attempts, match 07.11.2026)
+        "shape": _union(_box(-3400, -2945, -185, 205), _box(-3300, -2945, -315, -185), _V26_BACK, _box(-2945, -2845, -55, 205)),
+        # The sniper one row up: in the row over the starting fort the prow stops shots aimed down (match 07.11.2026: T202 fired 0
+        # of 86 attempts, its rays ended at x -2860). The 20mm takes that row, and its 139 from the reactor: 100 falling off with
+        # distance, about 65 (Bastion's test: 57 from a 20mm at 240 and a cannon at 495), the reactor has 100
+        "cfg": dict(_V26_BLOCK_CFG, rows=[-315, -185, -55, 75, 205, 308, 405, 503, 602, 700],
+                    turbine_floor_y=-55, split_cell=[(-3100, -185)], sandbag_slots=[(0, "floor", 0.5), (0, "mid", 0.5)],
+                    tower_connect={"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
+                    hidden_box=[(-3400, -2945, -185, -55), (-3300, -3100, -315, -185)], roof_weapon_cells=[], large_cells=[],
+                    bg_roof_cells=[(-3300, -185), (-3200, -185)], crossbrace_keep=[(-3400, -2945, -185, 700)],
+                    door_layer_floor="backbracing",
+                    split_doors=True, door_layers=2, door_brace_front=True, door_layers_late=True, door_layer_reach=60,
+                    door_split_skip=(-185,), door_layer_skip=[(-2945, -185), (-2895, -185)],
+                    # under the row's door background bracing: armour there stops the shots aimed down from the row above
+                    door_posts=[(-2845, -55, 75), (-2845, 75, 204)], door_aim_up=18, door_layer_tie=False,
+                    door_rest=[((-2845, -55, 75), "backbracing"), ((-2845, 75, 204), "backbracing")],
+                    bg_diag_cells=[(-2945, 75)], bg_struts=[((-2945, 75), (-2845, 75)), ((-2945, -55), (-2845, -55)), ((-2945.11, 206.49), (-2846.18, 203.99))],
+                    weapon_struts=[((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")],
+                    # the prow's woodspam in the background: solid, its floor stops the 20mm's shots aimed down
+                    woodspam=[{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": []},
+                              _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
+                    weapon_cells=[(-3100, 75, "sniper", 0.7),
+                                  (-3100, -185, "cannon", 0.18), (-3300, -185, "machinegun", 0.5)]),
         "plan": [
             ("eco", ["rebrace"]),
             ("tech", ["workshop"]),
@@ -1792,12 +1838,21 @@ VANILLA2V6_VARIANTS = {
             # the two storeys below come with it), then the cannon (the player, 30.10.2026; with the sniper before the
             # munitions plant the sniper came at ~177 s, the munitions plant at ~257 s, the first cannon at ~350 s)
             ("tech", ["munitions"]),
+            # the prow's cell before the sniper: its door stands on the cell's front (2v6-5, match 07.11.2026: door about 200 actions after the
+            # sniper, T202 placed it 7 times in 141 s)
+            ("build", [(-2945, 205), (-2945, 75)]),
             ("weapons", ["sniper"]),
+            _V26_OPEN_BEAM,
             ("eco", ["mine", "battery"]),
-            ("weapons", ["cannon"]),
-            ("eco", ["turbine"]),
+            # the sandbags before the first turbine, else a player snipes it (the player, 06.11.2026)
             ("defence", ["sandbags", "sandbags"]),
-            ("aa", ["machinegun"]),
+            ("eco", ["turbine"]),
+            ("weapons", ["cannon"]),
+            # its second door; below it background bracing: an armour floor out here would stop shots aimed down
+            ("struts", [((-2945, -185), (-2895, -185), "backbracing"), ((-2945, -315), (-2895, -315), "armour"),
+                        ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
+            ("build", [(-3300, -185, "machinegun")]),
+            ("weapons", ["machinegun"]),
             ("eco", ["mine"]),
             ("defence", ["woodspam:1", "woodspam:2"]),
             ("eco", ["turbine"]),
@@ -1805,7 +1860,7 @@ VANILLA2V6_VARIANTS = {
             ("tech", ["upgrade"]),
             ("eco", ["store", "battery"]),
             ("upgrades", ["sniper2"]),
-            ("weapons", ["cannon"]),
+            ("weapons", ["cannon20mm"]),
             ("upgrades", ["turbine2", "turbine2"]),
             ("defence", ["woodspam"]),
             ("upgrades", ["minigun"]),
@@ -1813,7 +1868,10 @@ VANILLA2V6_VARIANTS = {
             ("defence", ["woodspam"]),
         ],
     },
-    # 2v6-3, rocket rush: three EMP rockets (-> rockets) one above the other in the front cells. No smoke launcher: it
+    # 2v6-3, rocket rush: three EMP rockets (-> rockets) one above the other in the front cells: the lower two in the prow cells
+    # right behind their doors (the player, 07.11.2026: from the cell behind the prow they have no angle on the other forts, and the
+    # prow's diagonal stood in the middle one's way, rules.aim_window 0 and 0; rays on their own fort, matches 06.11. and 07.11.),
+    # that diagonal and the prow's roof in the background. No smoke launcher: it
     # needs a storey of its own row with a door roof (box ~127): the wind storey's row is the turbines'; the rockets then
     # fire without waiting for smoke (Fire.SmokeCover)
     "rockets": {
@@ -1822,27 +1880,31 @@ VANILLA2V6_VARIANTS = {
         "tech_slots": _V26["rockets"]["tech_slots"],
         "roof_weapons": {"machinegun"},
         "cfg": dict(_V26_LOW_CFG,
-                    weapon_cells=[(-3100, 205, "rocketemp", 0.7), (-3100, 80, "rocketemp", 0.7),
-                                  (-3100, -45, "rocketemp", 0.7)]),
+                    # the lowest on the starting fort's front beam, a strut of its own: no grid cell stands on it
+                    # 0.47: at 0.49 its body clears the door by exactly 10, on the long fort's nodes (about 1 apart) not at all
+                    weapon_struts=[((-2945.11, 206.49), (-2846.18, 203.99), 0.47, "rocketemp")],
+                    weapon_cells=[(-2945, 80, "rocketemp", 0.5), (-3100, -45, "rocketemp", 0.7)],
+                    bg_diag_cells=[(-2945, 80)], bg_struts=[((-2945, -45), (-2845, -45))]),
         "plan": [
             ("tech", ["armoury"]),
             ("eco", ["mine"]),
-            _V26_LONG_BRACE,
             ("weapons", ["rocketemp", "rocketemp"]),
-            ("build", [(-2945, 205), (-2945, 80)]),
-            # the upgrade centre right after the EMP rockets (match 30.10.2026: placed at 270-392 s behind the third
-            # rocket, a turbine and two mines, so the rockets came late or never), the turbine while it builds
-            ("tech", ["upgrade"]),
+            # wind before the upgrade centre: with a line of fire the EMP rockets shoot (800 energy each), the centre's 3000 never
+            # came together and nothing stood behind it to bring energy (match 07.11.2026: build stood at 188 of 342). The long
+            # brace gone: the game always refuses it (CS_NODESTOOFAR), and while it waits in the rebuild queue the clock that
+            # skips a stuck action stands still
             ("eco", ["turbine"]),
             # the sandbags right after the first turbine, else a player snipes it (the player, 06.11.2026)
             ("defence", ["sandbags", "sandbags"]),
+            ("eco", ["turbine"]),
+            ("tech", ["upgrade"]),
             ("upgrades", ["rocket", "rocket"]),
             ("eco", ["mine", "mine"]),
             ("weapons", ["rocketemp"]),
             ("upgrades", ["rocket"]),
             ("aa", ["machinegun"]),
             ("defence", ["woodspam"]),
-            ("eco", ["turbine", "turbine"]),
+            ("eco", ["turbine"]),
             ("eco", ["battery", "store"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
             ("eco", ["battery"]),
@@ -1851,21 +1913,30 @@ VANILLA2V6_VARIANTS = {
             ("defence", ["woodspam"]),
         ],
     },
-    # 2v6-4, sniper and laser rush: the laser behind the deck's lane (factory on its proven slot, the upgrade centre one
+    # 2v6-4, sniper and laser rush: the laser in the prow cell on the starting fort's front beam, between the block's front
+    # and the door (behind the deck's lane the floor stopped its shots: match 06.11.2026, 7 shots from 5 lasers, on the
+    # higher forts the ray ended on its own floor; about 5 degrees down there, about 17 here, the map needs up to 18; the
+    # laser has no blast, so the reactor below is safe) (factory on its proven slot, the upgrade centre one
     # strut behind the munitions slot: beside the factory their boxes overlapped; at LinkT 0.9, 34 clear of the
     # factory's box, so its own box stays out of the column x -3600..-3500 at the rock, where it hung in the open),
     # anti-air (machine gun -> minigun) in the front cell above it, the sniper (-> AP sniper) in the third front cell
     "laser": {
-        "title": "Sniper and laser rush: laser behind the deck lane, anti-air and sniper above, fortified turbine storey, firebeam in front (2v6)",
-        "shape": _V26_BLOCK,
+        "title": "Sniper and laser rush: laser at the deck's front door, anti-air and sniper above, fortified turbine storey, firebeam in front (2v6)",
+        # the sniper to the deck above the laser, its door on the prow's front (12/12 at the block's front, third storey), the anti-air
+        # gun in the third storey: it fires up, the door's place does not matter to it
+        "shape": _union(_V26_BLOCK, _box(-2945, -2845, -45, 205)),
         "tech_slots": {"upgrade": [((-3500, 602), (-3400, 602), 0.9)]},
-        "cfg": dict(_V26_BLOCK_CFG, large_cells=[(-3200, 205, 0.5)],
-                    weapon_cells=[(-3100, -45, "sniper", 0.28), (-3100, 80, "machinegun", 0.7)],
+        "cfg": dict(_V26_BLOCK_CFG, large_cells=[],
+                    weapon_cells=[(-2945, 205, "laser", 0.5), (-3100, 80, "sniper", 0.7), (-3100, -45, "machinegun", 0.7)],
+                    door_layer_skip=[(-2845, 205), (-2795, 80), (-2795, 204), (-2845, 80)], door_layer_floor="backbracing",
+                    door_posts=[(-2845, -45, 80), (-2795, 80, 204)],
+                    door_rest=[((-2845, -45, 80), "backbracing"), ((-2795, 80, 204), "backbracing")],
+                    bg_diag_cells=[(-2945, 80)], bg_struts=[((-2945, 80), (-2845, 80)), ((-2945, -45), (-2845, -45))],
                     roof_weapon_cells=[],
                     # the firebeam in front of the fort: a cell on the mine-row woodspam (x -2812..-2692, y ~497..602),
                     # its own row (602: the starting fort's machine gun stands at 505, the laser at 205); the mine row
                     # in one 120-wide layer so its top strut carries the firebeam (50 to each side of its LinkT point)
-                    woodspam=[_V26_BLOCK_CFG["woodspam"][0], _V_LOWER_FACE_WS,
+                    woodspam=[dict(_V26_BLOCK_CFG["woodspam"][0], rows=[-45, 80]), _V_LOWER_FACE_WS,
                               dict(_V_MINE_ROW_WS, layers=[-2692])],
                     weapon_struts=[((-2812, 602), (-2692, 602), 0.45, "firebeam")]),
         "plan": [
@@ -1875,11 +1946,17 @@ VANILLA2V6_VARIANTS = {
             ("tech", ["factory"]),
             # the sniper while the factory builds (it stands in the third storey; the player, 30.10.2026: tech, then
             # sniper, then the main weapon; first in the plan it held the factory back to ~268 s, the laser to ~371 s)
+            # the prow's cell before the sniper: its door stands on the cell's front (2v6-5, match 07.11.2026: door about 200 actions after the
+            # sniper, T202 placed it 7 times in 141 s)
+            ("build", [(-2945, 205), (-2945, 80)]),
             ("weapons", ["sniper"]),
             # the laser costs 1000 metal / 6000 energy, more than both caps (900 / 5000): a store and a battery first
             # (match 30.10.2026: with the battery after the laser the fort sat at 1200 / 5000 from 185 s to the end)
             ("eco", ["mine", "store", "battery"]),
             ("weapons", ["laser"]),
+            # the second door; below it background bracing: a solid floor out here would stop shots aimed down again
+            ("struts", [((-2845, 80), (-2795, 80), "backbracing"), ((-2846.18, 203.99), (-2795, 204), "backbracing"),
+                        ((-2795, 80), (-2795, 204), "door"), ((-2845, 80), (-2795, 204), "backbracing")]),
             ("eco", ["turbine"]),
             ("defence", ["sandbags", "sandbags"]),
             ("eco", ["mine"]),
@@ -1916,11 +1993,41 @@ VANILLA2V6_VARIANTS = {
 def _v26_bastion():
     v = dict(VANILLA_VARIANTS["bastion"])
     v["title"] = "Bastion on the 2v6 map: sockets at the front doors, turbine storey, mortar nest on top, one anti-air socket"
-    v["shape"] = _union(_V_BACK, _box(-3500, -2945, -55, 205), _box(-3400, -2945, -315, -55))
-    v["cfg"] = dict(v["cfg"], hidden_box=(-3400, -2945, -185, -55), bg_roof_cells=[(-3200, -185)],
+    # the back block to x -3500 as on the map's other plans: T202 was refused the node (-3600,602) (CS_OBSTRUCTION, the rock behind
+    # (5900,-1900); match 07.11.2026), stood at build 219-226 of 363 for 470 s with no heavy weapon
+    # the two lower sockets stand in the cell behind the prow, their doors on its front, as on 2v6-2 (rules.aim_window at the block's
+    # front: sniper 5/19, 20mm 6/19, the map asks 18/18)
+    v["shape"] = _union(_V26_BACK, _box(-3500, -2945, -55, 205), _box(-3400, -2945, -315, -55), _box(-2945, -2845, -55, 205))
+    # the second box: the mortar storey's posts, background as on Vanilla-8. Foreground, the post at x -3300 stood right in
+    # front of M1 and took its shots (the player and T302's rays, match 06.11.2026)
+    v["cfg"] = dict(v["cfg"], hidden_box=[(-3400, -2945, -185, -55), (-3400, -3100, -315, -185)], bg_roof_cells=[(-3200, -185)],
+                    door_layer_floor="backbracing",
                     weapon_cells=[w for w in v["cfg"]["weapon_cells"] if w[0] != -3500])
     v["plan"] = [(step, [i for i in items if i != (-3500, -185, "machinegun")]) if step == "build" else (step, items)
                  for step, items in v["plan"]]
+    # into the struts step after the sniper: the modules' "after" counts plan steps, a new step would shift them all
+    k = v["plan"].index(("weapons", ["sniper"])) + 1
+    assert v["plan"][k][0] == "struts"
+    v["plan"][k] = ("struts", list(v["plan"][k][1]) + _V26_OPEN_BEAM[1])
+    # B1 and B2 change rows: the sniper one row up, see 2v6-2. A socket's name stays with its job
+    swap = {(-3100, 205, "sniper"): (-3100, 75, "sniper"), (-3100, 75, "cannon20mm"): (-3100, 205, "cannon20mm")}
+    v["plan"] = [(step, [swap.get(i, i) for i in items]) if step == "build" else (step, items) for step, items in v["plan"]]
+    # the prow's cell before the sniper, in the same step (modules count steps): its door stands on the cell's front (match 07.11.2026:
+    # door about 200 actions after the sniper, T202 placed it 7 times in 141 s)
+    k = v["plan"].index(("build", [(-3100, 75, "sniper")]))
+    v["plan"][k] = ("build", [(-2945, 205), (-2945, 75), (-3100, 75, "sniper")])
+    cells = [w for w in v["cfg"]["weapon_cells"] if not (w[0] == -3100 and w[1] in (205, 75))]
+    v["cfg"] = dict(v["cfg"], weapon_cells=[(-3100, 75, "sniper", 0.7)] + cells,
+                    weapon_struts=[((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")],
+                    no_connect=[], door_aim_up=18, door_layer_tie=False,
+                    door_posts=[(-2845, -55, 75), (-2845, 75, 204)],
+                    door_rest=[((-2845, -55, 75), "backbracing"), ((-2845, 75, 204), "backbracing")],
+                    bg_diag_cells=list(v["cfg"].get("bg_diag_cells", [])) + [(-2945, 75)],
+                    bg_struts=list(v["cfg"].get("bg_struts", [])) + [((-2945, 75), (-2845, 75)), ((-2945, -55), (-2845, -55)),
+                                                                     ((-2945.11, 206.49), (-2846.18, 203.99))],
+                    woodspam=[{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": []},
+                              _V_LOWER_FACE_WS, _V_MINE_ROW_WS])
+    v["sockets"] = [dict(s, cell=(-3100, {"B1": 75, "B2": 205}[s["name"]])) if s["name"] in ("B1", "B2") else s for s in v["sockets"]]
     v["sockets"] = [s for s in v["sockets"] if s["name"] not in ("A1", "D1")]
     aa = next(m for m in v["modules"] if m["name"] == "antiair")
     mods = []
@@ -1929,10 +2036,45 @@ def _v26_bastion():
             continue
         if m["name"] == "antiair_front":
             m = dict(m, trigger=aa["trigger"])
+        if m["name"] == "heavy2":           # B2 now in the row over the starting fort, forward
+            m = dict(m, plan=[("device_on", [((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")])])
+        if m["name"] == "heavy1":           # C1's outer door on a background floor: armour stops the shots aimed down
+            m = dict(m, plan=[(st, [(a_, b_, "backbracing") if (a_, b_, k_) == ((-2945, -185), (-2895, -185), "armour") else (a_, b_, k_)
+                                    for a_, b_, k_ in items]) if st == "struts" else (st, items) for st, items in m["plan"]])
+        if m["name"] == "turbine2c":        # this map's third turbine stands on the storey's free cell, x -3500 is too near the rock
+            m = dict(m, plan=[("device_on", [((-3300, -55), (-3200, -55), 0.35, "turbine2")])])
         mods.append(m)
     v["modules"] = mods
     return v
 VANILLA2V6_VARIANTS["bastion"] = _v26_bastion()
+
+
+# Bastion's opening for the other Vanilla-fort plans (the player, 07.11.2026), the long versions by conversion:
+#  - the front strip, in place of rebrace_after_mine: that swapped the INNER armour, the strip the outer. Both would leave a storey
+#    with no armour, and a buzzsaw fells it (the player, 05.11.2026). It pays about the same, on demand;
+#  - the second and third hub after the first plant: much stiffer upwards (Bastion, the player 04.11.2026). The steps go in
+#    after the plan's first tech step; modules count plan steps, so their "after" moves with them.
+_V_FRONT_STRIP = [((-2844.7, 309.73), (-2892.17, 411.07)), ((-2846.18, 203.99), (-2844.7, 309.73))]
+
+
+def _bastion_opening(v):
+    k = next(n for n, s in enumerate(v["plan"]) if s[0] == "tech") + 1
+    hubs = [("struts", _V8_HUB2), ("struts", _V8_HUB3)]
+    # a plan starting with the armoury has no back column yet: the third hub's two struts to it wait for the plan's end
+    late = [] if v["plan"][k - 1][1] != ["armoury"] else [("struts", [q for q in _V8_HUB3 if q[1] in ((-3200.0, 503.0), (-3200.0, 405.0))])]
+    if late:
+        hubs = [hubs[0], ("struts", [q for q in _V8_HUB3 if q not in late[0][1]])]
+    v["plan"] = v["plan"][:k] + hubs + v["plan"][k:] + late
+    v["front_strip"] = _V_FRONT_STRIP
+    v["cfg"] = dict(v["cfg"], rebrace_after_mine=[])
+    if v.get("modules"):
+        v["modules"] = [dict(m, after=m["after"] + len(hubs)) if isinstance(m.get("after"), int) and m["after"] >= k else m
+                        for m in v["modules"]]
+
+
+for _vs, _names in ((VANILLA_VARIANTS, ("kanone20mm", "rockets", "modular")), (VANILLA2V6_VARIANTS, ("cannons", "rockets", "laser"))):
+    for _n in _names:
+        _bastion_opening(_vs[_n])
 
 # Removed 06.11.2026 (the player): Vanilla-2 and its 2v6 version. Their definitions stay, the others are built from them;
 # None keeps the numbers and seeds of the plans after them
@@ -3667,8 +3809,10 @@ class Plan:
                     continue
                 if any(_point_on_segment(q, pos[ba], pos[tb]) for q in pos.values()):
                     continue
-                appended.append((max(ka, kb), '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "armour" },'
-                                 % (ba, self._fmt(pos[ba]), tb, self._fmt(pos[tb]))))
+                if not self.cfg.get("door_layer_tie", True):       # 2v6-2, -5: 38.8 long, the fort's sag takes it under the game's minimum
+                    continue
+                appended.append((max(ka, kb), '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
+                                 % (ba, self._fmt(pos[ba]), tb, self._fmt(pos[tb]), self.cfg.get("door_layer_floor", "armour"))))
                 self.problems.append("door layers: outer doors tied (%.0f,%.0f)-(%.0f,%.0f)" % (*pos[ba], *pos[tb]))
         out = []
         for k, line in enumerate(self.actions):
@@ -3772,7 +3916,8 @@ class Plan:
                 new = [p_ for p_, n in ((pt, nt), (pb, nb)) if n is None]
                 near = [q for n, q in pos.items() if n not in (nt, nb) and any(math.dist(p_, q) < MIN_STRUT for p_ in new)]
                 # nor a new node on a strut of the plan
-                near += [p_ for p_ in new for pair in final if len(pair) == 2 and _point_on_segment(p_, *(pos.get(n) for n in pair))]
+                near += [p_ for p_ in new for pair in final if len(pair) == 2 and final[pair] != "backbracing"
+                         and _point_on_segment(p_, *(pos.get(n) for n in pair))]
                 if any(self.t.inside(p_) for p_ in new) or near:
                     self.problems.append("door of %s at x %.0f: door layer %d left out (%s)"
                                          % (d, x, layer + 1, "(%.0f,%.0f) taken" % near[0] if near else "rock"))
@@ -3789,10 +3934,11 @@ class Plan:
                     nb = self.next_id
                     self.next_id += 1
                     pos[nb] = pb
-                    lines.append(mk("node", bot_id, nb, "armour"))
+                    lines.append(mk("node", bot_id, nb, self.cfg.get("door_layer_floor", "armour")))
                 lines.append(mk("link", nt, nb, "door"))
             # the armour joining the layers (unless a strut stands there already) and the diagonal
-            for a, b, mat in ((top_id, nt, "armour"), (bot_id, nb, "armour"), (top_id, nb, "backbracing")):
+            # door_layer_floor: the material under an outer door (2v6: solid there, it stops shots aimed down)
+            for a, b, mat in ((top_id, nt, "armour"), (bot_id, nb, self.cfg.get("door_layer_floor", "armour")), (top_id, nb, "backbracing")):
                 pair = frozenset((a, b))
                 if pair not in final and not any(("OriginalNodeAId = %d," % a in l and "OriginalNodeBId = %d," % b in l)
                                                  or ("OriginalNodeAId = %d," % b in l and "OriginalNodeBId = %d," % a in l)
@@ -4493,7 +4639,7 @@ def main():
         errors = p.validate()
         name = "fort-t1f1-%s-%d.lua" % (args.map, args.start_number + n)
         p.write(os.path.join(args.out, name), var["title"])
-        rule_errors, rule_warnings = rules.check_plan(parse_lines(p.actions))
+        rule_errors, rule_warnings = rules.check_plan(parse_lines(p.actions), aim=cfg.get("aim"))
         rule_warnings += rules.tech_hidden(parse_lines(p.actions), start_fort(cfg.get("spr_map", args.map),
                                                                          {**base_pos, **node_positions(parse_lines(p.actions))}))
         devs = {}

@@ -56,23 +56,23 @@ if [ -d "$WP" ]; then for o in before after; do for e in ToGA1 ToGHngA1 ToGW1; d
   check "Stalactites $o: weapon_pack $e team 102"  "PLAN map=Stalactites .* fort=2500,-1350" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 102 2500 -1350
   check "Stalactites $o: weapon_pack $e in place"   "first action rel = -1.9, 151.4" "$LUA" t_vanilla2v6.lua $o mods/weapon_pack/ai/forts/hanging/long/fort-t1f1-TemplateHang-$e.lua 1 -4100 -150
 done; done; fi
-check "Modules load and are cut out after Load" "^after load: actions=313 expected=313 tagged=0$" "$LUA" t_modules.lua
+check "Modules load and are cut out after Load" "^after load: actions=323 expected=323 tagged=0$" "$LUA" t_modules.lua
 check "Modules are moved by the transform"     "^module mirrored: 3000.0, 400.0$" "$LUA" t_modules.lua
 check "Module waits for its Requires"          "MODULE_WAIT counterbattery trigger=mortar:1,mortar2:1 requires=50 now=9$" "$LUA" t_modules.lua
 check "Module wait is logged once"             "^1$" bash -c "\"$LUA\" t_modules.lua | grep -c MODULE_WAIT"
 check "Module is inserted at the build index"  "MODULE counterbattery trigger=mortar:1,mortar2:1 at=65 actions=3$" "$LUA" t_modules.lua
 check "Module comes before the rest of the plan" "^inserted: bracing armour mortar next=60$" "$LUA" t_modules.lua
 check "Index-keyed state moves with the insert" "^shifted: rebuild=true,true frustration=2 devices=4,2 since=45$" "$LUA" t_modules.lua
-check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=318$" "$LUA" t_modules.lua
+check "Each module fires once"                 "^anti-air at 3: machinegun, then sniper, total=328$" "$LUA" t_modules.lua
 check "Module waits for its After module"      "^goal before anti-air: nil$" "$LUA" t_modules.lua
 check "Module fires by time"                   "MODULE goal trigger=time:100 at=69 actions=1$" "$LUA" t_modules.lua
-check "Plan file with modules loads in Lua"     "^217 sniper 1 18 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
-check "Modular plan loads with time triggers"  "^217 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
+check "Plan file with modules loads in Lua"     "^229 sniper 1 30 sniper$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules[1] print(table.concat({ #Fort, m.Name, #m.Actions, m.Requires, m.Actions[1].DeviceSaveName }, " "))'
+check "Modular plan loads with time triggers"  "^229 10 sniper 45 heavyartillery artillery$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Time, m[4].Name, m[4].Trigger.After }, " "))'
 check "Surplus: not while the plan is built"    "^building: nil,nil$" "$LUA" t_surplus.lua
 check "Surplus: not while a rebuild is queued"  "^rebuilding: nil,nil$" "$LUA" t_surplus.lua
 check "Surplus: not below the thresholds"       "^short of energy: nil,nil$" "$LUA" t_surplus.lua
 check "Surplus: not before Seconds"             "^after 15 s: nil,nil$" "$LUA" t_surplus.lua
-check "Surplus module fires"                    "MODULE firebeam trigger=surplus:m=1200,e=9000 at=314 actions=1$" "$LUA" t_surplus.lua
+check "Surplus module fires"                    "MODULE firebeam trigger=surplus:m=1200,e=9000 at=324 actions=1$" "$LUA" t_surplus.lua
 check "Surplus: After module waits for the build" "^firebeam building: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: a dip restarts the clock"       "^after the dip: true,nil$" "$LUA" t_surplus.lua
 check "Surplus: second module fires"            "^laser: true,true laser$" "$LUA" t_surplus.lua
@@ -86,7 +86,7 @@ check "Engine probe: reclaim falls back to the next device" "EPROBE RECLAIM mach
 check "Engine probe: reclaim metal by frame"   "EPROBE RECLAIM series m0=500 end=525 deleted@2 deltas=0,0,25,0,0$" "$LUA" t_engineprobe.lua
 check "Engine probe: own strut hits by type"   "EPROBE LINKHIT t=20 hits=cannon:2/200,mortar:1/40 broken=1:1$" "$LUA" t_engineprobe.lua
 check "Engine probe: first hit logged once"    "^1$" bash -c "\"$LUA\" t_engineprobe.lua | grep -c 'LINKHIT first'"
-check "Vanilla-5 loads with its surplus module" "^216 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
+check "Vanilla-5 loads with its surplus module" "^228 1 firebeam 500 3500 20$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-5.lua") local m = FortModules print(table.concat({ #Fort, #m, m[1].Name, m[1].Trigger.Surplus.Metal, m[1].Trigger.Surplus.Energy, m[1].Trigger.Surplus.Seconds }, " "))'
 check "Bastion loads with sockets and zones"   "^[0-9]+ 9 B1 sniper -3100 5 Z0 M1\+M2 mortar$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") local s, z, m = FortSockets, FortZones, FortModules[1] print(table.concat({ #Fort, #s, s[3].Name, s[3].Default, s[3].Cell.x, #z, z[1].Name, m.Socket, m.Loadout }, " "))'
 check "Bastion: a shield against enemy beams"      "^laser firebeam shield -3100 -185 -3100 -55$" "$LUA" -e 'dofile("mods/fort9000dev/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua") for _, m in ipairs(FortModules) do if m.Name == "shield1" then local a = m.Actions[#m.Actions] local p, q = a.PosA, a.PosB or a.NewNodePos if p.y > q.y then p, q = q, p end print(table.concat({ m.Trigger.Types[1], m.Trigger.Types[2], a.MaterialSaveName, p.x, p.y, q.x, q.y }, " ")) end end'
 check "Sockets: listed with their loadouts"     "SOCKETS A1:machinegun A2:machinegun B1:sniper B2:cannon20mm/laser/firebeam C1:.* D1:.* M1:mortar/machinegun M2:mortar$" "$LUA" t_sockets.lua
@@ -255,7 +255,28 @@ check "Probe bypasses the build diagnostics"     "^0$"                          
 check "Probe measures the load with Hold"        "PROBE LOAD 1 cannon 503-501 s=0.300 sn=0.310 top=0.400:504-505 d=0,4,0,0$" "$LUA" t_probe.lua
 check "Probe removes devices, AI runs again"     "removed=901,902,903,904,905,906,907 disabled after=false$" "$LUA" t_probe.lua
 check "Recorder"                                 "RESULT w="                     "$LUA" t_recorder.lua 1
-check "Recorder 2v2 sums the teams of a side"     "SNAP s=2 t=102,202 m=1300 e=6000 dev=mine:1,reactor:2 shots= tm=102:600:3000,202:700:3000$" "$LUA" t_recorder2v2.lua
+check "Logging: off writes no recorder lines"    "^off lines=0$"                 "$LUA" t_logging.lua recorder
+check "Logging: another player's key is ignored" "^other player lines=0$"        "$LUA" t_logging.lua recorder
+check "Logging: L alone does nothing"            "^plain l lines=0$"             "$LUA" t_logging.lua recorder
+check "Logging: replayed keys do nothing"        "^replay key lines=0$"          "$LUA" t_logging.lua recorder
+check "Logging: Ctrl+Shift+L sends the event"    "EVENT Fort9000SetLogging true, 0 file=\[\] self=false" "$LUA" t_logging.lua recorder
+check "Logging: on again writes lines"           "LOG \[CREC\] f=1000 BUILT"     "$LUA" t_logging.lua recorder
+check "Logging: second press switches off"       "^off again lines=0$"           "$LUA" t_logging.lua recorder
+check "Logging: published default is silent"     "^published lines=0$"           "$LUA" t_logging.lua recorder_start
+check "Logging: START written when switched on"  "LOG \[CREC\] f=100 START v=4$" "$LUA" t_logging.lua recorder_start
+check "Logging: AI silent, arguments still run"  "^ai off lines=0 sold=true shapes=0$" "$LUA" t_logging.lua ai
+check "Logging: AI ignores another player"       "^ai other player=false$"       "$LUA" t_logging.lua ai
+check "Logging: AI writes again when on"         "T102 visible again$"           "$LUA" t_logging.lua ai
+check "Team game: an ally's plant is not our own"  "^own munitions=nil factory=1 battery=1$" "$LUA" t_allydevices.lua
+check "Team game: an ally's cannon is not our own" "^own heavy=0$"                 "$LUA" t_allydevices.lua
+check "Strip: armour back without heavy weapons in a rocket plan" "^restore needs: rockets 0, one 20mm 1, two lasers 2, sockets 2$" "$LUA" t_allydevices.lua
+check "Build hold: rockets wait for the energy of the next device" "^rocket short: true$" "$LUA" t_buildhold.lua
+check "Build hold: a sniper is not held"            "^sniper short: false$"          "$LUA" t_buildhold.lua
+check "Build hold: not when metal is short too"     "^both short: false$"            "$LUA" t_buildhold.lua
+check "Build hold: free again after MaxHold"        "^after 90 s: false$"            "$LUA" t_buildhold.lua
+check "Build hold: holds again after Free"          "^after 120 s: true$"            "$LUA" t_buildhold.lua
+check "Build hold: off when the energy is there"    "^energy there: false$"          "$LUA" t_buildhold.lua
+check "Recorder 2v2 sums the teams of a side"   "SNAP s=2 t=102,202 m=1300 e=6000 dev=mine:1,reactor:2 shots= tm=102:600:3000,202:700:3000$" "$LUA" t_recorder2v2.lua
 check "Recorder 1v1 snapshot unchanged"           "SNAP s=1 t=1 m=600 e=3000 dev=reactor:1 shots=$" "$LUA" t_recorder2v2.lua
 check "Recorder starts over on a restart"        "^-- restart$" "$LUA" t_restart.lua
 check "Recorder writes START restart=1"          "^\[CREC\] f=2 START v=4 restart=1$" "$LUA" t_restart.lua
@@ -270,10 +291,43 @@ if [ -n "$PY" ]; then
   check "Recorded build has no plan errors"      "^0$"                           sh -c "grep -c 'ERROR' conv1.txt conv2.txt | grep -v ':0$' | wc -l"
   check "Recorded side 2 is mirrored to side 1"  "^same$"                        sh -c "cmp -s rec1.lua rec2.lua && echo same"
   check "Recorded plan loads in Lua"             "^actions 10 first 56 10000$"    "$LUA" -e 'dofile("rec1.lua") print("actions " .. #Fort .. " first " .. Fort[1].OriginalNodeAId .. " " .. Fort[1].OriginalNodeBId)'
-  check "Tools read plan modules apart from the plan" "^217 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
-  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 18\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Tools read plan modules apart from the plan" "^229 sniper sniper,sniper2,laser,firebeam,cannon,cannon20mm 1 30$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); from fortplan import parse_plan, parse_modules; m = parse_modules(sys.argv[2])[0]; print(len(parse_plan(sys.argv[2])[1]), m['name'], ','.join(m['types']), m['count'], m['requires'])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
+  check "Plan modules pass the building rules"   "module sniper \(1 actions, requires 30\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-6.lua"
   check "Bastion and its modules pass the rules"  "module heavy2 \(1 actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   check "Bastion: C1's weapon passes the rules"     "module heavy1 \([0-9]+ actions, requires [0-9]+\): 0 errors" $PY "$MOD/.dev/tools/fortgen/rules.py" "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
+  # match 06.11.2026: a foreground post stood in front of the mortar, heavy weapons stood behind lanes and near the reactor
+  check "2v6-5: mortar storey posts are background" "^solid posts: 0$" $PY -c "import re, sys; t = open(sys.argv[1]).read(); print('solid posts:', len(re.findall(r'PosA = \{ x = -3[234]00\.00, y = -185\.00 \}.*?NewNodePos = \{ x = -3[234]00\.00, y = -315\.00 \}, MaterialSaveName = \"bracing\"', t)))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua"
+  check "2v6-2: the cannon clears the reactor's blast" "^cannons near: 0 of 1$" $PY -c "import re, sys, math; f = re.findall(r'PosA = \{ ?x = (-?[0-9.]+), y = (-?[0-9.]+) ?\}.*?PosB = \{ ?x = (-?[0-9.]+), y = (-?[0-9.]+) ?\}, LinkT = ([0-9.]+), DeviceSaveName = \"cannon\"', open(sys.argv[1]).read()); p = [(float(a) + (float(c) - float(a)) * float(t), float(b) + (float(d) - float(b)) * float(t)) for a, b, c, d, t in f]; print('cannons near:', sum(math.hypot(x + 3002, y - 305) < 400 for x, y in p), 'of', len(p))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua"
+  check "2v6-4: the laser stands at its front door" "^laser in the prow: 1$" $PY -c "import re, sys; print('laser in the prow:', len(re.findall(r'PosA = \{ ?x = -2945\.1[0-9]*, y = 206\.[0-9]+ ?\}.*?DeviceSaveName = \"laser\"', open(sys.argv[1]).read())))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-4.lua"
+  check "Rules: a shield in a weapon's body is an error" "shield .* reaches into its body" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; a = lambda t, **k: dict(k, type=t); print(rules.body_overlaps('sniper', (0, 0), (40, -30), (40, -60), 1, -rules.METAL_CLEARANCE) and 'shield' in rules.METAL and 'shield x reaches into its body')" "$MOD/.dev/tools/fortgen"
+  check "Rules: devices 5 clear overlap, 9 clear do not" "^5 clear True, 9 clear False$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; f = lambda g: g < 40 + 40 + rules.DEVICE_CLEARANCE; print('5 clear %s, 9 clear %s' % (f(85), f(89)))" "$MOD/.dev/tools/fortgen"
+  check "Vanilla, 2v6: no devices overlapping" "^overlaps: 0$" bash -c 'echo "overlaps: $("$0" "$1/.dev/tools/fortgen/rules.py" "$1"/fortplans/Vanilla/*.lua "$1"/fortplans/Vanilla2v6/*.lua "$1"/fortplans/Vanilla2v6Long/*.lua "$1"/fortplans/VanillaLong/*-8.lua | grep -c overlap)"' $PY "$MOD"
+  check "2v6-2, -5: the sniper's front beam is background" "^solid beams: 0$" $PY -c "import re, sys; print('solid beams:', sum(len(re.findall(r'x = -2945\.11, y = 206\.49 \}.*x = -2846\.18, y = 203\.99 \}, MaterialSaveName = \"(?!backbracing)', open(f).read())) for f in sys.argv[1:]))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua"
+  # human match 06.11.2026: turbine upgrades behind 6000 energy never came, the fort never got there without them
+  for f in "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua"; do
+    check "Bastion: turbine upgrades start from 1500 energy ($(basename "$f"))" "^turbine modules: 3, limit 1500, 6000 only for: mine2$" $PY -c "import re, sys; t = open(sys.argv[1], encoding='utf-8', errors='replace').read(); m = re.findall(r'Name = \"(turbine2[abc])\", Trigger = \{[^}]*EnergyAbove = (\d+)', t); u = re.search(r'Name = \"upgrades\", Trigger = \{[^}]*EnergyAbove = 6000.*?\n(.*?)\n\}', t, re.S); print('turbine modules: %d, limit %s, 6000 only for: %s' % (len(m), ','.join(sorted({e for n, e in m})), ','.join(sorted(set(re.findall(r'DeviceSaveName = \"(\w+)\"', u.group(1)))))))" "$f"
+  done
+  # the player, 07.11.2026: every Vanilla-fort plan has Bastion's opening; inner armour stays (a buzzsaw fells a storey without armour)
+  for d in Vanilla VanillaLong Vanilla2v6 Vanilla2v6Long; do
+    check "$d: front strip and all 12 struts of hubs 2 and 3 in every plan" "^plans without: 0$" $PY -c "import sys, glob, re; fs = glob.glob(sys.argv[1] + '/*.lua'); n = sum(not ('FortStrip' in t and len(re.findall(r'x = (?:-3049|-3149|3849|3949)\.00, y = (?:532|-2118)\.00', t.split('FortStrip')[0])) >= 12) for t in (open(f, errors='replace').read() for f in fs)); print('plans without:', n)" "$MOD/fortplans/$d"
+  done
+  check "2v6: no node behind x -3500 (rock behind T2-4)" "^nodes behind: 0$" $PY -c "import sys, glob, re; print('nodes behind:', sum(len(re.findall(r'NewNodePos = \{ x = -3[6-9]\d\d', open(f, errors='replace').read().split('FortModules')[0])) for f in glob.glob(sys.argv[1] + '/*.lua')))" "$MOD/fortplans/Vanilla2v6"
+  check "2v6-2, -5: sniper in the row over B2's old place" "^snipers in row 75: 2$" $PY -c "import sys, re; print('snipers in row 75:', sum(len(re.findall(r'y = 75\.00 \}, OriginalNodeBId = \d+, PosB = \{ x = -?[\d.]+, y = 75\.00 \}, LinkT = [\d.]+, DeviceSaveName = \"sniper\"', open(f, errors='replace').read())) > 0 for f in sys.argv[1:]))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua"
+  # the player, 07.11.2026: a foreground diagonal in front of a rocket passed, it was built between the EMP rocket and its upgrade
+  check "Rules: an upgraded weapon counts from its first placement" "line of fire blocked by bracing .*built after the weapon" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; n = lambda a, b, p, q: dict(Type='CREATE_NODE', OriginalNodeAId=a, PosA=p, OriginalNodeBId=b, NewNodePos=q, MaterialSaveName='bracing'); d = lambda name: dict(Type='CREATE_DEVICE', OriginalNodeAId=1, PosA=(0, 0), OriginalNodeBId=2, PosB=(100, 0), LinkT=0.5, DeviceSaveName=name); acts = [n(1, 2, (0, 0), (100, 0)), d('rocketemp'), n(2, 3, (100, 0), (170, -60)), n(3, 4, (170, -60), (170, 40)), d('rocket')]; print(rules.check_plan(acts)[0])" "$MOD/.dev/tools/fortgen"
+  check "Rules: the aim window sees the floor in front of a weapon" "^floor: down 5, level free up 45$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; pos = {1: (-400, 0), 2: (300, 0)}; links = {frozenset((1, 2)): ('bracing', 1, 2, 0)}; d, u = rules.aim_window(links, pos, 'laser', (0, 0), 5); print('floor: down %d, level free up %d' % (d, u))" "$MOD/.dev/tools/fortgen"
+  check "2v6-3: all three rockets aim at least 13 down, 45 up" "^rockets: 3, worst aim 13 45, blocked 0$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); r = [(n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == 'rocket']; w = [rules.aim_window(links, pos, n, p, k) for n, p, k in r]; print('rockets: %d, worst aim %d %d, blocked %d' % (len(r), min(x[0] for x in w), min(x[1] for x in w), sum(bool(rules.fire_blockers(links, pos, n, p, k)) for n, p, k in r)))" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-3.lua"
+  check "2v6-2: sniper2 can aim 19 18" "^19 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua" sniper2
+  check "2v6-2: cannon20mm can aim 45 20" "^45 20$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua" cannon20mm
+  check "2v6-2: cannon can aim 16 28" "^16 28$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua" cannon
+  check "2v6-4: sniper2 can aim 30 45" "^30 45$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-4.lua" sniper2
+  check "2v6-4: laser can aim 22 45" "^22 45$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-4.lua" laser
+  check "2v6-4: firebeam can aim 24 32" "^24 32$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-4.lua" firebeam
+  check "2v6-5: sniper can aim 19 18" "^19 18$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); print(*[rules.aim_window(links, pos, n, rules._point(pos, a, b, t), k) for n, a, b, t, pr, k in devs if n == sys.argv[3]][0])" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua" sniper
+  check "2v6-3: two turbines before the upgrade centre, no long brace" "^turbines before: 2, brace: 0$" $PY -c "import sys, re; a = [l for l in open(sys.argv[1], errors='replace').read().split('FortStrip')[0].split('\n') if l.startswith('{ Type')]; k = next(i for i, l in enumerate(a) if '\"upgrade\"' in l); print('turbines before: %d, brace: %d' % (sum('\"turbine\"' in l for l in a[:k]), sum('x = -2996.23, y = 503.57 }' in l and 'x = -2900.00, y = 700.00 }' in l for l in a)))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-3.lua"
+  check "2v6: every weapon has its door within 10 actions" "^weapons without: 0$" $PY -c "import sys, glob; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; n = 0; fs = glob.glob(sys.argv[2] + '/*.lua'); exec('for f in fs:\n  pos, links, devs, _ = rules.build_state(parse_plan(f)[1])\n  for w, a, b, t, pr, k in devs:\n    if w in rules.DIRECT and w not in rules.ANTI_AIR_ONLY:\n      g = rules.door_gap(links, pos, w, rules._point(pos, a, b, t), k)\n      n += g is None or g > rules.DOOR_GAP_MAX'); print('weapons without:', n)" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6"
+  check "2v6-5: the door stands before the first sniper" "^door before sniper: True$" $PY -c "import sys; sys.path.insert(0, sys.argv[1]); import rules; from fortplan import parse_plan; pos, links, devs, _ = rules.build_state(parse_plan(sys.argv[2])[1]); d = [x for x in devs if x[0] == 'sniper'][0]; print('door before sniper:', rules.door_gap(links, pos, d[0], rules._point(pos, d[1], d[2], d[3]), d[5]) < 0)" "$MOD/.dev/tools/fortgen" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua"
+  check "2v6-2: no weapon on the open roof"        "^roof weapons: 0$" $PY -c "import re, sys; print('roof weapons:', len(re.findall(r'y = -315\.00 ?\}.*?DeviceSaveName = \"(machinegun|minigun)\"', open(sys.argv[1]).read())))" "$MOD/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-2.lua"
   check "Physics: Bastion stands in its build order" "fort-t1f1-Vanilla-8.lua: (STANDS|WEAK)" $PY "$MOD/.dev/tools/fortgen/physics.py" check "$MOD/fortplans/Vanilla/fort-t1f1-Vanilla-8.lua"
   # published copy as a Workshop subscriber has it: only under mods/<PublishedFileId>/ (multiplayer desync, 28.10.2026)
   ID="$(sed -n 's/.*PublishedFileId *= *"\([0-9]*\)".*/\1/p' "$MOD/.dev/publishedfileid.lua" 2>/dev/null)"
@@ -284,11 +338,15 @@ if [ -n "$PY" ]; then
     # publish.py refuses a dev mod with test switches on (Force, Probe, EngineProbe), e.g. on a test branch
     echo "SKIP  published copy (publish.py refused: $(grep -m1 'fortplans.lua' pub.txt))"
   elif [ -n "$ID" ]; then
+    # the preload line needs logging: read it from a copy with logging on
+    sed 's/--\[\[LOGGING\]\] false/--[[LOGGING]] true/' "$ROOT/pub/fort9000/ai/ai.lua" > "$ROOT/pub/fort9000/ai/ai_logged.lua"
     ln -s "$ROOT/pub/fort9000" "$ROOT/mods/$ID"
     check "Published AI looks in the Workshop folder first" "^local CAI_ModDirs = \{ \"mods/$ID/\", \"mods/fort9000/\" \}$" grep "^local CAI_ModDirs" "$ROOT/pub/fort9000/ai/ai.lua"
+    check "Published AI does not log by default"   "^CAI_Logging = --\[\[LOGGING\]\] false$" grep "^CAI_Logging" "$ROOT/pub/fort9000/ai/ai.lua"
+    check "Published recorder does not log by default" "^local recLogging = --\[\[LOGGING\]\] false$" grep "^local recLogging" "$ROOT/pub/fort9000/script.lua"
     # the maps come in pairs() order: one check per map
     for m in "Abyss:3/2" "Vanilla:4/[24]" "VanillaLong:4/1" "Vanilla2v6:4/[24]" "Vanilla2v6Long:4/1"; do
-      check "Subscriber's copy loads plans and strategy ($m)" "PLAN-PRELOAD (.* )?$m( |$)" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
+      check "Subscriber's copy loads plans and strategy ($m)" "PLAN-PRELOAD (.* )?$m( |$)" env CAI_TEST_MOD="mods/$ID/ai/ai_logged.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
     done
     check "Subscriber's copy swaps the plan"       "first action = -2095.5, -94.4" env CAI_TEST_MOD="mods/$ID/ai/ai.lua" "$LUA" t_plan_swap.lua after fort-t1f1-Abyss-1.lua 1
   else

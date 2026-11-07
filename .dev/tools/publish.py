@@ -9,7 +9,8 @@ The published mod is data/mods/fort9000 ("FORT 9000 AI"). This script:
   4. rewrites mods/fort9000dev/ to mods/fort9000/ in the .lua files and drops " DEV" from displayname.lua,
   5. puts the Workshop folder mods/<PublishedFileId>/ in front of the AI's mod folders (the WORKSHOP marker in
      ai/ai.lua): subscribers have the mod only there, and all players must load the same files,
-  6. keeps a copy of publishedfileid.lua in .dev/ (tracked in git) and restores it when the target has none.
+  6. keeps a copy of publishedfileid.lua in .dev/ (tracked in git) and restores it when the target has none,
+  7. switches logging off by default (the LOGGING marker in ai/ai.lua and script.lua).
 
 Usage:
   python .dev/tools/publish.py              -> publish into ../fort9000
@@ -30,6 +31,9 @@ ID_FILE = "publishedfileid.lua"
 FORBIDDEN_EXT = (".bat", ".cmd", ".exe")      # the game's upload validation refuses these anywhere in the folder
 SKIP_NAMES = ("__pycache__",)
 SKIP_EXT = (".pyc", ".tmp")
+LOGGING_ON = b"--[[LOGGING]] true"            # the published mod does not log unless the player switches it on
+LOGGING_OFF = b"--[[LOGGING]] false"
+LOGGING_FILES = (os.path.join("ai", "ai.lua"), "script.lua")
 
 
 def skipped(name):
@@ -71,6 +75,10 @@ def check(src, files):
     m = re.search(r"^\s*Force\s*=\s*\{(.*?)\}", text, re.M | re.S)
     if m and re.search(r"\w+\s*=", m.group(1)):
         errors.append("ai/fortplans.lua: Force is not empty: " + " ".join(m.group(1).split()))
+    for rel in LOGGING_FILES:
+        with open(os.path.join(src, rel), "rb") as fh:
+            if LOGGING_ON not in fh.read():
+                errors.append(rel + ": the LOGGING marker is missing, logging would stay as it is")
     if not files:
         errors.append("nothing to publish")
     return errors
@@ -99,6 +107,7 @@ def transform(rel, data, mod_name, item_id):
     if rel.endswith(".lua"):
         if WORKSHOP_MARKER in data:
             data = data.replace(WORKSHOP_MARKER, ('"mods/%s/", ' % item_id).encode("ascii") if item_id else b"")
+        data = data.replace(LOGGING_ON, LOGGING_OFF)
         return data.replace(b"mods/fort9000dev/", ("mods/%s/" % mod_name).encode("ascii"))
     return data
 

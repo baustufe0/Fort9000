@@ -40,7 +40,7 @@ Other maps that use the same starting fort as Vanilla may also get the custom la
 [list]
 [*]On Stalactites the missile layouts fire through portals; the AI connects them itself.
 [*]If you take over an AI as your anti-air assistant, the mod switches itself off for that AI.
-[*]The mod writes short match notes (lines starting with [noparse][CREC][/noparse] and [noparse][CAI][/noparse]) to the Forts log file. They are only used locally to improve the AI. Nothing is sent anywhere.
+[*]The mod writes no match notes unless you ask for them: press Ctrl+Shift+L during a match to switch them on or off, for that match. They go to the Forts log file (lines starting with [noparse][CREC][/noparse] and [noparse][CAI][/noparse]), slow the game a little, and nothing is sent anywhere.
 [*]Don't run this mod together with other mods that change the AI.
 [/list]
 

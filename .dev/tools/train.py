@@ -56,7 +56,6 @@ DEFAULT_WEAPON_WEIGHT = 1.0
 DEFAULTS = {
     "Version": 1,
     "TrainedGames": 0,
-    "LogDecisions": True,
     "ThinkInterval": 5,
     "ThreatWeight": 30,
     "ThreatHalf": 10,

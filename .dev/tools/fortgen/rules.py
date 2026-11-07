@@ -21,6 +21,7 @@ SIZE = {
     "workshop": (90, 45), "factory": (90, 45), "upgrade": (90, 45), "munitions": (45, 85), "armoury": (45, 85),
     # dlc_smokebomb is packed (not readable): size estimated like a mortar launcher
     "smokebomb": (40, 40),
+    "missile": (63.75, 90), "missile2": (63.75, 90), "missileinv": (63.75, 90), "missile2inv": (63.75, 90),
 }
 # Height of a device's box above its strut: the game centres the box SelectionHeight above the strut
 # (SelectionOffset y = -SelectionHeight - 0.5) with half-height SelectionHeight, so it reaches 2x SelectionHeight up.
@@ -46,7 +47,8 @@ TURBINES = {"turbine", "turbine2"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
               "shotgun": "flak", "rocket": "rocketemp"}
 FOREGROUND = {"bracing", "armour", "door"}     # materials that stop shots (and wind); background bracing does not
-METAL = {"armour", "door"}                     # never recessed by a device placed over them (only wood bracing is)
+# never recessed by a device placed over them (only wood bracing is, the player, 06.11.2026: metal, door, energy shield)
+METAL = {"armour", "door", "shield", "portal"}
 MIN_LENGTH = 37.5          # StandardMinLength
 MIN_DOOR_LENGTH = 49
 FIRE_RANGE = 600           # checked length of the line of fire (beyond that it is outside the fort)
@@ -60,6 +62,10 @@ FIRE_RANGE = 600           # checked length of the line of fire (beyond that it 
 RECESSION = {"machinegun": (42.5, 62.5), "minigun": (130, 330), "sniper": (200, 400), "sniper2": (200, 400),
              "cannon": (200, 400), "cannon20mm": (200, 400), "laser": (130, 330), "firebeam": (130, 330),
              "flak": (60, 140), "shotgun": (70, 170), "rocket": (70, 170), "rocketemp": (70, 170)}
+# How high that box stands over the weapon's strut (its Offset y; Size y 25, so 12.5 to both sides). Its own floor is never in it.
+RECESSION_Y = {"machinegun": 40, "minigun": 40, "sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60,
+               "firebeam": 60, "flak": 60, "shotgun": 65, "rocket": 65, "rocketemp": 65}
+RECESSION_H = 12.5
 # A weapon's body (the box the game turns overlapped struts into background bracing with): SelectionWidth (a
 # half-width in the game files) to both sides of a centre moved forward by SelectionOffset (sniper 40, cannons 18;
 # the laser and machine guns are centred), 2 x SelectionHeight high (BOX_TOP). The Vanilla-2 sniper's body cleared the
@@ -75,6 +81,11 @@ METAL_CLEARANCE = 10
 # for lobbed weapons (along their arc) and by the generator's cautious mode (fire_blockers)
 OLD_RECESSION = 200
 OLD_RECESSION_MG = 20
+DOOR_GAP_MAX = 10          # actions a weapon may stand before its door
+# Two devices side by side need this much room beyond their half-widths: strut thickness and sag, as with METAL_CLEARANCE.
+# Refused 4 clear (cannon and machine gun, 2 of 2) and 5 clear (mortar and machine gun, 3 of 3), match 06.11.2026; 9 and
+# more stood (mortars and turbines 89-100 apart need 80)
+DEVICE_CLEARANCE = 7
 
 
 def body_overlaps(name, p, a, b, enemy_dir=1, margin=BODY_MARGIN):
@@ -95,6 +106,18 @@ def recessed(name, dist, p, a, b, enemy_dir=1):
     weapon is placed (inside its recession box, or overlapped by its body)."""
     first, last = RECESSION.get(name, (0, 0))
     return first <= dist <= last or body_overlaps(name, p, a, b, enemy_dir)
+
+
+def in_recession_box(name, p, a, b, enemy_dir=1):
+    """True if the strut a-b reaches into the weapon's recession box, in both directions."""
+    first, last = RECESSION.get(name, (0, 0))
+    cy = p[1] - RECESSION_Y.get(name, 0)
+    n = max(2, int(math.dist(a, b) / 2))
+    for k in range(n + 1):
+        x, y = a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n
+        if first <= enemy_dir * (x - p[0]) <= last and abs(y - cy) <= RECESSION_H:
+            return True
+    return False
 # mortar arc checked from the muzzle: steeply up and forward (dx, up); long enough to reach over a tower
 # standing 150 in front of a lower mortar
 MORTAR_ARC = (300, 520)
@@ -143,10 +166,14 @@ def build_state(actions):
                 ground.append((name, a["GroundPosition"]))
                 continue
             pair = frozenset((ida, idb))
-            # an upgrade replaces the device at the same place
+            # an upgrade replaces the device at the same place. It keeps the action of the first placement: the game clears
+            # the struts in the way only then, so a strut built between weapon and upgrade blocks it (2v6-3, the player
+            # 07.11.2026: EMP rocket at action 59, foreground diagonal at 71, upgrade at 164; counted from 164 it passed)
             base = UPGRADE_OF.get(name)
             if base:
-                devices = [d for d in devices if not (d[0] == base and d[4] == pair and abs(d[3] - a["LinkT"]) < 0.02)]
+                old = [d for d in devices if d[0] == base and d[4] == pair and abs(d[3] - a["LinkT"]) < 0.02]
+                devices = [d for d in devices if d not in old]
+                k = old[0][5] if old else k
             devices.append((name, ida, idb, a["LinkT"], pair, k))
         elif a["Type"] == "DESTROY_DEVICE":
             # the game's own plans sell a device to free its strut (Abyss-1: sandbags, then a laser there)
@@ -251,6 +278,46 @@ def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1, cautious=False):
     return out
 
 
+def aim_window(links, pos, name, p, k_dev, enemy_dir=1, limit=45):
+    """(degrees down, degrees up) a direct weapon can aim before a strut of its own fort stops the shot: the same test as
+    fire_blockers, on rays through the muzzle, not only the level one. Doors do not count, the AI opens them."""
+    w, h = SIZE.get(name, (40, 40))
+    muzzle = (p[0], p[1] - 0.6 * h)
+    out = []
+    for sign in (1, -1):                # y grows downward: +1 aims down
+        free = 0
+        for deg in range(1, limit + 1):
+            r = math.radians(deg)
+            q = (muzzle[0] + enemy_dir * FIRE_RANGE * math.cos(r), muzzle[1] + sign * FIRE_RANGE * math.sin(r))
+            stopped = False
+            for m, a, b, k, pair in _blocking(links, pos, muzzle, q):
+                if m == "door":
+                    continue
+                # cleared when the weapon is placed: in its box or its body, by height too (the floor stops shots aimed
+                # down: T202's laser, match 06.11.2026)
+                if k < k_dev and (in_recession_box(name, p, a, b, enemy_dir) or body_overlaps(name, p, a, b, enemy_dir)):
+                    continue
+                stopped = True
+                break
+            if stopped:
+                break
+            free = deg
+        out.append(free)
+    return tuple(out)
+
+
+def door_gap(links, pos, name, p, k_dev, enemy_dir=1):
+    """Plan actions between a direct weapon and its first door in the level line of fire; None if no door ever stands there.
+    Negative: the door stands first. A weapon without a door dies to the first sniper (2v6-5, match 07.11.2026: T202 placed its
+    sniper 7 times in 141 s, the door came about 200 actions after it)."""
+    doors = []
+    for p0, p1 in fire_lines(name, p, enemy_dir):
+        for pair, (m, ia, ib, k) in links.items():
+            if m == "door" and ia in pos and ib in pos and segments_cross(p0, p1, pos[ia], pos[ib]):
+                doors.append(k)
+    return min(doors) - k_dev if doors else None
+
+
 TECH = {"workshop", "factory", "upgrade", "munitions", "armoury"}
 
 
@@ -300,7 +367,8 @@ def _fmt(p):
     return "(%d,%d)" % (round(p[0]), round(p[1]))
 
 
-def check_plan(actions, enemy_dir=1, terrain=None):
+def check_plan(actions, enemy_dir=1, terrain=None, aim=None):
+    """aim (degrees down, degrees up): what the map asks of a direct weapon; less than that is a warning."""
     errors, warnings = [], []
     pos, links, devices, ground = build_state(actions)
 
@@ -325,6 +393,18 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             errors.append("%s: %s blocked by %s %s-%s, %.0f ahead%s" % (
                 where, "line of fire" if name in DIRECT else "mortar arc", m, _fmt(a), _fmt(b), dist,
                 " (built after the weapon, not recessed)" if k > kd else " (outside the recession box and the body)"))
+        # a door in front of it before the enemy sees it (a few actions after are the struts of its own cell)
+        if name in DIRECT and name not in ANTI_AIR_ONLY:
+            gap = door_gap(links, pos, name, p, kd, enemy_dir)
+            if gap is None:
+                warnings.append("%s: no door in its line of fire" % where)
+            elif gap > DOOR_GAP_MAX:
+                warnings.append("%s: its door comes %d actions after it" % (where, gap))
+        # the map's angles (2v6: the forts stand on a staircase): a weapon that cannot aim at the other forts is useless
+        if aim and name in DIRECT and name not in ANTI_AIR_ONLY:
+            down, up = aim_window(links, pos, name, p, kd, enemy_dir)
+            if down < aim[0] or up < aim[1]:
+                warnings.append("%s: can aim %d down, %d up (the map asks %d, %d)" % (where, down, up, aim[0], aim[1]))
         # no armour or door in a weapon's body (the player, 02.11.2026): placing it turns only wood bracing there into
         # background bracing; metal blocks it (CS_UNSTABLE). Stalactites probe: metal in the body refused 101 of 106
         # attempts. Doors and armour built later count too: they block the weapon's rebuild
@@ -372,7 +452,7 @@ def check_plan(actions, enemy_dir=1, terrain=None):
             if pr1 == pr2:
                 # the game allows one device per strut (test match 25.10.2026: sandbags beside a mortar took it)
                 errors.append("%s at %s and %s at %s share one strut (one device per strut)" % (n1, _fmt(p1), n2, _fmt(p2)))
-            elif abs(p1[1] - p2[1]) < 10 and abs(c1 - c2) < need - 1:
+            elif abs(p1[1] - p2[1]) < 10 and abs(c1 - c2) < need + DEVICE_CLEARANCE:
                 # side by side on neighbouring struts at the same height (a device wider than the rest of its
                 # strut reaches over the shared node)
                 errors.append("%s at %s and %s at %s overlap (neighbouring struts)" % (n1, _fmt(p1), n2, _fmt(p2)))
@@ -413,11 +493,16 @@ def check_plan(actions, enemy_dir=1, terrain=None):
     return errors, warnings
 
 
+# what a map asks of a direct weapon (degrees down, up), by the plan's folder: the 2v6 forts stand on a staircase
+AIM_BY_FOLDER = {"Vanilla2v6": (18, 18), "Vanilla2v6Long": (18, 18)}
+
+
 def main():
     for path in sys.argv[1:]:
         head, acts = parse_plan(path)
         # team 1 plans face the enemy on the right, team 2 plans (e.g. VanillaLong) on the left
-        errors, warnings = check_plan(acts, enemy_dir=-1 if head.get("team") == 2 else 1)
+        aim = AIM_BY_FOLDER.get(os.path.basename(os.path.dirname(os.path.abspath(path))))
+        errors, warnings = check_plan(acts, enemy_dir=-1 if head.get("team") == 2 else 1, aim=aim)
         print("%s: %d errors, %d warnings" % (os.path.basename(path), len(errors), len(warnings)))
         for e in errors:
             print("   RULE ERROR:", e)
@@ -426,7 +511,7 @@ def main():
         # reactive build modules: checked inside the plan, right after their Requires (the earliest the AI builds them)
         for m in parse_modules(path):
             k = m["requires"]
-            errors, warnings = check_plan(acts[:k] + m["actions"] + acts[k:], enemy_dir=-1 if head.get("team") == 2 else 1)
+            errors, warnings = check_plan(acts[:k] + m["actions"] + acts[k:], enemy_dir=-1 if head.get("team") == 2 else 1, aim=aim)
             print("   module %s (%d actions, requires %d): %d errors, %d warnings"
                   % (m["name"], len(m["actions"]), k, len(errors), len(warnings)))
             for e in errors:

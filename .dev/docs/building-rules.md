@@ -318,3 +318,20 @@ Map-specific ones are in [maps/vanilla.md](maps/vanilla.md) and [maps/abyss.md](
 - What exactly makes the game refuse a device with `CS_UNSTABLE` is not known: deterministic, independent of weight,
   more likely for a device added late next to loaded devices or on a sagging or tilted strut; neither shape, movement
   nor strut stress alone explains it.
+
+## Weapon bodies and device clearance (06.11.2026)
+
+`rules.py` checks every weapon against the plan with the game's own `SelectionWidth`, `SelectionHeight` and `SelectionOffset` (`SIZE`, `BOX_TOP`, `BODY_SHIFT`; all compared with the game files that day):
+- Armour, door, energy shield and portal (`METAL`) must stay `METAL_CLEARANCE` (10) out of a weapon's body, also when built later (the weapon's rebuild). Foreground wood there is fine: the game turns it into background bracing.
+- Two devices side by side need `DEVICE_CLEARANCE` (7) beyond their half-widths: refused at 4 and 5 clear, stood at 8 and 9.
+- Sizes not confirmed: the smoke launcher (packed, estimated). Missile launchers have width and height only; they hang, so the body checks above the strut do not fit them and they are not in `WEAPONS`.
+- Line of fire: a strut in the way is an error unless the game clears it, which it does only when the weapon is first placed. An upgrade keeps the action of its first placement (`build_state`); until 07.11.2026 it counted from the upgrade, so a strut built in between passed (2v6-3, the player: a foreground diagonal in front of a rocket).
+- Door: a direct weapon needs a door in its line of fire within `DOOR_GAP_MAX` (10) actions of its first placement (`door_gap`, a warning).
+- Aim: `aim_window` gives the degrees a direct weapon can aim down and up before its own fort stops the shot. A map can ask for angles (`MAPS[...]["aim"]`, `rules.AIM_BY_FOLDER`; 2v6: 18 and 18), less is a warning, not an error: the plans do not all reach them yet. It tests struts only, not terrain or the neighbouring forts.
+- `aim_window` models the recession box in both directions (`in_recession_box`). The level line of fire (`fire_blockers`, `recessed`) still tests only its distance ahead, so a strut above or below the box counts as cleared there.
+
+## Opening of every Vanilla-fort plan (07.11.2026)
+
+All Vanilla, VanillaLong, Vanilla2v6 and Vanilla2v6Long plans carry what Bastion introduced (`_bastion_opening` in `gen_fort.py`, the player):
+- Front strip (`FortStrip`, `CAI_FrontStrip`): the two outer armour struts in front of the reactor become wood while metal is below 150 in the first 300 s, and armour again from 800 metal. It replaces `rebrace_after_mine`, which swapped the inner struts: every storey keeps one armour strut, else a buzzsaw fells it. Restoring waits for 2 heavy weapons, or as many as a plan without sockets builds (`CAI_StripRestoreHeavy`).
+- Hubs: `_V8_HUB2` and `_V8_HUB3` after the plan's first tech step, `_V_HUB` first as before. Modules count plan steps, so their `after` moves with the two new steps.
