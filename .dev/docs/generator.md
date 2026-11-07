@@ -115,7 +115,12 @@ Options of Vanilla-8, Bastion (branch `bastion`, [bastion-plan.md](bastion-plan.
   the door's top on the line rising at that angle from the weapon (+12.5), each door layer in front on the same line as
   far as the nodes around allow (MIN_STRUT); the sniper's shell falls ~177 over the 6000 to the enemy fort, its top
   storeys need ~8-10 degrees (Vanilla-8 uses 9; test 3: doors cut to the barrel let the snipers hit only the lower
-  storeys). A top that would leave less than MIN_STRUT of armour above stays MIN_STRUT below the post's top.
+  storeys). A top that would leave less than MIN_STRUT of armour above stays MIN_STRUT below the post's top. A dict gives
+  each weapon its own angle. `door_aim_whole` (weapons): for these the door then takes the whole post top instead (not where the post's rest is
+  background bracing anyway, `door_rest`), the strut over each outer door is background bracing, which shots pass, and that
+  door's top lies on the angle's line even below the post's top, since it no longer limits the aim: it is the cover
+  against the AP sniper. So the angle sets the outer door's height (Vanilla-8: 20 degrees took the turbines' wind, 12 did not).
+  Vanilla-3's 20mms, Vanilla-6's sniper, Vanilla-8's 20mms, 2v6-2 and -5.
 - `bg_diag_cells [(left x, floor y)]`: these cells' diagonals are background bracing; `bg_struts [((x, y), (x, y))]`:
   these struts become background bracing (a later module's tall device stands in front of them: Vanilla-8's munitions
   plant, 170 high, over two storeys).

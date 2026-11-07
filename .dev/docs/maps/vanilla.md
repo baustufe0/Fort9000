@@ -64,8 +64,12 @@ Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
   match, `weapon_avoid`). Vanilla-3 (and the former laser plan) put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
   machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. In the top front cell (floor -270;
   the removed Vanilla-4) it was refused once the tower stood below it.
-- **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's 20mm doors 78 instead of 125 (126 shots
-  through them), its sniper's 62.5. Cannons (the removed Vanilla-4) and the former laser kept full doors (no split covers
+- **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's sniper's door 80.5. Its 20mm doors were 78 of 125
+  (126 shots through them) until the 2v2 of 07.11.2026 showed the armour over them left 3.4-4 degrees up: the shell falls
+  ~460-610 on the way, so the 20mm only reached the lower region of the lower fort (needed from the lower spot: -2..10 degrees
+  for the lower fort, 8..18 for the upper one). Now whole post doors (`door_aim_up` 20, `door_aim_whole`), outer doors with
+  background bracing over them: 14 and 17 degrees up, 11 and 13 down, measured to the barrel's pivot. Same fix 07.11.2026:
+  Vanilla-6's sniper (door 99 instead of 61.5, 4 -> 19 up) and Vanilla-8's 20mm in B2 (10 -> 28 up). Not played yet. Cannons (the removed Vanilla-4) and the former laser kept full doors (no split covers
   both barrel estimates); in the 100-high storeys no brace clears the sniper, so its door stays full.
 - **Woodspam** (region 0): two layers (x -2905/-2865) in front of the tower front, rows -370..-145, late. Regions 1 and
   2 (Vanilla-3, since 29.10.2026): Vanilla-2's lower-face layers and the extra mine-row layers, right after the second

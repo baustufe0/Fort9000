@@ -55,6 +55,8 @@ tested in a match.
 
 07.11.2026, aim of the other weapons (`rules.aim_window`, degrees down/up; plans 2, 4, 5 regenerated, not played yet): the lower weapons stand in the cell behind the prow, their doors on its front, as the rockets do.
 
+07.11.2026, aim measured again: `rules.aim_window` used a muzzle 0.6 of the device high, for the 20mm 33 against the barrel's 60, so the numbers above are too high. Really 2v6-2 and -5: 20mm 11 up, sniper 12 up, the armour over the outer door the limit. That strut is now background bracing (`door_aim_whole`): the rule sees 45 down and up for them, because nothing solid is left around the doors. Shots from above the door's line also come in that way; to check in a match whether the forward weapons die faster. Not played yet.
+
 | Plan | Weapon | Before | Now |
 |---|---|---|---|
 | 2 | sniper | 8/11 | 19/18 |

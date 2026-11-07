@@ -281,8 +281,9 @@ def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1, cautious=False):
 def aim_window(links, pos, name, p, k_dev, enemy_dir=1, limit=45):
     """(degrees down, degrees up) a direct weapon can aim before a strut of its own fort stops the shot: the same test as
     fire_blockers, on rays through the muzzle, not only the level one. Doors do not count, the AI opens them."""
-    w, h = SIZE.get(name, (40, 40))
-    muzzle = (p[0], p[1] - 0.6 * h)
+    # from the barrel's pivot (the weapon file's RecessionBox height), not 0.6 of the device's height: for the 20mm that is 60
+    # against 33, which showed 8 degrees up where Vanilla-3's armour left 3.4 (2v2 of 07.11.2026)
+    muzzle = (p[0], p[1] - RECESSION_Y.get(name, 0.6 * SIZE.get(name, (40, 40))[1]))
     out = []
     for sign in (1, -1):                # y grows downward: +1 aims down
         free = 0

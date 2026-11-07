@@ -1168,7 +1168,13 @@ VANILLA_VARIANTS = {
                     # down to the ground, which carry the 20mm cannons (physics.py max stress, two spring laws:
                     # all X 0.79 / 0.75, one diagonal everywhere 0.85 / 0.74, X in the tower only 0.80 / 0.81,
                     # this 0.76 / 0.72 with 15 actions less)
-                    single_diagonal=True, crossbrace_keep=[(-3400, -2945, -270, 700)]),
+                    single_diagonal=True, crossbrace_keep=[(-3400, -2945, -270, 700)],
+                    # the 20mm's shell (6000 per second) falls ~460 over the 5800 to the lower enemy fort, ~610 over the 6700 to
+                    # the upper one: from the lower spot it needs -2..10 degrees for the first and 8..18 for the second. The
+                    # doors cut to the barrel left 3.4-4 (2v2 of 07.11.2026: only the lower region of the lower fort). Whole
+                    # post doors, outer doors on the 20 degree line; the rest is the floor above: 14 and 17 degrees. No tie
+                    # between the outer doors: it would cross them, and physics.py peaks at 0.55 without it (0.74 before)
+                    door_aim_up={"cannon20mm": 20, "sniper": 9}, door_aim_whole=("cannon20mm",), door_layer_tie=False),
         "plan": [
             # 20mm rush: the tech chain (workshop 60 s, munitions plant 90 s, 20mm 70 s) sets the pace, the starting
             # economy (601 m / 3004 e, +13 m/s, +100 e/s, caps 900 / 5000) pays for it on time if nothing else
@@ -1353,7 +1359,11 @@ VANILLA_VARIANTS["modular"] = {
     "shape": VANILLA_VARIANTS["artillerie"]["shape"],
     "tech_slots": VANILLA_VARIANTS["artillerie"]["tech_slots"],
     "roof_weapons": {"machinegun"},
-    "cfg": dict(VANILLA_VARIANTS["artillerie"]["cfg"]),
+    # the sniper's door over the whole post, not Vanilla-2's 61.5 under 37.5 of armour: that left 4 degrees up, the shell
+    # needs -5..7 for the lower enemy fort and 4..14.5 for the upper one (see Vanilla-3's 20mms)
+    "cfg": dict(VANILLA_VARIANTS["artillerie"]["cfg"],
+                split_edges=[e for e in VANILLA_VARIANTS["artillerie"]["cfg"]["split_edges"] if e["mid"] != (-2845, 142.5)],
+                door_aim_up=8, door_aim_whole=("sniper", "sniper2")),
     "plan": [
         # core: the workshop (mortars need it, 60 s), the nest's sandbags (0 metal) and the two weapon cells over the
         # starting fort (the sniper's cell on its roof beam, the nest cell with the split mortar struts above it)
@@ -1454,8 +1464,10 @@ VANILLA_VARIANTS["bastion"] = {
             # a sniper's body with its barrel reaches ~120 ahead of its strut point (rules.body_overlaps): at LinkT
             # 0.18 of the 148-wide cell the barrel ends at the front door
             "split_doors": True, "door_layers": 2, "door_brace_front": True,
-            # the B doors cover every direct loadout and 9 degrees up (test 3: the snipers hit only the lower storeys)
-            "door_loadouts": True, "door_aim_up": 9, "door_split_skip": (-185,),
+            # the B doors cover every direct loadout and 9 degrees up (test 3: the snipers hit only the lower storeys); a
+            # 20mm's shell falls further (Vanilla-3's 20mms): whole post doors; 12 keeps the outer door out of the turbines' wind
+            "door_loadouts": True, "door_aim_up": {"default": 9, "cannon20mm": 12}, "door_aim_whole": ("cannon20mm",),
+            "door_split_skip": (-185,),
             # the second doors only after the economy (test 1, 03.11.2026: with them in the opening ~1120 metal went
             # into struts before the first sniper, which stood at 60 s), 50 in front (not on the prow node 58, 100
             # out: armour arms twice as long)
@@ -1823,6 +1835,7 @@ VANILLA2V6_VARIANTS = {
                     door_split_skip=(-185,), door_layer_skip=[(-2945, -185), (-2895, -185)],
                     # under the row's door background bracing: armour there stops the shots aimed down from the row above
                     door_posts=[(-2845, -55, 75), (-2845, 75, 204)], door_aim_up=18, door_layer_tie=False,
+                    door_aim_whole=("cannon20mm", "sniper", "sniper2"),
                     door_rest=[((-2845, -55, 75), "backbracing"), ((-2845, 75, 204), "backbracing")],
                     bg_diag_cells=[(-2945, 75)], bg_struts=[((-2945, 75), (-2845, 75)), ((-2945, -55), (-2845, -55)), ((-2945.11, 206.49), (-2846.18, 203.99))],
                     weapon_struts=[((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")],
@@ -2019,7 +2032,7 @@ def _v26_bastion():
     cells = [w for w in v["cfg"]["weapon_cells"] if not (w[0] == -3100 and w[1] in (205, 75))]
     v["cfg"] = dict(v["cfg"], weapon_cells=[(-3100, 75, "sniper", 0.7)] + cells,
                     weapon_struts=[((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")],
-                    no_connect=[], door_aim_up=18, door_layer_tie=False,
+                    no_connect=[], door_aim_up=18, door_layer_tie=False, door_aim_whole=("cannon20mm", "sniper", "sniper2"),
                     door_posts=[(-2845, -55, 75), (-2845, 75, 204)],
                     door_rest=[((-2845, -55, 75), "backbracing"), ((-2845, 75, 204), "backbracing")],
                     bg_diag_cells=list(v["cfg"].get("bg_diag_cells", [])) + [(-2945, 75)],
@@ -3699,12 +3712,20 @@ class Plan:
             # sniper's shell falls ~177 over the 6000 to the enemy fort, its top storeys need ~8-10 degrees (Vanilla-8
             # test 3, 03.11.2026: doors cut to the barrel +- 12.5 let the snipers hit only the lower storeys). The
             # door layers in front follow the same line (self._aim_top)
+            # A dict gives each weapon its own angle. door_aim_whole: a shell that drops needs the angle more than a short
+            # door, so where less than MIN_STRUT of armour would stay above the line the door takes the whole post top
+            # (Vanilla-3, 2v2 of 07.11.2026: armour 18 above the barrel, ~3.4 degrees up, the 20mm never reached the upper fort)
             aim = self.cfg.get("door_aim_up")
+            if isinstance(aim, dict):
+                aim = aim.get(d, aim.get("default"))
             self._aim_top = (lambda xx, ys=y_strut, h=h_top, x0=x_dev, ta=math.tan(math.radians(aim)):
                              ys - h - 12.5 - ta * (xx - x0)) if aim else None
             if self._aim_top:
                 # a little less aim rather than a whole-post door (the armour above at least MIN_STRUT)
-                y_hi.append(max(self._aim_top(x), y_top + MIN_STRUT))
+                # (not where the post's rest is background bracing: shots pass that, the door can stay short)
+                bg_rest = any(listed(pa, pb, [post]) and m_ == "backbracing" for post, m_ in self.cfg.get("door_rest", []))
+                whole = d in self.cfg.get("door_aim_whole", ()) and not bg_rest and self._aim_top(x) < y_top + MIN_STRUT
+                y_hi.append(y_top if whole else max(self._aim_top(x), y_top + MIN_STRUT))
             span = self.door_span(y_top, y_floor, min(y_hi), max(y_lo))
             boxes = []
             for dv, da, db_, dtt, dc in self.placed:
@@ -3842,6 +3863,9 @@ class Plan:
             '{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
         ) % (a, self._fmt(pos[a]), b, self._fmt(pos[b]), mat)
         built, last = 1, k0
+        # door_aim_whole: the strut over an outer door is background bracing, shots pass it. Armour there is the lid the
+        # weapon cannot aim past, and it blocks the weapon a storey up
+        top_mat = "backbracing" if d in self.cfg.get("door_aim_whole", ()) else "armour"
         for layer in range(1, self.cfg.get("door_layers", 1)):
             x0 = pos[top_id][0]
             yt, yb = pos[top_id][1], pos[bot_id][1]
@@ -3854,7 +3878,9 @@ class Plan:
                 near_q += [(xn, q[1]) for n, q in pos.items() if n != top_id and abs(q[0] - x0) < 3]
                 while y_aim < yt and any(math.dist((xn, y_aim), q) < MIN_STRUT for q in near_q):
                     y_aim += 0.5
-                yt = min(yt, y_aim)
+                # door_aim_whole: the shot passes the background bracing over this door, so it only has to reach the line,
+                # not the post's top (taller it takes the wind: Vanilla-8's turbines 45 % on the right)
+                yt = y_aim if d in self.cfg.get("door_aim_whole", ()) else min(yt, y_aim)
                 # the door below starts under this one: the armour tying the two needs a margin over MIN_STRUT, the
                 # fort sags (test 5, 04.11.2026: 37.7 long, the game refused it with CS_NODESTOOCLOSE and the door layers
                 # hung free; physics.py 0.69 instead of 0.60). This door ends a little above its floor instead
@@ -3929,7 +3955,7 @@ class Plan:
                     nt = self.next_id
                     self.next_id += 1
                     pos[nt] = pt
-                    lines.append(mk("node", top_id, nt, "armour"))
+                    lines.append(mk("node", top_id, nt, top_mat))
                 if nb is None:
                     nb = self.next_id
                     self.next_id += 1
@@ -3938,7 +3964,7 @@ class Plan:
                 lines.append(mk("link", nt, nb, "door"))
             # the armour joining the layers (unless a strut stands there already) and the diagonal
             # door_layer_floor: the material under an outer door (2v6: solid there, it stops shots aimed down)
-            for a, b, mat in ((top_id, nt, "armour"), (bot_id, nb, self.cfg.get("door_layer_floor", "armour")), (top_id, nb, "backbracing")):
+            for a, b, mat in ((top_id, nt, top_mat), (bot_id, nb, self.cfg.get("door_layer_floor", "armour")), (top_id, nb, "backbracing")):
                 pair = frozenset((a, b))
                 if pair not in final and not any(("OriginalNodeAId = %d," % a in l and "OriginalNodeBId = %d," % b in l)
                                                  or ("OriginalNodeAId = %d," % b in l and "OriginalNodeBId = %d," % a in l)
