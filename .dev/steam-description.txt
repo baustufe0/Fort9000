@@ -6,10 +6,10 @@ FORT 9000 AI extends the built-in Forts AI instead of replacing it. The AI plays
 
 [h2]Features[/h2]
 [list]
-[*][b]Custom fort layouts:[/b] on supported maps the AI picks one of several layouts each match (sniper and mortar nest, 20mm rush, rocket rush, cannon fort, sniper and laser rush, a modular fort, a swarm missile rush that fires through portals, ...), so it doesn't build the same fort every time.
+[*][b]Custom fort layouts:[/b] on supported maps the AI picks one of several layouts each match (20mm rush, rocket rush, cannon fort, sniper and laser rush, a modular fort, the reactive Bastion fort, a swarm missile rush that fires through portals, ...), so it doesn't build the same fort every time.
 [*][b]Sturdy forts:[/b] the layouts brace the starting fort first and are checked with a physics model, so the forts carry their own weight, standing or hanging; on the Vanilla maps the wind turbines sit in protected storeys, and a hanging fort no longer drops everything below a storey you cut.
 [*][b]Hidden plans:[/b] workshops, factories and other tech buildings, and the missile launchers on Stalactites, are only placed where they are fully covered, so you can't see what the AI is up to until it fires.
-[*][b]Reactive building:[/b] some layouts add weapons in response to what you build, for example anti-air when you build missiles or rockets.
+[*][b]Reactive building:[/b] some layouts add weapons in response to what you build, for example anti-air when you build missiles or rockets. The Bastion fort on the Vanilla maps goes further: it swaps its heavy weapons during the match and reinforces the parts of the fort you keep hitting.
 [*][b]Adaptive targeting:[/b] the AI rates your devices and goes for what hurts you most: weapons that threaten it, your economy, your reactor.
 [*][b]Aggression by game phase:[/b] it builds up its economy early and gets more aggressive as the match goes on and its economy grows.
 [*][b]Fire control:[/b] coordinated volleys, smoke cover for rockets and anti-air that reacts to incoming fire.

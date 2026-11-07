@@ -3,6 +3,37 @@
 One entry per Workshop upload (`ItemVersion` in `workshop/content/410900/3829000413/itemversion.lua`). Each version
 has a git tag `workshop-v<N>` on the commit that was published; the next entry covers `workshop-v<N-1>..workshop-v<N>`.
 
+## Version 7 (07.11.2026, workshop-v7 = 6a3e1c7)
+
+New layout: Bastion (Vanilla, Vanilla 2v2 and 2v6 Vanilla), replaces the old sniper and mortar nest layout
+- A fort that reacts to you: it opens with a sniper behind doors and a hidden mortar nest, then picks its heavy weapons
+  by chance and by what you build, and swaps them while the match runs.
+- It reinforces the parts of the fort you keep hitting, with more wood layers where the damage lands.
+- Heavy weapons stand away from the reactor, since a destroyed cannon's blast could take the reactor with it. A lost
+  heavy weapon gets the metal first, and an energy shield covers the turbines against beams.
+
+All Vanilla layouts (Vanilla, Vanilla 2v2 and 2v6 Vanilla)
+- 20mm cannons and snipers aim far higher and lower through their doors. Before, some could only hit the lower part of
+  the nearer enemy fort; a 20mm's shell drops on the way, and armour over the door stopped it aiming up.
+- A sturdier and cheaper opening: extra braces in the lower front, and the outer front armour is sold for wood early
+  and comes back later.
+- The starting gunner is sold when the woodspam starts, since the woodspam blocks its line of fire. Some layouts have
+  one anti-air gun fewer because of this.
+- Mortars stand under background roofs instead of door roofs, and sandbags come before the turbines.
+
+2v6 Vanilla (clean)
+- Weapons stand further forward with their doors built first, so they can aim up and down the staircase at the other
+  forts.
+
+Vanilla, Abyss and 2v6 Vanilla
+- Weapons no longer get refused because armour or a door reaches into the space they need.
+
+All maps
+- In 2v2 the AI no longer mistakes its ally's devices for its own when deciding what to build.
+- Match notes are off by default: press Ctrl+Shift+L in a match to switch them on for that match.
+
+Workshop page: description updated (Bastion, match notes).
+
 ## Version 6 (02.11.2026, workshop-v6 = 50b2301)
 
 New map: Stalactites (1v1 and 2v2)
