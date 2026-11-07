@@ -167,6 +167,16 @@ order the AI goes by when several fire at once).
   its `Requires`; `rules.py <plan>` does the same for installed plans; `mid_to_long.py` converts the modules too.
   The tools read the plan without its modules (`fortplan.parse_plan`; the modules: `parse_modules`).
 
+- `swaps [(point A, point B, material)]` on a module: a plan strut between those nodes gets the material when the module
+  goes in (a `CREATE_LINK` on a finished strut, first in the module's actions). Resolved after the final passes
+  (`module_swaps`), so it may name a strut `split_doors` built; the module's `Requires` waits for that strut. Vanilla-8's
+  `buzzsaw` makes the background diagonal between B2's two door layers a door.
+- Trigger key `no_tech` (`NoTech = true`): only while no plant for heavy weapons stands (munitions plant or factory,
+  fully built).
+- `SINGLE_USE` (the buzzsaw): a module with such a loadout never decides where a socket's loadouts are tested
+  (`tag_sockets`): it stands in the socket for a while, the lasting weapon's place counts. The buzzsaw is not in
+  `DOOR_WEAPONS`: a split door cut for it reached into the 20mm's body that follows it in B2.
+
 ## Adding a map
 
 - Plan files are named `fort-t<team>f<fort>-<Map>-<n|name>.lua`. Generator and plan swap support **t1f1** (one fort

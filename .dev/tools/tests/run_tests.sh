@@ -156,10 +156,26 @@ check "Front strip: once per strut"               "^once per strut: armour door 
 check "Front strip: logged with the metal"        "STRIP -2844.7,309.73--2892.17,411.07 armour->bracing result=-15 m=50->130 t=15$" "$LUA" t_strip.lua
 check "Front strip finds its struts on 2v6"       "^plenty: armour door armour$" "$LUA" t_strip.lua 4700 -900
 check "Front strip: 2v6 plays the 2v6 Bastion"    "PLAN map=Vanilla2v6 file=fort-t1f1-Vanilla2v6-5.lua" "$LUA" t_strip.lua 4700 -900
-check "Long Bastion keeps sockets, zones, strip"  "^9[[:space:]]+5[[:space:]]+2[[:space:]]+8[[:space:]]+3580[[:space:]]+4300[[:space:]]+3644.7[[:space:]]+Tech[[:space:]]+M1$" "$LUA" -e 'CREATE_NODE,DESTROY_NODE,CREATE_LINK,DESTROY_LINK,CREATE_DEVICE,DESTROY_DEVICE = 1,2,3,4,5,6 dofile("mods/fort9000dev/fortplans/VanillaLong/fort-t2f3-VanillaLong-8.lua") local n, tech, sock = 0 for _, m in ipairs(FortModules) do if m.Name == "heavy1" and m.Trigger.Tech then tech = "Tech" end if m.Name == "artillery" then sock = m.Actions[1].Socket end for _, a in ipairs(m.Actions) do if a.Socket then n = n + 1 end end end for _, a in ipairs(Fort) do if a.Socket then n = n + 1 end end print(#FortSockets, #FortZones, #FortStrip, n, FortZones[3].Box.x0, FortZones[3].Box.x1, FortStrip[1][1], tech, sock)'
+check "Long Bastion keeps sockets, zones, strip"  "^9[[:space:]]+5[[:space:]]+2[[:space:]]+9[[:space:]]+3580[[:space:]]+4300[[:space:]]+3644.7[[:space:]]+Tech[[:space:]]+M1$" "$LUA" -e 'CREATE_NODE,DESTROY_NODE,CREATE_LINK,DESTROY_LINK,CREATE_DEVICE,DESTROY_DEVICE = 1,2,3,4,5,6 dofile("mods/fort9000dev/fortplans/VanillaLong/fort-t2f3-VanillaLong-8.lua") local n, tech, sock = 0 for _, m in ipairs(FortModules) do if m.Name == "heavy1" and m.Trigger.Tech then tech = "Tech" end if m.Name == "artillery" then sock = m.Actions[1].Socket end for _, a in ipairs(m.Actions) do if a.Socket then n = n + 1 end end end for _, a in ipairs(Fort) do if a.Socket then n = n + 1 end end print(#FortSockets, #FortZones, #FortStrip, n, FortZones[3].Box.x0, FortZones[3].Box.x1, FortStrip[1][1], tech, sock)'
 check "2v6 Bastion: no sockets over the ceiling"  "^7[[:space:]]+nil[[:space:]]+nil[[:space:]]+nil$" "$LUA" -e 'CREATE_NODE,DESTROY_NODE,CREATE_LINK,DESTROY_LINK,CREATE_DEVICE,DESTROY_DEVICE = 1,2,3,4,5,6 dofile("mods/fort9000dev/fortplans/Vanilla2v6/fort-t1f1-Vanilla2v6-5.lua") local s, m = {}, {} for _, x in ipairs(FortSockets) do s[x.Name] = true end for _, x in ipairs(FortModules) do m[x.Name] = true end print(#FortSockets, s.A1, s.D1, m.heavy5)'
 check "Sniper sight: another device is no target" "^sandbags in the way: sniper hold$" "$LUA" t_sniper.lua
 check "Sniper sight: counted"                    "^counts: seen=3 pierced=1 hold=4$" "$LUA" t_sniper.lua
+check "Buzzsaw: only its own target search"      "^init: CAI_BuzzsawTarget blocked=true priorities=0 attempts=0$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: enemy wood at a device"          "^wood at the turbine's strut: y300$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: logs what it saw"                "BUZZSAW sight turbine 60 near material=bracing at=-2980,300$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: not at armour"                   "^armour in front: hold$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: background bracing near enough"  "^background bracing 200 off: y300$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: not at wood far from a device"   "^wood 400 off: hold$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: not at own wood or a device"     "^own wood in the way: hold$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: not at the bare device"          "^the device itself: hold$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: counted"                         "^counts: found=2 hold=4$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: Vanilla-8 module swaps the brace" "^module: socket=B2 notech=true actions=2 swap=door device=buzzsaw$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: module waits while a plant stands" "^with a factory: fired=false$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: module goes in without a plant"  "^without a plant: fired=true$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: spent, rebuilt once, no socket loss" "^first: queued=1 rebuild=true losses=0$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: then dropped and out of the socket" "^second: queued=1 rebuild=nil socket=nil devices=nil$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: the loss is logged"              "BUZZSAW lost 701 action=[0-9]+ blades=9 volleys=3 spent=1 rearm=0/1 tech=0 -> rebuild$" "$LUA" t_buzzsaw.lua
+check "Buzzsaw: never rebuilt with a plant"      "^with munitions: queued=1 rebuild=nil$" "$LUA" t_buzzsaw.lua
 check "Zones: nodes mapped by planned position" "^zone of 901: Z0, of 903: Z1, of 950: nil$" "$LUA" t_zones.lua
 check "Zones: enemy hits count, own do not"     "^totals: Z0=300 Z1=70$" "$LUA" t_zones.lua
 check "Zones: pressure decays and is logged"    "ZONES t=5 Z0:270/300 Z1:63/70 \(pressure/total\)$" "$LUA" t_zones.lua

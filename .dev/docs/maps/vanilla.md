@@ -334,6 +334,13 @@ Branch `bastion` ([bastion-plan.md](../bastion-plan.md)), picture [vanilla-8-bas
 - **Opening** (after test 1, which starved for metal): hub, B1 with its door, the sniper (plan action 15, ~400 metal
   of struts), the footing, workshop, three mines, B2; the second doors only after the first turbine.
 - **physics.py:** WEAK (stands), max stress 0.63 (B1's door carrying its layer), sag 93 at the back of the turbine storey.
+- **Buzzsaw** (module `buzzsaw`, 07.11.2026, the player's request): in the empty socket B2 while no plant stands, once the
+  enemy has a turbine or at 240 s, with the workshop, 3200 energy (its price and a volley) and the price at hand. At LinkT
+  0.6 (barrel tip at the inner door, body 22 clear of it). Its lane is open air and doors, but for the background
+  diagonal between B2's two door layers, which the module makes a door (`swaps`; the 20mm later opens it too). It goes
+  in from plan action 185, when that diagonal stands. `heavy2` replaces it; the AI rebuilds a spent one once while no
+  plant stands. Not on 2v6-5: B2 fires through the prow cell there, whose background diagonal is in the blades' way.
+  Not played yet.
 - **Zones** (`FortZones`): Z0 the woodspam in front of the starting fort, Z1 the socket front, Z2 turbine storey and
   nest, Z3 the back of the socket storeys, Z4 back block and starting fort. Zone modules: `Z0face` (third layer in
   front of the lower face) and `Z0prow` (third layer in front of the prow) when Z0 takes 300 / 500 damage.

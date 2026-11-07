@@ -34,6 +34,20 @@ does (`PrerequisiteAlt = "armoury"`; with weapon_pack the factory costs 5000 ene
 need the factory, cannons the munitions plant. A player reached cannons, firebeams and flak without a workshop
 (26.10.2026, Vanilla-7).
 
+**Buzzsaw** (`buzzsaw`, Moonshot DLC, `dlc1_weapons.pack`, which is encrypted): its values were read in a match with
+`GetDeviceValue` / `GetDeviceListValue` / `GetProjectileValue` (a dump in the recorder, 07.11.2026; the sniper's values
+matched the table, so the dump is reliable). 200 metal / 2000 energy, 35 s, **workshop only**, `MaxUpAngle` 20, never
+grouped (`MaxWeaponGroupSize` 1), 50 HP, mass 70. Box 40 × 40, centred (`SelectionOffset` 0, -40.5: box top 81, like the
+machine gun). `RecessionBox` Size 200 × 25, Offset (-230, -65): it clears 130-330 ahead, 52-78 above its strut.
+`BarrelLength` 60, `MinFireClearance` 500, aim -35..+80 degrees, shot speed 10000 (straight), `FireStdDev` 0.004.
+Reload 15.4 s, a volley is 3 blades 0.2 s apart (`RoundsEachBurst`), 1200 energy per volley. The projectile:
+**`CollidesWithBackgroundMaterials = true`** (the sniper's: false), `RayDamage` 7.5 over `RayLength` 50, damage
+multipliers bracing x11.7 direct / x18.75 ray, background bracing x7.8 / x12.5, rope x11.25, everything else x1 direct
+and 0 ray; deflected by shields. **After three volleys it destroys itself** (no config field for it: `MaxCharges` -1;
+seen in matches 38-47 s after it was finished, the recorder logs `LOST`), without a blast. Placement that worked: the
+game's Spirals-1 (a short strut out of the front) and the player's two of 07.11.2026 at the front edge, one door in
+front, no strut at all in the lane; one uncovered on the roof edge was destroyed while it was being built.
+
 | Device | Width × height (game values) | Mass |
 |---|---|---|
 | machine gun, minigun | 40 × 40 | 40 |
@@ -49,6 +63,7 @@ need the factory, cannons the munitions plant. A player reached cannons, firebea
 | sandbags | 40 × 25 (box 51 high) | 45 |
 | flak, shotgun (weapon_pack) | 40 × 58.75 | |
 | EMP rocket, rocket (weapon_pack) | 40 × 55.75 | |
+| buzzsaw (Moonshot, measured) | 40 × 40 | 70 |
 
 - `weapon_pack` is always installed: cannon and 20mm cannon need the **munitions plant** (needs workshop or armoury;
   800 metal / 5000 energy); laser and firebeam need the factory.
@@ -89,6 +104,10 @@ need the factory, cannons the munitions plant. A player reached cannons, firebea
   bracing becomes background bracing, armour a door. The box (weapon files: `Size`, `Offset`, centred on the offset)
   does **not start at the weapon**; ahead of its LinkT point it covers: machine gun 42.5-62.5, minigun, laser and
   firebeam 130-330, sniper, AP sniper, cannon and 20mm 200-400, flak 60-140, rocket, EMP rocket and shotgun 70-170.
+- **The buzzsaw's blades hit background bracing** (`rules.BG_BLOCKED`): every strut in its lane stops it, our own
+  background bracing included, and wood its recession box clears only turns into background bracing; only doors (the AI
+  opens them) may stand there. Its lane is checked from the barrel's tip (60 ahead, `rules.BG_BARREL`) at the muzzle
+  and at the pivot's height (65); the generator's `clear_fire_lines` makes wood in it a door, not background bracing.
 - A strut closer than the box is only cleared if the weapon's **body** overlaps it: `SelectionWidth` (a half-width) to
   both sides of a centre moved forward by `SelectionOffset` (sniper 40, cannon and 20mm 18, laser and machine guns 0),
   2 × `SelectionHeight` high. So the sniper's body reaches 110 ahead, the 20mm's 108, but the laser's only 50: the

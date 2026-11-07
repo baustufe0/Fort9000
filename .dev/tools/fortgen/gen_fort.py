@@ -40,19 +40,22 @@ MIN_STRUT = 37.5        # StandardMinLength: the shortest strut the game allows
 DOOR_MIN = 49           # the shortest door (MinLength of door in building_materials.lua)
 # direct-fire weapons whose door is cut to the shot (split_doors): barrel height above the strut (the RecessionBox
 # offset of the weapon file) and barrel length
+# not the buzzsaw: in Bastion it stands in a socket whose door is cut for the 20mm that follows it (a split door cut for the
+# buzzsaw reached into the 20mm's body); the 20mm's whole-post door covers its barrel (65 up)
 DOOR_WEAPONS = {"sniper", "sniper2", "cannon", "cannon20mm", "laser", "rocketemp", "rocket", "firebeam"}
 # rockets: weapon_pack's rocket.lua / rocketemp.lua (RecessionBox Offset y -65, BarrelLength 60); firebeam:
-# weapon_pack's firebeam.lua (Offset y -60, BarrelLength 58, like the laser)
+# weapon_pack's firebeam.lua (Offset y -60, BarrelLength 58, like the laser); buzzsaw (dlc1_weapons, packed): measured
+# in the game with GetDeviceValue (Offset y -65, BarrelLength 60, 07.11.2026)
 BARREL_H = {"sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60, "rocketemp": 65, "rocket": 65,
-            "firebeam": 60}
+            "firebeam": 60, "buzzsaw": 65}
 BARREL_LEN = {"sniper": 100, "sniper2": 100, "cannon": 100, "cannon20mm": 100, "laser": 58, "rocketemp": 60, "rocket": 60,
-              "firebeam": 58}
+              "firebeam": 58, "buzzsaw": 60}
 # door_layers: the AP sniper (PenetrationDamage 600) shoots through one door (400 HP) and destroyed 8 EMP rockets
 # behind single short doors (2v2 match 28.10.2026); a player's cannons stood behind three short doors in a row.
 # Each further door layer stands this far in front of the last one (at least MIN_STRUT, the armour joining them)
 DOOR_LAYER_GAP = 50
 DIRECT_WEAPONS = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser",
-                  "flak", "shotgun", "rocketemp", "rocket", "firebeam"}
+                  "flak", "shotgun", "rocketemp", "rocket", "firebeam", "buzzsaw"}
 # the smoke bomb launcher (dlc_smokebomb) stands on top like a mortar: the game's own plans (Mountain King 3v3)
 # put it on the highest storey
 LOBBED_WEAPONS = {"mortar", "mortar2", "smokebomb"}
@@ -63,13 +66,17 @@ TECH = {"workshop", "factory", "upgrade", "munitions", "armoury"}
 PREREQ = {"mortar": "workshop", "factory": "workshop", "cannon": "factory", "laser": "factory", "firebeam": "factory",
           "minigun": "upgrade", "sniper2": "upgrade", "mortar2": "upgrade", "mine2": "upgrade", "turbine2": "upgrade",
           "flak": "armoury", "rocketemp": "armoury", "smokebomb": "armoury", "shotgun": "upgrade", "rocket": "upgrade",
-          "missile": "workshop", "missileinv": "workshop", "missile2": "upgrade", "missile2inv": "upgrade"}
+          "missile": "workshop", "missileinv": "workshop", "missile2": "upgrade", "missile2inv": "upgrade",
+          "buzzsaw": "workshop"}
 UPGRADE_OF = {"minigun": "machinegun", "sniper2": "sniper", "mortar2": "mortar", "mine2": "mine", "turbine2": "turbine",
               "shotgun": "flak", "rocket": "rocketemp", "missile2": "missile", "missile2inv": "missileinv"}
 # tall devices: their box reaches 112 (rockets) to 118 (flak, shotgun) above the strut (rules.BOX_TOP; the smoke
 # bomb is assumed like a turbine, 127); on a floor they need a storey at least this high, like a turbine
 TALL = {"rocketemp", "rocket", "flak", "shotgun", "smokebomb"}
 TALL_MIN_H = 125
+# weapons that destroy themselves after a few shots (the buzzsaw: three volleys): they fill a socket for a while and never
+# stand for it, so a socket's loadouts are tested in the place of its lasting weapon (tag_sockets)
+SINGLE_USE = {"buzzsaw"}
 
 def _point_on_segment(p, a, b, tol=4.0):
     """p lies on the strut a-b (closer than tol, not at its ends)."""
@@ -1683,6 +1690,19 @@ VANILLA_VARIANTS["bastion"] = {
                               ((-2945, -185), (-2895, -185), "armour"), ((-2945, -315), (-2895, -315), "armour"),
                               ((-2895, -315), (-2895, -185), "door"), ((-2945, -315), (-2895, -185), "backbracing")]),
                   ("device_on", [((-3100, -185), (-2945, -185), 0.18, "cannon20mm")])]},
+        # a buzzsaw in the empty socket B2 while no plant stands (the player, 07.11.2026): workshop only, 200 metal, it shreds the
+        # enemy's wood (x18.75 on bracing, x12.5 on background bracing, about nothing on anything else) and destroys itself after
+        # three volleys. Its blades hit background bracing too (CollidesWithBackgroundMaterials, measured in the game): B2's lane
+        # is open air with doors only, but for the background diagonal between its two door layers: the module makes it a door
+        # (a CREATE_LINK on a finished strut swaps its material; the AI opens it to fire, the 20mm's later too), so it is
+        # generated on the whole plan. Barrel tip at the inner door (LinkT 0.6: body 22 clear of it). EnergyAbove: its price
+        # (2000) and one volley (1200). heavy2 replaces it later; the AI rebuilds a spent one (CAI_Defaults.Buzzsaw) only
+        # while no plant stands
+        {"name": "buzzsaw", "socket": "B2", "loadout": "buzzsaw", "after": 17, "replace": True,
+         "trigger": {"types": ("turbine", "turbine2"), "count": 1, "time": 240, "built": "workshop", "no_tech": True,
+                     "energy_above": 3200, "afford": True},
+         "swaps": [((-2945, -55), (-2895, 66.5), "door")],
+         "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.6, "buzzsaw")])]},
         {"name": "heavy2", "socket": "B2", "loadout": "cannon20mm", "after": 17, "replace": True,
          "trigger": {"heavy": 1, "afford": True}, "cfg": {"prereq": {}},
          "plan": [("device_on", [((-3100, 75), (-2945, 75), 0.18, "cannon20mm")])]},
@@ -2056,6 +2076,9 @@ def _v26_bastion():
             m = dict(m, trigger=aa["trigger"])
         if m["name"] == "heavy2":           # B2 now in the row over the starting fort, forward
             m = dict(m, plan=[("device_on", [((-3093.19, 205.21), (-2945.11, 206.49), 0.85, "cannon20mm")])])
+        # no buzzsaw: B2 fires through the prow cell here, whose background diagonal stands in its blades' way
+        if m["name"] == "buzzsaw":
+            continue
         if m["name"] == "heavy1":           # C1's outer door on a background floor: armour stops the shots aimed down
             m = dict(m, plan=[(st, [(a_, b_, "backbracing") if (a_, b_, k_) == ((-2945, -185), (-2895, -185), "armour") else (a_, b_, k_)
                                     for a_, b_, k_ in items]) if st == "struts" else (st, items) for st, items in m["plan"]])
@@ -2115,7 +2138,13 @@ def clear_fire_lines(actions, extra=(), cautious=True):
             if ia in pos and ib in pos:
                 p = rules._point(pos, ia, ib, t)
                 for m, a, b, k, pr, dist in rules.fire_blockers(links, pos, name, p, kd, cautious=cautious):
-                    fix[pr] = "door" if m == "armour" else "backbracing"
+                    if name in rules.BG_BLOCKED and m in ("bracing", "backbracing"):
+                        # a buzzsaw's blades hit background bracing too: only a door (opened to fire) clears its line;
+                        # a strut too short for a door stays and rules.py reports it
+                        if math.dist(a, b) >= DOOR_MIN:
+                            fix[pr] = "door"
+                    else:
+                        fix[pr] = "door" if m == "armour" else "backbracing"
         if not fix:
             break
         out = []
@@ -3352,6 +3381,7 @@ class Plan:
             self.clear_fire_lines()
         if self.cfg.get("split_doors"):
             self.split_doors()
+        self.module_swaps(variant)
         self.snapshot_at, n = {}, 0
         for l in self.actions:
             if l.startswith("-- MARK snapshot:"):
@@ -3365,6 +3395,38 @@ class Plan:
         self.module_requires()
         self.tag_sockets()
         return self
+
+    def module_swaps(self, variant):
+        """A module's "swaps" [(point A, point B, material)]: a plan strut between the nodes at A and B gets another
+        material when the module goes in (a CREATE_LINK on a finished strut swaps it, .dev/docs/building-rules.md). Resolved
+        here, after the final passes, so the strut may be one they built (Vanilla-8's door layers, split_doors); the
+        CREATE_LINK goes first in the module's lines, and module_requires waits for the plan action that builds the strut."""
+        specs = {m["name"]: m["swaps"] for m in variant.get("modules", []) if m.get("swaps")}
+        if not specs:
+            return
+        acts = parse_lines([l for l in self.actions if not l.startswith("-- MARK ")])
+        pos = dict(self.orig)
+        pos.update(node_positions(acts))
+        built = {}
+        for k, a in enumerate(acts, 1):
+            if a["Type"] in ("CREATE_NODE", "CREATE_LINK"):
+                built[frozenset((a["OriginalNodeAId"], a["OriginalNodeBId"]))] = k
+
+        def node(p):
+            near = [(math.dist(q, p), n) for n, q in pos.items() if math.dist(q, p) < 1.5]
+            return min(near)[1] if near else None
+        for m in self.modules:
+            for pa, pb, mat in specs.get(m["name"], ()):
+                ia, ib = node(pa), node(pb)
+                pair = frozenset((ia, ib))
+                if ia is None or ib is None or pair not in built:
+                    self.problems.append("module %s: no plan strut %s-%s to swap" % (m["name"], pa, pb))
+                    continue
+                line = ('{ Type = CREATE_LINK, OriginalNodeAId = %d, PosA = {%s }, OriginalNodeBId = %d, PosB = { %s }, MaterialSaveName = "%s" },'
+                        % (ia, self._fmt(pos[ia]), ib, self._fmt(pos[ib]), mat))
+                m["lines"] = [line] + m["lines"]
+                m["swap_after"] = max(m.get("swap_after", 0), built[pair])
+                m["swaps_n"] = m.get("swaps_n", 0) + 1
 
     def socket_of(self, line):
         """The socket (variant "sockets") a CREATE_DEVICE line stands in: its strut point inside the socket's cell, on
@@ -3412,7 +3474,7 @@ class Plan:
             name, cands = sk["name"], self.variant.get("loadouts", {}).get(sk["kind"], [])
             # the socket's first device: in the plan, or in the first module that fills it (with that module inserted)
             acts = None
-            for lines in [self.actions] + [self.with_module(m) for m in self.modules]:
+            for lines in [self.actions] + [self.with_module(m) for m in self.modules if m.get("loadout") not in SINGLE_USE]:
                 if any('Socket = "%s"' % name in l for l in lines):
                     acts = lines
                     break
@@ -3476,7 +3538,7 @@ class Plan:
         self.modules.append({"name": m["name"], "types": list(tr.get("types", ())), "count": tr.get("count", 1),
                              "time": tr.get("time"), "after": tr.get("after"), "surplus": tr.get("surplus"),
                              "zone": tr.get("zone"), "damage": tr.get("damage"), "postures": tr.get("postures"),
-                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "energy_above": tr.get("energy_above"), "tech": tr.get("tech"), "drawn": tr.get("drawn"), "heavy_done": tr.get("heavy_done"), "heavy_built": tr.get("heavy_built"), "reserve": tr.get("reserve"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
+                             "storage": tr.get("storage"), "afford": tr.get("afford"), "built": tr.get("built"), "energy_above": tr.get("energy_above"), "tech": tr.get("tech"), "no_tech": tr.get("no_tech"), "drawn": tr.get("drawn"), "heavy_done": tr.get("heavy_done"), "heavy_built": tr.get("heavy_built"), "reserve": tr.get("reserve"), "heavy": tr.get("heavy"), "branch": tr.get("branch"),
                              "replace": m.get("replace"), "retire": m.get("retire"),
                              "socket": m.get("socket"), "loadout": m.get("loadout"), "repeat": m.get("repeat"),
                              "cooldown": m.get("cooldown"), "lines": lines})
@@ -3519,6 +3581,8 @@ class Plan:
             # (Vanilla-8's factory module, placed right after its strut, stood 42 of 54 box points in the open)
             if any(a.get("DeviceSaveName", "") in TECH for a in mod):
                 req = max(req, self.snapshot_index(m))
+            # a swapped plan strut (module_swaps) must be finished first, or the swap has no effect
+            req = max(req, m.get("swap_after", 0))
             m["requires"] = req
             # struts the plan builds too (only after the module's snapshot): the module then builds them without the
             # plan's later changes (hidden cage, woodspam, cleared fire lines); move its "after" past them
@@ -3526,6 +3590,7 @@ class Plan:
                            for a in plan if a["Type"] in ("CREATE_NODE", "CREATE_LINK")}
             dup = sum(1 for a in mod if a["Type"] in ("CREATE_NODE", "CREATE_LINK") and frozenset(
                 (tuple(a.get("PosA") or ()), tuple(a.get("NewNodePos") or a.get("PosB") or ()))) in plan_struts)
+            dup -= m.get("swaps_n", 0)          # module_swaps: rebuilding a plan strut in another material is the point
             if dup:
                 self.problems.append("module %s builds %d struts the plan also builds later" % (m["name"], dup))
 
@@ -4711,6 +4776,7 @@ def main():
             trig += ["with %s built" % m["built"]] if m.get("built") else []
             trig += ["from %d energy" % m["energy_above"]] if m.get("energy_above") else []
             trig += ["if %s drawn" % m["drawn"]] if m.get("drawn") else []
+            trig += ["while no plant stands"] if m.get("no_tech") else []
             trig += ["after the heavy weapons"] if m.get("heavy_done") else []
             trig += ["%d heavy weapons built" % m["heavy_built"]] if m.get("heavy_built") else []
             trig += ["%d metal over" % m["reserve"]] if m.get("reserve") else []

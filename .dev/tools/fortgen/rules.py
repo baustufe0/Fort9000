@@ -21,6 +21,8 @@ SIZE = {
     "workshop": (90, 45), "factory": (90, 45), "upgrade": (90, 45), "munitions": (45, 85), "armoury": (45, 85),
     # dlc_smokebomb is packed (not readable): size estimated like a mortar launcher
     "smokebomb": (40, 40),
+    # the buzzsaw (dlc1_weapons, packed): measured in the game with GetDeviceValue (07.11.2026), centred like a machine gun
+    "buzzsaw": (40, 40),
     "missile": (63.75, 90), "missile2": (63.75, 90), "missileinv": (63.75, 90), "missile2inv": (63.75, 90),
 }
 # Height of a device's box above its strut: the game centres the box SelectionHeight above the strut
@@ -30,13 +32,22 @@ BOX_TOP = {"machinegun": 81, "minigun": 81, "sniper": 91, "sniper2": 91, "mortar
            "rocket": 112, "rocketemp": 112, "turbine": 127, "turbine2": 127, "battery": 81, "store": 81,
            "workshop": 91, "factory": 91, "upgrade": 91, "munitions": 170, "armoury": 170, "sandbags": 51,
            # dlc_smokebomb is packed: assumed like a turbine
-           "smokebomb": 127}
+           "smokebomb": 127,
+           # buzzsaw: SelectionHeight 40, SelectionOffset y -40.5 (measured in the game, 07.11.2026)
+           "buzzsaw": 81}
 # tall launchers: a solid strut through their box is an error (the other devices only get a warning; the
 # munitions plant, 170 high, was built in 100-high storeys in test matches)
 TALL = {"rocket", "rocketemp", "flak", "shotgun", "smokebomb"}
 # weapons that fire (roughly) straight ahead and need a clear line of fire (MinFireClearance 500-1000)
 DIRECT = {"machinegun", "minigun", "sniper", "sniper2", "cannon", "cannon20mm", "laser", "flak", "shotgun",
-          "rocket", "rocketemp", "firebeam"}
+          "rocket", "rocketemp", "firebeam", "buzzsaw"}
+# The buzzsaw's blades collide with background bracing (its projectile's CollidesWithBackgroundMaterials = true, the
+# sniper's false; measured in the game, 07.11.2026): our own background bracing blocks it as well, and so does wood
+# bracing its recession box turns into background bracing. Only doors (opened to fire) may stand in its line of fire.
+BG_BLOCKED = {"buzzsaw"}
+# where its blades leave the barrel: BarrelLength (measured, 07.11.2026); struts behind that point, in its own body, are no
+# obstacle to them (the body's wood is recessed, metal there is refused anyway)
+BG_BARREL = {"buzzsaw": 60}
 LOBBED = {"mortar", "mortar2", "smokebomb"}
 ROCKETS = {"rocket", "rocketemp"}
 MORTARS = {"mortar", "mortar2"}
@@ -61,10 +72,12 @@ FIRE_RANGE = 600           # checked length of the line of fire (beyond that it 
 # 20mm (body 108 ahead) in the same cell fired 126 shots.
 RECESSION = {"machinegun": (42.5, 62.5), "minigun": (130, 330), "sniper": (200, 400), "sniper2": (200, 400),
              "cannon": (200, 400), "cannon20mm": (200, 400), "laser": (130, 330), "firebeam": (130, 330),
-             "flak": (60, 140), "shotgun": (70, 170), "rocket": (70, 170), "rocketemp": (70, 170)}
+             "flak": (60, 140), "shotgun": (70, 170), "rocket": (70, 170), "rocketemp": (70, 170),
+             # buzzsaw: RecessionBox Size {200, 25}, Offset {-230, -65} (measured in the game, 07.11.2026)
+             "buzzsaw": (130, 330)}
 # How high that box stands over the weapon's strut (its Offset y; Size y 25, so 12.5 to both sides). Its own floor is never in it.
 RECESSION_Y = {"machinegun": 40, "minigun": 40, "sniper": 50, "sniper2": 50, "cannon": 70, "cannon20mm": 60, "laser": 60,
-               "firebeam": 60, "flak": 60, "shotgun": 65, "rocket": 65, "rocketemp": 65}
+               "firebeam": 60, "flak": 60, "shotgun": 65, "rocket": 65, "rocketemp": 65, "buzzsaw": 65}
 RECESSION_H = 12.5
 # A weapon's body (the box the game turns overlapped struts into background bracing with): SelectionWidth (a
 # half-width in the game files) to both sides of a centre moved forward by SelectionOffset (sniper 40, cannons 18;
@@ -202,11 +215,12 @@ def _point(pos, ida, idb, t):
     return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
 
 
-def _blocking(links, pos, p, q, skip=()):
-    """Foreground links crossing the segment p-q (except those in skip): [(material, a, b, action, pair)]."""
+def _blocking(links, pos, p, q, skip=(), mats=FOREGROUND):
+    """Links of the materials mats (default: foreground) crossing the segment p-q (except those in skip):
+    [(material, a, b, action, pair)]."""
     out = []
     for pair, (mat, ia, ib, k) in links.items():
-        if mat not in FOREGROUND or pair in skip or ia not in pos or ib not in pos:
+        if mat not in mats or pair in skip or ia not in pos or ib not in pos:
             continue
         if segments_cross(p, q, pos[ia], pos[ib]):
             out.append((mat, pos[ia], pos[ib], k, pair))
@@ -249,6 +263,11 @@ def fire_lines(name, p, enemy_dir=1):
     """Segments a weapon at base point p needs free: direct fire straight ahead, mortars steep forward."""
     w, h = SIZE.get(name, (40, 40))
     muzzle = (p[0], p[1] - 0.6 * h)
+    if name in BG_BLOCKED:
+        # from the barrel's tip, at the muzzle height and at the pivot's (RecessionBox height): every strut on the way,
+        # background bracing too, stops the blades
+        x0 = p[0] + enemy_dir * BG_BARREL[name]
+        return [((x0, y), (p[0] + enemy_dir * FIRE_RANGE, y)) for y in (muzzle[1], p[1] - RECESSION_Y[name])]
     if name in DIRECT:
         return [(muzzle, (p[0] + enemy_dir * FIRE_RANGE, muzzle[1]))]
     if name in LOBBED:
@@ -256,17 +275,32 @@ def fire_lines(name, p, enemy_dir=1):
     return []
 
 
+def blocking_mats(name):
+    """Materials that stop a weapon's shots: foreground, and background bracing too for a buzzsaw (BG_BLOCKED)."""
+    return FOREGROUND | {"backbracing"} if name in BG_BLOCKED else FOREGROUND
+
+
+def _bg_block(name, m, k, k_dev):
+    """A buzzsaw's blades hit background bracing: wood stays in their way when it is recessed (bracing becomes background
+    bracing); armour becomes a door, which the AI opens."""
+    return name in BG_BLOCKED and (m == "backbracing" or (m == "bracing" and k < k_dev))
+
+
 def fire_blockers(links, pos, name, p, k_dev, enemy_dir=1, cautious=False):
     """Foreground struts that block a weapon: built after it anywhere in its line of fire, or (built before)
     outside its recession box and its body (recessed()); doors in front of it are its own (opened to fire).
     cautious (the generator's clear_fire_lines): also every strut the earlier model called blocking (beyond
-    OLD_RECESSION, machine gun OLD_RECESSION_MG), so plans that fired in test matches keep every strut they cleared."""
+    OLD_RECESSION, machine gun OLD_RECESSION_MG), so plans that fired in test matches keep every strut they cleared.
+    A buzzsaw (BG_BLOCKED) is also blocked by background bracing anywhere in its line, and by wood the game recesses."""
     out = []
     for p0, p1 in fire_lines(name, p, enemy_dir):
-        for m, a, b, k, pair in _blocking(links, pos, p0, p1):
+        for m, a, b, k, pair in _blocking(links, pos, p0, p1, mats=blocking_mats(name)):
             dist = _cross_dist(p0, p1, a, b)
             if m == "door":
                 continue                    # the AI opens all doors in the way before firing (OpenWeaponDoors)
+            if _bg_block(name, m, k, k_dev):
+                out.append((m, a, b, k, pair, dist))
+                continue
             if k < k_dev:                   # built before the weapon: recessed by the game when it is placed?
                 if name not in DIRECT:
                     if dist <= OLD_RECESSION:
@@ -283,7 +317,7 @@ def aim_window(links, pos, name, p, k_dev, enemy_dir=1, limit=45):
     fire_blockers, on rays through the muzzle, not only the level one. Doors do not count, the AI opens them."""
     # from the barrel's pivot (the weapon file's RecessionBox height), not 0.6 of the device's height: for the 20mm that is 60
     # against 33, which showed 8 degrees up where Vanilla-3's armour left 3.4 (2v2 of 07.11.2026)
-    muzzle = (p[0], p[1] - RECESSION_Y.get(name, 0.6 * SIZE.get(name, (40, 40))[1]))
+    muzzle = (p[0] + enemy_dir * BG_BARREL.get(name, 0), p[1] - RECESSION_Y.get(name, 0.6 * SIZE.get(name, (40, 40))[1]))
     out = []
     for sign in (1, -1):                # y grows downward: +1 aims down
         free = 0
@@ -291,9 +325,12 @@ def aim_window(links, pos, name, p, k_dev, enemy_dir=1, limit=45):
             r = math.radians(deg)
             q = (muzzle[0] + enemy_dir * FIRE_RANGE * math.cos(r), muzzle[1] + sign * FIRE_RANGE * math.sin(r))
             stopped = False
-            for m, a, b, k, pair in _blocking(links, pos, muzzle, q):
+            for m, a, b, k, pair in _blocking(links, pos, muzzle, q, mats=blocking_mats(name)):
                 if m == "door":
                     continue
+                if _bg_block(name, m, k, k_dev):
+                    stopped = True
+                    break
                 # cleared when the weapon is placed: in its box or its body, by height too (the floor stops shots aimed
                 # down: T202's laser, match 06.11.2026)
                 if k < k_dev and (in_recession_box(name, p, a, b, enemy_dir) or body_overlaps(name, p, a, b, enemy_dir)):

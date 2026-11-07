@@ -75,6 +75,20 @@ local CAI_Defaults =
 	-- a device's centre, since a weapon's door is often cut to its barrel height
 	-- Near: the ray must end this close to the point aimed at; any other device on the way (sandbags, test 6) is no target
 	SniperSight = { Enabled = true, Hitpoints = { sniper = 0, sniper2 = 600 }, AimUp = { 0, 15, 30 }, Near = 60 },
+	-- Buzzsaw (all plans; the player, 07.11.2026): a single-use weapon, three volleys of three blades, then it destroys
+	-- itself (no blast). Its blades do x18.75 on bracing, x12.5 on background bracing and about nothing on anything else
+	-- (measured in the game). Sight: it fires only when a ray from it towards an enemy device of Targets first hits enemy
+	-- Wood within Near of the point aimed at (the device's platform point, its support, or its centre), else at enemy wood
+	-- within Far of it; otherwise it holds (no fallback to the built-in search). Rebuild: a lost buzzsaw is rebuilt at most
+	-- Rearm times per plan action, and with RearmNoTech not once a plant for heavy weapons stands (Bastion: the socket goes
+	-- to the heavy weapon); it never counts as a socket loss or for the rebuild cap. Volleys: a loss after that many is a
+	-- self-destruct (log only)
+	Buzzsaw = { Enabled = true, Types = { buzzsaw = true }, Volleys = 3, Rearm = 1, RearmNoTech = true, Near = 60, Far = 250,
+		Wood = { bracing = true, backbracing = true, rope = true },
+		Targets = { "turbine2", "turbine", "battery", "store", "reactor", "munitions", "factory", "upgrade", "armoury", "workshop",
+			"cannon", "laser", "firebeam", "cannon20mm", "sniper2", "sniper", "mortar2", "mortar", "rocket", "rocketemp",
+			"missile2", "missile", "missile2inv", "missileinv", "minigun", "machinegun", "flak", "shotgun", "smokebomb",
+			"mine2", "mine" } },
 	-- FrontStrip (plans with FortStrip, the player 04.11.2026): while metal is below Below in the first Until seconds, the
 	-- armour struts of the list become wood (armour reclaims 0.9 per unit of length, wood costs 0.1);
 	-- once metal is at RestoreAbove after that, they become armour again, one per think step. Once per strut: a round
@@ -1847,6 +1861,8 @@ function CAI_Init()
 	end
 	local okS, errS = pcall(CAI_InitSockets)
 	if not okS then CAI_Log("ERROR sockets: " .. tostring(errS)) end
+	local okB, errB = pcall(CAI_InitBuzzsaw)
+	if not okB then CAI_Log("ERROR buzzsaw: " .. tostring(errB)) end
 	for k, v in pairs(data.AntiAirFireProbability) do
 		data.CAI.baseAA[k] = v
 	end
@@ -2290,6 +2306,11 @@ function CAI_UpdateModules()
 				why = (own.munitions or own.factory) and (why or "tech") or nil
 			end
 			if why and tr.Built and not CAI_OwnDevices(true)[tr.Built] then why = nil end
+			-- NoTech (buzzsaw): only while no plant for heavy weapons stands; after it the socket is the heavy weapon's
+			if why and tr.NoTech then
+				local own = CAI_OwnDevices(true)
+				if own.munitions or own.factory then why = nil end
+			end
 			-- EnergyAbove: what can wait leaves the energy to the heavy weapons' shots (tests 20, 22: guns silent at 500-850 energy)
 			if why and tr.EnergyAbove then
 				local res = GetTeamResources(teamId)
@@ -2629,6 +2650,9 @@ function OnWeaponFired(weaponTeamId, saveName, weaponId, projectileNodeId, proje
 		end
 		st.ownShots = st.ownShots or {}
 		st.ownShots[saveName] = (st.ownShots[saveName] or 0) + 1
+		if st.buzzsaw and st.buzzsaw.types[saveName] then
+			st.buzzsaw.blades[weaponId] = (st.buzzsaw.blades[weaponId] or 0) + 1
+		end
 		if type(projectileNodeId) == "number" and projectileNodeId > 0 then
 			if (st.ownProjCount or 0) > 400 then
 				st.ownProj, st.ownProjCount = {}, 0
@@ -2835,6 +2859,107 @@ function CAI_SniperTarget(weaponId, weaponPos, sideDevices)
 	end
 	st.sniperSight.hold = st.sniperSight.hold + 1
 	return nil
+end
+
+-- Buzzsaw: see CAI_Defaults.Buzzsaw. WeaponFireBlockedByStructure and an empty priority list with no structure attempts
+-- leave CAI_BuzzsawTarget the only way to a target: nothing worth its three volleys, no shot.
+--   BUZZSAW sight <type> <id> near|far material=<m> at=<x>,<y>     (once per target device)
+--   BUZZSAW lost <id> action=<k> blades=<n> volleys=<v> spent=<0|1> rearm=<r>/<max> tech=<0|1> -> rebuild|drop
+function CAI_InitBuzzsaw()
+	local cfg = Strategy.Buzzsaw or CAI_Defaults.Buzzsaw
+	local st = data.CAI
+	if not (cfg and cfg.Enabled) or st == nil then return end
+	st.buzzsaw = { types = cfg.Types, blades = {}, rearms = {}, seen = {}, found = 0, hold = 0 }
+	if type(CastRayFromDevice) ~= "function" then return end
+	for w in pairs(cfg.Types) do
+		WeaponFireBlockedByStructure[w] = true
+		WeaponFindTargetFunction[w] = "CAI_BuzzsawTarget"
+		data.CustomWeaponPriorities[w] = {}
+		if data.WeaponTargetStructureAttempts then data.WeaponTargetStructureAttempts[w] = 0 end
+	end
+end
+
+function CAI_BuzzsawTarget(weaponId, weaponPos, sideDevices)
+	local st = data.CAI
+	local cfg = Strategy.Buzzsaw or CAI_Defaults.Buzzsaw
+	local b = st and st.buzzsaw
+	if b == nil then return nil end
+	local flags = RAY_EXCLUDE_CONSTRUCTION + RAY_ALLIED_BG_BLOCKS + RAY_EXCLUDE_DYNAMIC_TERRAIN   -- separate bits
+	-- the ray's first hit: enemy wood, and how far from the point aimed at
+	local function wood(pos)
+		local hit = CastRayFromDevice(weaponId, pos, 0, flags, 0)
+		if hit ~= RAY_HIT_STRUCTURE or GetRayHitSideId() ~= enemyTeamId then return nil end
+		local mat = GetRayHitMaterialSaveName and GetRayHitMaterialSaveName()
+		if not (mat and cfg.Wood[mat]) then return nil end
+		local at = GetRayHitPosition()
+		local dx, dy = at.x - pos.x, at.y - pos.y
+		return math.sqrt(dx * dx + dy * dy), mat, at
+	end
+	local function sight(kind, id, how, mat, at)
+		b.found = b.found + 1
+		if not b.seen[id] then
+			b.seen[id] = true
+			CAI_Log("BUZZSAW sight " .. kind .. " " .. id .. " " .. how .. " material=" .. mat .. " at=" .. CAI_Round(at.x) .. "," .. CAI_Round(at.y))
+		end
+	end
+	local far
+	for _, kind in ipairs(cfg.Targets) do
+		for _, id in ipairs(sideDevices[kind] or {}) do
+			if not IsCloaked(id) then
+				-- the platform point first (the strut the device stands on), then its centre
+				for _, pos in ipairs({ GetDevicePosition(id), GetDeviceCentrePosition(id) }) do
+					local d, mat, at = wood(pos)
+					if d and d <= cfg.Near then
+						sight(kind, id, "near", mat, at)
+						return pos
+					elseif d and d <= cfg.Far and far == nil then
+						far = { pos = pos, kind = kind, id = id, mat = mat, at = at }
+					end
+				end
+			end
+		end
+	end
+	if far then
+		sight(far.kind, far.id, "far", far.mat, far.at)
+		return far.pos
+	end
+	b.hold = b.hold + 1
+	return nil
+end
+
+-- QueueDeviceRebuild of a buzzsaw: "rearm" (rebuild it), "drop" (not again) or nil (not a buzzsaw)
+function CAI_BuzzsawLost(deviceId)
+	local st = data.CAI
+	local b = st and st.buzzsaw
+	local k = data.Devices and data.Devices[deviceId]
+	local a = k and Fort and Fort[k]
+	if b == nil or a == nil or not b.types[a.DeviceSaveName] then return nil end
+	local cfg = Strategy.Buzzsaw or CAI_Defaults.Buzzsaw
+	local blades = b.blades[deviceId] or 0
+	b.blades[deviceId] = nil
+	local per = 3
+	if type(GetWeaponTypeRoundsEachBurst) == "function" then
+		local ok, n = pcall(GetWeaponTypeRoundsEachBurst, a.DeviceSaveName, teamId)
+		if ok and type(n) == "number" and n >= 1 then per = n end
+	end
+	local volleys = math.ceil(blades / per)
+	local own = CAI_OwnDevices(true)
+	local tech = (own.munitions or own.factory) and true or false
+	local done = b.rearms[k] or 0
+	local rearm = done < (cfg.Rearm or 0) and not (cfg.RearmNoTech and tech)
+	CAI_Log("BUZZSAW lost " .. deviceId .. " action=" .. k .. " blades=" .. blades .. " volleys=" .. volleys
+		.. " spent=" .. (volleys >= (cfg.Volleys or 3) and 1 or 0) .. " rearm=" .. done .. "/" .. tostring(cfg.Rearm or 0)
+		.. " tech=" .. (tech and 1 or 0) .. " -> " .. (rearm and "rebuild" or "drop"))
+	if rearm then
+		b.rearms[k] = done + 1
+		return "rearm"
+	end
+	-- out of the socket: a refill or a swap must not build another weapon in its place (the buzzsaw's LinkT)
+	local s = a.Socket and st.sockets and st.sockets[a.Socket]
+	if s and s.current == a.DeviceSaveName then s.current = nil end
+	a.Socket = nil
+	if data.Rebuild then data.Rebuild[k] = nil end
+	return "drop"
 end
 
 -- A device of this AI's own team, not an ally's: the side's list holds all its teams, and the game asks each team for its own
@@ -3451,6 +3576,15 @@ end
 local CAI_BaseQueueDeviceRebuild = QueueDeviceRebuild
 if CAI_BaseQueueDeviceRebuild then
 	function QueueDeviceRebuild(deviceId)
+		-- a buzzsaw first: it is used up, not lost to the enemy; never a socket loss, never for the rebuild cap
+		local okB, verdict = pcall(CAI_BuzzsawLost, deviceId)
+		if not okB then CAI_Log("ERROR buzzsaw lost: " .. tostring(verdict)) end
+		if okB and verdict == "drop" then
+			data.Devices[deviceId] = nil
+			return
+		elseif okB and verdict == "rearm" then
+			return CAI_BaseQueueDeviceRebuild(deviceId)
+		end
 		local okS, swapped = pcall(CAI_SocketLost, deviceId)
 		if not okS then CAI_Log("ERROR socket: " .. tostring(swapped)) end
 		if okS and swapped then

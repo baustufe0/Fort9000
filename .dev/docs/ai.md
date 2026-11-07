@@ -36,6 +36,20 @@ starts from the first cost) and the firebeams fired one by one; no volley seen i
 **Anti-air first** (`Fire.AntiAirFirst`): flak and its upgrade, the shotgun, fire at the enemy fort only while the enemy has none of the `Threats` they should shoot down (mortars, heavy mortars, missiles, rockets, EMP rockets; counted every think step). With one of them they fire anti-air only, like `NoOffence` (offensive and rebuild fire probability 0); when the threats are gone their probabilities come back. Log on each change: `FLAK_HOLD on threats=<type:n,...>`, `FLAK_HOLD off`. Without a smoke launcher nothing changes. The timings are first guesses (the smoke bomb is a packed DLC weapon, its shell's flight time and cloud duration are not readable).
 **Fire diagnostics:** the fire timer logs why an offence weapon did not fire, at most one line per weapon every `CAI_FIREWAIT_EVERY` (30) seconds and at once when the reason changes: `FIREWAIT <type> <id> avail=<0|1> ready=<0|1> code=<FIREFAIL name|-> queue=<0|1> m= e=` when it is skipped (not available, not ready to fire with the engine's reason, or an action such as opening doors pending), `FIRETRY <type> <id> fired=<0|1> code= [ray=<hit>:<side>:<material>@<x>,<y>] m= e=` after `TryFireGun` (fired = no longer ready, i.e. reloading; `fired=0`: the built-in AI declined - no target, chance or cost; `ray` = what the targeting ray towards the enemy reactor hits first, cast with the flags of the built-in `TargetObstructed`, in which the team's own background bracing blocks the ray).
 
+**Buzzsaw** (`CAI_Defaults.Buzzsaw`, all plans, 07.11.2026): three volleys, then it destroys itself, so every volley
+must count. `CAI_InitBuzzsaw` gives it its own target search only (`WeaponFindTargetFunction`,
+`WeaponFireBlockedByStructure`, an empty priority list, no structure attempts): `CAI_BuzzsawTarget` casts a ray (own
+background bracing blocks, `RAY_ALLIED_BG_BLOCKS`) to the platform point, then the centre, of each enemy device in
+`Targets` order (turbines and storage first) and fires when the first hit is enemy wood (`Wood`: bracing, background
+bracing, rope; `GetRayHitMaterialSaveName`) within `Near` (60) of that point, else at the first such wood within `Far`
+(250); nothing of that kind, no shot. Log `BUZZSAW sight <type> <id> near|far material=<m> at=<x>,<y>` once per target.
+Its blades are counted (`OnWeaponFired`); when the built-in AI queues it for rebuilding (`QueueDeviceRebuild`, before the
+socket and the rebuild cap), `CAI_BuzzsawLost` rebuilds it at most `Rearm` (1) times per plan action and, with
+`RearmNoTech`, not once a munitions plant or factory stands; otherwise it is dropped and its action leaves its socket (a
+refill would build another weapon at its LinkT). Never a socket loss, never for the rebuild cap. Log `BUZZSAW lost <id>
+action=<k> blades=<n> volleys=<v> spent=<0|1> rearm=<r>/<max> tech=<0|1> -> rebuild|drop`. Module trigger `NoTech`: only
+while no plant stands. Test: `t_buzzsaw.lua` (mocked ray). Not seen in a match yet.
+
 **Retire idle weapons:** a plan may list weapon types to sell once they have nothing left to hit: `FortRetire = {
 sniper = 90 }` after the `Fort` table (written by `gen_fort.py` from a variant's `retire`; `CAI_LoadPlanFile` reads
 it, the plan swap logs e.g. `RETIRE-CONFIG sniper2:90,sniper:90`). The fire control counts, per weapon of such a type, the seconds in
