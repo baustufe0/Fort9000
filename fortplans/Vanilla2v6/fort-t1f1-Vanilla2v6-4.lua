@@ -189,6 +189,7 @@ Fort =
 { Type = CREATE_DEVICE, OriginalNodeAId = 10051, PosA = { x = -3200.00, y = -175.00 }, OriginalNodeBId = 10045, PosB = { x = -3100.00, y = -175.00 }, LinkT = 0.35, DeviceSaveName = "turbine" },
 { Type = CREATE_LINK, OriginalNodeAId = 10046, PosA = {x = -2945.00, y = -175.00 }, OriginalNodeBId = 10013, PosB = { x = -2945.00, y = -45.00 }, MaterialSaveName = "door" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10015, PosA = { x = -3100.00, y = -45.00 }, OriginalNodeBId = 10013, PosB = { x = -2945.00, y = -45.00 }, LinkT = 0.67, DeviceSaveName = "machinegun" },
+{ Type = DESTROY_DEVICE, OriginalNodeAId = 47, PosA = { x = -2996.23, y = 503.57 }, OriginalNodeBId = 46, PosB = { x = -2895.38, y = 505.41 }, DeviceSaveName = "machinegun" },
 { Type = CREATE_NODE, OriginalNodeAId = 50, PosA = { x = -2892.17, y = 411.07 }, OriginalNodeBId = 10053, NewNodePos = { x = -2852.00, y = 411.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10053, PosA = { x = -2852.00, y = 411.00 }, OriginalNodeBId = 10054, NewNodePos = { x = -2812.00, y = 411.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 46, PosA = { x = -2895.38, y = 505.41 }, OriginalNodeBId = 10055, NewNodePos = { x = -2852.00, y = 505.00 }, MaterialSaveName = "bracing" },

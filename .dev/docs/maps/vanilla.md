@@ -64,6 +64,7 @@ Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
   match, `weapon_avoid`). Vanilla-3 (and the former laser plan) put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
   machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. In the top front cell (floor -270;
   the removed Vanilla-4) it was refused once the tower stood below it.
+- **Starting machine gun:** sold (`sell:machinegun`) in the step that starts the woodspam, in every plan: behind the woodspam it cannot shoot (the player, 07.11.2026, Vanilla-6). No upgrade step puts it back; on Vanilla-5 and Vanilla-6 that is one minigun fewer. Not played yet.
 - **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's sniper's door 80.5. Its 20mm doors were 78 of 125
   (126 shots through them) until the 2v2 of 07.11.2026 showed the armour over them left 3.4-4 degrees up: the shell falls
   ~460-610 on the way, so the 20mm only reached the lower region of the lower fort (needed from the lower spot: -2..10 degrees

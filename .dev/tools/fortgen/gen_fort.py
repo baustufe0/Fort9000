@@ -1193,7 +1193,8 @@ VANILLA_VARIANTS = {
             ("aa", ["machinegun"]),
             ("eco", ["mine"]),
             # the lower front and the mine row: the whole fort stands on that storey (lost to one laser sweep at ~460 s)
-            ("defence", ["woodspam:1", "woodspam:2"]),
+            # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+            ("defence", ["sell:machinegun", "woodspam:1", "woodspam:2"]),
             ("weapons", ["sniper"]),
             ("eco", ["turbine"]),
             ("eco", ["mine"]),
@@ -1314,13 +1315,13 @@ VANILLA_VARIANTS = {
             ("defence", ["sandbags", "sandbags"]),
             # the smoke launcher on its storey on the gallery's back corner (its arc passes over everything ahead)
             ("weapons", ["smokebomb"]),
-            ("defence", ["woodspam"]),
+            # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+            ("defence", ["sell:machinegun", "woodspam"]),
             ("aa", ["machinegun"]),
             ("eco", ["turbine", "turbine"]),
             ("eco", ["battery", "store"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
             ("eco", ["battery"]),
-            ("upgrades", ["minigun"]),
             ("upgrades", ["mine2", "mine2"]),
             ("defence", ["woodspam"]),
             # the firebeam's tech last (workshop 400 m / 2000 e, factory 800 m / 6000 e, 60 s each): in the two matches
@@ -1374,7 +1375,8 @@ VANILLA_VARIANTS["modular"] = {
         ("eco", ["mine", "mine", "mine"]),                          # 4
         ("eco", ["turbine"]),                                       # 5
         ("defence", ["sandbags", "sandbags"]),                      # 6
-        ("defence", ["woodspam"]),                                  # 7
+        # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+        ("defence", ["sell:machinegun", "woodspam"]),               # 7
         ("eco", ["turbine", "turbine"]),                            # 8
         ("tech", ["upgrade"]),                                      # 9
         ("eco", ["battery", "store"]),                              # 10
@@ -1405,7 +1407,7 @@ VANILLA_VARIANTS["modular"] = {
                                                     "after": "sniper"},
          "plan": [("upgrades", ["sniper2"])]},
         {"name": "miniguns", "after": 9, "trigger": {"time": 540, "after": "antiair2"},
-         "plan": [("upgrades", ["minigun", "minigun"])]},
+         "plan": [("upgrades", ["minigun"])]},
         # late game: in the first test match (26.10.2026) the plan was finished at ~485 s and the AI sat at its storage
         # caps (1200 / 9000) for six minutes while the player's machine guns and mortars wore down the starting fort's
         # lower front. Two more mortars on the free gallery-roof cells (100 from each machine gun; nothing above
@@ -1867,7 +1869,8 @@ VANILLA2V6_VARIANTS = {
             ("build", [(-3300, -185, "machinegun")]),
             ("weapons", ["machinegun"]),
             ("eco", ["mine"]),
-            ("defence", ["woodspam:1", "woodspam:2"]),
+            # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+            ("defence", ["sell:machinegun", "woodspam:1", "woodspam:2"]),
             ("eco", ["turbine"]),
             ("eco", ["mine"]),
             ("tech", ["upgrade"]),
@@ -1876,7 +1879,6 @@ VANILLA2V6_VARIANTS = {
             ("weapons", ["cannon20mm"]),
             ("upgrades", ["turbine2", "turbine2"]),
             ("defence", ["woodspam"]),
-            ("upgrades", ["minigun"]),
             ("eco", ["turbine"]),
             ("defence", ["woodspam"]),
         ],
@@ -1916,7 +1918,8 @@ VANILLA2V6_VARIANTS = {
             ("weapons", ["rocketemp"]),
             ("upgrades", ["rocket"]),
             ("aa", ["machinegun"]),
-            ("defence", ["woodspam"]),
+            # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+            ("defence", ["sell:machinegun", "woodspam"]),
             ("eco", ["turbine"]),
             ("eco", ["battery", "store"]),
             ("upgrades", ["turbine2", "turbine2", "turbine2"]),
@@ -1975,7 +1978,8 @@ VANILLA2V6_VARIANTS = {
             ("eco", ["mine"]),
             ("eco", ["turbine"]),
             ("aa", ["machinegun"]),
-            ("defence", ["woodspam:1", "woodspam:2"]),
+            # the woodspam stands in the starting machine gun's line: no use any more, sold first (the player, 07.11.2026)
+            ("defence", ["sell:machinegun", "woodspam:1", "woodspam:2"]),
             ("eco", ["mine"]),
             ("tech", ["upgrade"]),
             ("eco", ["battery"]),
@@ -4390,10 +4394,11 @@ class Plan:
         """Plan step "sell:<device>": sell a device of the starting fort (orig_devices) with DESTROY_DEVICE, as the
         game's Abyss-1 sells its sandbags; its cell becomes a fire lane ("lane": no device, door in front,
         background diagonals), e.g. for a weapon behind it."""
-        for pa, pb, d, *_ in self.cfg.get("orig_devices", []):
+        for k, (pa, pb, d, *_) in enumerate(self.cfg.get("orig_devices", [])):
             ia, ib = self.node_at(pa), self.node_at(pb)
             if d != dev or not ia or not ib:
                 continue
+            self.__dict__.setdefault("orig_upgraded", set()).add(k)     # sold: no later upgrade builds it back
             a, b = self.nodes[ia], self.nodes[ib]
             self.actions.append('{ Type = DESTROY_DEVICE, OriginalNodeAId = %d, PosA = { %s }, OriginalNodeBId = %d, PosB = { %s }, DeviceSaveName = "%s" },'
                                 % (a[0], self._fmt(a[1]), b[0], self._fmt(b[1]), dev))

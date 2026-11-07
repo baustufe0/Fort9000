@@ -165,6 +165,7 @@ Fort =
 { Type = CREATE_LINK, OriginalNodeAId = 10049, PosA = {x = -3200.00, y = 40.00 }, OriginalNodeBId = 10006, PosB = { x = -3100.00, y = 105.00 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10047, PosA = { x = -3200.00, y = 105.00 }, OriginalNodeBId = 10006, PosB = { x = -3100.00, y = 105.00 }, LinkT = 0.30, DeviceSaveName = "sandbags" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10049, PosA = { x = -3200.00, y = 40.00 }, OriginalNodeBId = 10050, PosB = { x = -3100.00, y = 40.00 }, LinkT = 0.50, DeviceSaveName = "sandbags" },
+{ Type = DESTROY_DEVICE, OriginalNodeAId = 47, PosA = { x = -2996.23, y = 503.57 }, OriginalNodeBId = 46, PosB = { x = -2895.38, y = 505.41 }, DeviceSaveName = "machinegun" },
 { Type = CREATE_NODE, OriginalNodeAId = 58, PosA = { x = -2846.18, y = 203.99 }, OriginalNodeBId = 10051, NewNodePos = { x = -2805.00, y = 205.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10011, PosA = { x = -2845.00, y = 105.00 }, OriginalNodeBId = 10070, NewNodePos = { x = -2805.00, y = 116.01 }, MaterialSaveName = "backbracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 10070, PosA = {x = -2805.00, y = 116.01 }, OriginalNodeBId = 10051, PosB = { x = -2805.00, y = 205.00 }, MaterialSaveName = "door" },
@@ -250,29 +251,28 @@ FortModules =
 { Name = "antiair", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Time = 240 }, Requires = 152, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10048, PosA = { x = -3200.00, y = -25.00 }, OriginalNodeBId = 10009, PosB = { x = -3100.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "machinegun" },
 } },
-{ Name = "heavyartillery", Trigger = { Time = 330, After = "artillery" }, Requires = 213, Actions = {
+{ Name = "heavyartillery", Trigger = { Time = 330, After = "artillery" }, Requires = 214, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10006, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10008, PosB = { x = -3022.00, y = 105.00 }, LinkT = 0.25, DeviceSaveName = "mortar2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10008, PosA = { x = -3022.00, y = 105.00 }, OriginalNodeBId = 10007, PosB = { x = -2945.00, y = 105.00 }, LinkT = 0.75, DeviceSaveName = "mortar2" },
 } },
-{ Name = "antiair2", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 3, Time = 420, After = "antiair" }, Requires = 208, Actions = {
+{ Name = "antiair2", Trigger = { Types = { "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 3, Time = 420, After = "antiair" }, Requires = 209, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10039, PosA = { x = -3400.00, y = -25.00 }, OriginalNodeBId = 10069, PosB = { x = -3300.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "machinegun" },
 } },
-{ Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 2, Time = 450, After = "sniper" }, Requires = 213, Actions = {
+{ Name = "sniper2", Trigger = { Types = { "sniper2", "laser", "firebeam" }, Count = 2, Time = 450, After = "sniper" }, Requires = 214, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 56, PosA = { x = -3093.19, y = 205.21 }, OriginalNodeBId = 55, PosB = { x = -2945.11, y = 206.49 }, LinkT = 0.70, DeviceSaveName = "sniper2" },
 } },
-{ Name = "miniguns", Trigger = { Time = 540, After = "antiair2" }, Requires = 213, Actions = {
+{ Name = "miniguns", Trigger = { Time = 540, After = "antiair2" }, Requires = 214, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10048, PosA = { x = -3200.00, y = -25.00 }, OriginalNodeBId = 10009, PosB = { x = -3100.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "minigun" },
-{ Type = CREATE_DEVICE, OriginalNodeAId = 47, PosA = { x = -2996.23, y = 503.57 }, OriginalNodeBId = 46, PosB = { x = -2895.38, y = 505.41 }, LinkT = 0.50, DeviceSaveName = "minigun" },
 } },
-{ Name = "artillery2", Trigger = { Time = 480, After = "heavyartillery" }, Requires = 205, Actions = {
+{ Name = "artillery2", Trigger = { Time = 480, After = "heavyartillery" }, Requires = 206, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10069, PosA = { x = -3300.00, y = -25.00 }, OriginalNodeBId = 10048, PosB = { x = -3200.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "mortar" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10038, PosA = { x = -3500.00, y = -25.00 }, OriginalNodeBId = 10039, PosB = { x = -3400.00, y = -25.00 }, LinkT = 0.50, DeviceSaveName = "mortar" },
 } },
-{ Name = "heavyartillery2", Trigger = { Time = 560, After = "artillery2" }, Requires = 213, Actions = {
+{ Name = "heavyartillery2", Trigger = { Time = 560, After = "artillery2" }, Requires = 214, Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10006, PosA = { x = -3100.00, y = 105.00 }, OriginalNodeBId = 10008, PosB = { x = -3022.00, y = 105.00 }, LinkT = 0.25, DeviceSaveName = "mortar2" },
 { Type = CREATE_DEVICE, OriginalNodeAId = 10008, PosA = { x = -3022.00, y = 105.00 }, OriginalNodeBId = 10007, PosB = { x = -2945.00, y = 105.00 }, LinkT = 0.75, DeviceSaveName = "mortar2" },
 } },
-{ Name = "frontlayer", Trigger = { Types = { "machinegun", "minigun" }, Count = 6, Time = 600 }, Requires = 190, Actions = {
+{ Name = "frontlayer", Trigger = { Types = { "machinegun", "minigun" }, Count = 6, Time = 600 }, Requires = 191, Actions = {
 { Type = CREATE_NODE, OriginalNodeAId = 10056, PosA = { x = -2812.00, y = 411.00 }, OriginalNodeBId = 29000, NewNodePos = { x = -2772.00, y = 411.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_NODE, OriginalNodeAId = 10058, PosA = { x = -2812.00, y = 505.00 }, OriginalNodeBId = 29001, NewNodePos = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
 { Type = CREATE_LINK, OriginalNodeAId = 29000, PosA = {x = -2772.00, y = 411.00 }, OriginalNodeBId = 29001, PosB = { x = -2772.00, y = 505.00 }, MaterialSaveName = "bracing" },
