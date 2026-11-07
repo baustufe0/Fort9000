@@ -1499,8 +1499,9 @@ VANILLA_VARIANTS["bastion"] = {
             # the nest rests on its two columns only
             "tower_connect": {"base_y": 205, "storeys": 4, "skip_floors": (-185,)},
             "support_cheapest": True,
-            "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": [],
-                          "outside": "bracing"},
+            # in the background, like 2v6-5: solid, it stopped the B1 sniper aiming down from the upper spot (46 of 129 tries, match
+            # 07.11.2026 17:38; the lower fort asks up to 13 degrees down). It no longer stops shots at the reactor behind it
+            "woodspam": [{"wall_x": -2845, "layers": [-2805, -2765], "rows": [205, 310], "base": []},
                          _V_LOWER_FACE_WS, _V_MINE_ROW_WS],
             # the hub first (cheap, background bracing), the footing's armour brace after the first sniper
             "footing": _V_HUB,
@@ -1587,7 +1588,7 @@ VANILLA_VARIANTS["bastion"] = {
         {"name": "Z0prow", "zone": "Z0", "after": 17, "repeat": 3, "cooldown": 60,
          "trigger": {"zone": "Z0", "damage": 500},
          "cfg": {"woodspam": VANILLA_VARIANTS["artillerie"]["cfg"]["woodspam"] + [
-             {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": [], "outside": "bracing"}]},
+             {"wall_x": -2765, "layers": [-2725], "rows": [205, 310], "base": []}]},
          "plan": [("defence", ["woodspam:3"])]},
         # step 4: the factory when the posture asks for heavy direct fire (Siege: a zone keeps being hit; Punish: the
         # enemy builds economy or the AI piles up metal), at the latest at 450 s; then a B socket that keeps losing

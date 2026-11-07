@@ -277,11 +277,11 @@ FortModules =
 { Type = CREATE_LINK, OriginalNodeAId = 30001, PosA = {x = 3572.00, y = -2145.00 }, OriginalNodeBId = 10062, PosB = { x = 3612.00, y = -2048.00 }, MaterialSaveName = "bracing" },
 } },
 { Name = "Z0prow", Trigger = { Zone = "Z0", Damage = 500 }, Requires = 179, Repeat = 3, Cooldown = 60, Actions = {
-{ Type = CREATE_NODE, OriginalNodeAId = 10054, PosA = { x = 3565.00, y = -2445.00 }, OriginalNodeBId = 31000, NewNodePos = { x = 3525.00, y = -2445.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_NODE, OriginalNodeAId = 10056, PosA = { x = 3565.00, y = -2340.00 }, OriginalNodeBId = 31001, NewNodePos = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 31000, PosA = {x = 3525.00, y = -2445.00 }, OriginalNodeBId = 31001, PosB = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 10054, PosA = {x = 3565.00, y = -2445.00 }, OriginalNodeBId = 31001, PosB = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "bracing" },
-{ Type = CREATE_LINK, OriginalNodeAId = 31000, PosA = {x = 3525.00, y = -2445.00 }, OriginalNodeBId = 10056, PosB = { x = 3565.00, y = -2340.00 }, MaterialSaveName = "bracing" },
+{ Type = CREATE_NODE, OriginalNodeAId = 10054, PosA = { x = 3565.00, y = -2445.00 }, OriginalNodeBId = 31000, NewNodePos = { x = 3525.00, y = -2445.00 }, MaterialSaveName = "backbracing" },
+{ Type = CREATE_NODE, OriginalNodeAId = 10056, PosA = { x = 3565.00, y = -2340.00 }, OriginalNodeBId = 31001, NewNodePos = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "backbracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 31000, PosA = {x = 3525.00, y = -2445.00 }, OriginalNodeBId = 31001, PosB = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "backbracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 10054, PosA = {x = 3565.00, y = -2445.00 }, OriginalNodeBId = 31001, PosB = { x = 3525.00, y = -2340.00 }, MaterialSaveName = "backbracing" },
+{ Type = CREATE_LINK, OriginalNodeAId = 31000, PosA = {x = 3525.00, y = -2445.00 }, OriginalNodeBId = 10056, PosB = { x = 3565.00, y = -2340.00 }, MaterialSaveName = "backbracing" },
 } },
 { Name = "antiair_front", Trigger = { Types = { "mortar", "mortar2", "missile", "missile2", "missileinv", "missile2inv", "rocket", "rocketemp" }, Count = 1, Postures = { "AntiArtillery", "AntiAir" } }, Requires = 80, Socket = "A2", Loadout = "machinegun", Actions = {
 { Type = CREATE_DEVICE, OriginalNodeAId = 10012, PosA = { x = 3900.00, y = -2835.00 }, OriginalNodeBId = 10020, PosB = { x = 4000.00, y = -2835.00 }, LinkT = 0.97, DeviceSaveName = "machinegun", Socket = "A2" },

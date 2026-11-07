@@ -64,6 +64,7 @@ Shared with the cannon plan Vanilla-4 (removed 28.10.2026; tests in
   match, `weapon_avoid`). Vanilla-3 (and the former laser plan) put the sniper in the front column at floor -145 (`weapon_avoid` keeps the
   machine gun out; built), at LinkT 0.28 (`sniper_t`) so its split door's brace clears it. In the top front cell (floor -270;
   the removed Vanilla-4) it was refused once the tower stood below it.
+- **Vanilla-8's prow woodspam** (band y 205..310, and the module `Z0prow`'s layer): background bracing since 07.11.2026, as 2v6-5 has it. Solid, it stopped the B1 sniper aiming down from the upper spot (46 of 129 tries, match of 17:38); down 9 -> 16 degrees, the lower fort asks up to 13. B3's laser 7 -> 42 up. Cost: it no longer stops shots at the reactor behind it. Not played yet.
 - **Starting machine gun:** sold (`sell:machinegun`) in the step that starts the woodspam, in every plan: behind the woodspam it cannot shoot (the player, 07.11.2026, Vanilla-6). No upgrade step puts it back; on Vanilla-5 and Vanilla-6 that is one minigun fewer. Not played yet.
 - **Doors:** `split_doors` cuts the door posts to the shot: Vanilla-3's sniper's door 80.5. Its 20mm doors were 78 of 125
   (126 shots through them) until the 2v2 of 07.11.2026 showed the armour over them left 3.4-4 degrees up: the shell falls
